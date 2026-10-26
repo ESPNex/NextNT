@@ -145,11 +145,24 @@ XhciFindEndpoint(
     _In_ ULONG Slot,
     _In_ ULONG Dci)
 {
-    if (!Slot || Slot != Adapter->Slot)
+    PUSBNET_DEVICE Device;
+    ULONG Tier;
+
+    if (!Slot)
         return NULL;
 
-    if (Dci == Adapter->Ep0.Dci)
-        return &Adapter->Ep0;
+    for (Tier = 0; Tier < Adapter->Tier; Tier++)
+    {
+        Device = &Adapter->Devices[Tier];
+        if (Slot == Device->Slot && Dci == Device->Ep0.Dci)
+            return &Device->Ep0;
+    }
+
+    if (Slot != Adapter->Device->Slot)
+        return NULL;
+
+    if (Dci == Adapter->Device->Ep0.Dci)
+        return &Adapter->Device->Ep0;
 
     if (Adapter->BulkIn.Dci && Dci == Adapter->BulkIn.Dci)
         return &Adapter->BulkIn;
@@ -477,29 +490,37 @@ XhciResetPort(
     Neutral = Value & (XHCI_PORT_POWER | XHCI_PORT_INDICATOR | XHCI_PORT_WAKE_MASK);
     XhciWrite(Register, Neutral | (Value & XHCI_PORT_CHANGE_MASK));
 
-    if (!(Value & XHCI_PORT_ENABLED))
+    XhciWrite(Register, Neutral | XHCI_PORT_RESET);
+    for (i = 0; i < XHCI_PORT_RESET_WAIT; i++)
     {
-        XhciWrite(Register, Neutral | XHCI_PORT_RESET);
-        for (i = 0; i < XHCI_PORT_RESET_WAIT; i++)
-        {
-            Value = XhciRead(Register);
-            if (Value & XHCI_PORT_RESET_CHANGE)
-                break;
-
-            XhciStall(1000);
-        }
-
-        if (i == XHCI_PORT_RESET_WAIT)
-            return STATUS_IO_TIMEOUT;
-
-        XhciWrite(Register, Neutral | (Value & XHCI_PORT_CHANGE_MASK));
-        XhciStall(XHCI_RECOVERY_WAIT);
         Value = XhciRead(Register);
+        if (Value & XHCI_PORT_RESET_CHANGE)
+            break;
+
+        XhciStall(1000);
     }
+
+    if (i == XHCI_PORT_RESET_WAIT)
+        return STATUS_IO_TIMEOUT;
+
+    XhciWrite(Register, Neutral | (Value & XHCI_PORT_CHANGE_MASK));
+    XhciStall(XHCI_RECOVERY_WAIT);
+    Value = XhciRead(Register);
 
     if (!(Value & XHCI_PORT_CONNECTED) || !(Value & XHCI_PORT_ENABLED))
         return STATUS_DEVICE_NOT_CONNECTED;
 
     *Speed = (UCHAR)((Value >> XHCI_PORT_SPEED_SHIFT) & XHCI_PORT_SPEED_MASK);
     return *Speed ? STATUS_SUCCESS : STATUS_DEVICE_NOT_CONNECTED;
+}
+
+BOOLEAN
+XhciPortAlive(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Port)
+{
+    ULONG Value = XhciRead(Adapter->Operational + XHCI_OP_PORTSC(Port));
+
+    return (Value & (XHCI_PORT_CONNECTED | XHCI_PORT_ENABLED)) == (XHCI_PORT_CONNECTED | XHCI_PORT_ENABLED) &&
+           !(Value & XHCI_PORT_CONNECT_CHANGE);
 }

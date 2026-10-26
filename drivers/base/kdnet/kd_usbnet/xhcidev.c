@@ -36,13 +36,14 @@ static
 VOID
 XhciSetSlotContext(
     _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
     _In_ ULONG Entries)
 {
     volatile ULONG *Context = XhciInputContext(Adapter, 1);
 
-    Context[0] = ((ULONG)Adapter->Speed << 20) | (Entries << 27);
-    Context[1] = (ULONG)Adapter->Port << 16;
-    Context[2] = 0;
+    Context[0] = Device->Route | ((ULONG)Device->Speed << 20) | (Device->Hub ? XHCI_SLOT_HUB : 0) | (Entries << 27);
+    Context[1] = ((ULONG)Device->Port << 16) | ((ULONG)Device->Ports << 24);
+    Context[2] = Device->TtSlot | ((ULONG)Device->TtPort << 8) | ((ULONG)Device->ThinkTime << 16);
     Context[3] = 0;
 }
 
@@ -67,15 +68,16 @@ XhciSetEndpointContext(
 static
 ULONG
 XhciSlotControl(
-    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
     _In_ ULONG Type)
 {
-    return (Type << TRB_TYPE_SHIFT) | ((ULONG)Adapter->Slot << TRB_SLOT_SHIFT);
+    return (Type << TRB_TYPE_SHIFT) | ((ULONG)Device->Slot << TRB_SLOT_SHIFT);
 }
 
 NTSTATUS
 XhciAddressDevice(
-    _In_ PUSBNET_ADAPTER Adapter)
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device)
 {
     NTSTATUS Status;
     ULONG i;
@@ -87,39 +89,39 @@ XhciAddressDevice(
     if (!Adapter->CommandSlot || Adapter->CommandSlot > Adapter->MaxSlots)
         return STATUS_DEVICE_PROTOCOL_ERROR;
 
-    Adapter->Slot = Adapter->CommandSlot;
+    Device->Slot = Adapter->CommandSlot;
     for (i = 0; i < XHCI_DEVICE_CONTEXTS * Adapter->ContextSize; i++)
-        ((volatile UCHAR *)Adapter->DeviceContext)[i] = 0;
+        ((volatile UCHAR *)Device->Context)[i] = 0;
 
-    Adapter->Dcbaa[Adapter->Slot] = XhciPhysical(Adapter->DeviceContext);
+    Adapter->Dcbaa[Device->Slot] = XhciPhysical(Device->Context);
 
-    Adapter->Ep0.Dci = 1;
-    Adapter->Ep0.MaxBurst = 0;
-    switch (Adapter->Speed)
+    Device->Ep0.Dci = 1;
+    Device->Ep0.MaxBurst = 0;
+    switch (Device->Speed)
     {
         case XHCI_SPEED_LOW:
-            Adapter->Ep0.MaxPacket = 8;
+            Device->Ep0.MaxPacket = 8;
             break;
 
         case XHCI_SPEED_FULL:
         case XHCI_SPEED_HIGH:
-            Adapter->Ep0.MaxPacket = 64;
+            Device->Ep0.MaxPacket = 64;
             break;
 
         default:
-            Adapter->Ep0.MaxPacket = 512;
+            Device->Ep0.MaxPacket = 512;
             break;
     }
 
-    XhciInitializeRing(&Adapter->Ep0.Ring, Adapter->Ep0.Ring.Trbs);
+    XhciInitializeRing(&Device->Ep0.Ring, Device->Ep0.Ring.Trbs);
     XhciClearInput(Adapter);
     XhciInputContext(Adapter, 0)[1] = 0x3;
-    XhciSetSlotContext(Adapter, 1);
-    XhciSetEndpointContext(Adapter, &Adapter->Ep0, EP_TYPE_CONTROL, EP_CONTROL_AVERAGE);
+    XhciSetSlotContext(Adapter, Device, 1);
+    XhciSetEndpointContext(Adapter, &Device->Ep0, EP_TYPE_CONTROL, EP_CONTROL_AVERAGE);
     KeMemoryBarrier();
 
     Status = XhciCommand(Adapter, XhciPhysical(Adapter->InputContext), 0,
-                         XhciSlotControl(Adapter, TRB_ADDRESS_DEVICE));
+                         XhciSlotControl(Device, TRB_ADDRESS_DEVICE));
     if (NT_SUCCESS(Status))
         XhciStall(XHCI_ADDRESS_RECOVERY);
 
@@ -129,25 +131,41 @@ XhciAddressDevice(
 NTSTATUS
 XhciUpdateControlPacketSize(
     _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
     _In_ USHORT MaxPacket)
 {
-    if (MaxPacket == Adapter->Ep0.MaxPacket)
+    if (MaxPacket == Device->Ep0.MaxPacket)
         return STATUS_SUCCESS;
 
-    Adapter->Ep0.MaxPacket = MaxPacket;
+    Device->Ep0.MaxPacket = MaxPacket;
     XhciClearInput(Adapter);
     XhciInputContext(Adapter, 0)[1] = 0x2;
-    XhciSetEndpointContext(Adapter, &Adapter->Ep0, EP_TYPE_CONTROL, EP_CONTROL_AVERAGE);
+    XhciSetEndpointContext(Adapter, &Device->Ep0, EP_TYPE_CONTROL, EP_CONTROL_AVERAGE);
     KeMemoryBarrier();
 
     return XhciCommand(Adapter, XhciPhysical(Adapter->InputContext), 0,
-                       XhciSlotControl(Adapter, TRB_EVALUATE_CONTEXT));
+                       XhciSlotControl(Device, TRB_EVALUATE_CONTEXT));
+}
+
+NTSTATUS
+XhciConfigureHub(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device)
+{
+    XhciClearInput(Adapter);
+    XhciInputContext(Adapter, 0)[1] = 0x1;
+    XhciSetSlotContext(Adapter, Device, 1);
+    KeMemoryBarrier();
+
+    return XhciCommand(Adapter, XhciPhysical(Adapter->InputContext), 0,
+                       XhciSlotControl(Device, TRB_CONFIGURE_ENDPOINT));
 }
 
 NTSTATUS
 XhciConfigureBulk(
     _In_ PUSBNET_ADAPTER Adapter)
 {
+    PUSBNET_DEVICE Device = Adapter->Device;
     PUSBNET_ENDPOINT In = &Adapter->BulkIn, Out = &Adapter->BulkOut;
     NTSTATUS Status;
 
@@ -158,13 +176,13 @@ XhciConfigureBulk(
 
     XhciClearInput(Adapter);
     XhciInputContext(Adapter, 0)[1] = 1 | (1 << In->Dci) | (1 << Out->Dci);
-    XhciSetSlotContext(Adapter, max(In->Dci, Out->Dci));
+    XhciSetSlotContext(Adapter, Device, max(In->Dci, Out->Dci));
     XhciSetEndpointContext(Adapter, In, EP_TYPE_BULK_IN, EP_BULK_AVERAGE);
     XhciSetEndpointContext(Adapter, Out, EP_TYPE_BULK_OUT, EP_BULK_AVERAGE);
     KeMemoryBarrier();
 
     Status = XhciCommand(Adapter, XhciPhysical(Adapter->InputContext), 0,
-                         XhciSlotControl(Adapter, TRB_CONFIGURE_ENDPOINT));
+                         XhciSlotControl(Device, TRB_CONFIGURE_ENDPOINT));
     if (!NT_SUCCESS(Status))
     {
         In->Dci = 0;
@@ -176,24 +194,29 @@ XhciConfigureBulk(
 
 VOID
 XhciDisableSlot(
-    _In_ PUSBNET_ADAPTER Adapter)
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device)
 {
-    if (!Adapter->Slot)
+    if (!Device->Slot)
         return;
 
-    XhciCommand(Adapter, 0, 0, XhciSlotControl(Adapter, TRB_DISABLE_SLOT));
-    Adapter->Dcbaa[Adapter->Slot] = 0;
-    Adapter->Slot = 0;
-    Adapter->BulkIn.Dci = 0;
-    Adapter->BulkOut.Dci = 0;
+    XhciCommand(Adapter, 0, 0, XhciSlotControl(Device, TRB_DISABLE_SLOT));
+    Adapter->Dcbaa[Device->Slot] = 0;
+    Device->Slot = 0;
+    if (Device == Adapter->Device)
+    {
+        Adapter->BulkIn.Dci = 0;
+        Adapter->BulkOut.Dci = 0;
+    }
 }
 
 NTSTATUS
 XhciRecoverEndpoint(
     _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
     _In_ PUSBNET_ENDPOINT Endpoint)
 {
-    volatile ULONG *Context = (volatile ULONG *)(Adapter->DeviceContext + Endpoint->Dci * Adapter->ContextSize);
+    volatile ULONG *Context = (volatile ULONG *)(Device->Context + Endpoint->Dci * Adapter->ContextSize);
     PUSBNET_RING Ring = &Endpoint->Ring;
     ULONG Control = (ULONG)Endpoint->Dci << TRB_ENDPOINT_SHIFT;
     ULONG State;
@@ -201,12 +224,12 @@ XhciRecoverEndpoint(
     Endpoint->Done = TRUE;
     State = Context[0] & EP_STATE_MASK;
     if (State == EP_STATE_HALTED)
-        XhciCommand(Adapter, 0, 0, XhciSlotControl(Adapter, TRB_RESET_ENDPOINT) | Control);
+        XhciCommand(Adapter, 0, 0, XhciSlotControl(Device, TRB_RESET_ENDPOINT) | Control);
     else if (State == EP_STATE_RUNNING)
-        XhciCommand(Adapter, 0, 0, XhciSlotControl(Adapter, TRB_STOP_ENDPOINT) | Control);
+        XhciCommand(Adapter, 0, 0, XhciSlotControl(Device, TRB_STOP_ENDPOINT) | Control);
 
     return XhciCommand(Adapter, (Ring->Physical + Ring->Enqueue * USBNET_TRB_SIZE) | Ring->Cycle, 0,
-                       XhciSlotControl(Adapter, TRB_SET_DEQUEUE) | Control);
+                       XhciSlotControl(Device, TRB_SET_DEQUEUE) | Control);
 }
 
 BOOLEAN
@@ -242,8 +265,9 @@ XhciWaitEndpoint(
 }
 
 NTSTATUS
-XhciControl(
+XhciDeviceControl(
     _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
     _In_ UCHAR RequestType,
     _In_ UCHAR Request,
     _In_ USHORT Value,
@@ -251,7 +275,7 @@ XhciControl(
     _In_ USHORT Length,
     _Out_opt_ PULONG Transferred)
 {
-    PUSBNET_ENDPOINT Endpoint = &Adapter->Ep0;
+    PUSBNET_ENDPOINT Endpoint = &Device->Ep0;
     BOOLEAN In = (RequestType & USB_ENDPOINT_DIRECTION_MASK) != 0;
     ULONG64 Setup;
     ULONG Transfer;
@@ -260,7 +284,7 @@ XhciControl(
     if (Transferred)
         *Transferred = 0;
 
-    if (Length > USBNET_CONTROL_SIZE || !Adapter->Slot)
+    if (Length > USBNET_CONTROL_SIZE || !Device->Slot)
         return STATUS_INVALID_PARAMETER;
 
     Transfer = !Length ? TRB_SETUP_NO_DATA : In ? TRB_SETUP_IN_DATA : TRB_SETUP_OUT_DATA;
@@ -284,12 +308,12 @@ XhciControl(
     Endpoint->LastTrb = XhciQueueTrb(&Endpoint->Ring, 0, 0,
                                      (TRB_STATUS << TRB_TYPE_SHIFT) | TRB_IOC |
                                      (Length && In ? 0 : TRB_DIRECTION_IN));
-    XhciRing(Adapter, Adapter->Slot, Endpoint->Dci);
+    XhciRing(Adapter, Device->Slot, Endpoint->Dci);
 
     Status = XhciWaitEndpoint(Adapter, Endpoint, XHCI_CONTROL_WAIT);
     if (!NT_SUCCESS(Status))
     {
-        XhciRecoverEndpoint(Adapter, Endpoint);
+        XhciRecoverEndpoint(Adapter, Device, Endpoint);
         return Status;
     }
 
@@ -297,6 +321,19 @@ XhciControl(
         *Transferred = Endpoint->Residual <= Length ? Length - Endpoint->Residual : 0;
 
     return STATUS_SUCCESS;
+}
+
+NTSTATUS
+XhciControl(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ UCHAR RequestType,
+    _In_ UCHAR Request,
+    _In_ USHORT Value,
+    _In_ USHORT Index,
+    _In_ USHORT Length,
+    _Out_opt_ PULONG Transferred)
+{
+    return XhciDeviceControl(Adapter, Adapter->Device, RequestType, Request, Value, Index, Length, Transferred);
 }
 
 VOID
@@ -321,5 +358,5 @@ XhciQueueBulk(
     if (Terminate)
         Endpoint->LastTrb = XhciQueueTrb(&Endpoint->Ring, 0, 0, (TRB_NORMAL << TRB_TYPE_SHIFT) | TRB_IOC);
 
-    XhciRing(Adapter, Adapter->Slot, Endpoint->Dci);
+    XhciRing(Adapter, Adapter->Device->Slot, Endpoint->Dci);
 }

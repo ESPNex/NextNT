@@ -67,6 +67,10 @@
 #define XHCI_SPEED_HIGH             3
 #define XHCI_SPEED_SUPER            4
 
+#define XHCI_SLOT_HUB               0x04000000
+#define XHCI_ROUTE_TIER_SHIFT       4
+#define XHCI_ROUTE_PORT_MAX         15
+
 #define TRB_CYCLE                   0x00000001
 #define TRB_TOGGLE_CYCLE            0x00000002
 #define TRB_SHORT_PACKET            0x00000004
@@ -126,9 +130,27 @@
 #define USBNET_TX_SIZE              4096
 #define USBNET_TX_COUNT             2
 #define USBNET_FIXED_PAGES          8
+#define USBNET_MAX_TIERS            4
+#define USBNET_TIER_RING_OFFSET     2048
 #define USBNET_MAX_FRAME            1514
 #define USBNET_MIN_FRAME            14
 #define USBNET_PAD_FRAME            60
+
+#define USB_HUB_CLASS_IN            0xA0
+#define USB_HUB_CLASS_OUT           0x20
+#define USB_HUB_PORT_IN             0xA3
+#define USB_HUB_PORT_OUT            0x23
+#define USB_HUB_PORT_STATUS_SIZE    4
+#define USB_HUB_DESCRIPTOR_SIZE     12
+#define USB_HUB_THINK_TIME_SHIFT    5
+#define USB_HUB_THINK_TIME_MASK     3
+#define HUB_FEATURE_PORT_RESET      4
+#define HUB_FEATURE_PORT_POWER      8
+#define HUB_FEATURE_C_PORT_CONNECTION   16
+#define HUB_FEATURE_C_PORT_ENABLE       17
+#define HUB_FEATURE_C_PORT_RESET        20
+#define HUB_PORT_CHANGE_CONNECTION  0x0001
+#define HUB_PORT_CHANGE_RESET       0x0010
 
 #define USB_CLASS_CDC               0x02
 #define USB_CLASS_CDC_DATA          0x0A
@@ -215,6 +237,22 @@ typedef struct _USBNET_ENDPOINT
     BOOLEAN Done;
 } USBNET_ENDPOINT, *PUSBNET_ENDPOINT;
 
+typedef struct _USBNET_DEVICE
+{
+    UCHAR Slot;
+    UCHAR Speed;
+    UCHAR Port;
+    UCHAR HubPort;
+    UCHAR Ports;
+    UCHAR TtSlot;
+    UCHAR TtPort;
+    UCHAR ThinkTime;
+    BOOLEAN Hub;
+    ULONG Route;
+    PUCHAR Context;
+    USBNET_ENDPOINT Ep0;
+} USBNET_DEVICE, *PUSBNET_DEVICE;
+
 typedef struct _USBNET_FUNCTION
 {
     USBNET_PROTOCOL Protocol;
@@ -247,7 +285,6 @@ typedef struct _USBNET_ADAPTER
     PULONG64 Dcbaa;
     PULONG64 ScratchpadArray;
     PULONG Erst;
-    PUCHAR DeviceContext;
     PUCHAR InputContext;
     PUCHAR Control;
     PUCHAR RxBuffer;
@@ -263,11 +300,10 @@ typedef struct _USBNET_ADAPTER
     UCHAR CommandSlot;
     BOOLEAN CommandDone;
     BOOLEAN Running;
-    UCHAR Slot;
-    UCHAR Port;
-    UCHAR Speed;
+    ULONG Tier;
+    PUSBNET_DEVICE Device;
+    USBNET_DEVICE Devices[USBNET_MAX_TIERS];
     USBNET_FUNCTION Function;
-    USBNET_ENDPOINT Ep0;
     USBNET_ENDPOINT BulkIn;
     USBNET_ENDPOINT BulkOut;
     ULONG RndisRequest;
@@ -396,14 +432,26 @@ XhciResetPort(
     _In_ ULONG Port,
     _Out_ PUCHAR Speed);
 
+BOOLEAN
+XhciPortAlive(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Port);
+
 NTSTATUS
 XhciAddressDevice(
-    _In_ PUSBNET_ADAPTER Adapter);
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device);
 
 NTSTATUS
 XhciUpdateControlPacketSize(
     _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
     _In_ USHORT MaxPacket);
+
+NTSTATUS
+XhciConfigureHub(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device);
 
 NTSTATUS
 XhciConfigureBulk(
@@ -411,12 +459,25 @@ XhciConfigureBulk(
 
 VOID
 XhciDisableSlot(
-    _In_ PUSBNET_ADAPTER Adapter);
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device);
 
 NTSTATUS
 XhciRecoverEndpoint(
     _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
     _In_ PUSBNET_ENDPOINT Endpoint);
+
+NTSTATUS
+XhciDeviceControl(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Device,
+    _In_ UCHAR RequestType,
+    _In_ UCHAR Request,
+    _In_ USHORT Value,
+    _In_ USHORT Index,
+    _In_ USHORT Length,
+    _Out_opt_ PULONG Transferred);
 
 NTSTATUS
 XhciControl(
@@ -449,6 +510,18 @@ XhciWaitEndpoint(
 
 NTSTATUS
 UsbFindFunction(
+    _In_ PUSBNET_ADAPTER Adapter);
+
+VOID
+UsbReleaseDevices(
+    _In_ PUSBNET_ADAPTER Adapter);
+
+BOOLEAN
+UsbPathAlive(
+    _In_ PUSBNET_ADAPTER Adapter);
+
+NTSTATUS
+UsbReconnectBehindHub(
     _In_ PUSBNET_ADAPTER Adapter);
 
 NTSTATUS

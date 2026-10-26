@@ -9,6 +9,10 @@
 
 #define USB_MAX_CONFIGURATIONS  4
 #define USB_NO_INTERFACE        0xFF
+#define USB_HUB_RESET_WAIT      50
+#define USB_HUB_STEP            10000
+#define USB_HUB_DEBOUNCE        100000
+#define USB_HUB_RECOVERY        10000
 
 typedef struct _USB_SCAN
 {
@@ -204,16 +208,229 @@ UsbReadDescriptor(
 
 static
 NTSTATUS
-UsbProbeDevice(
-    _In_ PUSBNET_ADAPTER Adapter)
+UsbProbeTier(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Tier);
+
+static
+NTSTATUS
+UsbHubPortStatus(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Hub,
+    _In_ ULONG Port,
+    _Out_ PUSHORT PortStatus,
+    _Out_ PUSHORT PortChange)
 {
+    PUCHAR Data = Adapter->Control;
+    NTSTATUS Status;
+    ULONG Got;
+
+    *PortStatus = 0;
+    *PortChange = 0;
+    Status = XhciDeviceControl(Adapter, Hub, USB_HUB_PORT_IN, USB_REQUEST_GET_STATUS, 0, (USHORT)Port,
+                               USB_HUB_PORT_STATUS_SIZE, &Got);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    if (Got < USB_HUB_PORT_STATUS_SIZE)
+        return STATUS_DEVICE_DATA_ERROR;
+
+    *PortStatus = UsbNetGet16(Data);
+    *PortChange = UsbNetGet16(Data + 2);
+    return STATUS_SUCCESS;
+}
+
+static
+NTSTATUS
+UsbHubPortFeature(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Hub,
+    _In_ UCHAR Request,
+    _In_ USHORT Feature,
+    _In_ ULONG Port)
+{
+    return XhciDeviceControl(Adapter, Hub, USB_HUB_PORT_OUT, Request, Feature, (USHORT)Port, 0, NULL);
+}
+
+static
+NTSTATUS
+UsbHubResetPort(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PUSBNET_DEVICE Hub,
+    _In_ ULONG Port,
+    _Out_ PUCHAR Speed)
+{
+    USHORT PortStatus, PortChange;
+    NTSTATUS Status;
+    ULONG i;
+
+    *Speed = 0;
+    Status = UsbHubPortFeature(Adapter, Hub, USB_REQUEST_SET_FEATURE, HUB_FEATURE_PORT_RESET, Port);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    for (i = 0; i < USB_HUB_RESET_WAIT; i++)
+    {
+        XhciStall(USB_HUB_STEP);
+        Status = UsbHubPortStatus(Adapter, Hub, Port, &PortStatus, &PortChange);
+        if (!NT_SUCCESS(Status))
+            return Status;
+
+        if ((PortChange & HUB_PORT_CHANGE_RESET) && !(PortStatus & USB_PORT_STATUS_RESET))
+            break;
+    }
+
+    if (i == USB_HUB_RESET_WAIT)
+        return STATUS_IO_TIMEOUT;
+
+    UsbHubPortFeature(Adapter, Hub, USB_REQUEST_CLEAR_FEATURE, HUB_FEATURE_C_PORT_RESET, Port);
+    UsbHubPortFeature(Adapter, Hub, USB_REQUEST_CLEAR_FEATURE, HUB_FEATURE_C_PORT_CONNECTION, Port);
+    UsbHubPortFeature(Adapter, Hub, USB_REQUEST_CLEAR_FEATURE, HUB_FEATURE_C_PORT_ENABLE, Port);
+    XhciStall(USB_HUB_RECOVERY);
+
+    if ((PortStatus & (USB_PORT_STATUS_CONNECT | USB_PORT_STATUS_ENABLE)) !=
+        (USB_PORT_STATUS_CONNECT | USB_PORT_STATUS_ENABLE))
+    {
+        return STATUS_DEVICE_NOT_CONNECTED;
+    }
+
+    if (Hub->Speed >= XHCI_SPEED_SUPER)
+        *Speed = XHCI_SPEED_SUPER;
+    else if (PortStatus & USB_PORT_STATUS_LOW_SPEED)
+        *Speed = XHCI_SPEED_LOW;
+    else if (PortStatus & USB_PORT_STATUS_HIGH_SPEED)
+        *Speed = XHCI_SPEED_HIGH;
+    else
+        *Speed = XHCI_SPEED_FULL;
+
+    return STATUS_SUCCESS;
+}
+
+static
+NTSTATUS
+UsbProbeHubPort(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Tier,
+    _In_ ULONG Port)
+{
+    PUSBNET_DEVICE Hub = &Adapter->Devices[Tier];
+    PUSBNET_DEVICE Child = &Adapter->Devices[Tier + 1];
+    NTSTATUS Status;
+    UCHAR Speed;
+
+    Status = UsbHubResetPort(Adapter, Hub, Port, &Speed);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    Child->Port = Hub->Port;
+    Child->HubPort = (UCHAR)Port;
+    Child->Route = Hub->Route | (Port << (Tier * XHCI_ROUTE_TIER_SHIFT));
+    Child->Speed = Speed;
+    Child->TtSlot = 0;
+    Child->TtPort = 0;
+    if (Speed == XHCI_SPEED_LOW || Speed == XHCI_SPEED_FULL)
+    {
+        Child->TtSlot = Hub->Speed == XHCI_SPEED_HIGH ? Hub->Slot : Hub->TtSlot;
+        Child->TtPort = Hub->Speed == XHCI_SPEED_HIGH ? (UCHAR)Port : Hub->TtPort;
+    }
+
+    Status = UsbProbeTier(Adapter, Tier + 1);
+    if (!NT_SUCCESS(Status))
+    {
+        XhciDisableSlot(Adapter, Child);
+        Adapter->Tier = Tier;
+        Adapter->Device = Hub;
+    }
+
+    return Status;
+}
+
+static
+NTSTATUS
+UsbEnumerateHub(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Tier)
+{
+    PUSBNET_DEVICE Hub = &Adapter->Devices[Tier];
+    PUCHAR Data = Adapter->Control;
+    USHORT PortStatus, PortChange;
+    NTSTATUS Status;
+    ULONG Got, Port, Settle;
+
+    if (Tier + 1 >= USBNET_MAX_TIERS)
+        return STATUS_NOT_SUPPORTED;
+
+    Status = UsbReadDescriptor(Adapter, USB_CONFIGURATION_DESCRIPTOR_TYPE, 0, 0,
+                               sizeof(USB_CONFIGURATION_DESCRIPTOR), &Got);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    if (Got < sizeof(USB_CONFIGURATION_DESCRIPTOR))
+        return STATUS_DEVICE_DATA_ERROR;
+
+    Status = XhciControl(Adapter, 0, USB_REQUEST_SET_CONFIGURATION, Data[5], 0, 0, NULL);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    Status = XhciControl(Adapter, USB_HUB_CLASS_IN, USB_REQUEST_GET_DESCRIPTOR,
+                         (Hub->Speed >= XHCI_SPEED_SUPER ? USB_30_HUB_DESCRIPTOR_TYPE : USB_20_HUB_DESCRIPTOR_TYPE) << 8,
+                         0, USB_HUB_DESCRIPTOR_SIZE, &Got);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    if (Got < 7 || !Data[2])
+        return STATUS_DEVICE_DATA_ERROR;
+
+    Hub->Hub = TRUE;
+    Hub->Ports = min(Data[2], XHCI_ROUTE_PORT_MAX);
+    Hub->ThinkTime = Hub->Speed == XHCI_SPEED_HIGH ?
+                     (UCHAR)((UsbNetGet16(Data + 3) >> USB_HUB_THINK_TIME_SHIFT) & USB_HUB_THINK_TIME_MASK) : 0;
+    Settle = max((ULONG)Data[5] * 2000, USB_HUB_DEBOUNCE);
+
+    if (Hub->Speed >= XHCI_SPEED_SUPER)
+    {
+        Status = XhciControl(Adapter, USB_HUB_CLASS_OUT, USB_REQUEST_SET_HUB_DEPTH, (USHORT)Tier, 0, 0, NULL);
+        if (!NT_SUCCESS(Status))
+            return Status;
+    }
+
+    Status = XhciConfigureHub(Adapter, Hub);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    for (Port = 1; Port <= Hub->Ports; Port++)
+        UsbHubPortFeature(Adapter, Hub, USB_REQUEST_SET_FEATURE, HUB_FEATURE_PORT_POWER, Port);
+
+    XhciStall(Settle);
+    for (Port = 1; Port <= Hub->Ports; Port++)
+    {
+        if (!NT_SUCCESS(UsbHubPortStatus(Adapter, Hub, Port, &PortStatus, &PortChange)) ||
+            !(PortStatus & USB_PORT_STATUS_CONNECT))
+        {
+            continue;
+        }
+
+        if (NT_SUCCESS(UsbProbeHubPort(Adapter, Tier, Port)))
+            return STATUS_SUCCESS;
+    }
+
+    return STATUS_NO_SUCH_DEVICE;
+}
+
+static
+NTSTATUS
+UsbProbeDevice(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Tier)
+{
+    PUSBNET_DEVICE Device = Adapter->Device;
     PUCHAR Data = Adapter->Control;
     USBNET_FUNCTION Function;
     NTSTATUS Status;
     ULONG Got, Total, Configurations, i;
     USHORT MaxPacket;
 
-    Status = XhciAddressDevice(Adapter);
+    Status = XhciAddressDevice(Adapter, Device);
     if (!NT_SUCCESS(Status))
         return Status;
 
@@ -224,7 +441,7 @@ UsbProbeDevice(
     if (Got < 8)
         return STATUS_DEVICE_DATA_ERROR;
 
-    if (Adapter->Speed >= XHCI_SPEED_SUPER)
+    if (Device->Speed >= XHCI_SPEED_SUPER)
     {
         if (Data[7] != 9)
             return STATUS_DEVICE_DATA_ERROR;
@@ -238,7 +455,7 @@ UsbProbeDevice(
             return STATUS_DEVICE_DATA_ERROR;
     }
 
-    Status = XhciUpdateControlPacketSize(Adapter, MaxPacket);
+    Status = XhciUpdateControlPacketSize(Adapter, Device, MaxPacket);
     if (!NT_SUCCESS(Status))
         return Status;
 
@@ -246,8 +463,11 @@ UsbProbeDevice(
     if (!NT_SUCCESS(Status))
         return Status;
 
-    if (Got < sizeof(USB_DEVICE_DESCRIPTOR) || Data[4] == USB_DEVICE_CLASS_HUB)
+    if (Got < sizeof(USB_DEVICE_DESCRIPTOR))
         return STATUS_NOT_SUPPORTED;
+
+    if (Data[4] == USB_DEVICE_CLASS_HUB)
+        return UsbEnumerateHub(Adapter, Tier);
 
     Configurations = min(Data[17], USB_MAX_CONFIGURATIONS);
     for (i = 0; i < Configurations; i++)
@@ -267,16 +487,110 @@ UsbProbeDevice(
 
         Function.Configuration = Data[5];
         Adapter->Function = Function;
-        return STATUS_SUCCESS;
+        return UsbNetStartFunction(Adapter);
     }
 
     return STATUS_NOT_SUPPORTED;
+}
+
+static
+NTSTATUS
+UsbProbeTier(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Tier)
+{
+    PUSBNET_DEVICE Device = &Adapter->Devices[Tier];
+    NTSTATUS Status;
+
+    Adapter->Tier = Tier;
+    Adapter->Device = Device;
+    Device->Hub = FALSE;
+    Device->Ports = 0;
+    Device->ThinkTime = 0;
+    Status = UsbProbeDevice(Adapter, Tier);
+    if (!NT_SUCCESS(Status))
+    {
+        Adapter->Tier = Tier;
+        Adapter->Device = Device;
+    }
+
+    return Status;
+}
+
+VOID
+UsbReleaseDevices(
+    _In_ PUSBNET_ADAPTER Adapter)
+{
+    ULONG Tier = Adapter->Tier + 1;
+
+    while (Tier--)
+        XhciDisableSlot(Adapter, &Adapter->Devices[Tier]);
+
+    Adapter->Tier = 0;
+    Adapter->Device = &Adapter->Devices[0];
+}
+
+BOOLEAN
+UsbPathAlive(
+    _In_ PUSBNET_ADAPTER Adapter)
+{
+    USHORT PortStatus, PortChange;
+    ULONG Tier;
+
+    if (!XhciPortAlive(Adapter, Adapter->Devices[0].Port))
+        return FALSE;
+
+    for (Tier = 0; Tier < Adapter->Tier; Tier++)
+    {
+        if (!NT_SUCCESS(UsbHubPortStatus(Adapter, &Adapter->Devices[Tier], Adapter->Devices[Tier + 1].HubPort,
+                                         &PortStatus, &PortChange)) ||
+            (PortStatus & (USB_PORT_STATUS_CONNECT | USB_PORT_STATUS_ENABLE)) !=
+            (USB_PORT_STATUS_CONNECT | USB_PORT_STATUS_ENABLE) ||
+            (PortChange & HUB_PORT_CHANGE_CONNECTION))
+        {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+NTSTATUS
+UsbReconnectBehindHub(
+    _In_ PUSBNET_ADAPTER Adapter)
+{
+    ULONG Tier = Adapter->Tier - 1, Port;
+    PUSBNET_DEVICE Hub = &Adapter->Devices[Tier];
+    USHORT PortStatus, PortChange;
+    NTSTATUS Status = STATUS_NO_SUCH_DEVICE;
+
+    Adapter->Tier = Tier;
+    Adapter->Device = Hub;
+    for (Port = 1; Port <= Hub->Ports; Port++)
+    {
+        Status = UsbHubPortStatus(Adapter, Hub, Port, &PortStatus, &PortChange);
+        if (!NT_SUCCESS(Status))
+            break;
+
+        Status = STATUS_NO_SUCH_DEVICE;
+        if (!(PortChange & HUB_PORT_CHANGE_CONNECTION))
+            continue;
+
+        UsbHubPortFeature(Adapter, Hub, USB_REQUEST_CLEAR_FEATURE, HUB_FEATURE_C_PORT_CONNECTION, Port);
+        if ((PortStatus & USB_PORT_STATUS_CONNECT) && NT_SUCCESS(UsbProbeHubPort(Adapter, Tier, Port)))
+            return STATUS_SUCCESS;
+    }
+
+    Adapter->Tier = Tier + 1;
+    Adapter->Device = &Adapter->Devices[Tier + 1];
+    return Status;
 }
 
 NTSTATUS
 UsbFindFunction(
     _In_ PUSBNET_ADAPTER Adapter)
 {
+    PUSBNET_DEVICE Device = &Adapter->Devices[0];
     ULONG Port;
     UCHAR Speed;
 
@@ -288,13 +602,19 @@ UsbFindFunction(
         if (!NT_SUCCESS(XhciResetPort(Adapter, Port, &Speed)))
             continue;
 
-        Adapter->Port = (UCHAR)Port;
-        Adapter->Speed = Speed;
-        if (NT_SUCCESS(UsbProbeDevice(Adapter)) && NT_SUCCESS(UsbNetStartFunction(Adapter)))
+        Device->Port = (UCHAR)Port;
+        Device->HubPort = 0;
+        Device->Route = 0;
+        Device->Speed = Speed;
+        Device->TtSlot = 0;
+        Device->TtPort = 0;
+        if (NT_SUCCESS(UsbProbeTier(Adapter, 0)))
             return STATUS_SUCCESS;
 
-        XhciDisableSlot(Adapter);
+        XhciDisableSlot(Adapter, Device);
     }
 
+    Adapter->Tier = 0;
+    Adapter->Device = Device;
     return STATUS_NO_SUCH_DEVICE;
 }

@@ -25,7 +25,7 @@ UsbNetGetHardwareContextSize(
 {
     UNREFERENCED_PARAMETER(Device);
 
-    return UsbNetAlignedAdapterSize() + (USBNET_FIXED_PAGES + USBNET_MAX_SCRATCHPAD) * PAGE_SIZE;
+    return UsbNetAlignedAdapterSize() + (USBNET_FIXED_PAGES + USBNET_MAX_TIERS - 1 + USBNET_MAX_SCRATCHPAD) * PAGE_SIZE;
 }
 
 static
@@ -34,6 +34,7 @@ UsbNetLayout(
     _In_ PUSBNET_ADAPTER Adapter)
 {
     PUCHAR Page = (PUCHAR)Adapter + UsbNetAlignedAdapterSize();
+    ULONG Tier;
 
     Adapter->Dcbaa = (PULONG64)Page;
     Adapter->ScratchpadArray = (PULONG64)(Page + 1024);
@@ -41,11 +42,11 @@ UsbNetLayout(
     Page += PAGE_SIZE;
     Adapter->Command.Trbs = (PULONG)Page;
     Adapter->Events = (PULONG)(Page + USBNET_RING_SIZE);
-    Adapter->Ep0.Ring.Trbs = (PULONG)(Page + 2 * USBNET_RING_SIZE);
+    Adapter->Devices[0].Ep0.Ring.Trbs = (PULONG)(Page + 2 * USBNET_RING_SIZE);
     Adapter->BulkIn.Ring.Trbs = (PULONG)(Page + 3 * USBNET_RING_SIZE);
     Page += PAGE_SIZE;
     Adapter->BulkOut.Ring.Trbs = (PULONG)Page;
-    Adapter->DeviceContext = Page + USBNET_RING_SIZE;
+    Adapter->Devices[0].Context = Page + USBNET_RING_SIZE;
     Page += PAGE_SIZE;
     Adapter->InputContext = Page;
     Page += PAGE_SIZE;
@@ -55,7 +56,15 @@ UsbNetLayout(
     Page += PAGE_SIZE;
     Adapter->TxBuffers = Page;
     Page += USBNET_TX_COUNT * PAGE_SIZE;
+    for (Tier = 1; Tier < USBNET_MAX_TIERS; Tier++)
+    {
+        Adapter->Devices[Tier].Context = Page;
+        Adapter->Devices[Tier].Ep0.Ring.Trbs = (PULONG)(Page + USBNET_TIER_RING_OFFSET);
+        Page += PAGE_SIZE;
+    }
+
     Adapter->ScratchpadPages = Page;
+    Adapter->Device = &Adapter->Devices[0];
 }
 
 static
@@ -96,7 +105,7 @@ UsbNetSetLink(
     Adapter->RxNdp = 0;
     if (Up)
     {
-        Adapter->KdNet->LinkSpeed = UsbNetLinkSpeed(Adapter->Speed);
+        Adapter->KdNet->LinkSpeed = UsbNetLinkSpeed(Adapter->Device->Speed);
         Adapter->KdNet->LinkDuplex = 1;
     }
 
@@ -152,17 +161,6 @@ UsbNetShutdownController(
 }
 
 static
-BOOLEAN
-UsbNetPortAlive(
-    _In_ PUSBNET_ADAPTER Adapter)
-{
-    ULONG Value = XhciRead(Adapter->Operational + XHCI_OP_PORTSC(Adapter->Port));
-
-    return (Value & (XHCI_PORT_CONNECTED | XHCI_PORT_ENABLED)) == (XHCI_PORT_CONNECTED | XHCI_PORT_ENABLED) &&
-           !(Value & XHCI_PORT_CONNECT_CHANGE);
-}
-
-static
 VOID
 UsbNetRecover(
     _In_ PUSBNET_ADAPTER Adapter,
@@ -170,14 +168,18 @@ UsbNetRecover(
 {
     UCHAR Completion = Endpoint->Completion;
 
-    if (!UsbNetPortAlive(Adapter))
+    if (!UsbPathAlive(Adapter))
     {
-        XhciDisableSlot(Adapter);
+        if (Adapter->Tier && XhciPortAlive(Adapter, Adapter->Devices[0].Port))
+            XhciDisableSlot(Adapter, Adapter->Device);
+        else
+            UsbReleaseDevices(Adapter);
+
         UsbNetSetLink(Adapter, FALSE);
         return;
     }
 
-    XhciRecoverEndpoint(Adapter, Endpoint);
+    XhciRecoverEndpoint(Adapter, Adapter->Device, Endpoint);
     if (Completion == XHCI_CC_STALL)
     {
         XhciControl(Adapter, BMREQUEST_TO_ENDPOINT, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_STALL,
@@ -191,6 +193,7 @@ UsbNetReconnect(
     _In_ PUSBNET_ADAPTER Adapter)
 {
     ULONG Port, Value;
+    NTSTATUS Status;
     BOOLEAN Changed = FALSE;
 
     for (Port = 1; Port <= Adapter->MaxPorts; Port++)
@@ -203,10 +206,22 @@ UsbNetReconnect(
         }
     }
 
+    if (!Changed && Adapter->Tier)
+    {
+        Status = UsbReconnectBehindHub(Adapter);
+        if (NT_SUCCESS(Status))
+        {
+            UsbNetSetLink(Adapter, TRUE);
+            return;
+        }
+
+        Changed = Status != STATUS_NO_SUCH_DEVICE;
+    }
+
     if (!Changed)
         return;
 
-    XhciDisableSlot(Adapter);
+    UsbReleaseDevices(Adapter);
     if (NT_SUCCESS(UsbFindFunction(Adapter)))
         UsbNetSetLink(Adapter, TRUE);
 }
