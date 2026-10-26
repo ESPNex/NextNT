@@ -69,6 +69,7 @@ typedef struct _MACHINE
     volatile LONG StaleTlbUses;
     volatile LONG BreakBeforeMakeViolations;
     volatile LONG BadFrameAccesses;
+    volatile LONG IcacheSyncs;
     volatile LONG DirectViolations;
 } MACHINE, *PMACHINE;
 

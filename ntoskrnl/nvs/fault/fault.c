@@ -257,10 +257,14 @@ MiMakePageValid(
 
     if (Dirty)
         MiPfnSetModified(&Space->System->Pfn, Frame);
-    if (MI_PROT_IS_EXECUTE(Protection) && Space->System->Arch->RequiresExplicitIcacheSync)
+    if (MI_PROT_IS_EXECUTE(Protection) && Space->System->Arch->RequiresExplicitIcacheSync &&
+        !MiPfnExecCleanTest(&Space->System->Pfn, Frame))
     {
-        PVOID Mapping = MiPfnMapFrame(&Space->System->Pfn, Frame);
+        PVOID Mapping;
 
+        if (!MI_PROT_IS_WRITABLE(Protection))
+            MiPfnExecCleanSet(&Space->System->Pfn, Frame);
+        Mapping = MiPfnMapFrame(&Space->System->Pfn, Frame);
         MiArchSyncInstructionCache(Mapping, PAGE_SIZE);
         MiPfnUnmapFrame(&Space->System->Pfn, Mapping);
     }

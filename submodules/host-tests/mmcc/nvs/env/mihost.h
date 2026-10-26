@@ -174,6 +174,8 @@ VOID MiHostQueueDpc(MI_HOST_DPC_ROUTINE Routine, PVOID Context);
 #define MI_ATOMIC_CAS32(v, n, o)        __sync_val_compare_and_swap((v), (o), (n))
 #define MI_ATOMIC_OR8(v, m)             __sync_fetch_and_or((v), (UCHAR)(m))
 #define MI_ATOMIC_AND8(v, m)            __sync_fetch_and_and((v), (UCHAR)(m))
+#define MI_ATOMIC_OR32(v, m)            __sync_fetch_and_or((v), (LONG)(m))
+#define MI_ATOMIC_AND32(v, m)           __sync_fetch_and_and((v), (LONG)(m))
 static inline __attribute__((no_sanitize("thread"))) ULONG64 MiHostPeek(const void *Value, SIZE_T Size)
 {
     return (Size == 8) ? *(const volatile ULONG64 *)Value : *(const volatile ULONG *)Value;

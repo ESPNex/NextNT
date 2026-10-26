@@ -176,6 +176,8 @@ MiArchSyncInstructionCache(_In_ PVOID BaseAddress, _In_ SIZE_T Length)
 {
     UNREFERENCED_PARAMETER(BaseAddress);
     UNREFERENCED_PARAMETER(Length);
+    if (MachineCurrent != NULL)
+        __atomic_fetch_add(&MachineCurrent->IcacheSyncs, 1, __ATOMIC_RELAXED);
 }
 
 ULONG64

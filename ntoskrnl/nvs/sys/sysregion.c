@@ -144,6 +144,8 @@ MiSystemMapFrames(
 
         if (LeafFlags & MI_LEAF_PFN_CACHE)
             PageFlags = MiPfnMappingFlags(&System->Pfn, Frames[i], LeafFlags);
+        if (MI_PROT_IS_WRITABLE(Protection))
+            MiPfnExecCleanClear(&System->Pfn, (ULONG)Frames[i]);
 
         MiPtWrite(Space, Va, Slot, TableFrame,
                   MiArchPteMakeLeaf(Frames[i], Protection, PageFlags | MI_LEAF_GLOBAL | MI_LEAF_DIRTY));
@@ -359,6 +361,8 @@ MiSystemProtect(
         }
         else
         {
+            if (MI_PROT_IS_WRITABLE(Protection))
+                MiPfnExecCleanClear(&System->Pfn, Frame);
             MiPtWrite(Space, Va, Slot, TableFrame,
                       MiArchPteMakeLeaf(Frame, Protection, MI_LEAF_GLOBAL | MI_LEAF_DIRTY | CacheFlags));
         }

@@ -238,6 +238,14 @@ MiPfnDbInitialize(
 }
 
 VOID
+MiPfnDbSetExecClean(
+    _Inout_ PMI_PFN_DATABASE Db,
+    _In_ volatile LONG *Bitmap)
+{
+    Db->ExecClean = Bitmap;
+}
+
+VOID
 MiPfnDbAddRange(
     _Inout_ PMI_PFN_DATABASE Db,
     _In_ ULONG FirstFrame,
@@ -519,6 +527,7 @@ MiPfnReclaimStandby(
         OldIrql = MiPfnLock(Db, Candidate);
         if (Db->Pfn[Candidate].ReferenceCount == 0 && MiPfnListRemove(Db, Candidate, MiPageStandby))
         {
+            MiPfnExecCleanClear(Db, Candidate);
             if (Db->Repurpose != NULL)
                 Db->Repurpose(Db, Candidate);
 
@@ -863,6 +872,7 @@ MiPfnSetModified(
     _Inout_ PMI_PFN_DATABASE Db,
     _In_ ULONG Frame)
 {
+    MiPfnExecCleanClear(Db, Frame);
     MI_ATOMIC_OR8(&Db->Pfn[Frame].Flags, MI_PFN_FLAG_MODIFIED);
 }
 
@@ -913,6 +923,7 @@ MiPfnFreeLocked(
     BOOLEAN Drained = FALSE;
     KIRQL OldIrql;
 
+    MiPfnExecCleanClear(Db, Frame);
     MiPfnRestoreCache(Db, Frame);
     Entry->ReferenceCount = 0;
     Entry->ShareCount = 0;
@@ -1095,6 +1106,7 @@ MiPfnPurgeStandby(
             Taken = Db->Pfn[Frame].ReferenceCount == 0 && MiPfnListRemove(Db, Frame, MiPageStandby);
             if (Taken)
             {
+                MiPfnExecCleanClear(Db, Frame);
                 if (Db->Repurpose != NULL)
                     Db->Repurpose(Db, Frame);
                 MiPfnRestoreCache(Db, Frame);

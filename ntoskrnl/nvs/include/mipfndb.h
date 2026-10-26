@@ -143,7 +143,29 @@ typedef struct _MI_PFN_DATABASE
     volatile LONG64 ZeroedOnDemand;
     volatile LONG ModifiedCursor;
     volatile LONG ZeroingPaused;
+    volatile LONG *ExecClean;
 } MI_PFN_DATABASE, *PMI_PFN_DATABASE;
+
+static __inline BOOLEAN
+MiPfnExecCleanTest(_In_ PMI_PFN_DATABASE Db, _In_ ULONG Frame)
+{
+    return Db->ExecClean != NULL && Frame < Db->FrameCount &&
+           (MI_ATOMIC_READ32(&Db->ExecClean[Frame >> 5]) & (1L << (Frame & 31))) != 0;
+}
+
+static __inline VOID
+MiPfnExecCleanSet(_Inout_ PMI_PFN_DATABASE Db, _In_ ULONG Frame)
+{
+    if (Db->ExecClean != NULL && Frame < Db->FrameCount)
+        MI_ATOMIC_OR32(&Db->ExecClean[Frame >> 5], 1L << (Frame & 31));
+}
+
+static __inline VOID
+MiPfnExecCleanClear(_Inout_ PMI_PFN_DATABASE Db, _In_ ULONG Frame)
+{
+    if (MiPfnExecCleanTest(Db, Frame))
+        MI_ATOMIC_AND32(&Db->ExecClean[Frame >> 5], ~(1L << (Frame & 31)));
+}
 
 /* MDL aliases of managed RAM must retain the allocation's cache attributes.
  * Device PFNs outside the RAM database still use the caller's cache type. */
@@ -169,6 +191,7 @@ MiPfnMappingFlags(_In_ PMI_PFN_DATABASE Db, _In_ MI_FRAME_NUMBER Frame, _In_ ULO
 }
 
 VOID MiPfnDbInitialize(_Out_ PMI_PFN_DATABASE Db, _In_ PMI_PFN Array, _In_ ULONG FrameCount, _In_ ULONG CpuCount);
+VOID MiPfnDbSetExecClean(_Inout_ PMI_PFN_DATABASE Db, _In_ volatile LONG *Bitmap);
 VOID MiPfnDbSetDirectFrames(_Inout_ PMI_PFN_DATABASE Db, _In_ ULONG64 DirectFrames);
 VOID MiPfnDbSetRegionRotation(_Inout_ PMI_PFN_DATABASE Db, _In_ BOOLEAN Enable);
 VOID MiPfnWindowAttach(_Inout_ PMI_PFN_DATABASE Db, _In_ ULONG64 Base, _In_ PMI_PTE *Slots, _In_ PUCHAR States,

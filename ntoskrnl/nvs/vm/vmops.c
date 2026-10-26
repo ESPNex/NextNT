@@ -1728,6 +1728,8 @@ MiMapFramesUser(
             break;
         }
 
+        if (MI_PROT_IS_WRITABLE(Protection))
+            MiPfnExecCleanClear(&Space->System->Pfn, (ULONG)Frames[i]);
         MiPtWrite(Space, Va, Slot, TableFrame,
                   MiArchPteMakeLeaf(Frames[i], Protection,
                                     PageFlags | MI_LEAF_DIRTY | (Space->IsSystem ? MI_LEAF_GLOBAL : MI_LEAF_USER)));

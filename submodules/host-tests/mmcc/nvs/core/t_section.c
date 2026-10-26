@@ -1648,6 +1648,61 @@ SectionImageWindow(void)
     MiImageWindowUninitialize(&Window);
 }
 
+static
+void
+SectionExecCleanFrames(void)
+{
+    TEST_WORLD World;
+    MI_ADDRESS_SPACE A;
+    MI_ADDRESS_SPACE B;
+    PMI_SEGMENT Segment;
+    LONG Clean[512 / 32] = {0};
+    ULONG64 BaseA = 0;
+    ULONG64 BaseB = 0;
+    ULONG64 Writable = 0;
+    LONG Step = MiArchDescribe()->RequiresExplicitIcacheSync ? 1 : 0;
+    LONG Syncs;
+    ULONG i;
+
+    WorldCreate(&World, 512, 2, 100000);
+    World.Machine.StrictTlb = TRUE;
+    MiPfnDbSetExecClean(&World.System.Pfn, Clean);
+    SpaceCreate(&World, 0, &A);
+    SpaceCreate(&World, 1, &B);
+    CHECK(NT_SUCCESS(MiSegmentCreate(&World.System, MiSegmentPageFileBacked, 4 * 4096, MI_PROT_EXECUTE_READWRITE, NULL,
+                                     NULL, NULL, 0, &Segment)));
+    CHECK(NT_SUCCESS(Map(&A, Segment, &BaseA, 0, 0, MI_PROT_EXECUTE_READ)));
+    CHECK(NT_SUCCESS(Map(&B, Segment, &BaseB, 0, 0, MI_PROT_EXECUTE_READ)));
+
+    Syncs = World.Machine.IcacheSyncs;
+    CHECK(NT_SUCCESS(MachineTouch(&World.Machine, 0, BaseA, MachineExecute, TRUE)));
+    CHECK(World.Machine.IcacheSyncs == Syncs + Step);
+    CHECK(NT_SUCCESS(MachineTouch(&World.Machine, 1, BaseB, MachineExecute, TRUE)));
+    CHECK(World.Machine.IcacheSyncs == Syncs + Step);
+
+    CHECK(NT_SUCCESS(Map(&A, Segment, &Writable, 0, 0, MI_PROT_READWRITE)));
+    CHECK(NT_SUCCESS(UserWrite64(&World, 0, Writable, 0x1111)));
+    CHECK(NT_SUCCESS(MiUnmapView(&B, BaseB)));
+    BaseB = 0;
+    CHECK(NT_SUCCESS(Map(&B, Segment, &BaseB, 0, 0, MI_PROT_EXECUTE_READ)));
+    CHECK(NT_SUCCESS(MachineTouch(&World.Machine, 1, BaseB, MachineExecute, TRUE)));
+    CHECK(World.Machine.IcacheSyncs == Syncs + 2 * Step);
+    CHECK(UserRead64(&World, 1, BaseB, NULL) == 0x1111);
+
+    CHECK(NT_SUCCESS(MiUnmapView(&A, Writable)));
+    CHECK(NT_SUCCESS(MiUnmapView(&A, BaseA)));
+    CHECK(NT_SUCCESS(MiUnmapView(&B, BaseB)));
+    MiSegmentDereference(Segment);
+    SpaceDestroy(&World, 1, &B);
+    SpaceDestroy(&World, 0, &A);
+    MiPfnDrainCaches(&World.System.Pfn);
+    for (i = 0; i < RTL_NUMBER_OF(Clean); i++)
+        CHECK(Clean[i] == 0);
+    WorldExpectClean(&World, 512);
+    MiPfnDbSetExecClean(&World.System.Pfn, NULL);
+    WorldDestroy(&World);
+}
+
 void
 TestSection(void)
 {
@@ -1670,6 +1725,7 @@ TestSection(void)
     SectionUncachedLargePages();
     SectionUncachedPageFile();
     SectionImageWindow();
+    SectionExecCleanFrames();
 }
 
 static void

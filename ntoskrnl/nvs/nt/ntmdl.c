@@ -195,6 +195,8 @@ MmProbeAndLockPages(
     {
         if (Pages[i] >= MiSystem.Pfn.FrameCount)
             Mdl->MdlFlags |= MDL_IO_SPACE;
+        else if (Operation != IoReadAccess)
+            MiPfnExecCleanClear(&MiSystem.Pfn, (ULONG)Pages[i]);
     }
 
     Mdl->MdlFlags |= MDL_PAGES_LOCKED;
@@ -298,6 +300,8 @@ MmProbeAndLockSelectedPages(
                 UserPages = TRUE;
             if (Pages[i] >= MiSystem.Pfn.FrameCount)
                 Mdl->MdlFlags |= MDL_IO_SPACE;
+            else if (Operation != IoReadAccess)
+                MiPfnExecCleanClear(&MiSystem.Pfn, (ULONG)Pages[i]);
         }
     }
     ExFreePoolWithTag(Addresses, TAG_MDL);
