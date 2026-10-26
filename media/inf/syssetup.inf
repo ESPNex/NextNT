@@ -171,6 +171,7 @@ RegisterDlls = Wow64RegisterDlls
 11,,olepro32.dll,1
 11,,portabledeviceapi.dll,1
 11,,portabledevicetypes.dll,1
+11,,wpdshext.dll,1
 11,,prnfldr.dll,1
 11,,directmanipulation.dll,1
 11,,propsys.dll,1
@@ -223,6 +224,7 @@ RegisterDlls = Wow64RegisterDlls
 11,,mshtml.dll,3
 11,,msisip.dll,1
 11,,mydocs.dll,1
+11,,wpdshext.dll,1
 11,,qcap.dll,1
 11,,qedit.dll,1
 11,,sendmail.dll,1

@@ -1,0 +1,65 @@
+/*
+ * PROJECT:     LiberNT Portable Devices shell extension
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Resources
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+#include <windef.h>
+#include <winuser.h>
+#include "resource.h"
+
+#define REACTOS_VERSION_DLL
+#define REACTOS_STR_FILE_DESCRIPTION "Portable Devices Shell Extension"
+#define REACTOS_STR_INTERNAL_NAME    "wpdshext"
+#define REACTOS_STR_ORIGINAL_FILENAME "wpdshext.dll"
+#include <reactos/version.rc>
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+IDI_DEVICE_GENERIC        ICON "res/701.ico"
+IDI_DEVICE_CAMERA         ICON "res/702.ico"
+IDI_DEVICE_PHONE          ICON "res/703.ico"
+IDI_DEVICE_MEDIA_PLAYER   ICON "res/704.ico"
+IDI_DEVICE_VIDEO          ICON "res/705.ico"
+IDI_DEVICE_PIM            ICON "res/706.ico"
+IDI_DEVICE_AUDIO_RECORDER ICON "res/707.ico"
+IDI_STORAGE               ICON "res/710.ico"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+STRINGTABLE
+BEGIN
+    IDS_PORTABLE_DEVICES        "Portable Devices"
+    IDS_PORTABLE_DEVICES_FOLDER "Portable Devices"
+    IDS_PORTABLE_DEVICES_TIP    "Portable devices connected to this computer"
+    IDS_TYPE_GENERIC            "Portable Device"
+    IDS_TYPE_CAMERA             "Digital Camera"
+    IDS_TYPE_MEDIA_PLAYER       "Portable Media Player"
+    IDS_TYPE_PHONE              "Mobile Phone"
+    IDS_COLUMN_NAME             "Name"
+    IDS_COLUMN_TYPE             "Type"
+    IDS_COLUMN_SIZE             "Size"
+    IDS_COLUMN_CREATED          "Created"
+    IDS_COLUMN_MODIFIED         "Modified"
+    IDS_COLUMN_TOTAL            "Total Size"
+    IDS_COLUMN_FREE             "Free Space"
+    IDS_COLUMN_PERCENT_FULL     "Percent Full"
+    IDS_COLUMN_AVAILABLE        "Available Space"
+    IDS_COLUMN_PROTECTED        "Protected"
+    IDS_COLUMN_SUPPORTED        "Supported"
+    IDS_COLUMN_TRACK            "Track Number"
+    IDS_COLUMN_TITLE            "Title"
+    IDS_COLUMN_ARTIST           "Artist"
+    IDS_COLUMN_ALBUM            "Album"
+    IDS_COLUMN_YEAR             "Year"
+    IDS_COLUMN_GENRE            "Genre"
+    IDS_COLUMN_DURATION         "Duration"
+    IDS_COLUMN_DATE_AUTHORED    "Date Authored"
+    IDS_COLUMN_DIMENSIONS       "Dimensions"
+    IDS_YES                     "Yes"
+    IDS_NO                      "No"
+    IDS_CONFIRM_DELETE_ONE      "Are you sure you want to permanently delete this item?"
+    IDS_CONFIRM_DELETE_MANY     "Are you sure you want to permanently delete these %u items?"
+    IDS_CONFIRM_DELETE_TITLE    "Delete"
+END
