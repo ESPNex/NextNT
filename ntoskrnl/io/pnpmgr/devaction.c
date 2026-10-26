@@ -1332,6 +1332,17 @@ IopQueryDeviceCapabilities(PDEVICE_NODE DeviceNode,
                                &DeviceNode->CapabilityFlags,
                                sizeof(ULONG));
 
+        if (DeviceCaps->Address != MAXULONG)
+        {
+            RtlInitUnicodeString(&ValueName, L"Address");
+            ZwSetValueKey(InstanceKey,
+                          &ValueName,
+                          0,
+                          REG_DWORD,
+                          &DeviceCaps->Address,
+                          sizeof(ULONG));
+        }
+
         /* Set 'UINumber' value */
         if (DeviceCaps->UINumber != MAXULONG)
         {
