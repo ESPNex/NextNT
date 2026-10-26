@@ -964,7 +964,7 @@ LxProcessExited(
     LxProcessExitStatus(Process, (ExitStatus & 0xFF) << 8);
     Process->ExitTime = (LONG64)KeQueryInterruptTime();
     if (Process->RealTimer != NULL)
-        KeCancelTimer(&Process->RealTimer->Timer);
+        ExCancelTimer(Process->RealTimer->Timer, NULL);
     LxPosixTimersRelease(Process, FALSE);
     LxFdCloseAll(Process);
     LxIpcProcessExit(Process);

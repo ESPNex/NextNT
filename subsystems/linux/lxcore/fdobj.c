@@ -32,8 +32,7 @@ typedef struct _LX_EVENTFD
 
 typedef struct _LX_TIMERFD
 {
-    KTIMER Timer;
-    KDPC Dpc;
+    PEX_TIMER Timer;
     KSPIN_LOCK Lock;
     ULONG Clock;
     ULONG64 Expirations;
@@ -303,24 +302,28 @@ LxClockNs(
 static
 VOID
 NTAPI
-LxTimerfdDpc(
-    _In_ PKDPC Dpc,
-    _In_opt_ PVOID Context,
-    _In_opt_ PVOID Argument1,
-    _In_opt_ PVOID Argument2)
+LxTimerfdExpired(
+    _In_ PEX_TIMER ExTimer,
+    _In_opt_ PVOID Context)
 {
     PLX_TIMERFD Timer = Context;
+    LONG64 Now = LxClockNs(Timer->Clock);
+    LONG64 Count = 1;
 
-    UNREFERENCED_PARAMETER(Dpc);
-    UNREFERENCED_PARAMETER(Argument1);
-    UNREFERENCED_PARAMETER(Argument2);
+    UNREFERENCED_PARAMETER(ExTimer);
 
     KeAcquireSpinLockAtDpcLevel(&Timer->Lock);
-    Timer->Expirations++;
     if (Timer->IntervalNs != 0)
-        Timer->DueNs += Timer->IntervalNs;
+    {
+        if (Now > Timer->DueNs)
+            Count += (Now - Timer->DueNs) / Timer->IntervalNs;
+        Timer->DueNs += Count * Timer->IntervalNs;
+    }
     else
+    {
         Timer->DueNs = 0;
+    }
+    Timer->Expirations += Count;
     KeReleaseSpinLockFromDpcLevel(&Timer->Lock);
     LxPollWake(&Timer->Poll, LX_POLLIN | LX_POLLRDNORM);
 }
@@ -388,8 +391,8 @@ LxTimerfdRelease(
 {
     PLX_TIMERFD Timer = File->Object;
 
-    KeCancelTimer(&Timer->Timer);
-    KeFlushQueuedDpcs();
+    if (Timer->Timer != NULL)
+        ExDeleteTimer(Timer->Timer, TRUE, TRUE, NULL);
     LxFree(Timer);
     File->Object = NULL;
 }
@@ -418,8 +421,12 @@ LX_SYSCALL(LxSysTimerfdCreate)
     if (File == NULL)
         return -LX_ENOMEM;
     Timer = File->Object;
-    KeInitializeTimerEx(&Timer->Timer, NotificationTimer);
-    KeInitializeDpc(&Timer->Dpc, LxTimerfdDpc, Timer);
+    Timer->Timer = ExAllocateTimer(LxTimerfdExpired, Timer, EX_TIMER_HIGH_RESOLUTION);
+    if (Timer->Timer == NULL)
+    {
+        LxFileDereference(File);
+        return -LX_ENOMEM;
+    }
     KeInitializeSpinLock(&Timer->Lock);
     LxPollHeadInit(&Timer->Poll);
     Timer->Clock = (Clock == 8) ? LX_CLOCK_REALTIME : ((Clock == 9) ? LX_CLOCK_BOOTTIME : Clock);
@@ -476,7 +483,6 @@ LX_SYSCALL(LxSysTimerfdSettime)
     PLX_TIMERFD Timer;
     PLX_FILE File;
     LONG64 Result, Due, Interval, Now;
-    LARGE_INTEGER DueTime;
     KIRQL Irql;
 
     if (Flags & ~(LX_TFD_TIMER_ABSTIME | LX_TFD_TIMER_CANCEL_ON_SET))
@@ -495,7 +501,7 @@ LX_SYSCALL(LxSysTimerfdSettime)
         return (File == NULL) ? -LX_EBADF : -LX_EINVAL;
 
     LxTimerfdCurrent(Timer, &Old);
-    KeCancelTimer(&Timer->Timer);
+    ExCancelTimer(Timer->Timer, NULL);
 
     Due = LxTimespecToNs(&New.Value);
     Interval = LxTimespecToNs(&New.Interval);
@@ -516,14 +522,10 @@ LX_SYSCALL(LxSysTimerfdSettime)
     if ((Due != 0) && (Due != MAXLONG64))
     {
         LONG64 Relative = Due - Now;
-        LONG Period = 0;
 
         if (Relative < 100)
             Relative = 100;
-        DueTime.QuadPart = -((Relative + 99) / 100);
-        if (Interval != 0)
-            Period = (LONG)max(1, min(Interval / 1000000LL, MAXLONG));
-        KeSetTimerEx(&Timer->Timer, DueTime, Period, &Timer->Dpc);
+        ExSetTimer(Timer->Timer, -((Relative + 99) / 100), (Interval != 0) ? max(1, Interval / 100) : 0, NULL);
     }
 
     LxFileDereference(File);

@@ -147,12 +147,51 @@ LxSignalPending(
     return (((ULONG64)Thread->Pending | (ULONG64)Thread->Process->Pending) & ~Thread->SigMask) != 0;
 }
 
+static
+VOID
+NTAPI
+LxPreciseTimerExpired(
+    _In_ PEX_TIMER Timer,
+    _In_opt_ PVOID Context)
+{
+    UNREFERENCED_PARAMETER(Timer);
+    KeSetEvent(Context, IO_NO_INCREMENT, FALSE);
+}
+
+PLX_PRECISE_TIMER
+LxPreciseTimerStart(
+    _In_ LONG64 Interval100ns)
+{
+    PLX_PRECISE_TIMER Precise = LxAlloc(sizeof(*Precise));
+
+    if (Precise == NULL)
+        return NULL;
+    KeInitializeEvent(&Precise->Expired, NotificationEvent, FALSE);
+    Precise->Timer = ExAllocateTimer(LxPreciseTimerExpired, &Precise->Expired, EX_TIMER_HIGH_RESOLUTION);
+    if (Precise->Timer == NULL)
+    {
+        LxFree(Precise);
+        return NULL;
+    }
+    ExSetTimer(Precise->Timer, -Interval100ns, 0, NULL);
+    return Precise;
+}
+
+VOID
+LxPreciseTimerStop(
+    _In_ PLX_PRECISE_TIMER Precise)
+{
+    ExDeleteTimer(Precise->Timer, TRUE, TRUE, NULL);
+    LxFree(Precise);
+}
+
 NTSTATUS
 LxWaitForEvent(
     _In_ PKEVENT Event,
     _In_opt_ PLARGE_INTEGER Timeout)
 {
     PLX_THREAD Thread = LxCurrentThread();
+    PLX_PRECISE_TIMER Precise = NULL;
     LARGE_INTEGER Remaining;
     PLARGE_INTEGER Wait = Timeout;
     LONG64 Deadline = 0;
@@ -160,6 +199,32 @@ LxWaitForEvent(
 
     if (LxSignalPending(Thread))
         return STATUS_ALERTED;
+    if ((Timeout != NULL) && (Timeout->QuadPart < 0) &&
+        ((Precise = LxPreciseTimerStart(-Timeout->QuadPart)) != NULL))
+    {
+        PVOID Objects[2] = { Event, &Precise->Expired };
+
+        for (;;)
+        {
+            Status = KeWaitForMultipleObjects(2, Objects, WaitAny, UserRequest, UserMode, TRUE, NULL, NULL);
+            if (Status == STATUS_WAIT_0)
+                break;
+            if (Status == STATUS_WAIT_1)
+            {
+                Status = LxSignalPending(Thread) ? STATUS_ALERTED : STATUS_TIMEOUT;
+                break;
+            }
+            if ((Status != STATUS_USER_APC) && (Status != STATUS_ALERTED))
+                break;
+            if ((Thread == NULL) || LxSignalPending(Thread) || (Status == STATUS_USER_APC))
+            {
+                Status = STATUS_ALERTED;
+                break;
+            }
+        }
+        LxPreciseTimerStop(Precise);
+        return Status;
+    }
     if ((Timeout != NULL) && (Timeout->QuadPart < 0))
         Deadline = (LONG64)KeQueryInterruptTime() - Timeout->QuadPart;
 

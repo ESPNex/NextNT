@@ -205,12 +205,41 @@ LxSleep(
     _In_ LONG64 Interval100ns)
 {
     PLX_THREAD Thread = LxCurrentThread();
+    PLX_PRECISE_TIMER Precise;
     LARGE_INTEGER Interval;
     LONG64 Deadline;
     NTSTATUS Status;
 
     if (Interval100ns <= 0)
         return 0;
+
+    Precise = LxPreciseTimerStart(Interval100ns);
+    if (Precise != NULL)
+    {
+        LONG64 Result;
+
+        for (;;)
+        {
+            if (LxSignalPending(Thread))
+            {
+                Result = -LX_EINTR;
+                break;
+            }
+            Status = KeWaitForSingleObject(&Precise->Expired, UserRequest, UserMode, TRUE, NULL);
+            if (Status == STATUS_SUCCESS)
+            {
+                Result = 0;
+                break;
+            }
+            if (Status == STATUS_USER_APC)
+            {
+                Result = -LX_EINTR;
+                break;
+            }
+        }
+        LxPreciseTimerStop(Precise);
+        return Result;
+    }
 
     Deadline = (LONG64)KeQueryInterruptTime() + Interval100ns;
     for (;;)
@@ -3984,17 +4013,13 @@ LxItimerWork(
 static
 VOID
 NTAPI
-LxItimerDpc(
-    _In_ PKDPC Dpc,
-    _In_opt_ PVOID Context,
-    _In_opt_ PVOID Argument1,
-    _In_opt_ PVOID Argument2)
+LxItimerExpired(
+    _In_ PEX_TIMER ExTimer,
+    _In_opt_ PVOID Context)
 {
     PLX_ITIMER Timer = Context;
 
-    UNREFERENCED_PARAMETER(Dpc);
-    UNREFERENCED_PARAMETER(Argument1);
-    UNREFERENCED_PARAMETER(Argument2);
+    UNREFERENCED_PARAMETER(ExTimer);
 
     if (Timer->IntervalNs != 0)
         Timer->Due += Timer->IntervalNs / 100;
@@ -4013,8 +4038,7 @@ LxItimerRelease(
 {
     if (Process->RealTimer == NULL)
         return;
-    KeCancelTimer(&Process->RealTimer->Timer);
-    KeFlushQueuedDpcs();
+    ExDeleteTimer(Process->RealTimer->Timer, TRUE, TRUE, NULL);
     LxFree(Process->RealTimer);
     Process->RealTimer = NULL;
 }
@@ -4055,7 +4079,6 @@ LX_SYSCALL(LxSysSetitimer)
     PLX_PROCESS Process = Call->Process;
     PLX_ITIMER Timer;
     LX_TIMEVAL New[2], Old[2];
-    LARGE_INTEGER DueTime;
     LONG64 Value, Interval, Result;
 
     if (Call->Args[0] > 2)
@@ -4084,29 +4107,31 @@ LX_SYSCALL(LxSysSetitimer)
         Timer = LxAlloc(sizeof(*Timer));
         if (Timer == NULL)
             return -LX_ENOMEM;
-        KeInitializeTimerEx(&Timer->Timer, NotificationTimer);
-        KeInitializeDpc(&Timer->Dpc, LxItimerDpc, Timer);
+        Timer->Timer = ExAllocateTimer(LxItimerExpired, Timer, EX_TIMER_HIGH_RESOLUTION);
+        if (Timer->Timer == NULL)
+        {
+            LxFree(Timer);
+            return -LX_ENOMEM;
+        }
         ExInitializeWorkItem(&Timer->Work, LxItimerWork, Timer);
         Timer->Process = Process;
         if (InterlockedCompareExchangePointer((PVOID *)&Process->RealTimer, Timer, NULL) != NULL)
         {
+            ExDeleteTimer(Timer->Timer, TRUE, TRUE, NULL);
             LxFree(Timer);
             Timer = Process->RealTimer;
         }
     }
 
     LxItimerCurrent(Timer, Old);
-    KeCancelTimer(&Timer->Timer);
+    ExCancelTimer(Timer->Timer, NULL);
 
     Value = New[1].Seconds * 10000000LL + New[1].Microseconds * 10;
     Interval = New[0].Seconds * 10000000LL + New[0].Microseconds * 10;
     Timer->IntervalNs = (Value != 0) ? Interval * 100 : 0;
     Timer->Due = (Value != 0) ? (LONG64)KeQueryInterruptTime() + Value : 0;
     if (Value != 0)
-    {
-        DueTime.QuadPart = -Value;
-        KeSetTimerEx(&Timer->Timer, DueTime, (Interval != 0) ? (LONG)max(1, Interval / 10000) : 0, &Timer->Dpc);
-    }
+        ExSetTimer(Timer->Timer, -Value, Interval, NULL);
 
     if (Call->Args[2] != 0)
         return LxCopyToUser(Call->Args[2], Old, sizeof(Old));
@@ -4121,8 +4146,7 @@ LX_SYSCALL(LxSysSetitimer)
 typedef struct _LX_POSIX_TIMER
 {
     LIST_ENTRY Link;
-    KTIMER Timer;
-    KDPC Dpc;
+    PEX_TIMER Timer;
     WORK_QUEUE_ITEM Work;
     PLX_PROCESS Process;
     volatile LONG WorkQueued;
@@ -4197,17 +4221,13 @@ LxPosixTimerWork(
 static
 VOID
 NTAPI
-LxPosixTimerDpc(
-    _In_ PKDPC Dpc,
-    _In_opt_ PVOID Context,
-    _In_opt_ PVOID Argument1,
-    _In_opt_ PVOID Argument2)
+LxPosixTimerExpired(
+    _In_ PEX_TIMER ExTimer,
+    _In_opt_ PVOID Context)
 {
     PLX_POSIX_TIMER Timer = Context;
 
-    UNREFERENCED_PARAMETER(Dpc);
-    UNREFERENCED_PARAMETER(Argument1);
-    UNREFERENCED_PARAMETER(Argument2);
+    UNREFERENCED_PARAMETER(ExTimer);
 
     if (Timer->IntervalNs != 0)
         Timer->DueNs += Timer->IntervalNs;
@@ -4232,13 +4252,14 @@ LxPosixTimersRelease(
     PLIST_ENTRY Entry;
 
     for (Entry = Process->Timers.Flink; Entry != &Process->Timers; Entry = Entry->Flink)
-        KeCancelTimer(&CONTAINING_RECORD(Entry, LX_POSIX_TIMER, Link)->Timer);
+        ExCancelTimer(CONTAINING_RECORD(Entry, LX_POSIX_TIMER, Link)->Timer, NULL);
     if (!Free || IsListEmpty(&Process->Timers))
         return;
-    KeFlushQueuedDpcs();
     while (!IsListEmpty(&Process->Timers))
     {
         PLX_POSIX_TIMER Timer = CONTAINING_RECORD(RemoveHeadList(&Process->Timers), LX_POSIX_TIMER, Link);
+
+        ExDeleteTimer(Timer->Timer, TRUE, TRUE, NULL);
 
         while (Timer->WorkQueued)
         {
@@ -4303,8 +4324,12 @@ LX_SYSCALL(LxSysTimerCreate)
     Timer = LxAlloc(sizeof(*Timer));
     if (Timer == NULL)
         return -LX_ENOMEM;
-    KeInitializeTimerEx(&Timer->Timer, NotificationTimer);
-    KeInitializeDpc(&Timer->Dpc, LxPosixTimerDpc, Timer);
+    Timer->Timer = ExAllocateTimer(LxPosixTimerExpired, Timer, EX_TIMER_HIGH_RESOLUTION);
+    if (Timer->Timer == NULL)
+    {
+        LxFree(Timer);
+        return -LX_ENOMEM;
+    }
     ExInitializeWorkItem(&Timer->Work, LxPosixTimerWork, Timer);
     Timer->Process = Process;
     Timer->Clock = (Clock == 8) ? LX_CLOCK_REALTIME : ((Clock == 9) ? LX_CLOCK_BOOTTIME : Clock);
@@ -4349,7 +4374,6 @@ LX_SYSCALL(LxSysTimerSettime)
     PLX_PROCESS Process = Call->Process;
     PLX_POSIX_TIMER Timer;
     LX_ITIMERSPEC New, Old;
-    LARGE_INTEGER DueTime;
     LONG64 Result, Due, Interval, Now;
 
     Result = LxCopyFromUser(&New, Call->Args[2], sizeof(New));
@@ -4368,7 +4392,7 @@ LX_SYSCALL(LxSysTimerSettime)
         return -LX_EINVAL;
 
     LxPosixTimerCurrent(Timer, &Old);
-    KeCancelTimer(&Timer->Timer);
+    ExCancelTimer(Timer->Timer, NULL);
     Due = LxTimespecToNs(&New.Value);
     Interval = LxTimespecToNs(&New.Interval);
     Now = LxClockNow(Timer->Clock);
@@ -4385,9 +4409,7 @@ LX_SYSCALL(LxSysTimerSettime)
 
         if (Relative < 100)
             Relative = 100;
-        DueTime.QuadPart = -((Relative + 99) / 100);
-        KeSetTimerEx(&Timer->Timer, DueTime, (Interval != 0) ? (LONG)max(1, min(Interval / 1000000LL, MAXLONG)) : 0,
-                     &Timer->Dpc);
+        ExSetTimer(Timer->Timer, -((Relative + 99) / 100), (Interval != 0) ? max(1, Interval / 100) : 0, NULL);
     }
 
     if (Call->Args[3] != 0)
@@ -4433,8 +4455,7 @@ LX_SYSCALL(LxSysTimerDelete)
     ExReleaseFastMutex(&Process->Lock);
     if (Timer == NULL)
         return -LX_EINVAL;
-    KeCancelTimer(&Timer->Timer);
-    KeFlushQueuedDpcs();
+    ExDeleteTimer(Timer->Timer, TRUE, TRUE, NULL);
     while (Timer->WorkQueued)
     {
         LARGE_INTEGER Delay;

@@ -444,8 +444,7 @@ typedef struct _LX_NODE
 
 typedef struct _LX_ITIMER
 {
-    KTIMER Timer;
-    KDPC Dpc;
+    PEX_TIMER Timer;
     WORK_QUEUE_ITEM Work;
     PLX_PROCESS Process;
     volatile LONG WorkQueued;
@@ -842,6 +841,15 @@ VOID LxPollAdd(_In_ PLX_POLL_HEAD Head, _Inout_ PLX_POLL_ENTRY Entry);
 VOID LxPollRemove(_Inout_ PLX_POLL_ENTRY Entry);
 VOID LxPollWake(_In_ PLX_POLL_HEAD Head, _In_ ULONG Events);
 NTSTATUS LxWaitForEvent(_In_ PKEVENT Event, _In_opt_ PLARGE_INTEGER Timeout);
+
+typedef struct _LX_PRECISE_TIMER
+{
+    PEX_TIMER Timer;
+    KEVENT Expired;
+} LX_PRECISE_TIMER, *PLX_PRECISE_TIMER;
+
+PLX_PRECISE_TIMER LxPreciseTimerStart(_In_ LONG64 Interval100ns);
+VOID LxPreciseTimerStop(_In_ PLX_PRECISE_TIMER Precise);
 LONG64 LxFileWait(_In_ PLX_FILE File, _In_ ULONG Events, _In_opt_ PLARGE_INTEGER Timeout);
 LONG64 LxWaitHead(_In_ PLX_POLL_HEAD Head, _In_ BOOLEAN (*Ready)(_In_ PVOID Context), _In_ PVOID Context, _In_opt_ PLARGE_INTEGER Timeout);
 LONG LxQueryClock(_In_ ULONG Clock, _Out_ PLX_TIMESPEC Timespec);
