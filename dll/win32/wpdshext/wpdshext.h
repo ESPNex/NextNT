@@ -128,6 +128,7 @@ typedef struct wpd_folder
     BYTE device_type;
     WCHAR *pnp_id;
     WCHAR *object_id;
+    WCHAR *storage_puid;
 } wpd_folder;
 
 extern HINSTANCE wpdshext_instance;

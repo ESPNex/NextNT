@@ -210,7 +210,7 @@ HRESULT CALLBACK wpd_menu_callback(IShellFolder *iface, HWND hwnd, IDataObject *
                         ARRAY_SIZE(format));
             wsprintfW(text, format, count);
             LoadStringW(wpdshext_instance, IDS_CONFIRM_DELETE_TITLE, format, ARRAY_SIZE(format));
-            if (MessageBoxW(hwnd, text, format, MB_YESNO | MB_ICONWARNING) == IDYES)
+            if (!hwnd || MessageBoxW(hwnd, text, format, MB_YESNO | MB_ICONWARNING) == IDYES)
                 hr = wpd_delete_items(folder, count, items);
             else
                 hr = S_OK;
@@ -250,7 +250,184 @@ typedef struct wpd_data
     CLIPFORMAT cf_descriptor;
     CLIPFORMAT cf_contents;
     CLIPFORMAT cf_drop_effect;
+    CLIPFORMAT cf_storage_attributes;
+    CLIPFORMAT cf_nse;
+    CLIPFORMAT cf_pnp_path;
+    CLIPFORMAT cf_storage_puid;
 } wpd_data;
+
+typedef struct wpd_folder_stream
+{
+    IStream IStream_iface;
+    LONG refcount;
+} wpd_folder_stream;
+
+static inline wpd_folder_stream *impl_from_IStream(IStream *iface)
+{
+    return CONTAINING_RECORD(iface, wpd_folder_stream, IStream_iface);
+}
+
+static HRESULT WINAPI stream_QueryInterface(IStream *iface, REFIID iid, void **out)
+{
+    if (IsEqualIID(iid, &IID_IUnknown) || IsEqualIID(iid, &IID_ISequentialStream) || IsEqualIID(iid, &IID_IStream))
+    {
+        *out = iface;
+        IStream_AddRef(iface);
+        return S_OK;
+    }
+    *out = NULL;
+    return E_NOINTERFACE;
+}
+
+static ULONG WINAPI stream_AddRef(IStream *iface)
+{
+    return InterlockedIncrement(&impl_from_IStream(iface)->refcount);
+}
+
+static ULONG WINAPI stream_Release(IStream *iface)
+{
+    wpd_folder_stream *stream = impl_from_IStream(iface);
+    ULONG refcount = InterlockedDecrement(&stream->refcount);
+
+    if (!refcount)
+    {
+        HeapFree(GetProcessHeap(), 0, stream);
+        InterlockedDecrement(&wpdshext_locks);
+    }
+    return refcount;
+}
+
+static HRESULT WINAPI stream_Read(IStream *iface, void *buffer, ULONG size, ULONG *read)
+{
+    if (read)
+        *read = 0;
+    return E_INVALIDARG;
+}
+
+static HRESULT WINAPI stream_Write(IStream *iface, const void *buffer, ULONG size, ULONG *written)
+{
+    if (written)
+        *written = 0;
+    return E_INVALIDARG;
+}
+
+static HRESULT WINAPI stream_Seek(IStream *iface, LARGE_INTEGER move, DWORD origin, ULARGE_INTEGER *position)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_SetSize(IStream *iface, ULARGE_INTEGER size)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_CopyTo(IStream *iface, IStream *target, ULARGE_INTEGER size, ULARGE_INTEGER *read,
+                                    ULARGE_INTEGER *written)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_Commit(IStream *iface, DWORD flags)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_Revert(IStream *iface)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_LockRegion(IStream *iface, ULARGE_INTEGER offset, ULARGE_INTEGER size, DWORD type)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_UnlockRegion(IStream *iface, ULARGE_INTEGER offset, ULARGE_INTEGER size, DWORD type)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_Stat(IStream *iface, STATSTG *stat, DWORD flags)
+{
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI stream_Clone(IStream *iface, IStream **out)
+{
+    return E_NOTIMPL;
+}
+
+static const IStreamVtbl folder_stream_vtbl =
+{
+    stream_QueryInterface,
+    stream_AddRef,
+    stream_Release,
+    stream_Read,
+    stream_Write,
+    stream_Seek,
+    stream_SetSize,
+    stream_CopyTo,
+    stream_Commit,
+    stream_Revert,
+    stream_LockRegion,
+    stream_UnlockRegion,
+    stream_Stat,
+    stream_Clone,
+};
+
+static HRESULT folder_stream_create(IStream **out)
+{
+    wpd_folder_stream *stream;
+
+    *out = NULL;
+    stream = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*stream));
+    if (!stream)
+        return E_OUTOFMEMORY;
+    stream->IStream_iface.lpVtbl = &folder_stream_vtbl;
+    stream->refcount = 1;
+    InterlockedIncrement(&wpdshext_locks);
+    *out = &stream->IStream_iface;
+    return S_OK;
+}
+
+static HGLOBAL make_dword(DWORD value)
+{
+    HGLOBAL global = GlobalAlloc(GHND | GMEM_SHARE, sizeof(DWORD));
+
+    if (global)
+    {
+        *(DWORD *)GlobalLock(global) = value;
+        GlobalUnlock(global);
+    }
+    return global;
+}
+
+static HGLOBAL make_string(const WCHAR *value)
+{
+    SIZE_T size = lstrlenW(value) * sizeof(WCHAR);
+    HGLOBAL global = GlobalAlloc(GHND | GMEM_SHARE, size);
+
+    if (global)
+    {
+        memcpy(GlobalLock(global), value, size);
+        GlobalUnlock(global);
+    }
+    return global;
+}
+
+static DWORD storage_attributes(const wpd_data *data)
+{
+    UINT i;
+
+    for (i = 0; i < data->count; i++)
+    {
+        const wpd_item *item = wpd_item_from_pidl(data->items[i]);
+
+        if (item && wpd_item_is_container(item))
+            return 0xFB;
+    }
+    return 0xF8;
+}
 
 static inline wpd_data *impl_from_IDataObject(IDataObject *iface)
 {
@@ -462,15 +639,23 @@ static HRESULT WINAPI data_GetData(IDataObject *iface, FORMATETC *format, STGMED
         medium->hGlobal = make_idlist(data);
         return medium->hGlobal ? S_OK : E_OUTOFMEMORY;
     }
-    if (format->cfFormat == data->cf_drop_effect && (format->tymed & TYMED_HGLOBAL))
+    if ((format->cfFormat == data->cf_drop_effect || format->cfFormat == data->cf_storage_attributes ||
+         format->cfFormat == data->cf_nse || format->cfFormat == data->cf_pnp_path ||
+         (format->cfFormat == data->cf_storage_puid && data->folder->storage_puid)) &&
+        (format->tymed & TYMED_HGLOBAL))
     {
         medium->tymed = TYMED_HGLOBAL;
-        medium->hGlobal = GlobalAlloc(GHND | GMEM_SHARE, sizeof(DWORD));
-        if (!medium->hGlobal)
-            return E_OUTOFMEMORY;
-        *(DWORD *)GlobalLock(medium->hGlobal) = data->drop_effect;
-        GlobalUnlock(medium->hGlobal);
-        return S_OK;
+        if (format->cfFormat == data->cf_drop_effect)
+            medium->hGlobal = make_dword(data->drop_effect);
+        else if (format->cfFormat == data->cf_storage_attributes)
+            medium->hGlobal = make_dword(storage_attributes(data));
+        else if (format->cfFormat == data->cf_nse)
+            medium->hGlobal = make_dword(1);
+        else if (format->cfFormat == data->cf_pnp_path)
+            medium->hGlobal = make_string(data->folder->pnp_id);
+        else
+            medium->hGlobal = make_string(data->folder->storage_puid);
+        return medium->hGlobal ? S_OK : E_OUTOFMEMORY;
     }
     if (format->cfFormat == data->cf_descriptor && (format->tymed & TYMED_HGLOBAL))
     {
@@ -486,8 +671,15 @@ static HRESULT WINAPI data_GetData(IDataObject *iface, FORMATETC *format, STGMED
         hr = expand(data);
         if (FAILED(hr))
             return hr;
-        if (format->lindex < 0 || (UINT)format->lindex >= data->entry_count || data->entries[format->lindex].directory)
+        if (format->lindex < 0 || (UINT)format->lindex >= data->entry_count)
             return DV_E_LINDEX;
+        if (data->entries[format->lindex].directory)
+        {
+            hr = folder_stream_create(&medium->pstm);
+            if (SUCCEEDED(hr))
+                medium->tymed = TYMED_ISTREAM;
+            return hr;
+        }
         hr = wpd_get_device(data->folder->pnp_id, &device);
         if (FAILED(hr))
             return hr;
@@ -515,7 +707,9 @@ static HRESULT WINAPI data_QueryGetData(IDataObject *iface, FORMATETC *format)
     if (format->cfFormat == data->cf_contents)
         return (format->tymed & TYMED_ISTREAM) ? S_OK : DV_E_TYMED;
     if (format->cfFormat == data->cf_idlist || format->cfFormat == data->cf_descriptor ||
-        format->cfFormat == data->cf_drop_effect)
+        format->cfFormat == data->cf_drop_effect || format->cfFormat == data->cf_storage_attributes ||
+        format->cfFormat == data->cf_nse || format->cfFormat == data->cf_pnp_path ||
+        (format->cfFormat == data->cf_storage_puid && data->folder->storage_puid))
     {
         return (format->tymed & TYMED_HGLOBAL) ? S_OK : DV_E_TYMED;
     }
@@ -553,12 +747,16 @@ static HRESULT WINAPI data_SetData(IDataObject *iface, FORMATETC *format, STGMED
 static HRESULT WINAPI data_EnumFormatEtc(IDataObject *iface, DWORD direction, IEnumFORMATETC **out)
 {
     wpd_data *data = impl_from_IDataObject(iface);
-    FORMATETC formats[4] =
+    FORMATETC formats[8] =
     {
         { data->cf_idlist, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-        { data->cf_descriptor, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
         { data->cf_contents, NULL, DVASPECT_CONTENT, -1, TYMED_ISTREAM },
+        { data->cf_descriptor, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
+        { data->cf_storage_attributes, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
         { data->cf_drop_effect, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
+        { data->cf_nse, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
+        { data->cf_pnp_path, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
+        { data->cf_storage_puid, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
     };
 
     if (!out)
@@ -566,7 +764,7 @@ static HRESULT WINAPI data_EnumFormatEtc(IDataObject *iface, DWORD direction, IE
     *out = NULL;
     if (direction != DATADIR_GET)
         return E_NOTIMPL;
-    return SHCreateStdEnumFmtEtc(ARRAY_SIZE(formats), formats, out);
+    return SHCreateStdEnumFmtEtc(data->folder->storage_puid ? ARRAY_SIZE(formats) : ARRAY_SIZE(formats) - 1, formats, out);
 }
 
 static HRESULT WINAPI data_DAdvise(IDataObject *iface, FORMATETC *format, DWORD flags, IAdviseSink *sink, DWORD *connection)
@@ -635,6 +833,10 @@ HRESULT wpd_data_object_create(wpd_folder *folder, UINT count, PCUITEMID_CHILD_A
     data->cf_descriptor = (CLIPFORMAT)RegisterClipboardFormatW(CFSTR_FILEDESCRIPTORW);
     data->cf_contents = (CLIPFORMAT)RegisterClipboardFormatW(CFSTR_FILECONTENTSW);
     data->cf_drop_effect = (CLIPFORMAT)RegisterClipboardFormatW(CFSTR_PREFERREDDROPEFFECTW);
+    data->cf_storage_attributes = (CLIPFORMAT)RegisterClipboardFormatW(L"WPD Storage Attributes");
+    data->cf_nse = (CLIPFORMAT)RegisterClipboardFormatW(L"WPD NSE");
+    data->cf_pnp_path = (CLIPFORMAT)RegisterClipboardFormatW(L"WPD NSE PnPDevicePath");
+    data->cf_storage_puid = (CLIPFORMAT)RegisterClipboardFormatW(L"WPD NSE StoragePUID");
     IShellFolder2_AddRef(&folder->IShellFolder2_iface);
     InterlockedIncrement(&wpdshext_locks);
     hr = IDataObject_QueryInterface(&data->IDataObject_iface, iid, out);

@@ -211,6 +211,8 @@ HRESULT wpd_folder_child(wpd_folder *parent, PCUITEMID_CHILD pidl, wpd_folder **
     {
         child->pnp_id = strdup_co(parent->pnp_id);
         child->object_id = strdup_co(wpd_item_string(item, WPD_STR_ID));
+        child->storage_puid = strdup_co(item->kind == WPD_KIND_STORAGE ? wpd_item_string(item, WPD_STR_PARSE) :
+                                        parent->storage_puid);
     }
     first = ILCloneFirst((LPCITEMIDLIST)pidl);
     child->pidl = first ? ILCombine(parent->pidl, first) : NULL;
@@ -306,6 +308,7 @@ static ULONG WINAPI folder_Release(IShellFolder2 *iface)
         ILFree(folder->pidl);
         CoTaskMemFree(folder->pnp_id);
         CoTaskMemFree(folder->object_id);
+        CoTaskMemFree(folder->storage_puid);
         HeapFree(GetProcessHeap(), 0, folder);
         InterlockedDecrement(&wpdshext_locks);
     }
