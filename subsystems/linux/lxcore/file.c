@@ -547,6 +547,49 @@ LxWriteFailed(
     return -Error;
 }
 
+static
+LONG64
+LxHugeFileRead(
+    _In_ PLX_FILE File,
+    _In_ ULONG64 Buffer,
+    _In_ ULONG64 Length,
+    _Inout_opt_ PLONG64 Offset)
+{
+    FILE_STANDARD_INFORMATION Standard;
+    FILE_POSITION_INFORMATION Position;
+    IO_STATUS_BLOCK Iosb;
+    LONG64 Size, Start, Result;
+
+    if (!NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Standard, sizeof(Standard), FileStandardInformation)))
+        return -LX_EIO;
+    Size = Standard.EndOfFile.QuadPart;
+    if (Offset != NULL)
+        Start = *Offset;
+    else if (NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Position, sizeof(Position),
+                                               FilePositionInformation)))
+        Start = Position.CurrentByteOffset.QuadPart;
+    else
+        return -LX_EIO;
+    if ((Size < 0) || (Start < 0))
+        return -LX_EINVAL;
+    if (Start >= Size)
+        return 0;
+    Result = LxHugeStoreRead(File->Memfd->Huge, (ULONG64)Start, Buffer, min(Length, (ULONG64)(Size - Start)));
+    if (Result > 0)
+    {
+        if (Offset != NULL)
+        {
+            *Offset += Result;
+        }
+        else
+        {
+            Position.CurrentByteOffset.QuadPart = Start + Result;
+            ZwSetInformationFile(File->Handle, &Iosb, &Position, sizeof(Position), FilePositionInformation);
+        }
+    }
+    return Result;
+}
+
 LONG64
 LxFileRead(
     _In_ PLX_FILE File,
@@ -556,10 +599,12 @@ LxFileRead(
 {
     if ((File->Flags & LX_O_PATH) || ((File->Flags & LX_O_ACCMODE) == LX_O_WRONLY))
         return -LX_EBADF;
-    if (File->Ops->Read == NULL)
-        return -LX_EINVAL;
     if (Length > 0x7FFFF000)
         Length = 0x7FFFF000;
+    if ((File->Memfd != NULL) && (File->Memfd->Huge != NULL))
+        return LxHugeFileRead(File, Buffer, Length, Offset);
+    if (File->Ops->Read == NULL)
+        return -LX_EINVAL;
     return File->Ops->Read(File, Buffer, Length, Offset);
 }
 
@@ -571,6 +616,11 @@ LxMemfdDereference(
     {
         if (Memfd->Owner != NULL)
             ZwClose(Memfd->Owner);
+        if (Memfd->Huge != NULL)
+        {
+            LxHugeStoreTruncate(Memfd->Huge, 0);
+            LxFree(Memfd->Huge);
+        }
         LxFree(Memfd);
     }
 }
@@ -685,7 +735,7 @@ LxFileWrite(
 
     if ((File->Flags & LX_O_PATH) || ((File->Flags & LX_O_ACCMODE) == LX_O_RDONLY))
         return -LX_EBADF;
-    if (File->Ops->Write == NULL)
+    if ((File->Ops->Write == NULL) || ((File->Memfd != NULL) && (File->Memfd->Huge != NULL)))
         return -LX_EINVAL;
     if (Length > 0x7FFFF000)
         Length = 0x7FFFF000;

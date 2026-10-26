@@ -2767,6 +2767,50 @@ LxGenMaxMapCount(
 }
 
 static
+VOID
+LxGenHugePages(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    PCSTR Name = strrchr(Synth->Prefix, '/');
+    ULONG64 Total, Free, Surplus;
+
+    UNREFERENCED_PARAMETER(Self);
+    Name = (Name != NULL) ? Name + 1 : Synth->Prefix;
+    Total = LxHugeQueryPool(&Free, &Surplus);
+    if (strcmp(Name, "free_hugepages") == 0)
+        LxTextPrintf(Text, "%llu\n", Free);
+    else if (strcmp(Name, "surplus_hugepages") == 0)
+        LxTextPrintf(Text, "%llu\n", Surplus);
+    else if ((strcmp(Name, "resv_hugepages") == 0) || (strcmp(Name, "nr_overcommit_hugepages") == 0))
+        LxTextAppend(Text, "0\n", 2);
+    else
+        LxTextPrintf(Text, "%llu\n", Total);
+}
+
+static
+LONG
+LxWriteHugePages(
+    _In_ PLX_FILE File,
+    _In_reads_bytes_(Length) PCSTR Data,
+    _In_ ULONG Length)
+{
+    ULONG Value;
+    LONG Error;
+
+    UNREFERENCED_PARAMETER(File);
+    if (Length == 0)
+        return 0;
+    Error = LxParseWrittenNumber(Data, Length, &Value);
+    if ((Error == 0) && (LxHugePageSize() == 0))
+        Error = -LX_EINVAL;
+    if (Error == 0)
+        LxHugeSetPool(Value);
+    return Error;
+}
+
+static
 LONG
 LxWriteMaxMapCount(
     _In_ PLX_FILE File,
@@ -2874,7 +2918,11 @@ static const LX_TABLE_ENTRY LxProcSysTable[] =
     { "net/ipv4/conf/lo/tag", 0644, NULL, LxGenNetSysctl, LxWriteNetSysctl },
     { "net/unix/max_dgram_qlen", 0644, "512\n", NULL, LxWriteAccept },
     { "user/max_user_namespaces", 0644, NULL, LxGenMaxUserNamespaces, LxWriteMaxUserNamespaces },
+    { "vm/compact_memory", 0200, "", NULL, LxWriteAccept },
+    { "vm/drop_caches", 0200, "", NULL, LxWriteAccept },
     { "vm/max_map_count", 0644, NULL, LxGenMaxMapCount, LxWriteMaxMapCount },
+    { "vm/nr_hugepages", 0644, NULL, LxGenHugePages, LxWriteHugePages },
+    { "vm/nr_overcommit_hugepages", 0644, NULL, LxGenHugePages, LxWriteAccept },
     { "vm/overcommit_memory", 0644, "0\n", NULL, LxWriteAccept },
     { "vm/swappiness", 0644, "60\n", NULL, LxWriteAccept },
 };
@@ -3157,6 +3205,11 @@ static const LX_TABLE_ENTRY LxSysTable[] =
     { "kernel/config", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "kernel/debug", 0700 | LX_S_IFDIR, NULL, NULL, NULL },
     { "kernel/mm", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
+    { "kernel/mm/hugepages/hugepages-2048kB/free_hugepages", 0444, NULL, LxGenHugePages, NULL },
+    { "kernel/mm/hugepages/hugepages-2048kB/nr_hugepages", 0644, NULL, LxGenHugePages, LxWriteHugePages },
+    { "kernel/mm/hugepages/hugepages-2048kB/nr_overcommit_hugepages", 0644, NULL, LxGenHugePages, LxWriteAccept },
+    { "kernel/mm/hugepages/hugepages-2048kB/resv_hugepages", 0444, NULL, LxGenHugePages, NULL },
+    { "kernel/mm/hugepages/hugepages-2048kB/surplus_hugepages", 0444, NULL, LxGenHugePages, NULL },
     { "kernel/security", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "kernel/tracing", 0700 | LX_S_IFDIR, NULL, NULL, NULL },
     { "module", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
@@ -3231,6 +3284,7 @@ LxGenMeminfo(
     _In_ PLX_SYNTH Synth,
     _Inout_ PLX_TEXT Text)
 {
+    ULONG64 HugeTotal, HugeFree, HugeSurplus;
     LX_MEMORY_STATE State;
 
     UNREFERENCED_PARAMETER(Self);
@@ -3244,10 +3298,15 @@ LxGenMeminfo(
                  "AnonPages:             0 kB\nMapped:                0 kB\nShmem:                 0 kB\n"
                  "Slab:                  0 kB\nSReclaimable:          0 kB\nSUnreclaim:            0 kB\n"
                  "KernelStack:           0 kB\nPageTables:            0 kB\nCommitLimit:    %8llu kB\n"
-                 "Committed_AS:   %8llu kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:           0 kB\n"
-                 "HugePages_Total:       0\nHugePages_Free:        0\nHugepagesize:       2048 kB\n",
+                 "Committed_AS:   %8llu kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:           0 kB\n",
                  State.Total / 1024, State.Free / 1024, State.Available / 1024, State.Cached / 1024,
                  State.SwapTotal / 1024, State.SwapFree / 1024, State.CommitLimit / 1024, State.Committed / 1024);
+    HugeTotal = LxHugeQueryPool(&HugeFree, &HugeSurplus);
+    LxTextPrintf(Text,
+                 "HugePages_Total:   %5llu\nHugePages_Free:    %5llu\nHugePages_Rsvd:    %5llu\n"
+                 "HugePages_Surp:    %5llu\nHugepagesize:   %8llu kB\nHugetlb:        %8llu kB\n",
+                 HugeTotal, HugeFree, 0ULL, HugeSurplus, LxHugePageSize() / 1024,
+                 (HugeTotal + HugeSurplus) * (LxHugePageSize() / 1024));
 }
 
 static
@@ -5448,10 +5507,12 @@ LxSynthOpen(
                 else if (LxSysTable[Synth.Index].Generator != NULL)
                 {
                     LxSysTable[Synth.Index].Generator(Process, &Synth, &Text);
+                    Writer = LxSysTable[Synth.Index].Writer;
                 }
                 else
                 {
                     LxTextAppend(&Text, LxSysTable[Synth.Index].Text, (ULONG)strlen(LxSysTable[Synth.Index].Text));
+                    Writer = LxSysTable[Synth.Index].Writer;
                 }
                 break;
 

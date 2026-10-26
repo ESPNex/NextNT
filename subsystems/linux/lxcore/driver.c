@@ -935,6 +935,7 @@ DriverEntry(
     UNREFERENCED_PARAMETER(RegistryPath);
 
     LxProcessInitialize();
+    LxHugeInitialize();
     InitializeListHead(&LxInstanceList);
     ExInitializeFastMutex(&LxInstanceListLock);
     KeInitializeEvent(&LxInstanceCreateLock, SynchronizationEvent, TRUE);

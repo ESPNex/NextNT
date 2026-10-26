@@ -282,6 +282,8 @@ LxVmaSplit(
 
     if ((Vma == NULL) || (Vma->Start == Address))
         return 0;
+    if ((Vma->Flags & LX_VMA_HUGETLB) && (Address & (LxHugePageSize() - 1)))
+        return -LX_EINVAL;
     if (Process->VmaCount >= LxMaxMapCount)
         return -LX_ENOMEM;
 
@@ -1750,6 +1752,11 @@ LxMmPopulate(
             return -LX_EHWPOISON;
         if (!IsListEmpty(&Process->Guards) && LxMmGuardHit(Process, Cursor))
             return -LX_EFAULT;
+        if (Vma->Flags & LX_VMA_HUGETLB)
+        {
+            Cursor = min(Vma->End, End);
+            continue;
+        }
         if ((Vma->Flags & LX_VMA_VIEW) && (Vma->MapEnd != 0) &&
             (!NT_SUCCESS(LxVmQuery(Cursor, &Information)) || (Information.State != MEM_COMMIT)))
         {
@@ -2461,6 +2468,146 @@ LxMmMapCow(
     return 0;
 }
 
+static
+LONG
+LxMmFindHugeRange(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Hint,
+    _In_ ULONG64 Length,
+    _In_ ULONG64 PageSize,
+    _Out_ PULONG64 Base)
+{
+    ULONG64 Probe = 0, Aligned;
+
+    Hint = LX_ALIGN_UP(Hint, PageSize);
+    if ((Hint >= LX_MMAP_MIN_ADDR) && (Hint + Length > Hint) && LxVmIsFree(Hint, Hint + Length) &&
+        !LxVmaOverlaps(Process, Hint, Hint + Length))
+    {
+        *Base = Hint;
+        return 0;
+    }
+    if ((Length + PageSize < Length) || !NT_SUCCESS(LxVmAllocate(&Probe, Length + PageSize, MEM_RESERVE, PAGE_NOACCESS)))
+        return -LX_ENOMEM;
+    LxVmFree(Probe, 0, MEM_RELEASE);
+    Aligned = LX_ALIGN_UP(Probe, PageSize);
+    if (LxVmaOverlaps(Process, Aligned, Aligned + Length))
+        return -LX_ENOMEM;
+    *Base = Aligned;
+    return 0;
+}
+
+static
+LONG
+LxMmMapHuge(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Address,
+    _In_ ULONG64 Length,
+    _In_ ULONG Prot,
+    _In_ ULONG Flags,
+    _In_ ULONG VmaFlags,
+    _In_opt_ PLX_FILE File,
+    _In_ ULONG64 Offset,
+    _Out_ PULONG64 Result)
+{
+    ULONG64 PageSize = LxHugePageSize(), Pages, Index, Base = 0, First = 0;
+    BOOLEAN Fixed = (Flags & (LX_MAP_FIXED | LX_MAP_FIXED_NOREPLACE)) != 0;
+    ULONG HugeLog = (Flags & LX_MAP_HUGE_MASK) >> LX_MAP_HUGE_SHIFT;
+    BOOLEAN Mapped = FALSE;
+    PLX_FILE Backing = File;
+    PLX_HUGE_STORE Store;
+    LONG Error;
+
+    if ((PageSize == 0) || ((File == NULL) && (HugeLog != 0) && ((1ULL << HugeLog) != PageSize)))
+        return -LX_EINVAL;
+    if ((Offset & (PageSize - 1)) || (Fixed && (Address & (PageSize - 1))))
+        return -LX_EINVAL;
+    Length = LX_ALIGN_UP(Length, PageSize);
+    if ((Length == 0) || (Fixed && (Address + Length < Address)))
+        return -LX_ENOMEM;
+    Pages = Length / PageSize;
+
+    if ((File == NULL) || !(VmaFlags & LX_MAP_SHARED))
+    {
+        Backing = LxHugeFileCreate((File != NULL) ? File->Path : "/anon_hugepage (deleted)");
+        if (Backing == NULL)
+            return -LX_ENOMEM;
+    }
+    else
+    {
+        LxFileReference(Backing);
+        First = Offset / PageSize;
+    }
+    Store = Backing->Memfd->Huge;
+    Error = LxHugeStoreReserve(Store, First, Pages, FALSE);
+    for (Index = 0; (Error == 0) && (Backing != File) && (File != NULL) && (Index < Pages); Index++)
+    {
+        PVOID Source = LxHugeStorePage(File->Memfd->Huge, Offset / PageSize + Index);
+        PVOID Target;
+
+        if (Source == NULL)
+            continue;
+        Target = LxHugeStorePage(Store, Index);
+        if ((Target == NULL) || !NT_SUCCESS(LxHugeCopyPage(Source, Target)))
+            Error = -LX_ENOMEM;
+        if (Target != NULL)
+            ObDereferenceObject(Target);
+        ObDereferenceObject(Source);
+    }
+
+    if (Error == 0)
+    {
+        if (!Fixed)
+            Error = LxMmFindHugeRange(Process, Address, Length, PageSize, &Base);
+        else if ((Flags & LX_MAP_FIXED_NOREPLACE) && LxVmaOverlaps(Process, Address, Address + Length))
+            Error = -LX_EEXIST;
+        else if ((Error = LxMmUnmapRange(Process, Address, Address + Length)) == 0)
+            Base = Address;
+    }
+    for (Index = 0; (Error == 0) && (Index < Pages); Index++)
+    {
+        PVOID Section = LxHugeStorePage(Store, First + Index);
+        PVOID View = (PVOID)(ULONG_PTR)(Base + Index * PageSize);
+
+        if ((Section == NULL) || !NT_SUCCESS(LxHugeMapPage(Section, NtCurrentProcess(), &View, PAGE_READWRITE)))
+        {
+            while (Index != 0)
+                ZwUnmapViewOfSection(NtCurrentProcess(), (PVOID)(ULONG_PTR)(Base + --Index * PageSize));
+            Error = -LX_ENOMEM;
+        }
+        if (Section != NULL)
+            ObDereferenceObject(Section);
+    }
+    Mapped = (Error == 0);
+    if ((Error == 0) && ((Prot & (LX_PROT_READ | LX_PROT_WRITE | LX_PROT_EXEC)) != (LX_PROT_READ | LX_PROT_WRITE)))
+        LxVmProtect(Base, Length, LxProtToNt(Prot));
+    if (Error == 0)
+        Error = LxVmaInsertView(Process, Base, Base + Length, Prot, VmaFlags | LX_VMA_HUGETLB, Backing,
+                                First * PageSize, NULL, 0, 0, 0);
+    if ((Error != 0) && Mapped)
+    {
+        for (Index = 0; Index < Pages; Index++)
+            ZwUnmapViewOfSection(NtCurrentProcess(), (PVOID)(ULONG_PTR)(Base + Index * PageSize));
+    }
+    if ((Error == 0) && (Backing == File) && (Prot & LX_PROT_WRITE) && (File->Handle != NULL))
+    {
+        FILE_STANDARD_INFORMATION Standard;
+        FILE_END_OF_FILE_INFORMATION EndOfFile;
+        IO_STATUS_BLOCK Iosb;
+
+        if (NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Standard, sizeof(Standard),
+                                              FileStandardInformation)) &&
+            ((ULONG64)Standard.EndOfFile.QuadPart < Offset + Length))
+        {
+            EndOfFile.EndOfFile.QuadPart = (LONG64)(Offset + Length);
+            ZwSetInformationFile(File->Handle, &Iosb, &EndOfFile, sizeof(EndOfFile), FileEndOfFileInformation);
+        }
+    }
+    LxFileDereference(Backing);
+    if (Error == 0)
+        *Result = Base;
+    return Error;
+}
+
 LONG64
 LxMmMap(
     _In_ PLX_PROCESS Process,
@@ -2494,6 +2641,8 @@ LxMmMap(
         return -LX_EPERM;
     if ((Flags & LX_MAP_LOCKED) && !LxMmCanLock(Caller))
         return -LX_EPERM;
+    if ((File != NULL) && (Flags & LX_MAP_HUGETLB) && ((File->Memfd == NULL) || (File->Memfd->Huge == NULL)))
+        return -LX_EINVAL;
 
     LxMmLock(Process);
     if (Process->VmaCount > LxMaxMapCount)
@@ -2508,6 +2657,15 @@ LxMmMap(
         return -LX_EAGAIN;
     }
     VmaFlags |= Lock;
+
+    if ((File != NULL) ? ((File->Memfd != NULL) && (File->Memfd->Huge != NULL)) : ((Flags & LX_MAP_HUGETLB) != 0))
+    {
+        Error = LxMmMapHuge(Process, Address, Length, Prot, Flags, VmaFlags, File, Offset, &Base);
+        if ((Error == 0) && (Lock == LX_VMA_LOCKED))
+            LxMmLockPopulate(Process, Base, Base + LX_ALIGN_UP(Length, LxHugePageSize()));
+        LxMmUnlock(Process);
+        return (Error != 0) ? Error : (LONG64)Base;
+    }
 
     if ((VmaFlags & LX_MAP_SHARED) &&
         !((Flags & LX_MAP_FIXED_NOREPLACE) && LxVmaOverlaps(Process, Address, Address + Length)))
@@ -2749,6 +2907,40 @@ LxMmRelease(
         LxFree(CONTAINING_RECORD(RemoveHeadList(&Process->Guards), LX_GUARD, Link));
 }
 
+static
+PLX_FILE
+LxMmHugeForkCopy(
+    _In_ PLX_VMA Vma)
+{
+    ULONG64 PageSize = LxHugePageSize(), Pages = (Vma->End - Vma->Start) / PageSize, Index;
+    PLX_FILE Copy = LxHugeFileCreate(Vma->File->Path);
+
+    if (Copy == NULL)
+        return NULL;
+    if (LxHugeStoreReserve(Copy->Memfd->Huge, 0, Pages, TRUE) != 0)
+    {
+        LxFileDereference(Copy);
+        return NULL;
+    }
+    for (Index = 0; Index < Pages; Index++)
+    {
+        PVOID Source = LxHugeStorePage(Vma->File->Memfd->Huge, Vma->Offset / PageSize + Index);
+        PVOID Target = LxHugeStorePage(Copy->Memfd->Huge, Index);
+        NTSTATUS Status = ((Source != NULL) && (Target != NULL)) ? LxHugeCopyPage(Source, Target) : STATUS_NO_MEMORY;
+
+        if (Source != NULL)
+            ObDereferenceObject(Source);
+        if (Target != NULL)
+            ObDereferenceObject(Target);
+        if (!NT_SUCCESS(Status))
+        {
+            LxFileDereference(Copy);
+            return NULL;
+        }
+    }
+    return Copy;
+}
+
 LONG
 LxMmFork(
     _In_ PLX_PROCESS Child,
@@ -2782,8 +2974,21 @@ LxMmFork(
         Copy->ViewBase = Vma->ViewBase;
         Copy->ViewOffset = Vma->ViewOffset;
         Copy->MapEnd = Vma->MapEnd;
-        if (Copy->File != NULL)
+        if ((Vma->Flags & LX_VMA_HUGETLB) && !(Vma->Flags & LX_MAP_SHARED))
+        {
+            Copy->File = LxMmHugeForkCopy(Vma);
+            Copy->Offset = 0;
+            if (Copy->File == NULL)
+            {
+                LxFree(Copy);
+                LxMmRelease(Child);
+                return -LX_ENOMEM;
+            }
+        }
+        else if (Copy->File != NULL)
+        {
             LxFileReference(Copy->File);
+        }
         if (Copy->Section != NULL)
             ObReferenceObject(Copy->Section);
         if ((Copy->Flags & LX_VMA_SHM) && (Copy->Section != NULL))
@@ -2810,9 +3015,38 @@ LxMmFork(
 VOID
 LxMmForkChild(
     _In_ PLX_PROCESS Parent,
+    _In_ PLX_PROCESS Child,
     _In_ HANDLE ProcessHandle)
 {
+    ULONG64 PageSize = LxHugePageSize();
     PLIST_ENTRY Entry;
+
+    for (Entry = Child->Vmas.Flink; Entry != &Child->Vmas; Entry = Entry->Flink)
+    {
+        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+        ULONG64 Address;
+
+        if (!(Vma->Flags & LX_VMA_HUGETLB) || (Vma->Flags & LX_MAP_SHARED))
+            continue;
+        for (Address = Vma->Start; Address < Vma->End; Address += PageSize)
+        {
+            PVOID Section = LxHugeStorePage(Vma->File->Memfd->Huge, (Vma->Offset + (Address - Vma->Start)) / PageSize);
+            PVOID View = (PVOID)(ULONG_PTR)Address;
+
+            ZwUnmapViewOfSection(ProcessHandle, View);
+            if (Section == NULL)
+                continue;
+            if (NT_SUCCESS(LxHugeMapPage(Section, ProcessHandle, &View, PAGE_READWRITE)) &&
+                ((Vma->Prot & (LX_PROT_READ | LX_PROT_WRITE | LX_PROT_EXEC)) != (LX_PROT_READ | LX_PROT_WRITE)))
+            {
+                SIZE_T Size = (SIZE_T)PageSize;
+                ULONG OldProtect;
+
+                ZwProtectVirtualMemory(ProcessHandle, &View, &Size, LxProtToNt(Vma->Prot), &OldProtect);
+            }
+            ObDereferenceObject(Section);
+        }
+    }
 
     Parent = Parent->Mm;
     for (Entry = Parent->Vmas.Flink; Entry != &Parent->Vmas; Entry = Entry->Flink)
@@ -3021,6 +3255,24 @@ LxMadviseCheck(
 {
     BOOLEAN Locked = (Vma->Flags & LX_VMA_LOCKED) != 0;
     BOOLEAN PrivateAnon = !(Vma->Flags & LX_MAP_SHARED) && (Vma->File == NULL) && !(Vma->Flags & LX_VMA_SHM);
+
+    if (Vma->Flags & LX_VMA_HUGETLB)
+    {
+        switch (Advice)
+        {
+            case LX_MADV_NORMAL:
+            case LX_MADV_RANDOM:
+            case LX_MADV_SEQUENTIAL:
+            case LX_MADV_WILLNEED:
+            case LX_MADV_DONTDUMP:
+            case LX_MADV_DODUMP:
+            case LX_MADV_DONTFORK:
+            case LX_MADV_DOFORK:
+                return 0;
+            default:
+                return -LX_EINVAL;
+        }
+    }
 
     switch (Advice)
     {
@@ -3841,6 +4093,11 @@ LX_SYSCALL(LxSysMremap)
     {
         LxMmUnlock(Process);
         return -LX_EFAULT;
+    }
+    if (Vma->Flags & LX_VMA_HUGETLB)
+    {
+        LxMmUnlock(Process);
+        return -LX_EINVAL;
     }
 
     if ((Flags & LX_MREMAP_FIXED) && (NewLength < OldLength))

@@ -35,6 +35,7 @@
 #define LX_BRK_RESERVE      (1024ULL * 1024 * 1024)
 #define LX_AUXV_WORDS       40
 #define LX_MMAP_MIN_ADDR    0x10000ULL
+#define LX_VMA_HUGETLB      0x00020000
 #define LX_VMA_DONTDUMP     0x00040000
 #define LX_VMA_TOUCHED      0x00080000
 #define LX_VMA_WIPEONFORK   0x00100000
@@ -148,12 +149,19 @@ typedef struct _LX_EVENT_SOURCE
     volatile LONG64 Generation;
 } LX_EVENT_SOURCE, *PLX_EVENT_SOURCE;
 
+typedef struct _LX_HUGE_STORE
+{
+    ULONG Count;
+    PVOID *Pages;
+} LX_HUGE_STORE, *PLX_HUGE_STORE;
+
 typedef struct _LX_MEMFD
 {
     volatile LONG RefCount;
     volatile LONG Seals;
     volatile LONG WritableMaps;
     HANDLE Owner;
+    PLX_HUGE_STORE Huge;
 } LX_MEMFD, *PLX_MEMFD;
 
 typedef struct _LX_FILE_OPS
@@ -765,6 +773,17 @@ extern FAST_MUTEX LxInstanceListLock;
 extern KEVENT LxInstanceCreateLock;
 
 VOID LxProcessInitialize(VOID);
+VOID LxHugeInitialize(VOID);
+ULONG64 LxHugePageSize(VOID);
+ULONG64 LxHugeQueryPool(_Out_opt_ PULONG64 Free, _Out_opt_ PULONG64 Surplus);
+VOID LxHugeSetPool(_In_ ULONG64 Count);
+LONG LxHugeStoreReserve(_Inout_ PLX_HUGE_STORE Store, _In_ ULONG64 First, _In_ ULONG64 Count, _In_ BOOLEAN Surplus);
+VOID LxHugeStoreTruncate(_Inout_ PLX_HUGE_STORE Store, _In_ ULONG64 Count);
+PVOID LxHugeStorePage(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Index);
+NTSTATUS LxHugeMapPage(_In_ PVOID Section, _In_ HANDLE ProcessHandle, _Inout_ PVOID *Base, _In_ ULONG Protect);
+NTSTATUS LxHugeCopyPage(_In_ PVOID From, _In_ PVOID To);
+LONG64 LxHugeStoreRead(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Offset, _In_ ULONG64 Buffer, _In_ ULONG64 Length);
+PLX_FILE LxHugeFileCreate(_In_ PCSTR Path);
 PVOID LxAlloc(_In_ SIZE_T Size);
 VOID LxFree(_In_opt_ PVOID Buffer);
 PVOID LxAllocPaged(_In_ SIZE_T Size);
@@ -1191,7 +1210,7 @@ ULONG64 LxMmLockedBytes(_In_ PLX_PROCESS Process);
 VOID LxSharedVmTerminate(_In_ PLX_PROCESS Process, _In_ NTSTATUS ExitCode, _In_ BOOLEAN CurrentNtProcessOnly);
 VOID LxSharedVmExited(_In_ PLX_PROCESS Process);
 ULONG LxMmTruncateViews(_In_ HANDLE Handle);
-VOID LxMmForkChild(_In_ PLX_PROCESS Parent, _In_ HANDLE ProcessHandle);
+VOID LxMmForkChild(_In_ PLX_PROCESS Parent, _In_ PLX_PROCESS Child, _In_ HANDLE ProcessHandle);
 LONG64 LxMmMincore(_In_ PLX_PROCESS Process, _In_ ULONG64 Address, _In_ ULONG64 End, _In_ ULONG64 Output);
 ULONG64 LxMmVmaResident(_In_ HANDLE ProcessHandle, _In_ PLX_VMA Vma);
 VOID LxMmPagemap(_In_ PLX_PROCESS Process, _In_ HANDLE ProcessHandle, _In_ ULONG64 Address, _In_ ULONG Pages,

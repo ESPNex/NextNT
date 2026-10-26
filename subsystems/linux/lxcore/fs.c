@@ -1389,8 +1389,12 @@ LX_SYSCALL(LxSysFtruncate)
         Result = -LX_EINVAL;
     else if (File->Ops->Truncate == NULL)
         Result = -LX_EINVAL;
+    else if ((File->Memfd != NULL) && (File->Memfd->Huge != NULL) && (Call->Args[1] & (LxHugePageSize() - 1)))
+        Result = -LX_EINVAL;
     else if ((Result = LxMemfdCheckSize(File, (LONG64)Call->Args[1])) == 0)
         Result = File->Ops->Truncate(File, (LONG64)Call->Args[1]);
+    if ((Result == 0) && (File->Memfd != NULL) && (File->Memfd->Huge != NULL))
+        LxHugeStoreTruncate(File->Memfd->Huge, Call->Args[1] / LxHugePageSize());
     if ((File->Mount != NULL) && (File->Path != NULL))
         LxVcacheInvalidatePath(File->Mount->Ns, File->Path);
     LxFileDereference(File);

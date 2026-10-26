@@ -106,7 +106,12 @@ typedef enum _SECTION_INHERIT { ViewShare = 1, ViewUnmap = 2 } SECTION_INHERIT;
 typedef enum _EVENT_TYPE { NotificationEvent, SynchronizationEvent } EVENT_TYPE;
 typedef enum _KWAIT_REASON { Executive = 0, UserRequest = 6 } KWAIT_REASON;
 typedef enum _MEMORY_INFORMATION_CLASS { MemoryBasicInformation = 0, MemoryWorkingSetExList = 4 } MEMORY_INFORMATION_CLASS;
-typedef enum _FILE_INFORMATION_CLASS { FileStandardInformation = 5, FilePositionInformation = 14 } FILE_INFORMATION_CLASS;
+typedef enum _FILE_INFORMATION_CLASS
+{
+    FileStandardInformation = 5,
+    FilePositionInformation = 14,
+    FileEndOfFileInformation = 20
+} FILE_INFORMATION_CLASS;
 typedef enum _SECTION_INFORMATION_CLASS { SectionBasicInformation = 0 } SECTION_INFORMATION_CLASS;
 typedef enum _PROCESSINFOCLASS { ProcessQuotaLimits = 1 } PROCESSINFOCLASS;
 
@@ -200,6 +205,7 @@ void LxHostCopy(void *Destination, const void *Source, SIZE_T Length);
 #define LX_IO_CHUNK         (64 * 1024)
 #define LX_BRK_RESERVE      (1024ULL * 1024 * 1024)
 #define LX_MMAP_MIN_ADDR    0x10000ULL
+#define LX_VMA_HUGETLB      0x00020000
 #define LX_VMA_DONTDUMP     0x00040000
 #define LX_VMA_TOUCHED      0x00080000
 #define LX_VMA_WIPEONFORK   0x00100000
@@ -240,12 +246,24 @@ typedef struct _LX_VMA
     ULONG64 MapEnd;
 } LX_VMA, *PLX_VMA;
 
+typedef struct _FILE_END_OF_FILE_INFORMATION
+{
+    LARGE_INTEGER EndOfFile;
+} FILE_END_OF_FILE_INFORMATION, *PFILE_END_OF_FILE_INFORMATION;
+
+typedef struct _LX_HUGE_STORE
+{
+    ULONG Count;
+    PVOID *Pages;
+} LX_HUGE_STORE, *PLX_HUGE_STORE;
+
 typedef struct _LX_MEMFD
 {
     volatile LONG RefCount;
     volatile LONG Seals;
     volatile LONG WritableMaps;
     HANDLE Owner;
+    PLX_HUGE_STORE Huge;
 } LX_MEMFD, *PLX_MEMFD;
 
 struct _LX_FILE
@@ -440,7 +458,13 @@ LX_SYSCALL(LxSysMunlock);
 LX_SYSCALL(LxSysMlockall);
 LX_SYSCALL(LxSysMunlockall);
 ULONG64 LxMmLockedBytes(_In_ PLX_PROCESS Process);
-VOID LxMmForkChild(_In_ PLX_PROCESS Parent, _In_ HANDLE ProcessHandle);
+VOID LxMmForkChild(_In_ PLX_PROCESS Parent, _In_ PLX_PROCESS Child, _In_ HANDLE ProcessHandle);
+ULONG64 LxHugePageSize(VOID);
+LONG LxHugeStoreReserve(_Inout_ PLX_HUGE_STORE Store, _In_ ULONG64 First, _In_ ULONG64 Count, _In_ BOOLEAN Surplus);
+PVOID LxHugeStorePage(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Index);
+NTSTATUS LxHugeMapPage(_In_ PVOID Section, _In_ HANDLE ProcessHandle, _Inout_ PVOID *Base, _In_ ULONG Protect);
+NTSTATUS LxHugeCopyPage(_In_ PVOID From, _In_ PVOID To);
+PLX_FILE LxHugeFileCreate(_In_ PCSTR Path);
 extern volatile LONG LxMaxMapCount;
 LONG64 LxMmMincore(_In_ PLX_PROCESS Process, _In_ ULONG64 Address, _In_ ULONG64 End, _In_ ULONG64 Output);
 ULONG64 LxMmVmaResident(_In_ HANDLE ProcessHandle, _In_ PLX_VMA Vma);

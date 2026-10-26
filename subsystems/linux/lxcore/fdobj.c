@@ -18,6 +18,9 @@
 #define LX_MFD_HUGETLB      0x0004
 #define LX_MFD_NOEXEC_SEAL  0x0008
 #define LX_MFD_EXEC         0x0010
+#define LX_MFD_ALL          (LX_MFD_CLOEXEC | LX_MFD_ALLOW_SEALING | LX_MFD_HUGETLB | LX_MFD_NOEXEC_SEAL | LX_MFD_EXEC)
+#define LX_MFD_HUGE_SHIFT   26
+#define LX_MFD_HUGE_MASK    0x3F
 
 typedef struct _LX_EVENTFD
 {
@@ -1338,8 +1341,19 @@ LX_SYSCALL(LxSysMemfdCreate)
     NTSTATUS Status;
     LONG64 Result;
 
-    if (Flags & ~(LX_MFD_CLOEXEC | LX_MFD_ALLOW_SEALING | LX_MFD_HUGETLB | LX_MFD_NOEXEC_SEAL | LX_MFD_EXEC))
+    if (Flags & LX_MFD_HUGETLB)
+    {
+        ULONG HugeLog = (Flags >> LX_MFD_HUGE_SHIFT) & LX_MFD_HUGE_MASK;
+
+        if (Flags & ~(LX_MFD_ALL | (LX_MFD_HUGE_MASK << LX_MFD_HUGE_SHIFT)))
+            return -LX_EINVAL;
+        if ((LxHugePageSize() == 0) || ((HugeLog != 0) && ((1ULL << HugeLog) != LxHugePageSize())))
+            return -LX_ENODEV;
+    }
+    else if (Flags & ~LX_MFD_ALL)
+    {
         return -LX_EINVAL;
+    }
     Result = LxCopyStringFromUser(Call->Args[0], &Name, 249);
     if (Result != 0)
         return (Result == -LX_ENAMETOOLONG) ? -LX_EINVAL : Result;
@@ -1387,6 +1401,11 @@ LX_SYSCALL(LxSysMemfdCreate)
     File->Memfd->Seals = (Flags & LX_MFD_ALLOW_SEALING) ? 0 : LX_F_SEAL_SEAL;
     File->Memfd->WritableMaps = 0;
     LxFree(Name);
+    if ((Flags & LX_MFD_HUGETLB) && ((File->Memfd->Huge = LxAlloc(sizeof(*File->Memfd->Huge))) == NULL))
+    {
+        LxFileDereference(File);
+        return -LX_ENOMEM;
+    }
     Status = ObReferenceObjectByHandle(Handle, 0, *IoFileObjectType, KernelMode, (PVOID*)&FileObject, NULL);
     if (NT_SUCCESS(Status))
     {

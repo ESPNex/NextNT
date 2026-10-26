@@ -864,3 +864,39 @@ LxHostLog(const char *Format, ...)
     vfprintf(stderr, Converted, Args);
     va_end(Args);
 }
+
+ULONG64
+LxHugePageSize(VOID)
+{
+    return 0;
+}
+
+LONG
+LxHugeStoreReserve(PLX_HUGE_STORE Store, ULONG64 First, ULONG64 Count, BOOLEAN Surplus)
+{
+    return -LX_ENOMEM;
+}
+
+PVOID
+LxHugeStorePage(PLX_HUGE_STORE Store, ULONG64 Index)
+{
+    return NULL;
+}
+
+NTSTATUS
+LxHugeMapPage(PVOID Section, HANDLE ProcessHandle, PVOID *Base, ULONG Protect)
+{
+    return STATUS_NOT_SUPPORTED;
+}
+
+NTSTATUS
+LxHugeCopyPage(PVOID From, PVOID To)
+{
+    return STATUS_NOT_SUPPORTED;
+}
+
+PLX_FILE
+LxHugeFileCreate(PCSTR Path)
+{
+    return NULL;
+}

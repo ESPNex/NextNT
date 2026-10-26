@@ -230,6 +230,7 @@
 #define LX_MAP_FIXED_NOREPLACE  0x100000
 #define LX_MAP_UNINITIALIZED    0x4000000
 #define LX_MAP_HUGE_MASK        0xFC000000
+#define LX_MAP_HUGE_SHIFT       26
 
 #define LX_MREMAP_MAYMOVE   1
 #define LX_MREMAP_FIXED     2
@@ -287,6 +288,8 @@ typedef struct _LX_SCHED_ATTR
 #define LX_MS_SYNC          4
 
 #define LX_MADV_NORMAL      0
+#define LX_MADV_RANDOM      1
+#define LX_MADV_SEQUENTIAL  2
 #define LX_MADV_WILLNEED    3
 #define LX_MADV_DONTNEED    4
 #define LX_MADV_FREE        8

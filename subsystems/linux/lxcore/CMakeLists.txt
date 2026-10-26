@@ -9,6 +9,7 @@ list(APPEND SOURCE
     file.c
     fs.c
     futex.c
+    hugetlb.c
     ipc.c
     kconfig.c
     lxwin.c

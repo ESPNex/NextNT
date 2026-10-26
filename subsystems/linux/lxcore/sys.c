@@ -2347,7 +2347,7 @@ LxForkProcess(
         if (NT_SUCCESS(Status))
             Status = PsPicoCreateProcess(TRUE, Child, &ProcessHandle);
         if (NT_SUCCESS(Status))
-            LxMmForkChild(Parent, ProcessHandle);
+            LxMmForkChild(Parent, Child, ProcessHandle);
         LxMmUnlock(Parent);
         if (NT_SUCCESS(Status))
             Status = ObReferenceObjectByHandle(ProcessHandle, 0, *PsProcessType, KernelMode, (PVOID*)&EProcess, NULL);
