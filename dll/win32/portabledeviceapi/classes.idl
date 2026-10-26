@@ -1,0 +1,29 @@
+/*
+ * COM classes for portabledeviceapi.dll
+ *
+ * Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+#pragma makedep register
+
+[
+    helpstring("PortableDevice Class"),
+    threading(both),
+    uuid(728a21c5-3d9e-48d7-9810-864848f0f404)
+]
+coclass PortableDevice { }
+
+[
+    helpstring("PortableDeviceManager Class"),
+    threading(both),
+    uuid(0af10cec-2ecd-4b92-9581-34f6ae0637f3)
+]
+coclass PortableDeviceManager { }
+
+[
+    helpstring("PortableDeviceFTM Class"),
+    threading(both),
+    uuid(f7c0039a-4762-488a-b4b3-760ef9a1ba9b)
+]
+coclass PortableDeviceFTM { }
