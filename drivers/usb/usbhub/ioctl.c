@@ -137,6 +137,7 @@ USBH_PdoHandleMsFeatureDescriptor(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
     Urb->UrbControlVendorClassRequest.Hdr.Length =
         sizeof(struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST);
     Urb->UrbControlVendorClassRequest.Hdr.Function = URB_FUNCTION_VENDOR_DEVICE;
+    Urb->UrbControlVendorClassRequest.Hdr.UsbdDeviceHandle = PortExtension->DeviceHandle;
     Urb->UrbControlVendorClassRequest.TransferFlags =
         USBD_TRANSFER_DIRECTION_IN | USBD_SHORT_TRANSFER_OK;
     Urb->UrbControlVendorClassRequest.TransferBufferLength = TransferBufferLength;

@@ -2278,6 +2278,45 @@ USBH_PdoQueryId(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
                                      &EndBuffer,
                                      &Remaining,
                                      0,
+                                     L"USB\\COMPAT_VID_%04X&DevClass_%02X&SubClass_%02X&Prot%02X",
+                                     DeviceDescriptor->idVendor,
+                                     InterfaceDescriptor->bInterfaceClass,
+                                     InterfaceDescriptor->bInterfaceSubClass,
+                                     InterfaceDescriptor->bInterfaceProtocol);
+
+                EndBuffer++;
+                Remaining -= sizeof(UNICODE_NULL);
+
+                RtlStringCbPrintfExW(EndBuffer,
+                                     Remaining,
+                                     &EndBuffer,
+                                     &Remaining,
+                                     0,
+                                     L"USB\\COMPAT_VID_%04X&DevClass_%02X&SubClass_%02X",
+                                     DeviceDescriptor->idVendor,
+                                     InterfaceDescriptor->bInterfaceClass,
+                                     InterfaceDescriptor->bInterfaceSubClass);
+
+                EndBuffer++;
+                Remaining -= sizeof(UNICODE_NULL);
+
+                RtlStringCbPrintfExW(EndBuffer,
+                                     Remaining,
+                                     &EndBuffer,
+                                     &Remaining,
+                                     0,
+                                     L"USB\\COMPAT_VID_%04X&DevClass_%02X",
+                                     DeviceDescriptor->idVendor,
+                                     InterfaceDescriptor->bInterfaceClass);
+
+                EndBuffer++;
+                Remaining -= sizeof(UNICODE_NULL);
+
+                RtlStringCbPrintfExW(EndBuffer,
+                                     Remaining,
+                                     &EndBuffer,
+                                     &Remaining,
+                                     0,
                                      L"USB\\DevClass_%02X&SubClass_%02X&Prot_%02X",
                                      InterfaceDescriptor->bInterfaceClass,
                                      InterfaceDescriptor->bInterfaceSubClass,
