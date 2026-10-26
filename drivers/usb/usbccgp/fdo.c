@@ -546,7 +546,11 @@ FDO_CreateChildPdo(
         PDODeviceExtension->ConfigurationDescriptor = FDODeviceExtension->ConfigurationDescriptor;
         PDODeviceExtension->Present = TRUE;
         RtlCopyMemory(&PDODeviceExtension->Capabilities, &FDODeviceExtension->Capabilities, sizeof(DEVICE_CAPABILITIES));
+        PDODeviceExtension->Capabilities.Removable = FALSE;
         PDODeviceExtension->Capabilities.UniqueID = FALSE;
+        PDODeviceExtension->Capabilities.SurpriseRemovalOK = FALSE;
+        if (PDODeviceExtension->Capabilities.Address != MAXULONG)
+            PDODeviceExtension->Capabilities.Address += Index;
         RtlCopyMemory(&PDODeviceExtension->DeviceDescriptor, FDODeviceExtension->DeviceDescriptor, sizeof(USB_DEVICE_DESCRIPTOR));
 
         /* Keep the parent FDO extension valid until the PDO remove path unlinks this child. */
