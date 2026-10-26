@@ -1,0 +1,53 @@
+; WPDMTP.INF
+
+; Installation of the MTP device driver (wpdmtp.sys).
+
+[Version]
+Signature  = "$Windows NT$"
+LayoutFile = layout.inf
+Class      = WPD
+ClassGUID  = {EEC5AD98-8080-425F-922A-DABF3DE3F69A}
+Provider   = %LiberNT%
+DriverVer  = 06/21/2006,10.0.26100.1
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[Manufacturer]
+%GenericMfg% = GenericMfg
+
+[GenericMfg]
+%GenericMTP.DeviceDesc% = MTP, USB\MS_COMP_MTP
+%GenericMTP.DeviceDesc% = MTP, USB\Class_06&SubClass_01&Prot_01
+
+[MTP.NT]
+CopyFiles = MTP_CopyFiles.NT
+
+[MTP_CopyFiles.NT]
+wpdmtp.sys
+
+[MTP.NT.HW]
+AddReg = MTP_AddReg.HW
+
+[MTP_AddReg.HW]
+HKR, , EnableDefaultAutoPlaySupport, 0x00010001, 1
+HKR, , EnableLegacySupport,          0x00010001, 0xFFFFFFFF
+HKR, , ReportJPGFormatForEXIF,       0x00010001, 1
+HKR, , TSRedirFlags,                 0x00010001, 1
+
+[MTP.NT.Services]
+AddService = WpdMtp, 0x00000002, WpdMtp_Service_Inst
+
+[WpdMtp_Service_Inst]
+ServiceType    = 1
+StartType      = 3
+ErrorControl   = 1
+ServiceBinary  = %12%\wpdmtp.sys
+
+[Strings]
+; Non-localizable
+LiberNT = "LiberNT Project"
+
+; Localizable
+GenericMfg            = "(Standard MTP Device)"
+GenericMTP.DeviceDesc = "MTP USB Device"

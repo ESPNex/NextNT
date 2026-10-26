@@ -6,6 +6,7 @@ list(APPEND INF_FILES
     bth.inf
     c_firmware.inf
     c_image.inf
+    c_wpd.inf
     display.inf
     fdc.inf
     flpydisk.inf
@@ -33,7 +34,8 @@ list(APPEND INF_FILES
     usbport.inf
     volume.inf
     wdmaudio.inf
-    wmiacpi.inf)
+    wmiacpi.inf
+    wpdmtp.inf)
 
 if(REACTOS_USE_XPDM)
     list(APPEND INF_FILES display_xpdm.inf)

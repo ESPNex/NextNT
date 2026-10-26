@@ -27,6 +27,7 @@ usbport.inf
 volume.inf
 audio.inf
 c_image.inf
+c_wpd.inf
 
 [Infs.Always]
 syssetup.inf,EarlyPhaseSetup
@@ -168,6 +169,7 @@ RegisterDlls = Wow64RegisterDlls
 11,,opcservices.dll,1
 11,,oleaut32.dll,1
 11,,olepro32.dll,1
+11,,portabledeviceapi.dll,1
 11,,portabledevicetypes.dll,1
 11,,prnfldr.dll,1
 11,,directmanipulation.dll,1
