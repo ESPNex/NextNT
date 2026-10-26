@@ -105,6 +105,7 @@ list(APPEND IDL_SOURCES
     perhist.idl
 #    prgsnk.idl
     propidl.idl
+    portabledeviceapi.idl
     portabledevicetypes.idl
 #    query.idl
 #    ratingsp.idl

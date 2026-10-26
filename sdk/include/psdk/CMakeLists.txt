@@ -140,6 +140,7 @@ list(APPEND SOURCE
     perhist.idl
     propidl.idl
     propsys.idl
+    portabledeviceapi.idl
     portabledevicetypes.idl
     pstore.idl
     restrictederrorinfo.idl
