@@ -1947,6 +1947,7 @@ MiDetachMappedView(
     Space->TlbBatch->DeferTables = Deferred;
     MiTlbBatchEnd(Space, Owner);
     MiReturnCommit(Space, Vad->CommitCharge);
+    MiLockRangeRemove(Space, MI_VAD_START(Vad), MI_VAD_END(Vad));
     MiVadRemove(&Space->VadRoot, &Vad->Node);
 
     MI_ATOMIC_ADD32(&Segment->MappedViews, -1);

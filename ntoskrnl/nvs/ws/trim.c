@@ -105,8 +105,16 @@ MiTrimAddressSpace(
             while (Va < End && Trimmed < PageTarget)
             {
                 ULONG TableFrame;
-                PMI_PTE Slot = MiPtLookup(Space, Va, &TableFrame);
+                PMI_PTE Slot;
+                ULONG64 Next;
 
+                if (Space->LockRangeCount != 0 && MiLockRangeLocked(Space, Va, &Next))
+                {
+                    Va = (Next < End) ? Next : End;
+                    continue;
+                }
+
+                Slot = MiPtLookup(Space, Va, &TableFrame);
                 if (Slot == NULL)
                 {
                     Va = MiPtNextTableBoundary(Space, Va);
@@ -133,6 +141,282 @@ MiTrimAddressSpace(
 
     MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
     return Trimmed;
+}
+
+ULONG
+MiTrimRange(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    ULONG Trimmed = 0;
+    ULONG64 Va = Start;
+
+    MI_RW_ACQUIRE_EXCLUSIVE(&Space->Lock);
+    MiPtFlushEmpty(Space);
+
+    while (Va < End)
+    {
+        PMI_VAD Vad = MiVadLocate(Space, Va);
+        ULONG64 VadEnd;
+
+        if (Vad == NULL)
+        {
+            Va += PAGE_SIZE;
+            continue;
+        }
+
+        VadEnd = (Vad->Node.EndingVpn + 1) << PAGE_SHIFT;
+        if (VadEnd > End)
+            VadEnd = End;
+
+        if (MI_VAD_IS_DIRECT(Vad))
+        {
+            Va = VadEnd;
+            continue;
+        }
+
+        while (Va < VadEnd)
+        {
+            ULONG TableFrame;
+            PMI_PTE Slot;
+            ULONG64 Next;
+
+            if (Space->LockRangeCount != 0 && MiLockRangeLocked(Space, Va, &Next))
+            {
+                Va = (Next < VadEnd) ? Next : VadEnd;
+                continue;
+            }
+
+            Slot = MiPtLookup(Space, Va, &TableFrame);
+            if (Slot == NULL)
+            {
+                Va = MiPtNextTableBoundary(Space, Va);
+                continue;
+            }
+
+            if (MiTrimPage(Space, Vad, Va, Slot, TableFrame, TRUE))
+                Trimmed++;
+
+            Va += PAGE_SIZE;
+        }
+    }
+
+    MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
+    return Trimmed;
+}
+
+static
+ULONG
+MiLockRangeSearch(
+    _In_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 VirtualAddress)
+{
+    ULONG Low = 0;
+    ULONG High = Space->LockRangeCount;
+
+    while (Low < High)
+    {
+        ULONG Middle = Low + (High - Low) / 2;
+
+        if (Space->LockRanges[Middle].End <= VirtualAddress)
+            Low = Middle + 1;
+        else
+            High = Middle;
+    }
+
+    return Low;
+}
+
+BOOLEAN
+MiLockRangeLocked(
+    _In_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 VirtualAddress,
+    _Out_ PULONG64 Next)
+{
+    ULONG Index = MiLockRangeSearch(Space, VirtualAddress);
+
+    if (Index == Space->LockRangeCount)
+    {
+        *Next = ~0ULL;
+        return FALSE;
+    }
+
+    if (Space->LockRanges[Index].Start <= VirtualAddress)
+    {
+        *Next = Space->LockRanges[Index].End;
+        return TRUE;
+    }
+
+    *Next = Space->LockRanges[Index].Start;
+    return FALSE;
+}
+
+ULONG64
+MiLockRangePages(
+    _In_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    ULONG64 Pages = 0;
+    ULONG Index;
+
+    for (Index = MiLockRangeSearch(Space, Start); Index < Space->LockRangeCount; Index++)
+    {
+        PMI_LOCK_RANGE Range = &Space->LockRanges[Index];
+        ULONG64 From;
+        ULONG64 To;
+
+        if (Range->Start >= End)
+            break;
+
+        From = (Range->Start > Start) ? Range->Start : Start;
+        To = (Range->End < End) ? Range->End : End;
+        Pages += (To - From) >> PAGE_SHIFT;
+    }
+
+    return Pages;
+}
+
+static
+BOOLEAN
+MiLockRangeReserve(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG Count)
+{
+    PMI_LOCK_RANGE Ranges;
+    ULONG Capacity;
+
+    if (Count <= Space->LockRangeCapacity)
+        return TRUE;
+
+    Capacity = (Space->LockRangeCapacity != 0) ? Space->LockRangeCapacity * 2 : 8;
+    if (Capacity < Count)
+        Capacity = Count;
+
+    Ranges = MI_ALLOCATE(Capacity * sizeof(*Ranges));
+    if (Ranges == NULL)
+        return FALSE;
+
+    if (Space->LockRangeCount != 0)
+        RtlCopyMemory(Ranges, Space->LockRanges, Space->LockRangeCount * sizeof(*Ranges));
+    if (Space->LockRanges != NULL)
+        MI_FREE(Space->LockRanges);
+
+    Space->LockRanges = Ranges;
+    Space->LockRangeCapacity = Capacity;
+    return TRUE;
+}
+
+NTSTATUS
+MiLockRangeAdd(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    ULONG64 Pages;
+    ULONG First;
+    ULONG Last;
+
+    if (!MiLockRangeReserve(Space, Space->LockRangeCount + 2))
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    Pages = ((End - Start) >> PAGE_SHIFT) - MiLockRangePages(Space, Start, End);
+
+    First = MiLockRangeSearch(Space, Start);
+    if (First != 0 && Space->LockRanges[First - 1].End == Start)
+        First--;
+
+    for (Last = First; Last < Space->LockRangeCount && Space->LockRanges[Last].Start <= End; Last++)
+    {
+        if (Space->LockRanges[Last].Start < Start)
+            Start = Space->LockRanges[Last].Start;
+        if (Space->LockRanges[Last].End > End)
+            End = Space->LockRanges[Last].End;
+    }
+
+    if (Last == First)
+    {
+        RtlMoveMemory(&Space->LockRanges[First + 1], &Space->LockRanges[First],
+                      (Space->LockRangeCount - First) * sizeof(MI_LOCK_RANGE));
+        Space->LockRangeCount++;
+    }
+    else if (Last > First + 1)
+    {
+        RtlMoveMemory(&Space->LockRanges[First + 1], &Space->LockRanges[Last],
+                      (Space->LockRangeCount - Last) * sizeof(MI_LOCK_RANGE));
+        Space->LockRangeCount -= Last - First - 1;
+    }
+
+    Space->LockRanges[First].Start = Start;
+    Space->LockRanges[First].End = End;
+    Space->LockedPages += Pages;
+    return STATUS_SUCCESS;
+}
+
+VOID
+MiLockRangeRemove(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    ULONG Index = MiLockRangeSearch(Space, Start);
+
+    while (Index < Space->LockRangeCount && Space->LockRanges[Index].Start < End)
+    {
+        PMI_LOCK_RANGE Range = &Space->LockRanges[Index];
+        ULONG64 From = (Range->Start > Start) ? Range->Start : Start;
+        ULONG64 To = (Range->End < End) ? Range->End : End;
+
+        Space->LockedPages -= (To - From) >> PAGE_SHIFT;
+
+        if (Range->Start < Start && Range->End > End)
+        {
+            if (!MiLockRangeReserve(Space, Space->LockRangeCount + 1))
+            {
+                Space->LockedPages -= (Space->LockRanges[Index].End - End) >> PAGE_SHIFT;
+                Space->LockRanges[Index].End = Start;
+                return;
+            }
+
+            RtlMoveMemory(&Space->LockRanges[Index + 1], &Space->LockRanges[Index],
+                          (Space->LockRangeCount - Index) * sizeof(MI_LOCK_RANGE));
+            Space->LockRangeCount++;
+            Space->LockRanges[Index].End = Start;
+            Space->LockRanges[Index + 1].Start = End;
+            return;
+        }
+
+        if (Range->Start < Start)
+        {
+            Range->End = Start;
+            Index++;
+            continue;
+        }
+
+        if (Range->End > End)
+        {
+            Range->Start = End;
+            return;
+        }
+
+        RtlMoveMemory(&Space->LockRanges[Index], &Space->LockRanges[Index + 1],
+                      (Space->LockRangeCount - Index - 1) * sizeof(MI_LOCK_RANGE));
+        Space->LockRangeCount--;
+    }
+}
+
+VOID
+MiLockRangeReset(
+    _Inout_ PMI_ADDRESS_SPACE Space)
+{
+    if (Space->LockRanges != NULL)
+        MI_FREE(Space->LockRanges);
+
+    Space->LockRanges = NULL;
+    Space->LockRangeCount = 0;
+    Space->LockRangeCapacity = 0;
+    Space->LockedPages = 0;
 }
 
 static

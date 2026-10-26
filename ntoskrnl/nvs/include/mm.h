@@ -45,6 +45,12 @@ typedef struct _MI_TLB_BATCH
     MI_TLB_BATCH_ENTRY Entry[MI_TLB_BATCH_SIZE];
 } MI_TLB_BATCH, *PMI_TLB_BATCH;
 
+typedef struct _MI_LOCK_RANGE
+{
+    ULONG64 Start;
+    ULONG64 End;
+} MI_LOCK_RANGE, *PMI_LOCK_RANGE;
+
 typedef struct _MI_ADDRESS_SPACE
 {
     struct _MI_SYSTEM *System;
@@ -86,6 +92,11 @@ typedef struct _MI_ADDRESS_SPACE
     ULONG64 TrimCursor;
     MI_EMPTY_TABLE EmptyTable[MI_EMPTY_TABLE_CACHE_SIZE];
     ULONG EmptyTableNext;
+
+    PMI_LOCK_RANGE LockRanges;
+    ULONG LockRangeCount;
+    ULONG LockRangeCapacity;
+    ULONG64 LockedPages;
 } MI_ADDRESS_SPACE, *PMI_ADDRESS_SPACE;
 
 typedef struct _MI_SYSTEM
@@ -611,6 +622,12 @@ BOOLEAN MiTrimPrototypePage(_Inout_ PMI_ADDRESS_SPACE Space, _In_ PMI_VAD Vad, _
 NTSTATUS MiWritePrototypePage(_Inout_ struct _MI_SYSTEM *System, _In_ ULONG Frame);
 
 ULONG MiTrimAddressSpace(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG PageTarget, _In_ BOOLEAN Aggressive);
+ULONG MiTrimRange(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Start, _In_ ULONG64 End);
+BOOLEAN MiLockRangeLocked(_In_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 VirtualAddress, _Out_ PULONG64 Next);
+ULONG64 MiLockRangePages(_In_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Start, _In_ ULONG64 End);
+NTSTATUS MiLockRangeAdd(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Start, _In_ ULONG64 End);
+VOID MiLockRangeRemove(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Start, _In_ ULONG64 End);
+VOID MiLockRangeReset(_Inout_ PMI_ADDRESS_SPACE Space);
 ULONG MiWriteModifiedPages(_Inout_ PMI_SYSTEM System, _In_ ULONG MaximumPages);
 
 NTSTATUS MiPageFileInitialize(_Out_ PMI_PAGEFILE PageFile, _In_ PMI_PAGEFILE_OPS Ops, _In_opt_ PVOID Context,

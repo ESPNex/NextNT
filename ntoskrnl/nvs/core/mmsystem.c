@@ -193,6 +193,7 @@ MiAddressSpaceDestroy(
     MI_ASSERT(Space->CloneRoot.NodeCount == 0);
     MI_ASSERT(MI_ATOMIC_READ64(&Space->PageTablePages) == 0);
 
+    MiLockRangeReset(Space);
     MiPfnShareDecrement(&Space->System->Pfn, Space->RootFrame, TRUE);
     Space->RootFrame = 0;
 }

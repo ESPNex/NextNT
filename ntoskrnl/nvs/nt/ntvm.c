@@ -1748,10 +1748,11 @@ MiLockUnlockVirtualMemory(
     _In_ BOOLEAN Lock)
 {
     MI_PROCESS_REFERENCE Target;
+    PMI_ADDRESS_SPACE Space;
     PVOID BaseAddress;
     SIZE_T RegionSize;
     NTSTATUS Status;
-    ULONG64 Va, End;
+    ULONG64 Va, Start, End, Pages, Locked;
 
     PAGED_CODE();
 
@@ -1775,35 +1776,79 @@ MiLockUnlockVirtualMemory(
     if (!NT_SUCCESS(Status))
         return Status;
 
-    Va = (ULONG64)(ULONG_PTR)PAGE_ALIGN(BaseAddress);
+    Space = MiSpaceOfProcess(Target.Process);
+    Start = (ULONG64)(ULONG_PTR)PAGE_ALIGN(BaseAddress);
     End = ((ULONG64)(ULONG_PTR)BaseAddress + RegionSize + PAGE_SIZE - 1) & ~((ULONG64)PAGE_SIZE - 1);
+    Pages = (End - Start) >> PAGE_SHIFT;
 
-    for (; Lock && Va < End && NT_SUCCESS(Status); Va += PAGE_SIZE)
+    if (Lock)
     {
-        MI_MEMORY_INFORMATION Info;
+        for (Va = Start; Va < End && NT_SUCCESS(Status); Va += PAGE_SIZE)
+        {
+            MI_MEMORY_INFORMATION Info;
 
-        Status = MiQueryVirtualMemory(MiSpaceOfProcess(Target.Process), Va, &Info);
-        if (NT_SUCCESS(Status) && (Info.State != MI_MEM_COMMIT || !MI_PROT_IS_ACCESSIBLE(Info.Protect)))
-            Status = STATUS_ACCESS_VIOLATION;
+            Status = MiQueryVirtualMemory(Space, Va, &Info);
+            if (NT_SUCCESS(Status) && (Info.State != MI_MEM_COMMIT || !MI_PROT_IS_ACCESSIBLE(Info.Protect)))
+                Status = STATUS_ACCESS_VIOLATION;
+
+            if (NT_SUCCESS(Status))
+            {
+                ULONG Attempts = 0;
+
+                do
+                {
+                    Status = MiFault(Space, Va, MiFaultRead, TRUE);
+                } while (NT_SUCCESS(MiWaitForMemory(Status, &Attempts)) && Status == STATUS_NO_MEMORY);
+            }
+        }
 
         if (NT_SUCCESS(Status))
         {
+            MI_RW_ACQUIRE_EXCLUSIVE(&Space->Lock);
+            if (Space->LockedPages + Pages - MiLockRangePages(Space, Start, End) >
+                MI_PROCESS_OF(Target.Process)->WorkingSetMinimum)
+            {
+                Status = STATUS_WORKING_SET_QUOTA;
+            }
+            else
+            {
+                Status = MiLockRangeAdd(Space, Start, End);
+            }
+            MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
+        }
+
+        for (Va = Start; Va < End && NT_SUCCESS(Status); Va += PAGE_SIZE)
+        {
             ULONG Attempts = 0;
+            NTSTATUS FaultStatus;
 
             do
             {
-                Status = MiFault(MiSpaceOfProcess(Target.Process), Va, MiFaultRead, TRUE);
-            } while (NT_SUCCESS(MiWaitForMemory(Status, &Attempts)) && Status == STATUS_NO_MEMORY);
+                FaultStatus = MiFault(Space, Va, MiFaultRead, TRUE);
+            } while (NT_SUCCESS(MiWaitForMemory(FaultStatus, &Attempts)) && FaultStatus == STATUS_NO_MEMORY);
         }
+    }
+    else
+    {
+        MI_RW_ACQUIRE_SHARED(&Space->Lock);
+        Locked = MiLockRangePages(Space, Start, End);
+        MI_RW_RELEASE_SHARED(&Space->Lock);
+
+        if (Locked != Pages)
+        {
+            MiTrimRange(Space, Start, End);
+            Status = STATUS_NOT_LOCKED;
+        }
+
+        MI_RW_ACQUIRE_EXCLUSIVE(&Space->Lock);
+        MiLockRangeRemove(Space, Start, End);
+        MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
     }
 
     MiReleaseTargetProcess(&Target);
 
     if (NT_SUCCESS(Status))
-    {
-        Status = MiReturnRegion(UBaseAddress, URegionSize, (ULONG64)(ULONG_PTR)PAGE_ALIGN(BaseAddress),
-                                End - (ULONG64)(ULONG_PTR)PAGE_ALIGN(BaseAddress));
-    }
+        Status = MiReturnRegion(UBaseAddress, URegionSize, Start, End - Start);
 
     return Status;
 }

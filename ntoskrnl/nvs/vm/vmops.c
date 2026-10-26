@@ -1001,6 +1001,7 @@ MiFreePlaceholder(
     }
     else if (Vad->FromPlaceholder && Vad->Type == MiVadPrivate && Start == VadStart && End == VadEnd)
     {
+        MiLockRangeRemove(Space, Start, End);
         Returned = MiDeleteRange(Space, Vad, Start, End, FALSE);
         Vad->CommitCharge -= Returned;
         MiReturnCommit(Space, Returned);
@@ -1059,6 +1060,7 @@ MiFreeVirtualMemory(
             return FreeType == MI_MEM_RELEASE ? STATUS_UNABLE_TO_FREE_VM : STATUS_UNABLE_TO_DECOMMIT_VM;
         }
         *RegionSize = MI_VAD_END(Vad) - MI_VAD_START(Vad);
+        MiLockRangeRemove(Space, MI_VAD_START(Vad), MI_VAD_END(Vad));
         MiAweReleaseWindowLocked(Space, Vad);
         MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
         return STATUS_SUCCESS;
@@ -1072,6 +1074,7 @@ MiFreeVirtualMemory(
             return FreeType == MI_MEM_RELEASE ? STATUS_UNABLE_TO_FREE_VM : STATUS_UNABLE_TO_DECOMMIT_VM;
         }
         *RegionSize = MI_VAD_END(Vad) - MI_VAD_START(Vad);
+        MiLockRangeRemove(Space, MI_VAD_START(Vad), MI_VAD_END(Vad));
         MiRotateReleaseLocked(Space, Vad);
         MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
         return STATUS_SUCCESS;
@@ -1090,6 +1093,7 @@ MiFreeVirtualMemory(
             return FreeType == MI_MEM_RELEASE ? STATUS_UNABLE_TO_FREE_VM : STATUS_UNABLE_TO_DECOMMIT_VM;
         }
         *RegionSize = MI_VAD_END(Vad) - MI_VAD_START(Vad);
+        MiLockRangeRemove(Space, MI_VAD_START(Vad), MI_VAD_END(Vad));
         MiReleaseLargePagesLocked(Space, Vad);
         MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
         return STATUS_SUCCESS;
@@ -1120,6 +1124,8 @@ MiFreeVirtualMemory(
             return STATUS_UNABLE_TO_FREE_VM;
         }
     }
+
+    MiLockRangeRemove(Space, Start, End);
 
     if (FreeType == MI_MEM_DECOMMIT)
     {
@@ -1447,6 +1453,7 @@ MiWorkingSetPageLocked(
 {
     PMI_PFN_DATABASE Db = &Space->System->Pfn;
     ULONG64 Frame;
+    ULONG64 Next;
     BOOLEAN Committed;
     ULONG Protection;
     PMI_PTE Slot;
@@ -1476,7 +1483,7 @@ MiWorkingSetPageLocked(
     MiPageStatus(Space, Vad, Va, TRUE, &Committed, &Protection);
 
     Information->Valid = TRUE;
-    Information->Locked = Vad->LockedPages;
+    Information->Locked = (BOOLEAN)(Vad->LockedPages || MiLockRangeLocked(Space, Va, &Next));
     Information->LargePage = (BOOLEAN)(Vad->Type == MiVadLarge);
     Information->Protection = Protection;
     Information->ShareCount = 1;
@@ -1635,6 +1642,7 @@ MiCleanAddressSpace(
 
     MiAweDestroyPagesLocked(Space);
     MiVadFlushCache(Space);
+    MiLockRangeReset(Space);
     MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
 }
 

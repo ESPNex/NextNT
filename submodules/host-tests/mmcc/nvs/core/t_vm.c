@@ -984,6 +984,83 @@ VmWorkingSetList(void)
     WorldDestroy(&World);
 }
 
+static void
+VmLockRanges(void)
+{
+    TEST_WORLD World;
+    MI_ADDRESS_SPACE Space, Child;
+    MI_WORKING_SET_EX_INFORMATION Ws;
+    ULONG64 Base = 0, Size = 16 * PAGE_SIZE, Va, Length, Next;
+    LONG64 Resident;
+    NTSTATUS Status;
+    ULONG i;
+
+    WorldCreate(&World, 256, 1, 256);
+    ProcessCreate(&World, &Space);
+    ProcessCreate(&World, &Child);
+    WorldAttach(&World, 0, &Space);
+
+    MI_RW_ACQUIRE_EXCLUSIVE(&Space.Lock);
+    for (i = 0; i < 20; i++)
+        CHECK(NT_SUCCESS(MiLockRangeAdd(&Space, 0x40000000ULL + 2 * i * PAGE_SIZE, 0x40000000ULL + (2 * i + 1) * PAGE_SIZE)));
+    CHECK(Space.LockRangeCount == 20 && Space.LockedPages == 20);
+    CHECK(NT_SUCCESS(MiLockRangeAdd(&Space, 0x40000000ULL + PAGE_SIZE, 0x40000000ULL + 39 * PAGE_SIZE)));
+    CHECK(Space.LockRangeCount == 1 && Space.LockedPages == 39);
+    MiLockRangeRemove(&Space, 0x40000000ULL, 0x40000000ULL + 40 * PAGE_SIZE);
+    CHECK(Space.LockRangeCount == 0 && Space.LockedPages == 0);
+    MI_RW_RELEASE_EXCLUSIVE(&Space.Lock);
+
+    CHECK(NT_SUCCESS(MiAllocateVirtualMemory(&Space, &Base, &Size, MI_MEM_RESERVE | MI_MEM_COMMIT, MI_PROT_READWRITE)));
+    for (i = 0; i < 16; i++)
+        CHECK(NT_SUCCESS(UserWrite64(&World, 0, Base + i * PAGE_SIZE, i)));
+
+    MI_RW_ACQUIRE_EXCLUSIVE(&Space.Lock);
+    CHECK(NT_SUCCESS(MiLockRangeAdd(&Space, Base + 2 * PAGE_SIZE, Base + 4 * PAGE_SIZE)));
+    CHECK(NT_SUCCESS(MiLockRangeAdd(&Space, Base + 6 * PAGE_SIZE, Base + 8 * PAGE_SIZE)));
+    CHECK(Space.LockRangeCount == 2 && Space.LockedPages == 4);
+    CHECK(NT_SUCCESS(MiLockRangeAdd(&Space, Base + 4 * PAGE_SIZE, Base + 6 * PAGE_SIZE)));
+    CHECK(Space.LockRangeCount == 1 && Space.LockedPages == 6);
+    CHECK(NT_SUCCESS(MiLockRangeAdd(&Space, Base + 3 * PAGE_SIZE, Base + 5 * PAGE_SIZE)));
+    CHECK(Space.LockRangeCount == 1 && Space.LockedPages == 6);
+    CHECK(MiLockRangePages(&Space, Base, Base + 16 * PAGE_SIZE) == 6);
+    CHECK(MiLockRangePages(&Space, Base + 3 * PAGE_SIZE, Base + 10 * PAGE_SIZE) == 5);
+    CHECK(MiLockRangeLocked(&Space, Base + 2 * PAGE_SIZE, &Next) && Next == Base + 8 * PAGE_SIZE);
+    CHECK(!MiLockRangeLocked(&Space, Base, &Next) && Next == Base + 2 * PAGE_SIZE);
+    CHECK(!MiLockRangeLocked(&Space, Base + 8 * PAGE_SIZE, &Next) && Next == ~0ULL);
+    MiLockRangeRemove(&Space, Base + 4 * PAGE_SIZE, Base + 5 * PAGE_SIZE);
+    CHECK(Space.LockRangeCount == 2 && Space.LockedPages == 5);
+    MI_RW_RELEASE_EXCLUSIVE(&Space.Lock);
+    CHECK(NT_SUCCESS(MiQueryWorkingSetEx(&Space, Base + 2 * PAGE_SIZE, &Ws)) && Ws.Valid && Ws.Locked);
+    CHECK(NT_SUCCESS(MiQueryWorkingSetEx(&Space, Base + 4 * PAGE_SIZE, &Ws)) && Ws.Valid && !Ws.Locked);
+
+    Resident = MI_ATOMIC_READ64(&Space.ResidentPages);
+    CHECK(MiTrimAddressSpace(&Space, 64, TRUE) == 11);
+    CHECK(MI_ATOMIC_READ64(&Space.ResidentPages) == Resident - 11);
+    for (i = 0; i < 16; i++)
+        CHECK(UserRead64(&World, 0, Base + i * PAGE_SIZE, &Status) == i && NT_SUCCESS(Status));
+    CHECK(MiTrimRange(&Space, Base, Base + 4 * PAGE_SIZE) == 2);
+    CHECK(MiTrimRange(&Space, Base, Base + 4 * PAGE_SIZE) == 0);
+    CHECK(MiTrimAddressSpace(&Space, 64, TRUE) == 9);
+
+    Va = Base + 3 * PAGE_SIZE;
+    Length = 4 * PAGE_SIZE;
+    CHECK(NT_SUCCESS(MiFreeVirtualMemory(&Space, &Va, &Length, MI_MEM_DECOMMIT)));
+    CHECK(Space.LockRangeCount == 2 && Space.LockedPages == 2);
+    CHECK(MiLockRangePages(&Space, Base, Base + 16 * PAGE_SIZE) == 2);
+
+    CHECK(NT_SUCCESS(MiCloneAddressSpace(&Space, &Child)));
+    CHECK(Child.LockRangeCount == 0 && Child.LockedPages == 0 && Space.LockedPages == 2);
+
+    Size = 0;
+    CHECK(NT_SUCCESS(MiFreeVirtualMemory(&Space, &Base, &Size, MI_MEM_RELEASE)));
+    CHECK(Space.LockRangeCount == 0 && Space.LockedPages == 0);
+    CHECK(MiPtCheck(&Space) == 0 && World.Machine.StaleTlbUses == 0);
+    ProcessDestroy(&World, &Child);
+    ProcessDestroy(&World, &Space);
+    WorldExpectClean(&World, 256);
+    WorldDestroy(&World);
+}
+
 void
 TestVm(void)
 {
@@ -999,6 +1076,7 @@ TestVm(void)
     VmExecutableWriteTrackingReset();
     VmWorkingSetEx();
     VmWorkingSetList();
+    VmLockRanges();
 }
 
 static
