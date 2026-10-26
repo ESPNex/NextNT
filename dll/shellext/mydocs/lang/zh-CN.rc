@@ -1,0 +1,13 @@
+/*
+ * PROJECT:     LiberNT mydocs
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+{
+    IDS_NOSRCFILEFOUND "找不到源文件或文件夹“%ls”。"
+}

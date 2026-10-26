@@ -14,3 +14,6 @@
 #pragma code_page(65001)
 
 #include "lang/en-US.rc"
+#ifdef LANGUAGE_ZH_CN
+#include "lang/zh-CN.rc"
+#endif

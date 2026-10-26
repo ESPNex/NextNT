@@ -1,0 +1,32 @@
+// Chinese (Simplified) resources
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+   IDS_APP_TITLE           "控制台任务管理器，由 Aleksey Bragin <aleksey@reactos.org> 开发"
+
+   IDS_COLUMN_NUMBER       "# "
+   IDS_COLUMN_IMAGENAME    "映像名称                  "
+   IDS_COLUMN_PID          "PID  "
+   IDS_COLUMN_CPU          "CPU"
+   IDS_COLUMN_MEM          "内存使用"
+   IDS_COLUMN_MEM_UNIT     "KB"
+   IDS_COLUMN_PF           "页面错误"
+
+   IDS_IDLE_PROCESS        "系统空闲进程"
+   IDS_YES                 "Y"
+   IDS_NO                  "N"
+
+   IDS_MENU                "按键: q - 退出, k - 结束进程"
+   IDS_MENU_QUIT           "Q"
+   IDS_MENU_KILL_PROCESS   "K"
+
+   IDS_KILL_PROCESS        "确实要结束此进程吗? (y/n)"
+   IDS_KILL_PROCESS_ERR1   "无法终止此进程..."
+   IDS_KILL_PROCESS_ERR2   "无法终止进程 %d (OpenProcess 失败)"
+
+   IDS_CTM_GENERAL_ERR1    "ctm: 无法使用控制台。"
+   IDS_CTM_GENERAL_ERR2    "ctm: 无法对输入控制台执行 GetConsoleMode()。"
+   IDS_CTM_GENERAL_ERR3    "ctm: 无法对输出控制台执行 GetConsoleMode()。"
+END

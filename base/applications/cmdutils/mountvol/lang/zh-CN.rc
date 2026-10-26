@@ -1,0 +1,31 @@
+/*
+ * PROJECT:     LiberNT Mount Volume Command
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "创建、删除或列出卷装入点。\n\n\
+MOUNTVOL [drive:]path VolumeName\n\
+MOUNTVOL [drive:]path /D\n\
+MOUNTVOL [drive:]path /L\n\
+MOUNTVOL /R\n\
+MOUNTVOL /N\n\
+MOUNTVOL /E\n\
+MOUNTVOL drive: /S\n\n\
+    path        将包含装入点的现有空 NTFS 目录或驱动器号。\n\
+    VolumeName  要装入的卷，格式为 \\\\?\\Volume{GUID}\\。\n\
+    /D          从路径中删除卷装入点。\n\
+    /L          显示装入在该路径上的卷的名称。\n\
+    /R          删除系统中已不存在的卷的装入点设置。\n\
+    /N          禁止自动装入新卷。\n\
+    /E          重新启用自动装入新卷。\n\
+    /S          将 EFI 系统分区装入到该驱动器。\n\n"
+    IDS_VOLUME_LIST "VolumeName 的可能值以及当前的装入点如下:\n\n"
+    IDS_NO_MOUNT_POINTS "        *** 无装入点 ***\n"
+    IDS_INVALID_PARAMETERS "参数错误。\n"
+END

@@ -1,0 +1,266 @@
+/*
+ * PROJECT:     LiberNT Management Console
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+IDM_CONSOLE_SMALL MENU
+BEGIN
+    POPUP "文件(&F)"
+    BEGIN
+        MENUITEM "新建(&N)\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "打开(&O)...\tCtrl+O", IDM_FILE_OPEN
+        MENUITEM SEPARATOR
+        MENUITEM "退出(&X)\tAlt+F4", IDM_FILE_EXIT
+    END
+    POPUP "帮助(&H)"
+    BEGIN
+        MENUITEM "关于 ReactOS 管理控制台(&A)", IDM_HELP_ABOUT_MMC
+    END
+END
+
+IDM_CONSOLE_LARGE MENU
+BEGIN
+    POPUP "文件(&F)"
+    BEGIN
+        MENUITEM "新建(&N)\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "打开(&O)...\tCtrl+O", IDM_FILE_OPEN
+        MENUITEM "保存(&S)\tCtrl+S", IDM_FILE_SAVE
+        MENUITEM "另存为(&A)...", IDM_FILE_SAVEAS
+        MENUITEM SEPARATOR
+        MENUITEM "添加/删除管理单元...\tCtrl+M", IDM_FILE_ADD
+        MENUITEM "选项...", IDM_FILE_OPTIONS
+        MENUITEM SEPARATOR
+        MENUITEM "退出(&X)\tAlt+F4", IDM_FILE_EXIT
+    END
+    POPUP "操作(&A)"
+    BEGIN
+        MENUITEM "从这里创建窗口(&W)", IDM_ACTION_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "重命名(&M)", IDM_ACTION_RENAME
+        MENUITEM "导出列表(&L)", IDM_ACTION_EXPORT_LIST
+    END
+    POPUP "查看(&V)"
+    BEGIN
+        MENUITEM "添加/删除列", IDM_VIEW_COLUMNS
+        MENUITEM SEPARATOR
+        MENUITEM "大图标", IDM_VIEW_LARGE_ICONS
+        MENUITEM "小图标", IDM_VIEW_SMALL_ICONS
+        MENUITEM "列表", IDM_VIEW_LIST
+        MENUITEM "详细信息", IDM_VIEW_DETAILS
+        MENUITEM SEPARATOR
+        MENUITEM "自定义...", IDM_VIEW_CUSTOMIZE
+    END
+    POPUP "收藏夹(&O)"
+    BEGIN
+        MENUITEM "添加到收藏夹(&A)...", IDM_FAVORITES_ADD
+        MENUITEM "整理收藏夹(&O)...", IDM_FAVORITES_ORGANIZE
+    END
+    POPUP "窗口(&W)"
+    BEGIN
+        MENUITEM "新建窗口(&N)\tCtrl+W", IDM_WINDOWS_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "层叠(&C)", IDM_WINDOWS_CASCADE
+        MENUITEM "水平平铺(&T)", IDM_WINDOWS_TILE
+        MENUITEM "排列图标(&I)", IDM_WINDOWS_ARRANGE
+    END
+    POPUP "帮助(&H)"
+    BEGIN
+        MENUITEM "帮助主题(&H)", IDM_HELP_TOPICS
+        MENUITEM SEPARATOR
+        MENUITEM "关于 ReactOS 管理控制台(&A)", IDM_HELP_ABOUT_MMC
+    END
+END
+
+IDM_TREEVIEW_CONTEXT MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "从这里创建窗口(&W)", IDM_ACTION_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "重命名(&M)", IDM_ACTION_RENAME
+    END
+
+    POPUP ""
+    BEGIN
+        POPUP "查看"
+        BEGIN
+            MENUITEM "添加/删除列", IDM_VIEW_COLUMNS
+            MENUITEM SEPARATOR
+            MENUITEM "大图标", IDM_VIEW_LARGE_ICONS
+            MENUITEM "小图标", IDM_VIEW_SMALL_ICONS
+            MENUITEM "列表", IDM_VIEW_LIST
+            MENUITEM "详细信息", IDM_VIEW_DETAILS
+            MENUITEM SEPARATOR
+            MENUITEM "自定义...", IDM_VIEW_CUSTOMIZE
+        END
+        MENUITEM "从这里创建窗口(&W)", IDM_ACTION_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "重命名(&M)", IDM_ACTION_RENAME
+    END
+END
+
+IDD_DIALOG_ADD DIALOGEX 0, 0, 471, 274
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_CAPTION
+CAPTION "添加或删除管理单元"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "你可以从计算机上可用的管理单元中为此控制台选择管理单元，并配置所选的管理单元集。对于可扩展的管理单元，你可以配置要启用哪些扩展。", IDC_STATIC, 8, 7, 457, 23
+    LTEXT           "可用的管理单元:", IDC_STATIC, 7, 30, 163, 8
+    CONTROL         "", IDC_ADD_LIST_AVAILABLE, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_EX_FULLROWSELECT | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP, 7, 40, 163, 157
+    PUSHBUTTON      "添加(&A) >", IDC_ADD_BUTTON_ADD, 175, 40, 72, 14
+    PUSHBUTTON      "< 删除(&R)", IDC_ADD_BUTTON_REMOVE, 175, 58, 72, 14
+    LTEXT           "父管理单元:", IDC_ADD_TEXT_PARENT, 256, 30, 127, 8, WS_CHILD | NOT WS_VISIBLE
+    CONTROL         "", IDC_ADD_LIST_PARENT, "ComboBoxEx32", CBS_DROPDOWNLIST | WS_CHILD | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 256, 40, 127, 81
+    LTEXT           "所选的管理单元:", IDC_ADD_TEXT_SELECTED, 256, 30, 127, 8
+    CONTROL         "", IDC_ADD_LIST_SELECTED, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 256, 40, 127, 157
+    PUSHBUTTON      "上移(&U)", IDC_ADD_BUTTON_UP, 392, 40, 72, 14
+    PUSHBUTTON      "下移(&D)", IDC_ADD_BUTTON_DOWN, 392, 58, 72, 14
+
+    PUSHBUTTON      "高级...", IDC_ADD_ADVANCED, 392, 183, 72, 14
+
+    LTEXT           "描述:", IDC_STATIC, 7, 204, 162, 8
+    EDITTEXT        IDC_ADD_DESCRIPTION, 7, 214, 457, 33, ES_READONLY | ES_MULTILINE | WS_VSCROLL | WS_BORDER
+    DEFPUSHBUTTON   "确定", IDOK, 357, 254, 50, 14
+    PUSHBUTTON      "取消", IDCANCEL, 414, 254, 50, 14
+END
+
+IDD_CUSTOMIZE DIALOGEX 0, 0, 214, 223
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_CAPTION
+CAPTION "自定义视图"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT "选中或清除复选框，以显示或隐藏控制台窗口中的项目。", IDC_STATIC, 7, 7, 194, 22
+    GROUPBOX "MMC", IDC_STATIC, 7, 31, 200, 111
+    AUTOCHECKBOX "控制台树(&C)", IDC_CUSTOMIZE_SCOPEPANE, 13, 42, 160, 10
+    AUTOCHECKBOX "标准菜单(“操作”和“查看”)(&E)", IDC_CUSTOMIZE_MENUS, 13, 56, 160, 10
+    AUTOCHECKBOX "标准工具栏(&B)", IDC_CUSTOMIZE_TOOLBAR, 13, 70, 160, 10
+    AUTOCHECKBOX "状态栏(&S)", IDC_CUSTOMIZE_STATUSBAR, 13, 84, 160, 10
+    AUTOCHECKBOX "描述栏(&D)", IDC_CUSTOMIZE_DESCRIPTIONBAR, 13, 98, 160, 10
+    AUTOCHECKBOX "任务板导航选项卡(&N)", IDC_CUSTOMIZE_TABS, 13, 112, 160, 10
+    AUTOCHECKBOX "操作窗格(&A)", IDC_CUSTOMIZE_ACTIONSPANE, 13, 126, 160, 10
+    GROUPBOX "管理单元", IDC_STATIC, 7, 150, 200, 42
+    AUTOCHECKBOX "菜单(&M)", IDC_CUSTOMIZE_SNAPIN_MENUS, 13, 162, 160, 10
+    AUTOCHECKBOX "工具栏(&T)", IDC_CUSTOMIZE_SNAPIN_TOOLBARS, 13, 176, 160, 10
+    DEFPUSHBUTTON "确定", IDOK, 157, 200, 50, 14
+END
+
+IDD_CONSOLEOPTIONS DIALOGEX 0, 0, 252, 218
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_CAPTION
+CAPTION "控制台"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    ICON "", IDC_CONSOLEICON, 7, 7, 20, 20
+    EDITTEXT IDC_CONSOLENAME, 37, 11, 134, 12, NOT WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL
+    PUSHBUTTON "更改图标(&H)...", IDC_CONSOLESYMBOL, 177, 10, 68, 14
+
+    LTEXT "这些选项将在你下次打开 MMC 时生效。", IDC_STATIC, 7, 44, 238, 19
+    LTEXT "控制台模式(&C):", IDC_STATIC, 7, 70, 56, 8
+    COMBOBOX IDC_CONSOLEMODE, 67, 68, 178, 130, CBS_DROPDOWNLIST | WS_GROUP
+    GROUPBOX "描述", IDC_STATIC, 7, 87, 238, 60
+    LTEXT "", IDC_CONSOLEDESCRIPTION, 14, 100, 224, 43
+
+    AUTOCHECKBOX "不保存对此控制台的更改(&S)", IDC_CONSOLENOSAVE, 13, 160, 160, 10
+    AUTOCHECKBOX "允许用户自定义视图(&V)", IDC_CONSOLECUSTOM, 13, 172, 160, 10
+
+    DEFPUSHBUTTON   "确定",IDOK,140,197,50,14,WS_TABSTOP
+    PUSHBUTTON      "取消",IDCANCEL,194,197,50,14,WS_TABSTOP
+END
+
+IDD_ABOUT_SNAPIN DIALOGEX 0, 0, 206, 127
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "信息"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_ABOUT_ICON, 9, 9, 20, 20
+    EDITTEXT IDC_ABOUT_INFO, 53, 9, 136, 31, NOT WS_BORDER | ES_LEFT | ES_MULTILINE | ES_READONLY | ES_WANTRETURN | WS_CHILD | WS_VISIBLE | WS_TABSTOP
+    EDITTEXT IDC_ABOUT_DESCRIPTION, 9, 52, 188, 51, NOT WS_BORDER | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_WANTRETURN | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON "确定", IDOK, 149, 106, 50, 14
+END
+
+IDD_ADVANCED DIALOGEX 0, 0, 300, 73
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "高级"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT "默认情况下，管理单元会被添加到控制台根节点。选中此复选框后，你可以选择父管理单元。", IDC_STATIC, 7, 7, 277, 27
+    AUTOCHECKBOX "允许更改父管理单元", IDC_ADVANCED_CHECK, 7, 37, 278, 10
+    DEFPUSHBUTTON "确定", IDOK, 189, 53, 50, 14
+    PUSHBUTTON "取消", IDCANCEL, 243, 53, 50, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_APPTITLE "ReactOS 管理控制台"
+    IDS_CONSOLETITLE "控制台%1!u!"
+    IDS_MODULE "模块"
+    IDS_VENDOR "供应商"
+    IDS_ABOUTTITLE "关于"
+
+    IDS_CONSOLEROOT "控制台根节点"
+
+    IDS_AUTHORMODE "作者模式"
+    IDS_USERMODE_FULL "用户模式 - 完全访问"
+    IDS_USERMODE_MULTIPLE "用户模式 - 受限访问，多窗口"
+    IDS_USERMODE_SINGLE "用户模式 - 受限访问，单窗口"
+
+    IDS_AUTHORMODE_DESC "授予用户对所有 MMC 功能的完全访问权限，包括添加或删除管理单元、创建新窗口、创建任务板视图以及查看树的所有部分。"
+    IDS_USERMODE_FULL_DESC "禁止用户添加或删除管理单元，或更改管理单元控制台属性。用户对树具有完全访问权限。"
+    IDS_USERMODE_MULTIPLE_DESC "禁止用户访问管理单元控制台窗口中不可见的树区域。"
+    IDS_USERMODE_SINGLE_DESC "以单窗口模式打开管理单元控制台，并禁止用户访问该管理单元控制台窗口中不可见的树区域。"
+
+    IDS_ABOUT_VERSION "版本: "
+    IDS_ABOUT_SNAPIN "关于 %s(&B)..."
+END
+
+STRINGTABLE
+BEGIN
+    IDM_TB_UNDO         "撤消"
+    IDM_TB_REDO         "重做"
+    IDM_TB_UP           "向上一级"
+    IDM_TB_SCOPE_PANE   "显示/隐藏控制台树"
+    IDM_TB_EXPORT_LIST  "导出列表"
+    IDM_TB_HELP         "帮助"
+    IDM_TB_ACTIONS_PANE "显示/隐藏操作窗格"
+END
+
+STRINGTABLE
+BEGIN
+    IDM_FILE_NEW      "创建新的控制台。"
+    IDM_FILE_OPEN     "打开现有的控制台。"
+    IDM_FILE_SAVE     "保存当前控制台。"
+    IDM_FILE_SAVEAS   "将当前控制台的副本保存到单独的文件中。"
+    IDM_FILE_ADD      "允许你向管理单元控制台添加管理单元或从中删除管理单元。"
+    IDM_FILE_OPTIONS  "更改用户和/或管理单元控制台的选项。"
+    IDM_FILE_RECENT1  "打开此管理单元控制台。"
+    IDM_FILE_RECENT2       "打开此管理单元控制台。"
+    IDM_FILE_RECENT3       "打开此管理单元控制台。"
+    IDM_FILE_RECENT4       "打开此管理单元控制台。"
+    IDM_FILE_EXIT          "退出程序并提示保存文档。"
+
+    IDM_ACTION_NEW         "打开一个以此节点为根的新窗口。"
+    IDM_ACTION_RENAME      "重命名当前所选内容。"
+    IDM_ACTION_EXPORT_LIST "将当前列表导出到文件。"
+
+    IDM_VIEW_COLUMNS       "打开一个对话框，你可以在其中修改结果窗格中的列。"
+    IDM_VIEW_LARGE_ICONS   "使用大图标显示项目。"
+    IDM_VIEW_SMALL_ICONS   "使用小图标显示项目。"
+    IDM_VIEW_LIST          "以列表形式显示项目。"
+    IDM_VIEW_DETAILS       "在窗口中显示有关每个项目的信息。"
+    IDM_VIEW_CUSTOMIZE     "更改视图的选项。"
+
+    IDM_FAVORITES_ADD      "将当前视图添加到收藏夹列表。"
+    IDM_FAVORITES_ORGANIZE "允许你将收藏夹整理到文件夹中。"
+
+    IDM_WINDOWS_NEW        "新建窗口。"
+    IDM_WINDOWS_CASCADE    "以重叠方式排列窗口。"
+    IDM_WINDOWS_TILE       "以平铺方式排列窗口。"
+    IDM_WINDOWS_ARRANGE    "在窗口底部排列图标。"
+
+    IDM_HELP_TOPICS        "打开帮助。"
+    IDM_HELP_ABOUT_MMC     "显示程序信息、版本号和版权。"
+    IDM_HELP_ABOUT_SNAPIN  "显示管理单元信息、版本号和版权。"
+END

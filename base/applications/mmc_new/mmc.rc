@@ -29,3 +29,6 @@ IDB_TOOLBAR BITMAP "resources/toolbar.bmp"
 #ifdef LANGUAGE_EN_US
     #include "lang/en-US.rc"
 #endif
+#ifdef LANGUAGE_ZH_CN
+    #include "lang/zh-CN.rc"
+#endif

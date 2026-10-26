@@ -1,0 +1,23 @@
+/*
+ * PROJECT:     LiberNT msctfime.ime
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_OK               "确定"
+    IDS_CANCEL           "取消"
+    IDS_ABORT            "中止(&A)"
+    IDS_RETRY            "重试(&R)"
+    IDS_IGNORE           "忽略(&I)"
+    IDS_YES              "是(&Y)"
+    IDS_NO               "否(&N)"
+
+    IDS_ENTER            "输入"
+    IDS_FINALIZE_STRING  "确定字符串"
+    IDS_CONVERSION       "转换"
+END

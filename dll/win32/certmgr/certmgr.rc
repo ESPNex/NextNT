@@ -22,3 +22,6 @@ IDR_CERTMGRABOUT REGISTRY "res/certmgrabout.rgs"
 #ifdef LANGUAGE_EN_US
     #include "lang/en-US.rc"
 #endif
+#ifdef LANGUAGE_ZH_CN
+    #include "lang/zh-CN.rc"
+#endif

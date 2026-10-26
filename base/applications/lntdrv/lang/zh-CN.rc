@@ -1,0 +1,184 @@
+/*
+ * PROJECT:     LiberNT Driver Installer
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+IDD_FRAME DIALOGEX 0, 0, 420, 240
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "LiberNT 驱动程序安装程序"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "", IDC_FRAME_TITLE, 120, 10, 290, 14, SS_NOPREFIX
+    LTEXT "", IDC_FRAME_SUBTITLE, 120, 26, 290, 18, SS_NOPREFIX
+    LTEXT "", IDC_FRAME_PAGE, 120, 48, 290, 160, NOT WS_VISIBLE
+    CONTROL "", -1, "Static", SS_ETCHEDHORZ, 120, 212, 300, 1
+    PUSHBUTTON "上一步(&B)", IDC_FRAME_BACK, 250, 219, 50, 14
+    DEFPUSHBUTTON "下一步(&N)", IDC_FRAME_NEXT, 305, 219, 50, 14
+    PUSHBUTTON "取消", IDCANCEL, 360, 219, 50, 14
+END
+
+IDD_DEVICES DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "", IDC_DEVICES_STATUS, 0, 0, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+    CONTROL "", IDC_DEVICES, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 0, 12, 290, 116
+    LTEXT "", IDC_DEVICES_NOTE, 0, 132, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+    PUSHBUTTON "详细信息(&D)", IDC_DETAILS, 0, 146, 56, 14
+    PUSHBUTTON "全选(&A)", IDC_SELECT_ALL, 60, 146, 56, 14
+    PUSHBUTTON "全部清除(&C)", IDC_SELECT_NONE, 120, 146, 56, 14
+    PUSHBUTTON "历史记录(&H)", IDC_HISTORY, 234, 146, 56, 14
+END
+
+IDD_PROGRESS DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "", IDC_PROGRESS_TEXT, 0, 44, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT "", IDC_PROGRESS_DETAIL, 0, 58, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+END
+
+IDD_DONE DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL "", IDC_RESULTS, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 0, 0, 290, 136
+    LTEXT "", IDC_DONE_NOTE, 0, 140, 290, 18, SS_NOPREFIX
+END
+
+IDD_HISTORY DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL "", IDC_HISTORY_LIST, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 0, 0, 290, 140
+    PUSHBUTTON "回滚(&R)", IDC_ROLLBACK, 0, 146, 56, 14
+    PUSHBUTTON "删除驱动程序(&V)", IDC_REMOVE, 60, 146, 64, 14
+    LTEXT "", IDC_HISTORY_NOTE, 130, 149, 160, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+END
+
+IDD_DETAILS DIALOGEX 0, 0, 300, 200
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "设备详细信息"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    EDITTEXT IDC_DETAILS_TEXT, 7, 7, 286, 166, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | ES_AUTOHSCROLL | WS_VSCROLL | WS_HSCROLL
+    DEFPUSHBUTTON "确定", IDOK, 243, 179, 50, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CAPTION "LiberNT 驱动程序安装程序"
+    IDS_BACK "上一步(&B)"
+    IDS_NEXT "下一步(&N)"
+    IDS_CANCEL "取消"
+    IDS_INSTALL "安装(&I)"
+    IDS_FINISH "完成(&F)"
+    IDS_DEVICES_TITLE "此电脑的驱动程序"
+    IDS_DEVICES_SUBTITLE "没有驱动程序或使用第三方驱动程序，且在 Microsoft 更新目录中有更新驱动程序的设备。勾选要安装的设备。"
+    IDS_INSTALL_TITLE "正在安装驱动程序"
+    IDS_INSTALL_SUBTITLE "请等待驱动程序安装完成。"
+    IDS_DONE_TITLE "已完成"
+    IDS_DONE_SUBTITLE "每个设备的结果。"
+    IDS_HISTORY_TITLE "从目录安装的驱动程序"
+    IDS_HISTORY_SUBTITLE "LiberNT 驱动程序安装程序在此电脑上所做的每项更改，最新的在前。"
+    IDS_COL_DEVICE "设备"
+    IDS_COL_VERSION "版本"
+    IDS_COL_DRIVER "驱动程序"
+    IDS_COL_RESULT "结果"
+    IDS_COL_DATE "日期"
+    IDS_COL_ACTION "操作"
+    IDS_DEVICES_NOTE "%1 个设备，%2 个没有驱动程序，已勾选 %3 个。正在为 %4 搜索驱动程序。"
+    IDS_INSTALL_START "正在安装 %1 个驱动程序"
+    IDS_INSTALL_STEP "第 %1 个驱动程序，共 %2 个: %3"
+    IDS_INSTALL_CANCELLING "将在当前步骤完成后停止..."
+    IDS_PROGRESS_QUERY "正在向 Microsoft 更新目录查询程序包"
+    IDS_PROGRESS_DOWNLOAD "正在下载 %1 (%2 KB)"
+    IDS_PROGRESS_UNPACK "正在解压 %1"
+    IDS_PROGRESS_VERIFY "正在检查程序包签名"
+    IDS_PROGRESS_CHECK "正在检查驱动程序是否适合此设备"
+    IDS_PROGRESS_INSTALL "正在为 %1 安装驱动程序"
+    IDS_RESULT_INSTALLED "已安装"
+    IDS_RESULT_REBOOT "已安装，需要重新启动"
+    IDS_RESULT_SKIPPED "已有驱动程序"
+    IDS_RESULT_FILE "%1 (%2)"
+    IDS_DONE_FAILED "有 %1 个驱动程序无法安装。"
+    IDS_DONE_OK "驱动程序已安装。"
+    IDS_DONE_REBOOT "请重新启动电脑以完成安装。"
+    IDS_DONE_CANCELLED "安装已停止。"
+    IDS_ACTION_INSTALL "安装"
+    IDS_ACTION_ROLLBACK "回滚"
+    IDS_ACTION_REMOVE "删除"
+    IDS_ROLLBACK_CONFIRM "要恢复 %1 之前使用的驱动程序(版本 %2)吗?"
+    IDS_REMOVE_CONFIRM "要从 %1 删除目录驱动程序吗? 之后 LiberNT 将为该设备安装它现有的最佳驱动程序。"
+    IDS_ACTION_DONE "完成。"
+    IDS_ACTION_DONE_REBOOT "完成。请重新启动电脑以完成操作。"
+    IDS_ACTION_FAILED "更改失败: %1"
+    IDS_HISTORY_WORKING "正在处理..."
+    IDS_ADMIN_REQUIRED "安装和删除驱动程序需要管理员权限。"
+    IDS_ADMIN_RESTART "要以管理员身份重新启动 LiberNT 驱动程序安装程序吗?"
+    IDS_WORKER_FAILED "无法启动工作线程: %1"
+    IDS_ERROR_CHECKSUM "下载的内容与目录发布的校验和不匹配。"
+    IDS_ERROR_SERVER "Microsoft 更新目录返回了意外的应答。"
+    IDS_ERROR_CANCELLED "已取消。"
+    IDS_ERROR_NOT_BETTER "已安装的驱动程序与此设备更匹配。"
+    IDS_ERROR_NO_COMPAT "此程序包中没有适用于此电脑上该设备的驱动程序。"
+    IDS_ERROR_FORMAT "Microsoft 更新目录页面已更改，无法读取。LiberNT 驱动程序安装程序需要更新。"
+    IDS_ERROR_PROGRAM "此目录程序包是一个程序，而不是驱动程序包。如果你信任它，请自行运行。"
+    IDS_ERROR_ALREADY "此驱动程序已安装。"
+    IDS_ERROR_NOT_NEWER "已安装的驱动程序比此驱动程序更新。"
+    IDS_ERROR_NOT_COVERED "程序包中的某个文件不在其签名范围内。"
+    IDS_ERROR_NOT_IN_USE "该设备已不再使用此目录驱动程序。"
+    IDS_ERROR_NO_SIGNATURE "此程序包没有签名。"
+    IDS_ERROR_OFFLINE "无法访问 Microsoft 更新目录。请检查此电脑是否已连接到 Internet。"
+    IDS_ERROR_SIGNATURE "程序包签名不受信任: %1"
+    IDS_ERROR_CODE "错误 %1"
+    IDS_STATUS_MISSING "缺少驱动程序"
+    IDS_STATUS_PROBLEM "问题代码 %1"
+    IDS_STATUS_WORKING "正常工作"
+    IDS_STATUS_STOPPED "未启动"
+    IDS_SOURCE_CATALOG "Microsoft 更新目录"
+    IDS_SOURCE_THIRD_PARTY "第三方"
+    IDS_DETAIL_NAME "名称: %1"
+    IDS_DETAIL_STATUS "状态: %1"
+    IDS_DETAIL_CLASS "类别: %1"
+    IDS_DETAIL_INSTANCE "实例 ID: %1"
+    IDS_DETAIL_DRIVER "驱动程序: %1 %2 %3"
+    IDS_DETAIL_INF "INF: %1"
+    IDS_DETAIL_SOURCE "来源: %1"
+    IDS_DETAIL_SERVICE "服务: %1"
+    IDS_DETAIL_HARDWARE "硬件 ID:"
+    IDS_DETAIL_COMPATIBLE "兼容 ID:"
+    IDS_DETAIL_QUERIES "在目录中搜索的 ID:"
+    IDS_DETAIL_NONE "无"
+    IDS_NOTE_NOT_SEARCHABLE "无法搜索"
+    IDS_NOTE_NOT_FOUND "不在目录中"
+    IDS_NOTE_FAILED "搜索失败: %1"
+    IDS_NOTE_AVAILABLE "有可用的驱动程序: %1"
+    IDS_NOTE_NEWER "有更新的驱动程序: %1"
+    IDS_NOTE_CURRENT "最新"
+    IDS_CLI_LIST_ERROR "无法列出设备: %1"
+    IDS_CLI_LIST_TOTAL "%1 个设备，体系结构 %2"
+    IDS_CLI_MISSING_TOTAL "%1 个设备没有驱动程序"
+    IDS_CLI_ALREADY "%1: 已有驱动程序"
+    IDS_CLI_INSTALLING "%1 (%2): 正在安装"
+    IDS_CLI_INSTALLED "%1: 已安装 %2"
+    IDS_CLI_INSTALLED_REBOOT "%1: 已安装 %2，需要重新启动"
+    IDS_CLI_FAILED "%1: %2"
+    IDS_CLI_SUMMARY "已安装 %1 个，不在目录中 %2 个，失败 %3 个。"
+    IDS_CLI_RESTART "需要重新启动。"
+    IDS_CLI_NO_DEVICE "没有实例 ID 为 %1 的现有设备。"
+    IDS_CLI_USAGE "用法: lntdrv [/list | /scan | /installall | /search <instance id> | /install <instance id> [update id]]"
+    IDS_NOTE_OTHER_ARCH "目录中没有 %1 驱动程序；只有适用于 %2 的驱动程序"
+    IDS_NOTE_OTHER_WINDOWS "目录中只有适用于其他 Windows 版本的驱动程序"
+    IDS_ERROR_OTHER_ARCH "目录中没有适用于此电脑体系结构的驱动程序。"
+    IDS_CLI_GROUP "%1 (%2，%3 个设备)"
+    IDS_DONE_NOTHING "未安装任何驱动程序。"
+    IDS_SCAN_PROGRESS "正在搜索 Microsoft 更新目录... 第 %1 个设备，共 %2 个"
+    IDS_SCAN_FOUND "为 %1 个设备找到了更新的驱动程序。"
+    IDS_SCAN_NONE "Microsoft 更新目录中没有可为此电脑安装的新内容。"
+    IDS_RESULT_UNSIGNED "签名未验证"
+END

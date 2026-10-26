@@ -1,0 +1,14 @@
+/*
+ * PROJECT:     LiberNT Version Program
+ * LICENSE:     MIT (https://spdx.org/licenses/MIT)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_OSINFO_COMPAT_FORMAT "报告为 NT %s (内部版本 %s%s)"
+    IDS_OSINFO_SPK_FORMAT ": %s"
+END

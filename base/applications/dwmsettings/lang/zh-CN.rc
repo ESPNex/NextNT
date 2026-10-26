@@ -1,0 +1,39 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Ahmed ARIF <arif193@gmail.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+IDD_SETTINGS DIALOGEX 0, 0, 282, 284
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "DWM 设置"
+FONT 9, "MS Shell Dlg"
+BEGIN
+    LTEXT "自定义桌面窗口效果。每项更改都会立即保存。", -1, 12, 12, 258, 26
+    GROUPBOX "GPU 窗口效果", IDC_EFFECTS_GROUP, 12, 42, 258, 110
+    AUTOCHECKBOX "窗口动画(&W)", IDC_ANIMATIONS, 24, 58, 230, 12
+    AUTOCHECKBOX "窗口阴影(&S)", IDC_SHADOWS, 24, 76, 230, 12
+    AUTOCHECKBOX "启用玻璃外观(&G)", IDC_ACRYLIC, 24, 94, 230, 12
+    AUTOCHECKBOX "模糊窗口标题(&T)", IDC_BLUR, 36, 112, 218, 12
+    AUTOCHECKBOX "模糊窗口内容(&N)", IDC_CONTENT_BLUR, 36, 130, 218, 12
+    GROUPBOX "颜色方案", IDC_SCHEME_GROUP, 12, 158, 258, 60
+    AUTORADIOBUTTON "浅色(&L)", IDC_SCHEME_LIGHT, 24, 176, 100, 12, WS_GROUP
+    AUTORADIOBUTTON "深色(&D)", IDC_SCHEME_DARK, 140, 176, 100, 12
+    LTEXT "请先选择 Windows 8 视觉样式，才能使用玻璃外观和颜色方案。", IDC_THEME_NOTE, 24, 194, 238, 18
+    LTEXT "", IDC_STATUS, 12, 228, 258, 28
+    DEFPUSHBUTTON "关闭", IDCANCEL, 210, 262, 60, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ACTIVE "GPU 合成处于活动状态。更改无需重新启动 DWM 即可生效。"
+    IDS_APPLIED "已保存。DWM 已为下一个 GPU 帧重新加载效果。无需重新启动。"
+    IDS_INACTIVE "已保存。DWM 已为下一个软件帧重新加载效果。无需重新启动。"
+    IDS_UNAVAILABLE "已保存。DWM 未确认此更改。如果效果没有更新，请重新启动 DWM。"
+    IDS_RELOAD_FAILED "已保存，但 DWM 无法读取所有首选项。某些效果可能仍在使用之前的设置。"
+    IDS_READ_FAILED "无法读取已保存的设置。错误 %lu。"
+    IDS_WRITE_FAILED "无法保存此更改。错误 %lu。"
+    IDS_MISMATCH "已保存，但活动的 DWM 设置不同。请再次选择该选项以重试。"
+    IDS_DISCONNECTED "DWM 未连接到此面板。更改将被保存；如果没有生效，请重新启动 DWM。"
+    IDS_GPU_UNAVAILABLE "软件合成处于活动状态。更改无需重新启动 DWM 即可生效。"
+END

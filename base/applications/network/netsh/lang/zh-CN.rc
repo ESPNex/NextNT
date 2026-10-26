@@ -1,0 +1,92 @@
+/*
+ * PROJECT:     LiberNT NetSh
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+/* Basic application information */
+STRINGTABLE
+BEGIN
+    IDS_APP_USAGE "\n用法: netsh [-a AliasFile] [-c Context] [-r RemoteMachine] \
+\n             [Command | -f ScriptFile]\n"
+    IDS_OPEN_FAILED      "无法打开文件 %ls。\n"
+    IDS_THIS_COMMANDS    "\n此上下文中的命令:\n"
+    IDS_CONTEXT_COMMANDS "\n%s 上下文中的命令:\n"
+    IDS_ALIAS_NOT_FOUND  "找不到以下别名: %s。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_HELP_HEADER       "\n下列命令有效:\n"
+    IDS_HELP_FOOTER       "\n若要查看命令的帮助，请键入命令，后跟空格，\n 然后键入 ?。\n\n"
+    IDS_SUBCONTEXT_HEADER "\n下列子上下文可用:\n"
+
+    IDS_HLP_UP             "返回到上一级上下文。\n"
+    IDS_HLP_UP_EX          "\n用法: %1!s!\n\n        返回到上一级上下文。\n"
+    IDS_HLP_EXIT           "退出程序。\n"
+    IDS_HLP_EXIT_EX        "\n用法: %1!s!\n\n        退出程序。\n"
+    IDS_HLP_HELP           "显示命令列表。\n"
+    IDS_HLP_HELP_EX        "\n用法: %1!s!\n\n        显示命令列表。\n"
+    IDS_HLP_POPD           "从堆栈上弹出一个上下文。\n"
+    IDS_HLP_POPD_EX        "\n用法: %1!s!\n\n        从堆栈上弹出一个上下文。\n"
+    IDS_HLP_PUSHD          "将当前上下文压入堆栈。\n"
+    IDS_HLP_PUSHD_EX       "\n用法: %1!s!\n\n        将当前上下文压入堆栈。\n"
+    IDS_HLP_EXEC           "运行脚本文件。\n"
+    IDS_HLP_EXEC_EX        "\n用法: %1!s! <脚本文件名>\n\n        加载脚本文件并运行它。\n"
+    IDS_HLP_DUMP           "显示一个配置脚本。\n"
+    IDS_HLP_DUMP_EX        "\n用法: %1!s!\n\n        创建一个包含当前配置的脚本。如果保存到\n\
+        文件，可以使用此脚本更改配置设置。\n"
+    IDS_HLP_OFFLINE        "将当前模式设置成脱机。\n"
+    IDS_HLP_OFFLINE_EX     "\n用法: %1!s!\n\n        将当前模式设置成脱机。在脱机模式下所做的更改会被保存，\n\
+        并在模式切换回联机时应用到正在运行的配置中。\n"
+    IDS_HLP_ONLINE         "将当前模式设置成联机。\n"
+    IDS_HLP_ONLINE_EX      "\n用法: %1!s!\n\n        将当前模式设置成联机。在联机模式下所做的更改会立即\n\
+        反映在正在运行的配置中。如果在脱机模式下进行了更改，\n        这些更改会在模式切换回联机时反映在正在运行的\n\
+        配置中。\n"
+    IDS_HLP_ABORT          "丢弃在脱机模式下所做的更改。\n"
+    IDS_HLP_ABORT_EX       "\n用法: %1!s!\n\n        丢弃在脱机模式下所做的更改。这不影响在联机模式下\n\
+        所做的更改。\n"
+    IDS_HLP_COMMIT         "提交在脱机模式下所做的更改。\n"
+    IDS_HLP_COMMIT_EX      "\n用法: %1!s!\n\n        将在脱机模式下所做的更改提交到正在运行的配置。\n\
+        在联机模式下，此命令不执行任何操作。\n"
+    IDS_HLP_ALIAS           "添加一个别名。\n"
+    IDS_HLP_ALIAS_EX        "\n用法 : %1!s! [alias-name] [string1 string 2 ...]\n\n        如果未指定参数，将显示所有别名。\n\
+        如果指定了 alias-name，将显示与其等价的字符串\n        (如果找到)。\n\
+        如果指定了一个或多个字符串，则 alias-name 将被设置为\n        这些字符串。\n"
+    IDS_HLP_UNALIAS         "删除一个别名。\n"
+    IDS_HLP_UNALIAS_EX      "\n用法 : %1!s! alias-name\n\n        删除别名 alias-name。\n"
+
+    IDS_HLP_ADD_HELPER     "安装一个帮助程序 DLL。\n"
+    IDS_HLP_ADD_HELPER_EX  "\n用法: %1!s! <dll 文件名>\n\n        在 netsh 中安装指定的帮助程序 DLL。\n"
+
+    IDS_HLP_DEL_HELPER     "删除一个帮助程序 DLL。\n"
+    IDS_HLP_DEL_HELPER_EX  "\n用法: %1!s! <dll 文件名>\n\n        从 netsh 中删除指定的帮助程序 DLL。\n"
+
+    IDS_HLP_SET_MACHINE    "设置当前操作的计算机。\n"
+    IDS_HLP_SET_MACHINE_EX "\n用法: %1!s! [[name=]<string>]\n\n        设置当前操作的计算机。如果未指定计算机名，\n\
+        则使用本地计算机。\n"
+    IDS_HLP_SET_MODE       "将当前模式设置成联机或脱机。\n"
+    IDS_HLP_SET_MODE_EX    "\n用法: %1!s! [mode=]{online|offline}\n\n        将当前模式设置成联机或脱机。\n"
+
+    IDS_HLP_SHOW_ALIAS     "列出所有定义的别名。\n"
+    IDS_HLP_SHOW_ALIAS_EX  "\n用法: %1!s!\n\n        列出所有定义的别名。\n"
+    IDS_HLP_SHOW_HELPER    "列出所有顶级帮助程序。\n"
+    IDS_HLP_SHOW_HELPER_EX "\n用法: %1!s!\n\n        列出所有顶级帮助程序。\n"
+    IDS_HLP_SHOW_MODE      "显示当前模式。\n"
+    IDS_HLP_SHOW_MODE_EX   "\n用法: %1!s!\n\n        显示当前模式(脱机或联机)。\n"
+
+    IDS_HLP_GROUP_ADD      "在项目列表上添加一个配置项目。\n"
+    IDS_HLP_GROUP_DELETE   "在项目列表上删除一个配置项目。\n"
+    IDS_HLP_GROUP_SET      "更新配置设置。\n"
+    IDS_HLP_GROUP_SHOW     "显示信息。\n"
+END
+
+STRINGTABLE
+BEGIN
+    ERROR_INVALID_SYNTAX   "为此命令提供的语法无效。请查看帮助以获取正确的语法。\n"
+    ERROR_CMD_NOT_FOUND    "找不到下列命令: %1!s!。\n"
+    ERROR_OKAY             "确定。\n"
+END

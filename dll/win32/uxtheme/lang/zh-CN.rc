@@ -1,0 +1,18 @@
+/*
+ * PROJECT:     LiberNT uxtheme.dll
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_MESSAGEBOX "消息框"
+    IDS_ACTIVEWIN "活动窗口"
+    IDS_INACTIVEWIN "非活动窗口"
+    IDS_OK "确定"
+    IDS_WINTEXT "窗口文字"
+    IDS_ERR_UNKNOWN_PROPERTY "必须是 Primitive、enum 或 type: %1"
+END

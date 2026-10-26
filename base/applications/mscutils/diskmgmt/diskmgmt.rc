@@ -27,3 +27,6 @@ IDI_MAIN       ICON "res/hdisk.ico"
 #ifdef LANGUAGE_EN_US
     #include "lang/en-US.rc"
 #endif
+#ifdef LANGUAGE_ZH_CN
+    #include "lang/zh-CN.rc"
+#endif

@@ -1,0 +1,14 @@
+/*
+ * PROJECT:     LiberNT msxml3r
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_XML_FILE "XML 文档"
+    IDS_XLS_FILE "XSL 样式表"
+END

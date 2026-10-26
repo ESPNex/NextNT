@@ -1,0 +1,25 @@
+/*
+ * PROJECT:     LiberNT Certificates Snap-in
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_SNAPIN_NAME          "证书"
+    IDS_SNAPIN_DESCRIPTION   "浏览为你的用户帐户存储的证书。"
+    IDS_SNAPIN_PROVIDER      "LiberNT"
+    IDS_ROOT_CURRENT_USER    "证书 - 当前用户"
+    IDS_COLUMN_ISSUED_TO     "颁发给"
+    IDS_COLUMN_ISSUED_BY     "颁发者"
+    IDS_COLUMN_EXPIRATION    "截止日期"
+    IDS_COLUMN_PURPOSES      "预期目的"
+    IDS_COLUMN_FRIENDLY_NAME "友好名称"
+    IDS_COLUMN_OBJECT_TYPE   "对象类型"
+    IDS_FOLDER_CERTIFICATES  "证书"
+    IDS_PURPOSES_ALL         "<所有>"
+    IDS_FRIENDLY_NAME_NONE   "<无>"
+END

@@ -47,3 +47,6 @@ IDI_DOWN ICON     "res/down.ico"
 #ifdef LANGUAGE_TR_TR
     #include "lang/tr-TR.rc"
 #endif
+#ifdef LANGUAGE_ZH_CN
+    #include "lang/zh-CN.rc"
+#endif

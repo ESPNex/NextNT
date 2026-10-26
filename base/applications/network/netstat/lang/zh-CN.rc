@@ -1,0 +1,118 @@
+/*
+ * PROJECT:     LiberNT netstat utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\n显示协议统计信息和当前 TCP/IP 网络连接。\n\n\
+NETSTAT [-a] [-b] [-e] [-n] [-o] [-p proto] [-r] [-s] [-t] [-v] [interval]\n\n\
+  -a            显示所有连接和侦听端口。\n\
+  -b            FIXME (接受此选项，但功能尚未实现)。\n\
+  -e            显示以太网统计信息。此选项可以与 -s 选项结合使用。\n\
+  -n            以数字形式显示地址和端口号。\n\
+  -o            显示每个连接的进程 ID。\n\
+  -p proto      显示 proto 指定的协议的连接；proto 可以是 TCP 或 UDP。\n\
+                如果与 -s 选项一起用来显示每个协议的统计信息，\n\
+                proto 可以是 TCP、UDP 或 IP。\n\
+  -r            显示当前路由表。\n\
+  -s            显示每个协议的统计信息。默认情况下，显示 IP、ICMP、\n\
+                TCP 和 UDP 的统计信息；\n\
+                可以使用 -p 选项指定默认的子集。\n\
+  -t            FIXME (接受此选项，但功能尚未实现)。\n\
+  -v            FIXME (接受此选项，但功能尚未实现)。\n\
+  interval      每隔 interval 秒重新显示选定的统计信息。\n\
+                按 CTRL+C 停止重新显示。默认情况下，netstat\n\
+                只打印一次当前信息。\n"
+    IDS_DISPLAY_THEADER "\n  协议   本地地址               外部地址               状态"
+    IDS_DISPLAY_PROCESS "       进程\n"
+    IDS_ACTIVE_CONNECT "\n活动连接\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_IP4_STAT_HEADER "\nIPv4 统计信息\n\n"
+    IDS_IP_PACK_REC "  接收的数据包                       = %lu\n"
+    IDS_IP_HEAD_REC_ERROR "  接收的标头错误                     = %lu\n"
+    IDS_IP_ADDR_REC_ERROR "  接收的地址错误                     = %lu\n"
+    IDS_IP_DATAG_FWD "  转发的数据报                       = %lu\n"
+    IDS_IP_UNKNOWN_PRO_REC "  接收的未知协议                     = %lu\n"
+    IDS_IP_REC_PACK_DISCARD "  丢弃的接收数据包                   = %lu\n"
+    IDS_IP_REC_PACK_DELIVER "  传送的接收数据包                   = %lu\n"
+    IDS_IP_OUT_REQUEST "  输出请求                           = %lu\n"
+    IDS_IP_ROUTE_DISCARD "  路由丢弃                           = %lu\n"
+    IDS_IP_DISCARD_OUT_PACK "  丢弃的输出数据包                   = %lu\n"
+    IDS_IP_OUT_PACKET_NO_ROUTE "  输出数据包无路由                   = %lu\n"
+    IDS_IP_REASSEMBLE_REQUIRED "  需要重新组合                       = %lu\n"
+    IDS_IP_REASSEMBLE_SUCCESS "  重新组合成功                       = %lu\n"
+    IDS_IP_REASSEMBLE_FAILURE "  重新组合失败                       = %lu\n"
+    IDS_IP_DATAG_FRAG_SUCCESS "  数据报分段成功                     = %lu\n"
+    IDS_IP_DATAG_FRAG_FAILURE "  数据报分段失败                     = %lu\n"
+    IDS_IP_DATAG_FRAG_CREATE "  分段已创建                         = %lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ICMP4_STAT_HEADER "\nICMPv4 统计信息\n\n"
+    IDS_ICMP_THEADER             "                            已接收      已发送\n"
+    IDS_ICMP_MSG "  消息                      %-11lu %-10lu\n"
+    IDS_ICMP_ERROR "  错误                      %-11lu %-10lu\n"
+    IDS_ICMP_DEST_UNREACH "  无法到达目标              %-11lu %-10lu\n"
+    IDS_ICMP_TIME_EXCEED "  超时                      %-11lu %-10lu\n"
+    IDS_ICMP_PARAM_PROBLEM "  参数问题                  %-11lu %-10lu\n"
+    IDS_ICMP_SRC_QUENCHES "  源抑制                    %-11lu %-10lu\n"
+    IDS_ICMP_REDIRECT "  重定向                    %-11lu %-10lu\n"
+    IDS_ICMP_ECHO "  回显                      %-11lu %-10lu\n"
+    IDS_ICMP_ECHO_REPLY "  回显回复                  %-11lu %-10lu\n"
+    IDS_ICMP_TIMESTAMP "  时间戳                    %-11lu %-10lu\n"
+    IDS_ICMP_TIMESTAMP_REPLY "  时间戳回复                %-11lu %-10lu\n"
+    IDS_ICMP_ADDRESSS_MASK "  地址掩码                  %-11lu %-10lu\n"
+    IDS_ICMP_ADDRESSS_MASK_REPLY "  地址掩码回复              %-11lu %-10lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TCP4_HEADER "\nIPv4 的 TCP 统计信息\n\n"
+    IDS_TCP_ACTIVE_OPEN "  主动开放                            = %lu\n"
+    IDS_TCP_PASS_OPEN "  被动开放                            = %lu\n"
+    IDS_TCP_FAIL_CONNECT "  失败的连接尝试                      = %lu\n"
+    IDS_TCP_RESET_CONNECT "  重置连接                            = %lu\n"
+    IDS_TCP_CURRENT_CONNECT "  当前连接                            = %lu\n"
+    IDS_TCP_SEG_RECEIVE "  接收的分段                          = %lu\n"
+    IDS_TCP_SEG_SENT "  发送的分段                          = %lu\n"
+    IDS_TCP_SEG_RETRANSMIT "  重新传输的分段                      = %lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_UDP_IP4_HEADER "\nIPv4 的 UDP 统计信息\n\n"
+    IDS_UDP_DATAG_RECEIVE "  接收的数据报          = %lu\n"
+    IDS_UDP_NO_PORT "  无端口                = %lu\n"
+    IDS_UDP_RECEIVE_ERROR "  接收错误              = %lu\n"
+    IDS_UDP_DATAG_SEND "  发送的数据报          = %lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ETHERNET_INTERFACE_STAT     "接口统计\n\n"
+    IDS_ETHERNET_THEADER            "                           已接收              已发送\n\n"
+    IDS_ETHERNET_BYTES "字节                 %14lu %15lu\n"
+    IDS_ETHERNET_UNICAST_PACKET "单播数据包           %14lu %15lu\n"
+    IDS_ETHERNET_NON_UNICAST_PACKET "非单播数据包         %14lu %15lu\n"
+    IDS_ETHERNET_DISCARD "丢弃                 %14lu %15lu\n"
+    IDS_ETHERNET_ERROR "错误                 %14lu %15lu\n"
+    IDS_ETHERNET_UNKNOWN "未知协议             %14lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ERROR_WSA_START "错误: WSAStartup() 失败: %d\n"
+    IDS_ERROR_ROUTE "错误: 找不到 'route.exe'\n"
+    IDS_ERROR_TCP_SNAPSHOT "错误: 无法获取 TCP 终结点快照。\n"
+    IDS_ERROR_UDP_ENDPOINT "错误: 无法获取 UDP 终结点快照。\n"
+    IDS_ERROR_UDP_ENDPOINT_TABLE "错误: 无法获取 UDP 终结点表快照。\n"
+END

@@ -1,0 +1,32 @@
+/*
+ * PROJECT:     LiberNT dwnl utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "用法: dwnl URL [目标]\n"
+    IDS_RESOLVING "正在解析 %s... "
+    IDS_DONE "完成。\n"
+    IDS_LENGTH_FULL "长度: %I64u [%s]\n"
+    IDS_LENGTH "长度: %I64u\n"
+    IDS_FILE_SAVED "\n文件已保存。\n"
+    IDS_CONNECTING_TO_FULL "正在连接到 %s [%s]... "
+    IDS_CONNECTING_TO "正在连接到 %s... "
+    IDS_REDIRECTING_TO "正在重定向到 %s... "
+    IDS_SEND_REQUEST "正在发送请求... "
+    IDS_BYTES_DOWNLOADED "已下载 %I64u 字节"
+    IDS_BYTES_DOWNLOADED_FULL "%2d%% (已下载 %I64u 字节)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ERROR_DOWNLOAD "\n错误: 下载失败。\n"
+    IDS_ERROR_CODE "\n错误: %u\n"
+    IDS_ERROR_FILENAME "\n错误: 无法确定文件名，请指定目标文件名。\n"
+    IDS_ERROR_PROTOCOL "\n错误: 不支持的协议。\n"
+END

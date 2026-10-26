@@ -29,3 +29,6 @@ CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "lntdrv.exe.manifest"
 #ifdef LANGUAGE_FR_FR
     #include "lang/fr-FR.rc"
 #endif
+#ifdef LANGUAGE_ZH_CN
+    #include "lang/zh-CN.rc"
+#endif

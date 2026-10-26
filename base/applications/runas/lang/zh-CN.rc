@@ -1,0 +1,38 @@
+/*
+ * PROJECT:     LiberNT runas utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE01 "RUNAS 用法\n\n"
+    IDS_USAGE02 "RUNAS [ [/noprofile | /profile] [/env] [/savecred | /netonly] ]\n"
+    IDS_USAGE03 "      /user:<UserName> program\n\n"
+    IDS_USAGE04 "RUNAS [ [/noprofile | /profile] [/env] [/savecred | /netonly] ]\n"
+    IDS_USAGE05 "      /smartcard [/user:<UserName>] program\n\n"
+    IDS_USAGE06 "   /noprofile      指定不应加载用户的配置文件。\n"
+    IDS_USAGE07 "                   这会使应用程序加载得更快，但\n"
+    IDS_USAGE08 "                   可能导致某些应用程序无法正常工作。\n"
+    IDS_USAGE09 "   /profile        指定应加载用户的配置文件。\n"
+    IDS_USAGE10 "                   这是默认值。\n"
+    IDS_USAGE11 "   /env            使用当前环境而不是用户的环境。\n"
+    IDS_USAGE12 "   /netonly        如果指定的凭据仅用于远程访问，\n"
+    IDS_USAGE13 "                   请使用此选项。\n"
+    IDS_USAGE14 "   /savecred       尚未实现。\n"
+    IDS_USAGE15 "   /smartcard      尚未实现。\n"
+    IDS_USAGE16 "   /user           <UserName> 的格式应为 USER@DOMAIN 或 DOMAIN\\USER\n"
+    IDS_USAGE17 "   program         EXE 的命令行。请参阅下面的示例\n\n"
+    IDS_USAGE18 "示例:\n"
+    IDS_USAGE19 "> runas /noprofile /user:mymachine\\administrator cmd\n\n"
+    IDS_USAGE20 "注意:  /profile 与 /netonly 不兼容。\n"
+
+    IDS_START     "正在尝试启动 %s，用户为 ""%s\\%s""...\n"
+    IDS_RUN_ERROR "RUNAS 错误: 无法运行 %s\n"
+    IDS_INTERNAL_ERROR "RUNAS 错误: 内部错误 %ld\n"
+
+    IDS_PASSWORD  "输入 ""%s\\%s"" 的密码: "
+END

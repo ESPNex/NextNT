@@ -1,0 +1,65 @@
+/*
+ * PROJECT:     LiberNT route utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE1 "\n\
+操作网络路由表。\n\n\
+ROUTE [-f] [-p] command [destination]\n\
+                [MASK netmask] [gateway] [METRIC metric]\n\n\
+  -f           在执行命令之前清除路由表中的所有网关条目。\n\
+               可与 ADD 和 DELETE 命令一起使用。\n\n\
+  -p           使路由在系统重新启动后仍然保留。默认情况下，\n\
+               系统重新启动时不保留路由。可与 ADD 命令一起使用。\n\n\
+  command      下列选项之一:\n\
+                 PRINT   打印路由。\n\
+                 ADD     添加新路由。\n\
+                 DELETE  删除路由。\n\
+  destination  指定主机。\n\
+  netmask      指定此路由条目的子网掩码值。\n\
+               如果未指定，默认为 255.255.255.255。\n\
+  gateway      指定网关。\n\
+  metric       指定跃点数，即到达目标的开销。\n\
+  interface    指定此路由的接口编号。\n"
+
+    IDS_USAGE2 "\n\
+route add 用法:\n\
+route add <target> [mask <mask>] <gw> [metric <m>]\n\
+  向 IP 路由表添加一条路由。\n\
+  <target> 是要添加路由的网络或主机。\n\
+  <mask>   是要使用的子网掩码(未指定时自动检测)\n\
+  <gw>     是访问该网络所用的网关\n\
+  <m>      是要使用的跃点数(值越小越优先)\n"
+
+    IDS_USAGE3 "\n\
+示例:\n\
+    > route PRINT               ... 打印所有路由\n\
+    > route PRINT 156*          ... 打印所有匹配 156* 的路由\n\
+    > route ADD 156.0.0.0 MASK 255.0.0.0 156.0.1.12 METRIC 5\n\
+             destination^       netmask^   gateway^  metric^\n\n\
+    > route DELETE 156.0.0.0    ... 删除一条路由\n\
+    > route DELETE 156*         ... 删除所有匹配 156* 的路由\n"
+
+    IDS_ROUTE_ADD_ERROR "添加路由失败\n"
+    IDS_ROUTE_DEL_ERROR "删除路由失败\n"
+    IDS_ROUTE_ENUM_ERROR "枚举路由失败\n"
+    IDS_SEPARATOR "===========================================================================\n"
+    IDS_INTERFACE_LIST "接口列表\n"
+    IDS_INTERFACE_ENTRY "0x%-2lx ........................... %s\n"
+    IDS_ETHERNET_ENTRY "0x%-2lx ...%s...... %s\n"
+    IDS_IPV4_ROUTE_TABLE "\nIPv4 路由表\n"
+    IDS_ACTIVE_ROUTES "活动路由:\n"
+    IDS_ROUTES_ENTRY "  %15s  %15s  %15s  %15s  %6ld\n"
+    IDS_PERSISTENT_ROUTES "永久路由:\n"
+    IDS_PERSISTENT_ENTRY "  %15s  %15s  %15s  %8s\n"
+    IDS_DEFAULT_GATEWAY "默认网关:%18s\n"
+    IDS_ROUTES_HEADER "         网络目标         网络掩码             网关             接口  跃点数\n"
+    IDS_PERSISTENT_HEADER "         网络目标         网络掩码             网关    跃点数\n"
+    IDS_NONE "  无\n"
+END

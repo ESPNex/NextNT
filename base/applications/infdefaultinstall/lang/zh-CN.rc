@@ -1,0 +1,19 @@
+/*
+ * PROJECT:     LiberNT INF Default Install
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_SUCCESS "操作成功完成。"
+    IDS_FAILED "安装失败。"
+    IDS_UNSUPPORTED "你选择的 INF 文件不支持这种安装方法"
+    IDS_USAGE "用法: InfDefaultInstall.exe <INF 文件>"
+    IDS_NO_SECTION "在 INF 中找不到所需的节。"
+    IDS_ERROR_TITLE "错误"
+    IDS_INSTALL_ERROR "安装错误"
+END

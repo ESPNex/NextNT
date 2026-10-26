@@ -1,0 +1,54 @@
+/*
+ * PROJECT:     LiberNT System Information
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+IDM_MAIN MENU
+BEGIN
+    POPUP "文件(&F)"
+    BEGIN
+        MENUITEM "退出(&X)", IDM_EXIT
+    END
+    POPUP "查看(&V)"
+    BEGIN
+        MENUITEM "刷新(&R)\tF5", IDM_REFRESH
+    END
+    POPUP "帮助(&H)"
+    BEGIN
+        MENUITEM "关于系统信息(&A)", IDM_ABOUT
+    END
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TITLE "系统信息"
+    IDS_COLUMN_ITEM "项目"
+    IDS_COLUMN_VALUE "值"
+    IDS_OS_NAME "操作系统名称"
+    IDS_VERSION "版本"
+    IDS_VERSION_FORMAT "%lu.%lu.%lu 内部版本 %lu"
+    IDS_SYSTEM_NAME "系统名称"
+    IDS_MANUFACTURER "系统制造商"
+    IDS_MODEL "系统型号"
+    IDS_SYSTEM_TYPE "系统类型"
+    IDS_TYPE_X86 "基于 x86 的电脑"
+    IDS_TYPE_X64 "基于 x64 的电脑"
+    IDS_TYPE_ARM64 "基于 ARM64 的电脑"
+    IDS_PROCESSOR "处理器"
+    IDS_PROCESSOR_FORMAT "%s，%lu 个逻辑处理器"
+    IDS_BIOS "BIOS 版本/日期"
+    IDS_WINDOWS_DIRECTORY "Windows 目录"
+    IDS_SYSTEM_DIRECTORY "系统目录"
+    IDS_LOCALE "区域设置"
+    IDS_USER_NAME "用户名"
+    IDS_TIME_ZONE "时区"
+    IDS_TOTAL_PHYSICAL "已安装的物理内存总量"
+    IDS_AVAILABLE_PHYSICAL "可用物理内存"
+    IDS_TOTAL_VIRTUAL "总虚拟内存"
+    IDS_AVAILABLE_VIRTUAL "可用虚拟内存"
+    IDS_PAGE_FILE "页面文件空间"
+END

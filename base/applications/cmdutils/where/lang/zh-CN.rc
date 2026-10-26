@@ -1,0 +1,55 @@
+/*
+ * PROJECT:     LiberNT WHERE command
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "用法: WHERE [options] pattern...\n\
+\n\
+描述:\n\
+    显示与搜索模式匹配的文件的位置。\n\
+    默认情况下，此工具使用搜索模式在 PATH 环境变量\n\
+    指定的路径中进行搜索。\n\
+\n\
+选项:\n\
+  /F       用双引号显示所有匹配的文件。\n\
+  /Q       安静模式。不显示任何文件和消息。\n\
+  /R dir   从指定的目录开始递归搜索。\n\
+  /T       显示所有匹配文件的大小和上次修改日期。\n\
+  pattern  指定要搜索文件的模式。可以使用通配符 * 和 ?。\n\
+           也可以使用 ""$env:pattern"" 和 ""path:pattern"" 格式，\n\
+           其中 ""env"" 是环境变量，将在 ""env"" 环境变量\n\
+           指定的路径中进行搜索。不要将这些格式与 /R 一起使用。\n\
+           还会将 PATHEXT 变量中的扩展名附加到模式后进行搜索。\n\
+  /?       显示此消息。\n\
+\n\
+注意: 如果搜索成功，此工具返回错误级别 0；如果找不到文件，\n\
+      返回 1；如果出错，返回 2。\n\
+\n\
+示例:\n\
+    WHERE myfile*.exe\n\
+    WHERE /F /T mspaint\n\
+    WHERE $WINDIR:notepad myfile???\n\
+    WHERE C:\\Windows;C:\\Windows\\system32:exp*.exe\n\
+    WHERE /R ""C:\\Program Files"" *.dll\n"
+
+    IDS_BAD_ARG "错误: 无效参数 - '%ls'。\n"
+    IDS_NOT_FOUND "信息: 用提供的模式无法找到文件。\n"
+    IDS_FILE_INFO "%10I64u  %-12ls %-12ls %ls\n"
+    IDS_WANT_VALUE "错误: '%ls' 需要一个值。\n"
+    IDS_TYPE_HELP "键入 ""WHERE /?"" 以了解用法。\n"
+    IDS_ENVPAT_WITH_R "错误: ""$env:pattern"" 不能与 /R 一起使用。\n"
+    IDS_PATHPAT_WITH_R "错误: ""path:pattern"" 格式不能与 /R 一起使用。\n"
+    IDS_BAD_PATHPAT "错误: ""path:pattern"" 中指定的模式无效。\n"
+    IDS_OUTOFMEMORY "错误: 内存不足。\n"
+    IDS_BAD_ENVVAR "错误: 找不到环境变量 ""%ls""。\n"
+    IDS_CANT_FOUND "错误: 系统找不到指定的文件。\n"
+    IDS_BAD_DIR "错误: 指定的目录无效。\n"
+    IDS_BAD_NAME "错误: 文件名、目录名或卷标语法不正确。\n"
+    IDS_TOO_MANY "错误: '%ls' 选项不能超过 '%u' 次。\n"
+END

@@ -1,0 +1,243 @@
+/*
+ * PROJECT:     LiberNT DISM
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_HEADER "\n部署映像服务和管理工具\n版本: %s\n\n"
+    IDS_ERROR_DECIMAL "\n错误: %lu\n\n"
+    IDS_ERROR_HEX "\n错误: 0x%08lx\n\n"
+    IDS_LOG_LOCATION "\nDISM 日志文件位于 %s\n"
+    IDS_UNRECOGNIZED_TOKEN "DISM 无法识别命令行选项 ""%s""。\n有关详细信息，请运行 DISM.exe /? 查看帮助。\n"
+    IDS_UNKNOWN_OPTION "%s 选项未知。\n有关详细信息，请运行 DISM.exe /? 查看帮助。\n"
+    IDS_MISSING_OPTION "命令行缺少 %s 选项。\n有关详细信息，请参阅帮助。\n"
+    IDS_OPTIONS_CONFLICT "%s 和 %s 选项不能在命令行中一起使用。\n有关详细信息，请参阅帮助。\n"
+    IDS_OPTION_REQUIRED "命令行中缺少必需的选项。\n请确保指定了 %s 或 %s。\n"
+    IDS_IMAGE_NOT_FOUND "指定的映像在指定的映像容器中不存在。\n请先检查映像容器中现有的映像。\n"
+    IDS_INVALID_ARGUMENTS "处理命令时出错。\n请确保命令行参数有效。有关详细信息，请查看日志文件。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DETAILS "映像的详细信息: %s\n\n"
+    IDS_INDEX "索引: %d\n"
+    IDS_NAME "名称: %s\n"
+    IDS_DESCRIPTION "描述: %s\n"
+    IDS_SIZE "大小: %s 字节\n"
+    IDS_WIM_BOOTABLE "WIM 可启动: %s\n"
+    IDS_ARCHITECTURE "体系结构: %s\n"
+    IDS_HAL "Hal: %s\n"
+    IDS_VERSION "版本: %s\n"
+    IDS_SP_BUILD "ServicePack 内部版本: %s\n"
+    IDS_SP_LEVEL "ServicePack 级别: %s\n"
+    IDS_EDITION "版本类型: %s\n"
+    IDS_INSTALLATION "安装: %s\n"
+    IDS_PRODUCT_TYPE "产品类型: %s\n"
+    IDS_PRODUCT_SUITE "产品套件: %s\n"
+    IDS_SYSTEM_ROOT "系统根目录: %s\n"
+    IDS_DIRECTORIES "目录: %s\n"
+    IDS_FILES "文件: %s\n"
+    IDS_CREATED "创建时间: %s\n"
+    IDS_MODIFIED "修改时间: %s\n"
+    IDS_LANGUAGES "语言:\n"
+    IDS_LANGUAGES_UNDEFINED "语言: <未定义>\n"
+    IDS_LANGUAGE "\t%s\n"
+    IDS_LANGUAGE_DEFAULT "\t%s (默认)\n"
+    IDS_UNDEFINED "<未定义>"
+    IDS_YES "是"
+    IDS_NO "否"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_APPLYING "正在应用映像\n"
+    IDS_SAVING "正在保存映像\n"
+    IDS_EXPORTING "正在导出映像\n"
+    IDS_MOUNTED_IMAGES "已装载的映像:\n\n\n"
+    IDS_NO_MOUNTED_IMAGES "找不到已装载的映像。\n\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_HELP_GENERAL "\nDISM.exe [dism_options] {Imaging_command} [<Imaging_arguments>]\n\
+\n\
+描述:\n\
+\n\
+  DISM 用于捕获、应用、导出、拆分和检查 Windows 映像(WIM、ESD 和 SWM)文件。\n\
+\n\
+WIM 命令:\n\
+\n\
+  /List-Image             - 列出映像中的文件和文件夹。\n\
+  /Delete-Image           - 从包含多个映像的 WIM 文件中删除一个映像。\n\
+  /Export-Image           - 将映像复制到另一个 WIM 或 ESD 文件中。\n\
+  /Append-Image           - 将目录捕获为现有 WIM 文件中的新映像。\n\
+  /Capture-Image          - 将目录捕获到新的 WIM 文件中。\n\
+  /Get-MountedWimInfo     - 列出已装载的 WIM 映像。\n\
+  /Get-WimInfo            - 显示 WIM 文件中的映像。\n\
+  /Cleanup-Wim            - 删除损坏的 WIM 装载所遗留的资源。\n\
+\n\
+通用映像命令:\n\
+\n\
+  /Split-Image            - 将 WIM 文件拆分为只读的拆分 WIM (SWM) 文件。\n\
+  /Apply-Image            - 将映像应用到目录。\n\
+  /Get-MountedImageInfo   - 列出已装载的映像。\n\
+  /Get-ImageInfo          - 显示 WIM、ESD 或 SWM 文件中的映像。\n\
+  /Cleanup-Mountpoints    - 删除损坏的装载所遗留的资源。\n\
+\n\
+DISM 选项:\n\
+\n\
+  /English                - 以英语显示命令行输出。\n\
+  /LogPath                - 设置日志文件路径。\n\
+  /Quiet                  - 只显示错误消息。\n\
+\n\
+若要获取某个命令的帮助，请在 /? 之前紧接着指定该命令。\n\
+\n\
+  示例:\n\
+    DISM.exe /Apply-Image /?\n\
+    DISM.exe /Get-ImageInfo /?\n\
+\n"
+    IDS_HELP_GET_IMAGEINFO "\n/Get-ImageInfo /ImageFile:<image_file> [/Index:<image_index> | /Name:<image_name>]\n\
+\n\
+  显示 WIM、ESD 或 SWM 文件中的映像。使用 /Index 或 /Name 时，\n\
+  显示该映像的详细信息。\n\
+\n\
+    示例:\n\
+      DISM.exe /Get-ImageInfo /ImageFile:C:\\images\\install.wim\n\
+      DISM.exe /Get-ImageInfo /ImageFile:C:\\images\\install.esd /Index:1\n\
+\n"
+    IDS_HELP_GET_WIMINFO "\n/Get-WimInfo /WimFile:<WIM_file> [/Index:<image_index> | /Name:<image_name>]\n\
+\n\
+  显示 WIM 文件中的映像。使用 /Index 或 /Name 时，显示该映像的\n\
+  详细信息。\n\
+\n\
+    示例:\n\
+      DISM.exe /Get-WimInfo /WimFile:C:\\images\\install.wim\n\
+      DISM.exe /Get-WimInfo /WimFile:C:\\images\\install.wim /Index:1\n\
+\n"
+    IDS_HELP_LIST_IMAGE "\n/List-Image /ImageFile:<path_to_image_file>\n\
+  [/Index:<image_index> | /Name:<image_name>]\n\
+\n\
+  列出映像中的文件和文件夹。\n\
+  包含多个映像的文件需要指定 /Index 或 /Name。\n\
+\n\
+    示例:\n\
+      DISM.exe /List-Image /ImageFile:install.wim /Index:1\n\
+\n"
+    IDS_HELP_APPLY_IMAGE "\n/Apply-Image /ImageFile:<path_to_image_file> /ApplyDir:<target_directory>\n\
+  [/Index:<image_index> | /Name:<image_name>] [/CheckIntegrity] [/Verify]\n\
+  [/NoRpFix] [/SWMFile:<pattern>] [/Compact] [/WIMBoot] [/EA]\n\
+\n\
+  将映像应用到现有目录。\n\
+  使用 /CheckIntegrity 在 WIM 文件完整性表不匹配时停止。\n\
+  使用 /Verify 检查已应用的数据。\n\
+  使用 /NoRpFix 保持重分析点与捕获时一致。\n\
+  使用 /SWMFile 以路径和模式指定拆分 WIM 的各个部分。\n\
+  使用 /Compact 以压缩方式应用文件。\n\
+  使用 /WIMBoot 以 WIMBoot 模式应用映像。\n\
+  使用 /EA 应用扩展属性。\n\
+  包含多个映像的文件需要指定 /Index 或 /Name。\n\
+\n\
+    示例:\n\
+      DISM.exe /Apply-Image /ImageFile:install.wim /Index:1 /ApplyDir:D:\\\n\
+\n\
+      DISM.exe /Apply-Image /ImageFile:install.swm /SWMFile:install*.swm\n\
+        /ApplyDir:D:\\ /Index:1\n\
+\n"
+    IDS_HELP_CAPTURE_IMAGE "\n/Capture-Image /ImageFile:<path_to_image_file> /CaptureDir:<source_directory>\n\
+  /Name:<Name>\n\
+  [/Description:Description] [/ConfigFile:<wimscript.ini>]\n\
+  [/Compress:{fast|max|none}] [/Bootable] [/CheckIntegrity] [/Verify]\n\
+  [/NoRpFix] [/EA]\n\
+\n\
+  将目录及其所有子文件夹捕获到新的 WIM 文件中。\n\
+  使用 /ConfigFile 指定一个文件，其中列出要从捕获和压缩中\n\
+  排除的路径。\n\
+  使用 /Compress 选择压缩方式。默认为 fast。\n\
+  使用 /Bootable 将映像标记为启动映像。\n\
+  使用 /CheckIntegrity 在 WIM 文件中存储完整性表。\n\
+  使用 /Verify 检查写入的 WIM 文件。\n\
+  使用 /NoRpFix 保持重分析点不变。\n\
+  使用 /EA 捕获扩展属性。\n\
+\n\
+    示例:\n\
+      DISM.exe /Capture-Image /ImageFile:install.wim /CaptureDir:D:\\\n\
+        /Name:Drive-D\n\
+\n"
+    IDS_HELP_APPEND_IMAGE "\n/Append-Image /ImageFile:<path_to_image_file> /CaptureDir:<source_directory>\n\
+  /Name:<Name>\n\
+  [/Description:Description] [/ConfigFile:<wimscript.ini>]\n\
+  [/Bootable] [/CheckIntegrity] [/Verify] [/NoRpFix] [/EA]\n\
+\n\
+  将目录捕获为现有 WIM 文件中的新映像。\n\
+  使用 /ConfigFile 指定一个文件，其中列出要从捕获和压缩中\n\
+  排除的路径。\n\
+  使用 /Bootable 将映像标记为启动映像。\n\
+  使用 /CheckIntegrity 在 WIM 文件中存储完整性表。\n\
+  使用 /Verify 检查写入的 WIM 文件。\n\
+  使用 /NoRpFix 保持重分析点不变。\n\
+  使用 /EA 捕获扩展属性。\n\
+\n\
+    示例:\n\
+      DISM.exe /Append-Image /ImageFile:install.wim /CaptureDir:D:\\\n\
+        /Name:Drive-D\n\
+\n"
+    IDS_HELP_EXPORT_IMAGE "\n/Export-Image /SourceImageFile:<path_to_image_file> [/SWMFile:<pattern>]\n\
+  [/SourceIndex:<image_index> | /SourceName:<image_name>]\n\
+  /DestinationImageFile:<path_to_image_file> [/DestinationName:<Name>]\n\
+  [/Compress:{fast|max|none|recovery}] [/Bootable] [/CheckIntegrity]\n\
+  包含多个映像的文件需要指定 /SourceIndex 或 /SourceName。\n\
+\n\
+  将映像复制到另一个 WIM 或 ESD 文件中。如果目标文件已存在，\n\
+  该映像将作为新映像添加到其中。\n\
+  使用 /SWMFile 以路径和模式指定拆分 WIM 的各个部分。\n\
+  使用 /Compress 选择新目标文件的压缩方式。\n\
+  recovery 会写入固实 ESD 文件。不指定时，目标文件使用源文件的\n\
+  压缩方式。\n\
+  使用 /Bootable 将映像标记为启动映像。\n\
+  使用 /CheckIntegrity 在目标文件中存储完整性表。\n\
+\n\
+    示例:\n\
+      DISM.exe /Export-Image /SourceImageFile:install.wim /SourceIndex:1\n\
+        /DestinationImageFile:install2.wim\n\
+\n"
+    IDS_HELP_DELETE_IMAGE "\n/Delete-Image /ImageFile:<path_to_image_file>\n\
+  {/Index:<image_index> | /Name:<image_name>} [/CheckIntegrity]\n\
+\n\
+  从包含多个映像的 WIM 文件中删除一个映像。\n\
+  使用 /CheckIntegrity 检查并更新完整性表。\n\
+\n\
+    示例:\n\
+      DISM.exe /Delete-Image /ImageFile:install.wim /Index:1\n\
+\n"
+    IDS_HELP_SPLIT_IMAGE "\n/Split-Image\n\
+  /ImageFile:<path_to_image_file> /SWMFile:<path_to_swm> /FileSize:<MB-Size>\n\
+  [/CheckIntegrity]\n\
+\n\
+  将 WIM 文件拆分为只读的拆分 WIM 文件。\n\
+  使用 /FileSize 设置每个部分的最大大小，以兆字节(MB)为单位。\n\
+  使用 /CheckIntegrity 在每个部分中存储完整性表。\n\
+\n\
+    示例:\n\
+      DISM.exe /Split-Image /ImageFile:install.wim /SWMFile:split.swm\n\
+        /FileSize:650\n\
+\n"
+    IDS_HELP_GET_MOUNTED "\n/Get-MountedImageInfo\n\
+\n\
+  列出已装载的映像及其状态。\n\
+\n\
+    示例:\n\
+      DISM.exe /Get-MountedImageInfo\n\
+\n"
+    IDS_HELP_CLEANUP "\n/Cleanup-Mountpoints\n\
+\n\
+  删除损坏的映像装载所遗留的资源。\n\
+\n\
+    示例:\n\
+      DISM.exe /Cleanup-Mountpoints\n\
+\n"
+END

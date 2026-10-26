@@ -1,0 +1,79 @@
+/*
+ * PROJECT:     LiberNT msutb.dll
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_OK               "确定"
+    IDS_CANCEL           "取消"
+    IDS_ABORT            "中止(&A)"
+    IDS_RETRY            "重试(&R)"
+    IDS_IGNORE           "忽略(&I)"
+    IDS_YES              "是(&Y)"
+    IDS_NO               "否(&N)"
+
+    IDS_SETTINGS         "设置(&E)..."
+    IDS_RESTORELANGBAR   "还原语言栏"
+    IDS_LANGUAGE         "语言"
+    IDS_LANGUAGEBUTTON   "语言按钮"
+    IDS_TRANSPARENCY     "透明度(&T)"
+    IDS_TEXTLABELS       "文字标签(&T)"
+    IDS_MINIMIZE         "最小化(&M)"
+    IDS_CLOSELANGBAR     "关闭语言栏(&C)"
+    IDS_EXTRAICONS       "在任务栏中显示其他图标(&A)"
+    IDS_LANGUAGEBAR      "语言栏"
+    IDS_RESTORELANGBAR2  "还原语言栏(&R)"
+    IDS_MENUWND          "菜单窗口"
+    IDS_VERTICAL         "垂直(&V)"
+    IDS_ADJUSTLANGBAND   "调整语言区位置(&A)"
+    IDS_LEFTCLICK        "左键单击"
+END
+
+IDD_CLOSELANGBARNOBAND DIALOGEX 0, 0, 200, 105
+CAPTION "语言栏"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "你已关闭语言栏。\r\n\r\n若要以后使用语言栏，请在“文本服务”控制面板中的“语言栏设置”对话框里选中“在桌面上显示语言栏”。", -1, 5, 5, 190, 60
+    AUTOCHECKBOX "不再显示此消息(&D)", IDC_CLOSELANGBAR_CHECK, 5, 70, 145, 10
+    DEFPUSHBUTTON "确定", IDOK, 80, 85, 55, 15
+    PUSHBUTTON "取消", IDCANCEL, 140, 85, 55, 15
+}
+
+IDD_CLOSELANGBAR DIALOGEX 0, 0, 200, 105
+CAPTION "语言栏"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "你已关闭语言栏。\r\n\r\n若要以后使用语言栏，请在“区域和语言选项”控制面板中的“语言栏设置”对话框里选中“在桌面上显示语言栏”。", -1, 5, 5, 190, 60
+    AUTOCHECKBOX "不再显示此消息(&D)", IDC_CLOSELANGBAR_CHECK, 5, 70, 145, 10
+    DEFPUSHBUTTON "确定", IDOK, 80, 85, 55, 15
+    PUSHBUTTON "取消", IDCANCEL, 140, 85, 55, 15
+}
+
+IDD_MINIMIZELANGBARNOBAND DIALOGEX 0, 0, 205, 124
+CAPTION "语言栏"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "你已最小化语言栏。若要还原它，只需单击语言栏图标(在时钟附近)，然后从弹出菜单中选择“还原语言栏”。", -1, 5, 5, 190, 50
+    CONTROL IDB_BITMAP154, -1, "STATIC", SS_BITMAP, 72, 63, 60, 60, WS_EX_STATICEDGE
+    AUTOCHECKBOX "不再显示此消息", IDC_MINIMIZELANGBAR_CHECK, 5, 95, 142, 10
+    DEFPUSHBUTTON "确定", IDOK, 140, 105, 60, 15
+}
+
+IDD_MINIMIZELANGBAR DIALOGEX 0, 0, 205, 124
+CAPTION "语言栏"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "你已最小化语言栏。若要还原它，只需单击语言栏图标(在时钟附近)，然后从弹出菜单中选择“还原语言栏”。", -1, 5, 5, 190, 50
+    CONTROL IDB_BITMAP155, -1, "STATIC", SS_BITMAP, 53, 67, 60, 60, WS_EX_STATICEDGE
+    AUTOCHECKBOX "不再显示此消息", IDC_MINIMIZELANGBAR_CHECK, 5, 95, 142, 10
+    DEFPUSHBUTTON "确定", IDOK, 140, 105, 60, 15
+}

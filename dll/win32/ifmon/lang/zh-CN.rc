@@ -1,0 +1,217 @@
+/*
+ * PROJECT:     LiberNT IP Helper Monitor
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Chinese (Simplified) resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+STRINGTABLE
+BEGIN
+    IDS_HLP_INTERFACE_SHOW "显示信息。\n"
+    IDS_HLP_INTERFACE_SHOW_INTERFACE "显示接口。\n"
+    IDS_HLP_INTERFACE_SHOW_INTERFACE_EX "\n用法:\n"
+
+    IDS_HLP_IP_ADD "将配置项添加到表中。\n"
+    IDS_HLP_IP_ADD_ADDRESS     "将 IP 地址添加到指定的接口。\n"
+    IDS_HLP_IP_ADD_ADDRESS_EX  "\n用法: %1!s! [name=]<string> [[addr=]IP address [mask=]IP subnet mask]\n\
+       [[gateway=]IP address [gwmetric=]integer]\n\n\
+参数:\n\n\
+      name         - IP 接口的名称。\n\
+      addr         - 要为该接口添加的 IP 地址。\n\
+      mask         - 指定 IP 地址的子网掩码。\n\
+      gateway      - 指定 IP 地址的默认网关。\n\
+      gwmetric     - 默认网关的跃点数。\n\n\
+注释: 向接口添加 IP 地址和默认网关。如果该接口启用了 DHCP，\n\
+      DHCP 将被禁用。\n\n\
+示例:\n\n\
+       %1!s! ""本地连接"" 10.0.0.2  255.0.0.0\n\
+       %1!s! ""本地连接"" gateway=10.0.0.3 gwmetric=2\n\n\
+       第一个命令将子网掩码为 255.0.0.0 的静态 IP 地址 10.0.0.2\n\
+       添加到“本地连接”接口。第二个命令将 IP 地址 10.0.0.3\n\
+       添加为此接口的第二个默认网关，网关跃点数为 2。\n"
+
+    IDS_HLP_IP_ADD_DNS    "添加静态 DNS 服务器地址。\n"
+    IDS_HLP_IP_ADD_DNS_EX "\n用法: %1!s! [name=]<string> [addr=]<IP address> [[index=]<integer>]\n\n\
+参数:\n\n\
+      标记           值\n\
+      name         - 要添加 DNS 服务器的接口的名称。\n\
+      addr         - 要添加的 DNS 服务器的 IP 地址。\n\
+      index        - 指定所指定 DNS 服务器地址的索引(优先级)。\n\n\
+注释: 将新的 DNS 服务器 IP 地址添加到静态配置的列表中。\n\
+      默认情况下，DNS 服务器添加到列表末尾。如果指定了索引，\n\
+      DNS 服务器将被放在列表中的该位置，其他服务器将依次下移。\n\
+      如果之前通过 DHCP 获取了 DNS 服务器，新地址将替换旧列表。\n\n\
+示例:\n\n\
+       %1!s! ""本地连接"" 10.0.0.1\n\
+       %1!s! ""本地连接"" 10.0.0.3 index=2\n"
+
+    IDS_HLP_IP_DELETE            "从表中删除配置项。\n"
+    IDS_HLP_IP_DELETE_ADDRESS    "从指定的接口删除 IP 地址或默认网关。\n"
+    IDS_HLP_IP_DELETE_ADDRESS_EX "\n用法: %1!s! [name=]<string> [[addr=]IP address] [[gateway=]IP address|ALL]\n\n\
+参数:\n\n\
+      标记           值\n\
+      name         - 接口的名称。\n\
+      addr         - 由 name 指定的接口的静态 IP 地址。\n\
+      gateway      - 下列值之一:\n\
+                     <IP address>: 要删除的静态 IP 地址的特定默认网关\n\
+                                   IP 地址。\n\
+                     ALL: 删除要删除的静态 IP 地址的所有默认网关\n\
+                          IP 地址。\n\n\
+注释: 从具有多个静态 IP 地址的接口删除一个 IP 地址，\n\
+      或从指定的接口删除默认网关。\n\n\
+示例:\n\n\
+       %1!s! ""本地连接"" addr=10.0.0.1 gateway=all\n"
+
+    IDS_HLP_IP_DELETE_ARPCACHE    "刷新一个或所有接口的 ARP 缓存。\n"
+    IDS_HLP_IP_DELETE_ARPCACHE_EX "\n用法: %1!s! [name=]<string>\n\n\
+参数:\n\n\
+      标记           值\n\
+      name         - 特定接口的友好名称。如果未指定名称，\n\
+                     将刷新所有接口的 ARP 缓存。\n\n\
+注释: 刷新特定接口或所有接口上的地址解析协议(ARP)缓存。\n\n\
+示例:\n\n\
+       %1!s!\n\
+       %1!s! name=""本地连接""\n"
+
+    IDS_HLP_IP_DELETE_DNS    "从指定的接口删除 DNS 服务器。\n"
+    IDS_HLP_IP_DELETE_DNS_EX "\n用法: %1!s! [name=]<string> [[addr=]<IP address>|ALL ]\n\n\
+参数:\n\n\
+      标记           值\n\
+      name         - 要删除 DNS 服务器的接口的名称。\n\
+      addr         - 下列值之一:\n\
+                     <IP address>: 要删除的 DNS 服务器的特定 IP 地址。\n\
+                     ALL: 删除所有已配置的 DNS 服务器 IP 地址。\n\n\
+注释: 删除特定接口的静态配置的 DNS 服务器 IP 地址。\n\n\
+示例:\n\n\
+       %1!s! ""本地连接"" 10.0.0.1\n\
+       %1!s! ""本地连接"" all\n"
+
+    IDS_HLP_IP_SET             "设置配置信息。\n"
+    IDS_HLP_IP_SET_ADDRESS     "设置指定接口的 IP 地址或默认网关。\n"
+    IDS_HLP_IP_SET_ADDRESS_EX  "\n用法: %1!s! [name=]<string> \n\
+       [[source=]dhcp | \n\
+        [source=] static [addr=]IP address [mask=]IP subnet mask]\n\
+       [[gateway=]<IP address>|none [gwmetric=]integer]\n\n\
+参数:\n\n\
+      标记           值\n\
+      name         - 接口的名称。\n\
+      source       - 下列值之一:\n\
+                     dhcp: 将 DHCP 设置为配置特定接口 IP 地址的来源。\n\
+                     static: 将配置 IP 地址的来源设置为本地静态配置。\n\
+      gateway      - 下列值之一:\n\
+                     <IP address>: 要设置的静态 IP 地址的特定默认网关。\n\
+                     none: 不设置默认网关。\n\
+      gwmetric     - 默认网关的跃点数。如果 gateway 设置为 'none'，\n\
+                     则不应设置此字段。\n\
+      以下选项仅在 source 为 'static' 时使用:\n\
+      addr         - 指定接口的 IP 地址。\n\
+      mask         - 指定 IP 地址的子网掩码。\n\n\
+注释: 用于将 IP 地址配置模式从 DHCP 更改为静态模式，或从静态模式\n\
+      更改为 DHCP。在使用静态 IP 地址的接口上添加 IP 地址或添加\n\
+      默认网关。\n\n\
+示例:\n\n\
+       %1!s! name=""本地连接"" source=dhcp\n\
+       %1!s! local static 10.0.0.9 255.0.0.0 10.0.0.1 1\n"
+
+    IDS_HLP_IP_SET_DNS         "设置 DNS 服务器模式和地址。\n"
+    IDS_HLP_IP_SET_DNS_EX      "\n用法: %1!s! [name=]<string> [source=]dhcp|static [addr=]<IP address>|none\n\
+             [[register=]none|primary|both]\n\n\
+参数:\n\n\
+      标记           值\n\
+      name         - 接口的名称。\n\
+      source       - 下列值之一:\n\
+                     dhcp: 将 DHCP 设置为配置特定接口 DNS 服务器的来源。\n\
+                     static: 将配置 DNS 服务器的来源设置为本地静态配置。\n\
+      addr         - 下列值之一:\n\
+                     <IP address>: DNS 服务器的 IP 地址。\n\
+                     none: 清除 DNS 服务器列表。\n\
+      register     - 下列值之一:\n\
+                     none: 禁用动态 DNS 注册。\n\
+                     primary: 只在主 DNS 后缀下注册。\n\
+                     both: 在主 DNS 后缀下和特定于连接的后缀下\n\
+                           都进行注册。\n\n\
+注释: 将 DNS 服务器配置设置为 DHCP 或静态模式。只有当 source 为\n\
+      'static' 时，'addr' 选项才可用于为指定接口配置静态的\n\
+      DNS 服务器 IP 地址列表。\n\n\
+示例:\n\n\
+       %1!s! name=""本地连接"" source=dhcp\n\
+       %1!s! ""本地连接"" static 10.0.0.1 primary\n"
+
+    IDS_HLP_IP_SHOW              "显示 IP 信息。\n"
+    IDS_HLP_IP_SHOW_ADDRESSES    "显示 IP 地址配置。\n"
+    IDS_HLP_IP_SHOW_ADDRESSES_EX "\n用法: %1!s! [[name=]string]\n\n\
+参数:\n\n\
+      标记            值\n\
+      name            特定接口的名称。\n\n\
+注释: 显示一个或多个特定接口的 IP 地址配置。\n\n\
+示例:\n\n\
+      %1!s! ""本地连接""\n"
+    IDS_HLP_IP_SHOW_CONFIG       "显示 IP 地址和其他信息。\n"
+    IDS_HLP_IP_SHOW_CONFIG_EX    "\n用法: %1!s! [[name=]string]\n\n\
+参数:\n\n\
+      标记            值\n\
+      name            特定接口的名称。\n\n\
+注释: 显示一个或多个特定接口的 IP 地址和 DNS 服务器配置。\n\n\
+示例:\n\n\
+      %1!s! ""本地连接""\n"
+    IDS_HLP_IP_SHOW_DNS          "显示 DNS 服务器地址。\n"
+    IDS_HLP_IP_SHOW_DNS_EX       "\n用法: %1!s! [[name=]string]\n\n\
+参数:\n\n\
+      标记            值\n\
+      name            特定接口的名称。\n\n\
+注释: 显示一个或多个特定接口的 DNS 服务器配置。\n\n\
+示例:\n\n\
+      %1!s! ""本地连接""\n"
+
+    IDS_HLP_IP_RESET    "将 TCP/IP 及相关组件重置为初始状态。\n"
+    IDS_HLP_IP_RESET_EX "\n用法: %1!s! [name=]<string>\n\n\
+参数:\n\n\
+      标记           值\n\
+      name         - 一个文件的名称，有关重置了哪些设置的信息将追加到\n\
+                     该文件中。\n\n\
+注释: 将 TCP/IP 及相关组件重置为初始状态。\n\n\
+示例:\n\n\
+       %1!s! resetlog.txt\n"
+
+    IDS_HLP_WINSOCK_RESET "将 Winsock 目录重置为初始状态。\n"
+    IDS_HLP_WINSOCK_RESET_EX "\n用法: %1!s!\n\n\
+注释: 将 Winsock 目录重置为初始状态。\n"
+    IDS_HLP_WINSOCK_SHOW  "显示信息。\n"
+    IDS_HLP_WINSOCK_SHOW_CATALOG "显示 Winsock 目录的内容。\n"
+    IDS_HLP_WINSOCK_SHOW_CATALOG_EX "\n用法: %1!s! [[type=]full]\n\n\
+参数:\n\n\
+    \n"
+
+    IDS_IP_HEADER        "\n接口 ""%1!s!"" 的配置\n"
+    IDS_DHCP_ON          "    DHCP 已启用:                          是\n"
+    IDS_DHCP_OFF         "    DHCP 已启用:                          否\n"
+    IDS_NOIPADDRESS      "    IP 地址:                              无\n"
+    IDS_IPADDRESS        "    IP 地址:                              %1!s!\n"
+    IDS_IPADDRESSES      "    IP 地址:                              %1!s!\n"
+    IDS_NOSUBNETMASK     "    子网掩码:                             无\n"
+    IDS_SUBNETMASK       "    子网掩码:                             %1!s!\n"
+    IDS_SUBNETMASKS      "    子网掩码:                             %1!s!\n"
+    IDS_DEFAULTGATEWAY   "    默认网关:                             %1!s!\n"
+    IDS_GATEWAYMETRIC    "    网关跃点数:                           %1!s!\n"
+    IDS_INTERFACEMETRIC  "    接口跃点数:                           %1!s!\n"
+    IDS_STATICNAMESERVER "    静态配置的 DNS 服务器:                %1!s!\n"
+    IDS_DHCPNAMESERVER   "    通过 DHCP 配置的 DNS 服务器:          %1!s!\n"
+    IDS_EMPTYLINE        "                                          %1!s!\n"
+
+    IDS_DUMP_NEWLINE     "\n"
+    IDS_DUMP_HEADERLINE  "# ----------------------------------\n"
+
+    IDS_DUMP_IP_HEADER    "# 接口 IP 配置\n"
+    IDS_DUMP_IP_INTERFACE "# ""%1!s!"" 的接口 IP 配置\n"
+    IDS_DUMP_IP_FOOTER    "# 接口 IP 配置结束\n"
+
+    IDS_ERROR_INVALID_INTERFACE  "\n指定的接口 %1!s! 无效。\n"
+    IDS_ERROR_BAD_VALUE "\n%1!s! 不是 %1!s! 可接受的值。\n"
+    IDS_ERROR_ALREADY_DHCP "\n此接口上已启用 DHCP。\n"
+    IDS_ERROR_GET_PROPERTIES "\n获取接口 %1!s! 的配置时出错。\n"
+
+    IDS_ERROR_ADD_DHCP_ADDRESS "\n无法将静态 IP 地址添加到配置为使用 DHCP 的接口。\n"
+    IDS_ERROR_DELETE_DHCP_ADDRESS "\n无法删除通过 DHCP 配置的 IP 地址。\n"
+END
