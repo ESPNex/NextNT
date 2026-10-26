@@ -25,11 +25,45 @@ KiQueryCurrentIrql(VOID)
 
 VOID
 NTAPI
+KiDispatchInterrupt(VOID);
+
+static
+VOID
+KiRequestPendingSoftwareInterrupt(
+    _In_ KIRQL Irql,
+    _In_ KIRQL Level)
+{
+    PKIPCR Pcr = (PKIPCR)KeGetPcr();
+    PKTHREAD Thread;
+
+    if ((Pcr == NULL) || !KiHalInitialized || (Pcr->Prcb.NestingLevel != 0) || (Irql >= Level))
+    {
+        return;
+    }
+
+    if (Level == DISPATCH_LEVEL)
+    {
+        if (Pcr->DispatchInterrupt != 0)
+            HalRequestSoftwareInterrupt(DISPATCH_LEVEL);
+        return;
+    }
+
+    Thread = KeGetCurrentThread();
+    if ((Pcr->ApcInterrupt != 0) && (Thread != NULL) && KiIsKernelApcDeliverable(Thread, Irql))
+    {
+        HalRequestSoftwareInterrupt(APC_LEVEL);
+    }
+}
+
+VOID
+NTAPI
 KiRestoreTrapFrameIrql(
     _In_ KIRQL Irql)
 {
     /* Called from the KiTrapReturn assembly tail. */
     KiSetIrqlAndPriorityMask(Irql);
+    KiRequestPendingSoftwareInterrupt(Irql, DISPATCH_LEVEL);
+    KiRequestPendingSoftwareInterrupt(Irql, APC_LEVEL);
 }
 
 FORCEINLINE
@@ -125,6 +159,41 @@ KiShouldDeliverApcOnLower(
             KiIsKernelApcDeliverable(Thread, NewIrql));
 }
 
+static
+VOID
+KiDispatchOnLower(
+    _In_ KIRQL NewIrql)
+{
+    PKIPCR Pcr;
+
+    for (;;)
+    {
+        Pcr = (PKIPCR)KeGetPcr();
+        if ((Pcr == NULL) || !KiHalInitialized || (Pcr->DispatchInterrupt == 0) ||
+            (Pcr->Prcb.NestingLevel != 0))
+        {
+            return;
+        }
+
+        if (ARM64_READ_SYSREG(DAIF) & ARM64_PSTATE_IRQ_MASK)
+        {
+            KiRequestPendingSoftwareInterrupt(NewIrql, DISPATCH_LEVEL);
+            return;
+        }
+
+        KiSetCurrentIrql(DISPATCH_LEVEL);
+        Pcr = (PKIPCR)KeGetPcr();
+        if (Pcr->DispatchInterrupt != 0)
+        {
+            HalClearSoftwareInterrupt(DISPATCH_LEVEL);
+            KiClearDpcInterruptRequested(&Pcr->Prcb);
+            KiDispatchInterrupt();
+            _enable();
+        }
+        KiSetIrqlAndPriorityMask(NewIrql);
+    }
+}
+
 VOID
 FASTCALL
 KfLowerIrql(
@@ -147,11 +216,21 @@ KfLowerIrql(
 
     KiSetIrqlAndPriorityMask(NewIrql);
 
+    if (NewIrql < DISPATCH_LEVEL)
+    {
+        KiDispatchOnLower(NewIrql);
+    }
+
     if (KiShouldDeliverApcOnLower(NewIrql))
     {
+        HalClearSoftwareInterrupt(APC_LEVEL);
         KiSetIrqlAndPriorityMask(APC_LEVEL);
         KiDeliverApc(KernelMode, NULL, NULL);
         KiSetIrqlAndPriorityMask(NewIrql);
+    }
+    else
+    {
+        KiRequestPendingSoftwareInterrupt(NewIrql, APC_LEVEL);
     }
 }
 

@@ -2892,6 +2892,8 @@ HalInitSystem(
     return TRUE;
 }
 
+static UCHAR HalpArm64SoftwareSgiSent[MAXIMUM_PROCESSORS];
+
 VOID
 FASTCALL
 HalRequestSoftwareInterrupt(
@@ -2899,8 +2901,14 @@ HalRequestSoftwareInterrupt(
 {
     PKIPCR Pcr;
     ULONG SgiId;
-    KIRQL CurrentIrql;
+    ULONG Cpu;
+    ULONG64 Daif;
 
+    if ((SoftwareInterruptRequested != APC_LEVEL) && (SoftwareInterruptRequested != DISPATCH_LEVEL))
+        return;
+
+    Daif = ARM64_READ_SYSREG(DAIF);
+    ARM64_DAIFSET(3);
     Pcr = KeGetPcr();
 
     if (SoftwareInterruptRequested == APC_LEVEL)
@@ -2909,24 +2917,22 @@ HalRequestSoftwareInterrupt(
         if (Pcr != NULL)
             Pcr->ApcInterrupt = 1;
     }
-    else if (SoftwareInterruptRequested == DISPATCH_LEVEL)
+    else
     {
         SgiId = HAL_ARM64_SGI_DPC;
         if (Pcr != NULL)
             Pcr->DispatchInterrupt = 1;
     }
-    else
+
+    if ((Pcr == NULL) || (SoftwareInterruptRequested > KeGetCurrentIrql()))
     {
-        return;
+        Cpu = KeGetCurrentProcessorNumber();
+        if (Cpu < MAXIMUM_PROCESSORS)
+            HalpArm64SoftwareSgiSent[Cpu] |= (UCHAR)(1u << SgiId);
+        HalpArm64SendSgiSelf(SgiId);
     }
 
-    CurrentIrql = KeGetCurrentIrql();
-    if (SoftwareInterruptRequested <= CurrentIrql)
-    {
-        HalpArm64SetPmrExact(CurrentIrql);
-    }
-
-    HalpArm64SendSgiSelf(SgiId);
+    ARM64_WRITE_SYSREG(DAIF, Daif);
 }
 
 NTSTATUS
@@ -3544,20 +3550,42 @@ FASTCALL
 HalClearSoftwareInterrupt(
     _In_ KIRQL Request)
 {
-    PKIPCR Pcr = KeGetPcr();
+    PKIPCR Pcr;
+    ULONG SgiId;
+    ULONG Cpu;
+    ULONG64 Daif;
+    UCHAR Bit;
+
+    if ((Request != APC_LEVEL) && (Request != DISPATCH_LEVEL))
+        return;
+
+    Daif = ARM64_READ_SYSREG(DAIF);
+    ARM64_DAIFSET(3);
+    Pcr = KeGetPcr();
 
     if (Request == APC_LEVEL)
     {
+        SgiId = HAL_ARM64_SGI_APC;
         if (Pcr != NULL)
             Pcr->ApcInterrupt = 0;
-        HalpArm64ClearSelfSgi(HAL_ARM64_SGI_APC);
     }
-    else if (Request == DISPATCH_LEVEL)
+    else
     {
+        SgiId = HAL_ARM64_SGI_DPC;
         if (Pcr != NULL)
             Pcr->DispatchInterrupt = 0;
-        HalpArm64ClearSelfSgi(HAL_ARM64_SGI_DPC);
     }
+
+    Bit = (UCHAR)(1u << SgiId);
+    Cpu = KeGetCurrentProcessorNumber();
+    if ((Cpu >= MAXIMUM_PROCESSORS) || (HalpArm64SoftwareSgiSent[Cpu] & Bit))
+    {
+        if (Cpu < MAXIMUM_PROCESSORS)
+            HalpArm64SoftwareSgiSent[Cpu] &= (UCHAR)~Bit;
+        HalpArm64ClearSelfSgi(SgiId);
+    }
+
+    ARM64_WRITE_SYSREG(DAIF, Daif);
 }
 
 VOID
