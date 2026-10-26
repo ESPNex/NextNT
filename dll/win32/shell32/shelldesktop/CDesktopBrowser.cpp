@@ -30,6 +30,9 @@
 #include <atlsimpcoll.h>
 #include <shdocvw_undoc.h>
 
+static const GUID GUID_DEVINTERFACE_WPD_SHELL =
+    { 0x6ac27878, 0xa6fa, 0x4155, { 0xba, 0x85, 0xf9, 0x8f, 0x49, 0x1d, 0x4f, 0x33 } };
+
 WINE_DEFAULT_DEBUG_CHANNEL(desktop);
 
 static const WCHAR szProgmanClassName[]  = L"Progman";
@@ -62,6 +65,7 @@ private:
     CComPtr<IOleWindow>        m_ChangeNotifyServer;
     HWND                       m_hwndChangeNotifyServer;
     DWORD m_dwDrives;
+    HDEVNOTIFY m_hPortableDeviceNotify;
     LONG m_lShellWindowsCookie;
     CComObject<CDesktopAutomation> *m_pAutomation;
     CSimpleArray<CComBSTR> m_PropertyNames;
@@ -333,6 +337,7 @@ CDesktopBrowser::CDesktopBrowser():
     m_hWndShellView(NULL),
     m_hwndChangeNotifyServer(NULL),
     m_dwDrives(::GetLogicalDrives()),
+    m_hPortableDeviceNotify(NULL),
     m_lShellWindowsCookie(0),
     m_pAutomation(NULL)
 {
@@ -438,6 +443,10 @@ HRESULT CDesktopBrowser::Initialize(IShellDesktopTray *ShellDesk)
     Create(NULL, NULL, szProgmanWindowName, WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW);
     if (!m_hWnd)
         return E_FAIL;
+
+    DEV_BROADCAST_DEVICEINTERFACE_W Filter = { sizeof(Filter), DBT_DEVTYP_DEVICEINTERFACE };
+    Filter.dbcc_classguid = GUID_DEVINTERFACE_WPD_SHELL;
+    m_hPortableDeviceNotify = RegisterDeviceNotificationW(m_hWnd, &Filter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
     hRet = psfDesktop->CreateViewObject(m_hWnd, IID_PPV_ARG(IShellView, &m_ShellView));
     if (FAILED_UNEXPECTEDLY(hRet))
@@ -1268,6 +1277,11 @@ LRESULT CDesktopBrowser::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
         WinList_Revoke(m_lShellWindowsCookie);
         m_lShellWindowsCookie = 0;
     }
+    if (m_hPortableDeviceNotify)
+    {
+        UnregisterDeviceNotification(m_hPortableDeviceNotify);
+        m_hPortableDeviceNotify = NULL;
+    }
     bHandled = FALSE;
     return 0;
 }
@@ -1315,6 +1329,16 @@ LRESULT CDesktopBrowser::OnDeviceChange(UINT uMsg, WPARAM wParam, LPARAM lParam,
 {
     if (wParam != DBT_DEVICEARRIVAL && wParam != DBT_DEVICEREMOVECOMPLETE)
         return 0;
+
+    PDEV_BROADCAST_HDR pHeader = (PDEV_BROADCAST_HDR)lParam;
+    if (pHeader && pHeader->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE &&
+        IsEqualGUID(((PDEV_BROADCAST_DEVICEINTERFACE_W)pHeader)->dbcc_classguid, GUID_DEVINTERFACE_WPD_SHELL))
+    {
+        CComHeapPtr<ITEMIDLIST> pidlDrives;
+        if (SUCCEEDED(SHGetSpecialFolderLocation(NULL, CSIDL_DRIVES, &pidlDrives)))
+            SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_IDLIST, pidlDrives, NULL);
+        return 0;
+    }
 
     DWORD dwDrives = ::GetLogicalDrives();
     for (INT iDrive = 0; iDrive <= 'Z' - 'A'; ++iDrive)
