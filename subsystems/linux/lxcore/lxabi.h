@@ -207,13 +207,23 @@
 
 #define LX_MAP_SHARED           0x01
 #define LX_MAP_PRIVATE          0x02
+#define LX_MAP_SHARED_VALIDATE  0x03
+#define LX_MAP_TYPE             0x0f
 #define LX_MAP_FIXED            0x10
 #define LX_MAP_ANONYMOUS        0x20
 #define LX_MAP_GROWSDOWN        0x0100
+#define LX_MAP_DENYWRITE        0x0800
+#define LX_MAP_EXECUTABLE       0x1000
 #define LX_MAP_LOCKED           0x2000
+#define LX_MAP_NORESERVE        0x4000
 #define LX_MAP_POPULATE         0x8000
+#define LX_MAP_NONBLOCK         0x10000
 #define LX_MAP_STACK            0x20000
+#define LX_MAP_HUGETLB          0x40000
+#define LX_MAP_SYNC             0x80000
 #define LX_MAP_FIXED_NOREPLACE  0x100000
+#define LX_MAP_UNINITIALIZED    0x4000000
+#define LX_MAP_HUGE_MASK        0xFC000000
 
 #define LX_MREMAP_MAYMOVE   1
 #define LX_MREMAP_FIXED     2
@@ -272,6 +282,11 @@ typedef struct _LX_SCHED_ATTR
 
 #define LX_MADV_DONTNEED    4
 #define LX_MADV_FREE        8
+
+#define LX_MLOCK_ONFAULT    0x01
+#define LX_MCL_CURRENT      1
+#define LX_MCL_FUTURE       2
+#define LX_MCL_ONFAULT      4
 
 #define LX_AT_NULL          0
 #define LX_AT_PHDR          3
@@ -438,6 +453,7 @@ typedef struct _LX_SCHED_ATTR
 #define LX_SEGV_ACCERR      2
 #define LX_ILL_ILLOPC       1
 #define LX_BUS_ADRALN       1
+#define LX_BUS_ADRERR       2
 #define LX_TRAP_BRKPT       1
 #define LX_FPE_INTDIV       1
 #define LX_CLD_EXITED       1

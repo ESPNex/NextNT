@@ -1245,11 +1245,12 @@ LxGenPidStatus(
         LxProcessUsage(Process, NULL, &Usage);
         LxTextPrintf(Text,
                      "Kthread:\t0\n"
-                     "VmPeak:\t%8llu kB\nVmSize:\t%8llu kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\n"
+                     "VmPeak:\t%8llu kB\nVmSize:\t%8llu kB\nVmLck:\t%8llu kB\nVmPin:\t       0 kB\n"
                      "VmHWM:\t%8llu kB\nVmRSS:\t%8llu kB\nRssAnon:\t       0 kB\nRssFile:\t       0 kB\n"
                      "RssShmem:\t       0 kB\nVmData:\t%8llu kB\nVmStk:\t       0 kB\nVmExe:\t%8llu kB\n"
                      "VmLib:\t       0 kB\nVmPTE:\t       0 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\n",
-                     Usage.PeakVirtualSize / 1024, Usage.VirtualSize / 1024, Usage.MaxRss / 1024, Usage.WorkingSet / 1024,
+                     Usage.PeakVirtualSize / 1024, Usage.VirtualSize / 1024, LxMmLockedBytes(Process) / 1024,
+                     Usage.MaxRss / 1024, Usage.WorkingSet / 1024,
                      Usage.PrivateBytes / 1024, (Process->EndCode - Process->StartCode) / 1024);
     }
     else
@@ -1686,16 +1687,86 @@ LxGenPidLimits(
 
 static
 VOID
-LxGenPidMaps(
-    _In_ PLX_PROCESS Self,
-    _In_ PLX_SYNTH Synth,
+LxGenSmapsEntry(
+    _In_ HANDLE Handle,
+    _In_ PLX_VMA Vma,
     _Inout_ PLX_TEXT Text)
 {
+    static const PCSTR Names[] =
+    {
+        "Size:", "KernelPageSize:", "MMUPageSize:", "Rss:", "Pss:", "Pss_Dirty:", "Shared_Clean:", "Shared_Dirty:",
+        "Private_Clean:", "Private_Dirty:", "Referenced:", "Anonymous:", "KSM:", "LazyFree:", "AnonHugePages:",
+        "ShmemPmdMapped:", "FilePmdMapped:", "Shared_Hugetlb:", "Private_Hugetlb:", "Swap:", "SwapPss:", "Locked:"
+    };
+    ULONG64 Values[RTL_NUMBER_OF(Names)] = { 0 };
+    ULONG64 Rss = (Handle != NULL) ? LxMmVmaResident(Handle, Vma) / 1024 : 0;
+    BOOLEAN Shared = (Vma->Flags & LX_MAP_SHARED) != 0;
+    ULONG Index;
+
+    Values[0] = (Vma->End - Vma->Start) / 1024;
+    Values[1] = Values[2] = LX_PAGE_SIZE / 1024;
+    Values[3] = Values[4] = Values[10] = Rss;
+    if (Vma->File == NULL)
+    {
+        Values[5] = Values[9] = Rss;
+        if (!Shared)
+            Values[11] = Rss;
+    }
+    else
+    {
+        Values[Shared ? 6 : 8] = Rss;
+    }
+    if (Vma->Flags & LX_VMA_LOCKED)
+        Values[21] = Rss;
+
+    for (Index = 0; Index < RTL_NUMBER_OF(Names); Index++)
+        LxTextPrintf(Text, "%-16s%8llu kB\n", Names[Index], Values[Index]);
+    LxTextPrintf(Text, "THPeligible:    %8u\nVmFlags: %s%s%s%s%s%s%s%s%s%s\n", 0,
+                 (Vma->Prot & LX_PROT_READ) ? "rd " : "",
+                 (Vma->Prot & LX_PROT_WRITE) ? "wr " : "",
+                 (Vma->Prot & LX_PROT_EXEC) ? "ex " : "",
+                 Shared ? "sh " : "",
+                 "mr ",
+                 (Vma->Flags & LX_VMA_NOMAYWRITE) ? "" : "mw ",
+                 "me ",
+                 (Vma->Flags & LX_VMA_STACK) ? "gd " : "",
+                 (Vma->Flags & LX_VMA_LOCKED) ? "lo " : "",
+                 (!Shared && (Vma->Prot & LX_PROT_WRITE)) ? "ac " : "");
+}
+
+static
+VOID
+LxGenPidMapsCommon(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text,
+    _In_ BOOLEAN Smaps)
+{
     PLX_PROCESS Process = LxProcessLookup(Self->Instance, Synth->Pid);
+    PEPROCESS EProcess = NULL;
+    HANDLE Handle = NULL;
     PLIST_ENTRY Entry;
 
     if (Process == NULL)
         return;
+
+    if (Smaps)
+    {
+        if (Process->Mm->NtPid == HandleToUlong(PsGetCurrentProcessId()))
+        {
+            Handle = NtCurrentProcess();
+        }
+        else if (!Process->Exited &&
+                 NT_SUCCESS(PsLookupProcessByProcessId(ULongToHandle(Process->Mm->NtPid), &EProcess)))
+        {
+            if (!NT_SUCCESS(ObOpenObjectByPointer(EProcess, OBJ_KERNEL_HANDLE, NULL, PROCESS_QUERY_INFORMATION,
+                                                  *PsProcessType, KernelMode, &Handle)))
+            {
+                Handle = NULL;
+            }
+            ObDereferenceObject(EProcess);
+        }
+    }
 
     LxMmLock(Process);
     for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
@@ -1733,9 +1804,33 @@ LxGenPidMaps(
             LxTextAppend(Text, Name, (ULONG)strlen(Name));
         }
         LxTextAppend(Text, "\n", 1);
+        if (Smaps)
+            LxGenSmapsEntry(Handle, Vma, Text);
     }
     LxMmUnlock(Process);
+    if ((Handle != NULL) && (Handle != NtCurrentProcess()))
+        ZwClose(Handle);
     LxProcessDereference(Process);
+}
+
+static
+VOID
+LxGenPidMaps(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    LxGenPidMapsCommon(Self, Synth, Text, FALSE);
+}
+
+static
+VOID
+LxGenPidSmaps(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    LxGenPidMapsCommon(Self, Synth, Text, TRUE);
 }
 
 static
@@ -1960,7 +2055,7 @@ static const LX_PID_ENTRY LxPidEntries[] =
     { "root", LX_S_IFLNK, 0777, NULL, NULL, NULL },
     { "sessionid", LX_S_IFREG, 0444, "4294967295", NULL, NULL },
     { "setgroups", LX_S_IFREG, 0644, NULL, LxGenPidSetgroups, LxWritePidSetgroups },
-    { "smaps", LX_S_IFREG, 0444, NULL, LxGenPidMaps, NULL },
+    { "smaps", LX_S_IFREG, 0444, NULL, LxGenPidSmaps, NULL },
     { "stat", LX_S_IFREG, 0444, NULL, LxGenPidStat, NULL },
     { "statm", LX_S_IFREG, 0444, NULL, LxGenPidStatm, NULL },
     { "status", LX_S_IFREG, 0444, NULL, LxGenPidStatus, NULL },

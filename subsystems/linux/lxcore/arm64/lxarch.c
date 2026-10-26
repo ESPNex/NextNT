@@ -367,6 +367,41 @@ LxArm64SetFpLr(
     }
 }
 
+VOID
+LxArchRestoreContext(
+    _Inout_ PKTRAP_FRAME TrapFrame,
+    _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame,
+    _In_ PCONTEXT Context)
+{
+    ULONG Index;
+
+    for (Index = 0; Index <= 18; Index++)
+        TrapFrame->X[Index] = Context->X[Index];
+    if (ExceptionFrame != NULL)
+    {
+        ExceptionFrame->X19 = Context->X19;
+        ExceptionFrame->X20 = Context->X20;
+        ExceptionFrame->X21 = Context->X21;
+        ExceptionFrame->X22 = Context->X22;
+        ExceptionFrame->X23 = Context->X23;
+        ExceptionFrame->X24 = Context->X24;
+        ExceptionFrame->X25 = Context->X25;
+        ExceptionFrame->X26 = Context->X26;
+        ExceptionFrame->X27 = Context->X27;
+        ExceptionFrame->X28 = Context->X28;
+    }
+    LxArm64SetFpLr(TrapFrame, ExceptionFrame, Context->Fp, Context->Lr);
+    TrapFrame->Sp = Context->Sp;
+    TrapFrame->Pc = Context->Pc;
+    TrapFrame->Spsr = Context->Cpsr;
+    if (TrapFrame->VfpState != NULL)
+    {
+        TrapFrame->VfpState->Fpcr = Context->Fpcr;
+        TrapFrame->VfpState->Fpsr = Context->Fpsr;
+        RtlCopyMemory(TrapFrame->VfpState->V, Context->V, sizeof(Context->V));
+    }
+}
+
 BOOLEAN
 LxArchSetupSignalFrame(
     _Inout_ PKTRAP_FRAME TrapFrame,

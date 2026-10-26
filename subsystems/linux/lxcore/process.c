@@ -319,6 +319,7 @@ LxProcessCreate(
         return NULL;
 
     Process->RefCount = 1;
+    Process->Mm = Process;
     LxInstanceReference(Instance);
     Process->Instance = Instance;
     InitializeListHead(&Process->GlobalLink);
@@ -698,8 +699,16 @@ LxProcessExitGroup(
     _In_ LONG WaitStatus)
 {
     NTSTATUS ExitCode;
+    PLX_THREAD Thread;
 
     LxProcessExitStatus(Process, WaitStatus);
+    if (Process->Mm != Process)
+    {
+        Thread = LxCurrentThread();
+        if ((Thread != NULL) && (Thread->Process == Process))
+            Thread->VforkExited = TRUE;
+        return;
+    }
     if ((WaitStatus & 0x7F) == 0)
         ExitCode = (WaitStatus >> 8) & 0xFF;
     else

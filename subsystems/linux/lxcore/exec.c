@@ -669,7 +669,7 @@ LxExecKillOtherThreads(
         {
             PLX_THREAD Candidate = CONTAINING_RECORD(Entry, LX_THREAD, Link);
 
-            if (Candidate->EThread != Current)
+            if ((Candidate->EThread != Current) && (PsGetThreadProcess(Candidate->EThread) == PsGetCurrentProcess()))
             {
                 Other = Candidate->EThread;
                 ObReferenceObject(Other);

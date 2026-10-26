@@ -50,7 +50,20 @@ list(APPEND MM_TESTS t_async.c t_large.c t_awe.c t_clone.c t_session.c ${NVS_ROO
 list(APPEND MM_TESTS ${NVS_ROOT}/nt/ntprotect.c)
 list(APPEND MM_TESTS ${NVS_ROOT}/nt/ntmapping.c ${NVS_ROOT}/nt/nttruncate.c)
 list(APPEND MM_TESTS t_highmem.c)
-set(MM_AREAS pfn pagetable vad vm large awe clone session fault fault_smp paging section image stress ccmm ntfile writeback ntpaging async sys process highmem)
+
+set(LXCORE_SOURCE ${REACTOS_HOST_SOURCE_ROOT}/subsystems/linux/lxcore)
+set(LXCORE_HOST ${CMAKE_CURRENT_SOURCE_DIR}/../../../lxcore)
+set(LXCORE_COPY ${CMAKE_CURRENT_BINARY_DIR}/lxcore)
+add_custom_command(OUTPUT ${LXCORE_COPY}/mm.c ${LXCORE_COPY}/lxcore.h
+    COMMAND ${CMAKE_COMMAND} -E copy ${LXCORE_SOURCE}/mm.c ${LXCORE_COPY}/mm.c
+    COMMAND ${CMAKE_COMMAND} -E copy ${LXCORE_HOST}/lxcore.h ${LXCORE_COPY}/lxcore.h
+    DEPENDS ${LXCORE_SOURCE}/mm.c ${LXCORE_HOST}/lxcore.h)
+set(LXCORE_TESTS ${LXCORE_HOST}/t_lxmm.c ${LXCORE_HOST}/lxshim.c ${LXCORE_COPY}/mm.c)
+set_source_files_properties(${LXCORE_TESTS} PROPERTIES
+    INCLUDE_DIRECTORIES "${LXCORE_HOST};${CMAKE_CURRENT_SOURCE_DIR};${LXCORE_SOURCE};${LXCORE_SOURCE}/arm64")
+list(APPEND MM_TESTS ${LXCORE_TESTS})
+
+set(MM_AREAS pfn pagetable vad vm large awe clone session fault fault_smp paging section image stress ccmm ntfile writeback ntpaging async sys process highmem lxmm)
 
 include(${NVS_ROOT}/check-standalone.cmake)
 nvs_assert_standalone(${MM_CORE} ${CC_ENGINE})

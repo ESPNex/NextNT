@@ -37,13 +37,14 @@ LxPicoSystemCall(
     LONG64 Result;
 
     RtlZeroMemory(&Call, sizeof(Call));
-    Call.Thread = PsPicoGetThreadContext(PsGetCurrentThread());
+    Call.Thread = LxThreadOf(PsGetCurrentThread());
     Call.Process = Call.Thread->Process;
     Call.TrapFrame = TrapFrame;
     Call.ExceptionFrame = ExceptionFrame;
     LxArchGetSyscall(TrapFrame, &Call.Number, Call.Args);
 
     Result = LxSysCall(&Call);
+    Call.Thread = LxThreadOf(PsGetCurrentThread());
     if ((Result == -LX_ERESTARTSYS) || (Result == -LX_ERESTARTNOINTR) || (Result == -LX_ERESTARTNOHAND))
     {
         Call.Thread->Restart = Result;
@@ -53,7 +54,10 @@ LxPicoSystemCall(
     if (Result != LX_SYSCALL_NO_RESULT)
         LxArchSetSyscallResult(TrapFrame, Result);
 
-    LxSignalCheckPending(Call.Thread, TrapFrame, ExceptionFrame);
+    if (!Call.Thread->VforkExited)
+        LxSignalCheckPending(Call.Thread, TrapFrame, ExceptionFrame);
+    if (LxVforkFinish(TrapFrame, ExceptionFrame))
+        LxSignalCheckPending(LxThreadOf(PsGetCurrentThread()), TrapFrame, ExceptionFrame);
 }
 
 static
@@ -64,7 +68,7 @@ LxPicoDispatchException(
     _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame,
     _Inout_ PKTRAP_FRAME TrapFrame)
 {
-    PLX_THREAD Thread = PsPicoGetThreadContext(PsGetCurrentThread());
+    PLX_THREAD Thread = LxThreadOf(PsGetCurrentThread());
     LX_SIGINFO Info;
     LONG Code;
     LONG Signal = LxSignalFromException(ExceptionRecord->ExceptionCode, &Code);
@@ -79,6 +83,12 @@ LxPicoDispatchException(
                         (ExceptionRecord->ExceptionInformation[0] == 8) ? LX_PROT_EXEC : LX_PROT_READ))
     {
         return TRUE;
+    }
+    if (Thread->FaultBus)
+    {
+        Thread->FaultBus = FALSE;
+        Signal = LX_SIGBUS;
+        Code = LX_BUS_ADRERR;
     }
 
     RtlZeroMemory(&Info, sizeof(Info));
@@ -101,6 +111,7 @@ LxPicoDispatchException(
                 (PVOID)ExceptionRecord->ExceptionInformation[1] : NULL);
 
     LxProcessExitGroup(Thread->Process, Signal);
+    return LxVforkFinish(TrapFrame, ExceptionFrame);
 }
 
 static
@@ -117,6 +128,7 @@ LxPicoThreadStart(
     {
         LONG Errno = 0;
         NTSTATUS Status;
+        BOOLEAN Vfork = Request->Vfork;
 
         Thread->Exec = NULL;
         LxThreadAttach(Thread);
@@ -124,9 +136,16 @@ LxPicoThreadStart(
         Status = LxExecImage(Thread, Request, TrapFrame, ExceptionFrame, &Errno);
         Request->Status = Status;
         Request->Errno = Errno;
+        if (Vfork && !NT_SUCCESS(Status) && (Status != STATUS_UNSUCCESSFUL))
+        {
+            InterlockedCompareExchange((PLONG)&Thread->Process->NtPid, 0, (LONG)HandleToUlong(PsGetCurrentProcessId()));
+            KeSetEvent(&Request->Done, IO_NO_INCREMENT, FALSE);
+            ZwTerminateProcess(NtCurrentProcess(), Status);
+            PsPicoTerminateCurrentThread(Status);
+        }
         KeSetEvent(&Request->Done, IO_NO_INCREMENT, FALSE);
         if (!NT_SUCCESS(Status))
-            LxProcessExitGroup(Thread->Process, 127 << 8);
+            LxProcessExitGroup(Thread->Process, Vfork ? LX_SIGSEGV : (127 << 8));
         return;
     }
 
@@ -148,6 +167,7 @@ LxPicoThreadExit(
     if (Thread == NULL)
         return;
 
+    LxVforkAbandon(Thread);
     LxFutexExitRobustList(Thread);
     if (Thread->ClearChildTid != 0)
     {
@@ -169,6 +189,11 @@ LxPicoProcessExit(
 
     if (Process == NULL)
         return;
+    if (Process->NtPid != HandleToUlong(PsGetProcessId(EProcess)))
+    {
+        LxProcessDereference(Process);
+        return;
+    }
 
     LxMmLock(Process);
     LxMmRelease(Process);

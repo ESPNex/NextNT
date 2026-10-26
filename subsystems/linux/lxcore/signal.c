@@ -117,6 +117,20 @@ LxSignalTerminate(
 
     if (Target->Trace || (Target->Pid == 1))
         DPRINT1("Linux process %lu (%s) is killed by signal %ld\n", Target->Pid, Target->Comm, Signal);
+    if (Target->Mm != Target)
+    {
+        PLX_THREAD Current = LxCurrentThread();
+
+        if ((Current != NULL) && (Current->Process == Target))
+        {
+            LxProcessExitGroup(Target, Signal);
+            return;
+        }
+        LxProcessExitStatus(Target, Signal);
+        InterlockedOr64(&Target->Pending, (LONG64)LX_SIGNAL_BIT(LX_SIGKILL));
+        LxSignalWake(Target, 0);
+        return;
+    }
     if (Target->NtPid == HandleToUlong(PsGetCurrentProcessId()))
         LxProcessExitGroup(Target, Signal);
 
@@ -401,6 +415,7 @@ LxSignalCheckPending(
             if (LxSignalIgnoredByDefault(Signal) || (Process->Pid == 1) || LxPidNsIsInit(Process))
                 continue;
             LxProcessExitGroup(Process, Signal);
+            return;
         }
 
         if ((Restart == -LX_ERESTARTNOINTR) || ((Restart == -LX_ERESTARTSYS) && (Action.Flags & LX_SA_RESTART)))

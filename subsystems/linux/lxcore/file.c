@@ -16,12 +16,23 @@
 static volatile LONG64 LxAnonInode = 0x100000;
 
 PLX_THREAD
+LxThreadOf(
+    _In_ PETHREAD EThread)
+{
+    PLX_THREAD Thread = PsPicoGetThreadContext(EThread);
+
+    while ((Thread != NULL) && (Thread->Vfork != NULL))
+        Thread = Thread->Vfork;
+    return Thread;
+}
+
+PLX_THREAD
 LxCurrentThread(VOID)
 {
     PETHREAD Thread = PsGetCurrentThread();
 
     if (!PsIsSystemThread(Thread))
-        return PsPicoGetThreadContext(Thread);
+        return LxThreadOf(Thread);
     return NULL;
 }
 

@@ -99,6 +99,8 @@ LxSysCall(
         }
         Start = (LONG64)KeQueryInterruptTime();
         Result = Entry->Handler(Call);
+        Call->Thread = LxThreadOf(PsGetCurrentThread());
+        Call->Process = Call->Thread->Process;
         Call->Thread->CurrentSyscall = MAXULONG;
         if (((LONG64)KeQueryInterruptTime() - Start > 10000000LL) && !LxSyscallMayBlock(Entry->Handler))
         {
@@ -1945,12 +1947,16 @@ LX_SYSCALL(LxSysExit)
 {
     if (Call->Process->ThreadCount <= 1)
         LxProcessExitGroup(Call->Process, ((LONG)Call->Args[0] & 0xFF) << 8);
+    if (Call->Thread->VforkExited)
+        return 0;
     PsPicoTerminateCurrentThread((NTSTATUS)(Call->Args[0] & 0xFF));
+    return 0;
 }
 
 LX_SYSCALL(LxSysExitGroup)
 {
     LxProcessExitGroup(Call->Process, ((LONG)Call->Args[0] & 0xFF) << 8);
+    return 0;
 }
 
 LX_SYSCALL(LxSysKill)
@@ -2217,6 +2223,7 @@ LxForkProcess(
     PLX_CGROUP Cgroup = NULL;
     PEPROCESS EProcess = NULL;
     HANDLE ProcessHandle = NULL, ThreadHandle = NULL;
+    BOOLEAN Borrow = ((Request->Flags & (LX_CLONE_VM | LX_CLONE_VFORK)) == (LX_CLONE_VM | LX_CLONE_VFORK));
     NTSTATUS Status;
     ULONG Pid, UserPid;
     LONG Error;
@@ -2311,13 +2318,21 @@ LxForkProcess(
     if (Request->Flags & LX_CLONE_CHILD_SETTID)
         Thread->SetChildTid = Request->ChildTid;
 
-    LxMmLock(Parent);
-    Status = (LxMmFork(Child, Parent) == 0) ? STATUS_SUCCESS : STATUS_NO_MEMORY;
-    if (NT_SUCCESS(Status))
-        Status = PsPicoCreateProcess(TRUE, Child, &ProcessHandle);
-    LxMmUnlock(Parent);
-    if (NT_SUCCESS(Status))
-        Status = ObReferenceObjectByHandle(ProcessHandle, 0, *PsProcessType, KernelMode, (PVOID*)&EProcess, NULL);
+    if (Borrow)
+    {
+        Thread->VforkContext = LxAlloc(sizeof(CONTEXT));
+        Status = (Thread->VforkContext != NULL) ? STATUS_SUCCESS : STATUS_NO_MEMORY;
+    }
+    else
+    {
+        LxMmLock(Parent);
+        Status = (LxMmFork(Child, Parent) == 0) ? STATUS_SUCCESS : STATUS_NO_MEMORY;
+        if (NT_SUCCESS(Status))
+            Status = PsPicoCreateProcess(TRUE, Child, &ProcessHandle);
+        LxMmUnlock(Parent);
+        if (NT_SUCCESS(Status))
+            Status = ObReferenceObjectByHandle(ProcessHandle, 0, *PsProcessType, KernelMode, (PVOID*)&EProcess, NULL);
+    }
     if (!NT_SUCCESS(Status))
     {
         if (ProcessHandle != NULL)
@@ -2332,9 +2347,16 @@ LxForkProcess(
         return -LxStatusToErrno(Status);
     }
 
-    Child->NtPid = HandleToUlong(PsGetProcessId(EProcess));
-    LxProcessPublishName(Child, EProcess);
-    ObDereferenceObject(EProcess);
+    if (Borrow)
+    {
+        Child->Mm = Parent->Mm;
+    }
+    else
+    {
+        Child->NtPid = HandleToUlong(PsGetProcessId(EProcess));
+        LxProcessPublishName(Child, EProcess);
+        ObDereferenceObject(EProcess);
+    }
     LxProcessRegister(Child);
     InterlockedIncrement((PLONG)&Parent->Instance->ProcessCount);
 
@@ -2362,6 +2384,21 @@ LxForkProcess(
     if (Request->Flags & LX_CLONE_PARENT_SETTID)
         LxCopyToUser(Request->ParentTid, &UserPid, sizeof(UserPid));
 
+    if (Borrow)
+    {
+        LxArchCaptureContext(Call->TrapFrame, Call->ExceptionFrame, Thread->VforkContext);
+        Thread->VforkTls = LxArchGetThreadPointer(Call->TrapFrame);
+        Thread->VforkPid = UserPid;
+        LxThreadAttach(Thread);
+        Thread->VforkParent = Call->Thread;
+        Call->Thread->Vfork = Thread;
+        LxArchSetThreadPointer(Call->TrapFrame, Thread->Tls);
+        if (Thread->SetChildTid != 0)
+            LxCopyToUser(Thread->SetChildTid, &Thread->Tid, sizeof(Thread->Tid));
+        LxArchRestoreContext(Call->TrapFrame, Call->ExceptionFrame, Context);
+        return 0;
+    }
+
     Status = PsPicoCreateThread(ProcessHandle, Context, Thread, &ThreadHandle, NULL);
     if (!NT_SUCCESS(Status))
     {
@@ -2380,6 +2417,162 @@ LxForkProcess(
         KeWaitForSingleObject(&Child->VforkDone, UserRequest, KernelMode, FALSE, NULL);
 
     return UserPid;
+}
+
+static
+VOID
+LxVforkRelease(
+    _Inout_ PLX_THREAD Thread)
+{
+    PLX_PROCESS Child = Thread->Process;
+    PLX_THREAD Parent = Thread->VforkParent;
+    ULONG Zero = 0;
+
+    LxFutexExitRobustList(Thread);
+    if (Thread->ClearChildTid != 0)
+    {
+        if (LxCopyToUser(Thread->ClearChildTid, &Zero, sizeof(Zero)) == 0)
+            LxFutexWake(Thread->ClearChildTid, 1);
+    }
+    LxThreadDetach(Thread);
+    Parent->Vfork = NULL;
+    Thread->VforkParent = NULL;
+    Child->Mm = Child;
+    LxProcessUsage(Child, NULL, &Child->ExitUsage);
+    Child->ExitUsageValid = TRUE;
+    LxProcessExited(Child, 0);
+    InterlockedDecrement((PLONG)&Child->Instance->ProcessCount);
+    LxFree(Thread->VforkContext);
+    Thread->VforkContext = NULL;
+    LxThreadFree(Thread);
+    LxProcessDereference(Child);
+}
+
+BOOLEAN
+LxVforkFinish(
+    _Inout_ PKTRAP_FRAME TrapFrame,
+    _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame)
+{
+    PLX_THREAD Thread = LxThreadOf(PsGetCurrentThread());
+    BOOLEAN Finished = FALSE;
+
+    while ((Thread != NULL) && Thread->VforkExited && (Thread->VforkParent != NULL))
+    {
+        PLX_THREAD Parent = Thread->VforkParent;
+
+        LxArchRestoreContext(TrapFrame, ExceptionFrame, Thread->VforkContext);
+        LxArchSetThreadPointer(TrapFrame, Thread->VforkTls);
+        LxArchSetSyscallResult(TrapFrame, Thread->VforkPid);
+        LxVforkRelease(Thread);
+        LxSchedApplyAffinity(Parent);
+        Thread = Parent;
+        Finished = TRUE;
+    }
+    return Finished;
+}
+
+VOID
+LxVforkAbandon(
+    _Inout_ PLX_THREAD Thread)
+{
+    while (Thread->Vfork != NULL)
+    {
+        PLX_THREAD Child = Thread->Vfork;
+
+        while (Child->Vfork != NULL)
+            Child = Child->Vfork;
+        LxProcessExitStatus(Child->Process, LX_SIGKILL);
+        LxVforkRelease(Child);
+    }
+}
+
+static
+LONG64
+LxVforkExec(
+    _Inout_ PLX_CALL Call,
+    _Inout_ PLX_EXEC_REQUEST Request)
+{
+    PLX_THREAD Borrowed = Call->Thread, Parent = Call->Thread->VforkParent, Thread;
+    PLX_PROCESS Child = Call->Process, Owner = Call->Process->Mm;
+    HANDLE ProcessHandle = NULL, ThreadHandle = NULL;
+    PEPROCESS EProcess = NULL;
+    CONTEXT Context;
+    NTSTATUS Status;
+    LONG64 Pid;
+
+    Thread = LxThreadCreate(Child);
+    if (Thread == NULL)
+        return -LX_ENOMEM;
+    Thread->Tid = Borrowed->Tid;
+    RtlCopyMemory(Thread->NsTid, Borrowed->NsTid, sizeof(Thread->NsTid));
+    Thread->SigMask = Borrowed->SigMask;
+    Thread->Sched = Borrowed->Sched;
+    Thread->Affinity = Borrowed->Affinity;
+    Thread->UserAffinity = Borrowed->UserAffinity;
+    LxNsThreadInherit(Thread, Borrowed);
+    KeInitializeEvent(&Request->Done, NotificationEvent, FALSE);
+    Request->Vfork = TRUE;
+    Thread->Exec = Request;
+
+    LxThreadDetach(Borrowed);
+    Child->Mm = Child;
+    LxProcessReference(Child);
+    Status = PsPicoCreateProcess(FALSE, Child, &ProcessHandle);
+    if (NT_SUCCESS(Status))
+        Status = ObReferenceObjectByHandle(ProcessHandle, 0, *PsProcessType, KernelMode, (PVOID*)&EProcess, NULL);
+    if (NT_SUCCESS(Status))
+    {
+        Child->NtPid = HandleToUlong(PsGetProcessId(EProcess));
+        RtlZeroMemory(&Context, sizeof(Context));
+        Context.ContextFlags = CONTEXT_FULL;
+        Status = PsPicoCreateThread(ProcessHandle, &Context, Thread, &ThreadHandle, NULL);
+    }
+    if (!NT_SUCCESS(Status))
+    {
+        Child->NtPid = 0;
+        if (ProcessHandle != NULL)
+        {
+            ZwTerminateProcess(ProcessHandle, Status);
+            ZwClose(ProcessHandle);
+        }
+        else
+        {
+            LxProcessDereference(Child);
+        }
+        if (EProcess != NULL)
+            ObDereferenceObject(EProcess);
+        LxThreadFree(Thread);
+        Child->Mm = Owner;
+        LxThreadAttach(Borrowed);
+        return -LxStatusToErrno(Status);
+    }
+    ZwClose(ThreadHandle);
+
+    KeWaitForSingleObject(&Request->Done, Executive, KernelMode, FALSE, NULL);
+    if (!NT_SUCCESS(Request->Status) && (Request->Status != STATUS_UNSUCCESSFUL))
+    {
+        ZwClose(ProcessHandle);
+        ObDereferenceObject(EProcess);
+        Child->Mm = Owner;
+        LxThreadAttach(Borrowed);
+        return -(LONG64)Request->Errno;
+    }
+
+    LxProcessPublishName(Child, EProcess);
+    ZwClose(ProcessHandle);
+    ObDereferenceObject(EProcess);
+
+    Pid = Borrowed->VforkPid;
+    LxArchRestoreContext(Call->TrapFrame, Call->ExceptionFrame, Borrowed->VforkContext);
+    LxArchSetThreadPointer(Call->TrapFrame, Borrowed->VforkTls);
+    Parent->Vfork = NULL;
+    Borrowed->VforkParent = NULL;
+    LxFree(Borrowed->VforkContext);
+    Borrowed->VforkContext = NULL;
+    LxThreadFree(Borrowed);
+    LxProcessDereference(Child);
+    LxSchedApplyAffinity(Parent);
+    return Pid;
 }
 
 static
@@ -2598,6 +2791,7 @@ LxExecCommon(
     NTSTATUS Status;
     LONG64 Result;
     LONG Errno = 0;
+    BOOLEAN Vfork = (Call->Process->Mm != Call->Process);
 
     RtlZeroMemory(&Request, sizeof(Request));
     Request.FileName = FileName;
@@ -2606,7 +2800,11 @@ LxExecCommon(
     if (Result == 0)
         Result = LxCaptureVector(Envp, &Request.Env, &Request.EnvLength, &Request.EnvCount);
 
-    if (Result == 0)
+    if ((Result == 0) && Vfork)
+    {
+        Result = LxVforkExec(Call, &Request);
+    }
+    else if (Result == 0)
     {
         Status = LxExecImage(Call->Thread, &Request, Call->TrapFrame, Call->ExceptionFrame, &Errno);
         if (NT_SUCCESS(Status))
@@ -2623,7 +2821,7 @@ LxExecCommon(
     if (File != NULL)
         LxFileDereference(File);
 
-    if (Result == LX_SIGSEGV)
+    if ((Result == LX_SIGSEGV) && !Vfork)
         LxProcessExitGroup(Call->Process, LX_SIGSEGV);
     return Result;
 }
@@ -2823,6 +3021,7 @@ LxWaitChild(
             return -LX_ERESTARTSYS;
     }
 }
+
 
 LX_SYSCALL(LxSysWait4)
 {
@@ -3624,42 +3823,12 @@ LX_SYSCALL(LxSysMincore)
     ULONG64 Address = Call->Args[0];
     ULONG64 End = Address + LX_ALIGN_UP(Call->Args[1], LX_PAGE_SIZE);
     ULONG64 Output = Call->Args[2];
-    UCHAR Vector[64];
 
     if (Address & (LX_PAGE_SIZE - 1))
         return -LX_EINVAL;
     if (End < Address)
         return -LX_ENOMEM;
-    if (!LxMmIsMapped(Call->Process, Address, End))
-        return -LX_ENOMEM;
-
-    while (Address < End)
-    {
-        MEMORY_BASIC_INFORMATION Information;
-        ULONG64 RegionEnd;
-        NTSTATUS Status;
-        UCHAR Value;
-
-        Status = ZwQueryVirtualMemory(NtCurrentProcess(), (PVOID)(ULONG_PTR)Address, MemoryBasicInformation,
-                                      &Information, sizeof(Information), NULL);
-        if (!NT_SUCCESS(Status) || (Information.State == MEM_FREE))
-            return -LX_ENOMEM;
-        Value = (Information.State == MEM_COMMIT) ? 1 : 0;
-        RegionEnd = min(End, (ULONG64)(ULONG_PTR)Information.BaseAddress + Information.RegionSize);
-
-        RtlFillMemory(Vector, sizeof(Vector), Value);
-        while (Address < RegionEnd)
-        {
-            ULONG64 Pages = min((RegionEnd - Address) / LX_PAGE_SIZE, sizeof(Vector));
-            LONG64 Result = LxCopyToUser(Output, Vector, (SIZE_T)Pages);
-
-            if (Result != 0)
-                return Result;
-            Output += Pages;
-            Address += Pages * LX_PAGE_SIZE;
-        }
-    }
-    return 0;
+    return LxMmMincore(Call->Process, Address, End, Output);
 }
 
 static
@@ -3934,7 +4103,7 @@ LxPosixTimersRelease(
 
     for (Entry = Process->Timers.Flink; Entry != &Process->Timers; Entry = Entry->Flink)
         KeCancelTimer(&CONTAINING_RECORD(Entry, LX_POSIX_TIMER, Link)->Timer);
-    if (!Free)
+    if (!Free || IsListEmpty(&Process->Timers))
         return;
     KeFlushQueuedDpcs();
     while (!IsListEmpty(&Process->Timers))

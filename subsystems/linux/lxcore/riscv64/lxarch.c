@@ -140,6 +140,16 @@ LxArchSetForkContext(
 }
 
 VOID
+LxArchRestoreContext(
+    _Inout_ PKTRAP_FRAME TrapFrame,
+    _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame,
+    _In_ PCONTEXT Context)
+{
+    UNREFERENCED_PARAMETER(ExceptionFrame);
+    TrapFrame->Context = *Context;
+}
+
+VOID
 LxArchSetThreadPointer(
     _Inout_ PKTRAP_FRAME TrapFrame,
     _In_ ULONG64 Value)

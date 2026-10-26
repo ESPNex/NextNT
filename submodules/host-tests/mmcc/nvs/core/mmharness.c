@@ -356,6 +356,7 @@ static const TEST_ENTRY Tests[] =
     { "sys", TestSys, 0 },
     { "process", TestProcess, 0 },
     { "highmem", TestHighMem, 0 },
+    { "lxmm", TestLxMm, 0 },
     { "benchsys", TestBenchSys, 1 },
     { "benchvm", TestBenchVm, 1 },
     { "benchcc", TestBenchCcDirty, 1 },
