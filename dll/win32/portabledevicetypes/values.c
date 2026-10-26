@@ -204,6 +204,12 @@ static HRESULT values_get_typed(IPortableDeviceValues *iface, REFPROPERTYKEY key
 
     if (conversion_attempted)
         *conversion_attempted = FALSE;
+    if (SUCCEEDED(hr) && value->vt == VT_ERROR && type != VT_ERROR && FAILED(value->scode))
+    {
+        hr = value->scode;
+        PropVariantClear(value);
+        return hr;
+    }
     if (SUCCEEDED(hr) && value->vt != type)
     {
         if (conversion_attempted)
