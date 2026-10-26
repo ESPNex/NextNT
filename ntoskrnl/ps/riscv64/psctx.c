@@ -45,7 +45,7 @@ PspGetOrSetContextKernelRoutine(
 
     /* Accept only this architecture's context layout. */
     if (!(Request->Context.ContextFlags & CONTEXT_RISCV64) ||
-        (Request->Context.ContextFlags & ~CONTEXT_ALL))
+        (Request->Context.ContextFlags & ~(CONTEXT_ALL | CONTEXT_EXCEPTION_REQUEST)))
     {
         Request->Status = STATUS_INVALID_PARAMETER;
         KeSetEvent(&Request->Event, IO_NO_INCREMENT, FALSE);
@@ -56,7 +56,19 @@ PspGetOrSetContextKernelRoutine(
         KeContextToTrapFrame(&Request->Context, NULL, Frame,
                             Request->Context.ContextFlags, Request->Mode);
     else
+    {
         KeTrapFrameToContext(Frame, NULL, &Request->Context);
+        Request->Context.ContextFlags &= ~(CONTEXT_EXCEPTION_REPORTING | CONTEXT_SERVICE_ACTIVE |
+                                           CONTEXT_EXCEPTION_ACTIVE);
+        if (Request->Context.ContextFlags & CONTEXT_EXCEPTION_REQUEST)
+        {
+            Request->Context.ContextFlags |= CONTEXT_EXCEPTION_REPORTING;
+            if (KiUserTrap(Frame) && (Frame->Scause == 8))
+                Request->Context.ContextFlags |= CONTEXT_SERVICE_ACTIVE;
+            else if (!(Frame->Scause & (1ULL << 63)))
+                Request->Context.ContextFlags |= CONTEXT_EXCEPTION_ACTIVE;
+        }
+    }
 
     KeSetEvent(&Request->Event, IO_NO_INCREMENT, FALSE);
 }
