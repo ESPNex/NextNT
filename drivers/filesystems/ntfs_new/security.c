@@ -31,6 +31,13 @@ NtfsCheckRecordAccess(
         *GrantedAccess = PreviouslyGrantedAccess;
         return STATUS_SUCCESS;
     }
+    if (AccessMode == KernelMode)
+    {
+        *GrantedAccess = DesiredAccess | PreviouslyGrantedAccess;
+        if (DesiredAccess & MAXIMUM_ALLOWED)
+            *GrantedAccess = IoGetFileObjectGenericMapping()->GenericAll | (*GrantedAccess & ~MAXIMUM_ALLOWED);
+        return STATUS_SUCCESS;
+    }
 
     Status = NtfsFileRecordReadSecurityDescriptor(File, NULL, &DescriptorLength);
     if (Status == STATUS_NOT_FOUND)

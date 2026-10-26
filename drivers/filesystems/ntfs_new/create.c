@@ -537,7 +537,7 @@ NtfsCheckOpenAccess(
     if (DesiredAccess & MAXIMUM_ALLOWED)
         ParentAccess |= DELETE | FILE_READ_ATTRIBUTES;
     ParentAccess &= ~PreviouslyGrantedAccess;
-    if (ParentAccess &&
+    if (ParentAccess && (AccessMode != KernelMode) &&
         NtfsSplitParentName(Name, &ParentLength, &LeafName, &LeafLength))
     {
         Status = NtfsMasterFileTableGetFileRecordFromQueryEx(Mft,
