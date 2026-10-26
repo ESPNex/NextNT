@@ -146,7 +146,8 @@ PsGetContextThread(IN PETHREAD Thread,
         Size = sizeof(CONTEXT);
 
         /* Read the flags */
-        Flags = ProbeForReadUlong(&ThreadContext->ContextFlags);
+        Flags = (PreviousMode != KernelMode) ? ProbeForReadUlong(&ThreadContext->ContextFlags) :
+                                               ThreadContext->ContextFlags;
 
 #ifdef _M_IX86
         /* Check if the caller wanted extended registers */
@@ -340,7 +341,8 @@ PsSetContextThread(IN PETHREAD Thread,
         Size = sizeof(CONTEXT);
 
         /* Read the flags */
-        Flags = ProbeForReadUlong(&ThreadContext->ContextFlags);
+        Flags = (PreviousMode != KernelMode) ? ProbeForReadUlong(&ThreadContext->ContextFlags) :
+                                               ThreadContext->ContextFlags;
 
 #ifdef _M_IX86
         /* Check if the caller wanted extended registers */
