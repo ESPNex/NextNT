@@ -3938,7 +3938,9 @@ LRESULT CDefView::OnChangeNotify(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
             break;
         case SHCNE_UPDATEDIR:
         case SHCNE_ATTRIBUTES:
-            if (child0)
+            if (lEvent == SHCNE_UPDATEDIR && Pidls[0] && ILIsEqual(Pidls[0], m_pidlParent))
+                Refresh();
+            else if (child0)
                 LV_UpdateItem(child0);
             else
                 Refresh();
