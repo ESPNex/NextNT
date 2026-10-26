@@ -2136,7 +2136,7 @@ USBH_PdoQueryId(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
                 IN PIRP Irp)
 {
     ULONG IdType;
-    WCHAR Buffer[200];
+    WCHAR Buffer[512];
     PWCHAR EndBuffer;
     size_t Remaining = sizeof(Buffer);
     size_t Length;
@@ -2318,7 +2318,77 @@ USBH_PdoQueryId(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
             }
             else
             {
-                RtlStringCbPrintfExW(Buffer,
+                EndBuffer = Buffer;
+
+                if (PortExtension->MsCompatibleId[0])
+                {
+                    if (PortExtension->MsSubCompatibleId[0])
+                    {
+                        RtlStringCbPrintfExW(EndBuffer,
+                                             Remaining,
+                                             &EndBuffer,
+                                             &Remaining,
+                                             0,
+                                             L"USB\\MS_COMP_%S&MS_SUBCOMP_%S",
+                                             PortExtension->MsCompatibleId,
+                                             PortExtension->MsSubCompatibleId);
+
+                        EndBuffer++;
+                        Remaining -= sizeof(UNICODE_NULL);
+                    }
+
+                    RtlStringCbPrintfExW(EndBuffer,
+                                         Remaining,
+                                         &EndBuffer,
+                                         &Remaining,
+                                         0,
+                                         L"USB\\MS_COMP_%S",
+                                         PortExtension->MsCompatibleId);
+
+                    EndBuffer++;
+                    Remaining -= sizeof(UNICODE_NULL);
+                }
+
+                RtlStringCbPrintfExW(EndBuffer,
+                                     Remaining,
+                                     &EndBuffer,
+                                     &Remaining,
+                                     0,
+                                     L"USB\\COMPAT_VID_%04X&Class_%02X&SubClass_%02X&Prot_%02X",
+                                     DeviceDescriptor->idVendor,
+                                     InterfaceDescriptor->bInterfaceClass,
+                                     InterfaceDescriptor->bInterfaceSubClass,
+                                     InterfaceDescriptor->bInterfaceProtocol);
+
+                EndBuffer++;
+                Remaining -= sizeof(UNICODE_NULL);
+
+                RtlStringCbPrintfExW(EndBuffer,
+                                     Remaining,
+                                     &EndBuffer,
+                                     &Remaining,
+                                     0,
+                                     L"USB\\COMPAT_VID_%04X&Class_%02X&SubClass_%02X",
+                                     DeviceDescriptor->idVendor,
+                                     InterfaceDescriptor->bInterfaceClass,
+                                     InterfaceDescriptor->bInterfaceSubClass);
+
+                EndBuffer++;
+                Remaining -= sizeof(UNICODE_NULL);
+
+                RtlStringCbPrintfExW(EndBuffer,
+                                     Remaining,
+                                     &EndBuffer,
+                                     &Remaining,
+                                     0,
+                                     L"USB\\COMPAT_VID_%04X&Class_%02X",
+                                     DeviceDescriptor->idVendor,
+                                     InterfaceDescriptor->bInterfaceClass);
+
+                EndBuffer++;
+                Remaining -= sizeof(UNICODE_NULL);
+
+                RtlStringCbPrintfExW(EndBuffer,
                                      Remaining,
                                      &EndBuffer,
                                      &Remaining,

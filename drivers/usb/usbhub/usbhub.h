@@ -312,6 +312,10 @@ typedef struct _USBHUB_PORT_PDO_EXTENSION {
   LIST_ENTRY PortPowerList;
   KSPIN_LOCK PortPowerListSpinLock;
   WCHAR DevPath[32];
+  BOOLEAN MsOsVendorCodeValid;
+  UCHAR MsOsVendorCode;
+  CHAR MsCompatibleId[9];
+  CHAR MsSubCompatibleId[9];
 } USBHUB_PORT_PDO_EXTENSION, *PUSBHUB_PORT_PDO_EXTENSION;
 
 typedef struct _USBHUB_URB_TIMEOUT_CONTEXT {
@@ -554,6 +558,11 @@ USBH_GetDeviceType(
   IN PUSBHUB_FDO_EXTENSION HubExtension,
   IN PUSB_DEVICE_HANDLE DeviceHandle,
   OUT USB_DEVICE_TYPE * OutDeviceType);
+
+VOID
+NTAPI
+USBH_QueryMsOsDescriptors(
+  IN PUSBHUB_PORT_PDO_EXTENSION PortExtension);
 
 NTSTATUS
 NTAPI

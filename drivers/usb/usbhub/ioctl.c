@@ -75,10 +75,6 @@ NTSTATUS
 USBH_GetMsOsVendorCode(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
                        OUT PUCHAR VendorCode)
 {
-    struct _URB_CONTROL_DESCRIPTOR_REQUEST Urb;
-    OS_STRING OsString;
-    NTSTATUS Status;
-
     if (!VendorCode)
     {
         return STATUS_INVALID_PARAMETER;
@@ -86,34 +82,12 @@ USBH_GetMsOsVendorCode(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
 
     *VendorCode = 0;
 
-    RtlZeroMemory(&OsString, sizeof(OsString));
-    RtlZeroMemory(&Urb, sizeof(Urb));
-
-    Urb.Hdr.Length = sizeof(Urb);
-    Urb.Hdr.Function = URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE;
-    Urb.TransferBufferLength = sizeof(OsString);
-    Urb.TransferBuffer = &OsString;
-    Urb.Index = OS_STRING_DESCRIPTOR_INDEX;
-    Urb.DescriptorType = USB_STRING_DESCRIPTOR_TYPE;
-    Urb.LanguageId = 0;
-
-    Status = USBH_SyncSubmitUrb(PortExtension->Common.SelfDevice, (PURB)&Urb);
-    if (!NT_SUCCESS(Status) || !USBD_SUCCESS(Urb.Hdr.Status))
+    if (!PortExtension->MsOsVendorCodeValid)
     {
         return STATUS_NOT_SUPPORTED;
     }
 
-    if (OsString.bLength < sizeof(OS_STRING) ||
-        OsString.bDescriptorType != USB_STRING_DESCRIPTOR_TYPE ||
-        RtlCompareMemory(OsString.MicrosoftString,
-                         MS_OS_STRING_SIGNATURE,
-                         sizeof(MS_OS_STRING_SIGNATURE) - sizeof(WCHAR)) !=
-            sizeof(MS_OS_STRING_SIGNATURE) - sizeof(WCHAR))
-    {
-        return STATUS_NOT_SUPPORTED;
-    }
-
-    *VendorCode = OsString.bVendorCode;
+    *VendorCode = PortExtension->MsOsVendorCode;
     return STATUS_SUCCESS;
 }
 

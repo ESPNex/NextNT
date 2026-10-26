@@ -5763,6 +5763,248 @@ USBH_FreeCachedStrings(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension)
     PortExtension->LanguageIdCached = FALSE;
 }
 
+typedef struct _USBHUB_MS_EXT_COMPAT_HEADER {
+    ULONG dwLength;
+    USHORT bcdVersion;
+    USHORT wIndex;
+    UCHAR bCount;
+    UCHAR Reserved[7];
+} USBHUB_MS_EXT_COMPAT_HEADER, *PUSBHUB_MS_EXT_COMPAT_HEADER;
+
+typedef struct _USBHUB_MS_EXT_COMPAT_FUNCTION {
+    UCHAR bFirstInterfaceNumber;
+    UCHAR Reserved1;
+    CHAR CompatibleID[8];
+    CHAR SubCompatibleID[8];
+    UCHAR Reserved2[6];
+} USBHUB_MS_EXT_COMPAT_FUNCTION, *PUSBHUB_MS_EXT_COMPAT_FUNCTION;
+
+C_ASSERT(sizeof(USBHUB_MS_EXT_COMPAT_HEADER) == 16);
+C_ASSERT(sizeof(USBHUB_MS_EXT_COMPAT_FUNCTION) == 24);
+
+#define USBHUB_MS_EXT_COMPAT_ID_INDEX 0x0004
+#define USBHUB_MS_EXT_COMPAT_MAX_FUNCTIONS 32
+
+static
+NTSTATUS
+NTAPI
+USBH_GetOsvcValue(IN PWSTR ValueName,
+                  IN ULONG ValueType,
+                  IN PVOID ValueData,
+                  IN ULONG ValueLength,
+                  IN PVOID Context,
+                  IN PVOID EntryContext)
+{
+    if (ValueType != REG_BINARY || ValueLength < 2)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    RtlCopyMemory(EntryContext, ValueData, 2);
+    *(PBOOLEAN)Context = TRUE;
+    return STATUS_SUCCESS;
+}
+
+static
+NTSTATUS
+USBH_GetMsExtendedCompatId(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
+                           IN PVOID Buffer,
+                           IN ULONG Length,
+                           OUT PULONG Transferred)
+{
+    struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST *Urb;
+    NTSTATUS Status;
+
+    *Transferred = 0;
+    Urb = ExAllocatePoolWithTag(NonPagedPool, sizeof(*Urb), USB_HUB_TAG);
+    if (!Urb)
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    RtlZeroMemory(Urb, sizeof(*Urb));
+    Urb->Hdr.Length = sizeof(*Urb);
+    Urb->Hdr.Function = URB_FUNCTION_VENDOR_DEVICE;
+    Urb->TransferFlags = USBD_TRANSFER_DIRECTION_IN | USBD_SHORT_TRANSFER_OK;
+    Urb->TransferBufferLength = Length;
+    Urb->TransferBuffer = Buffer;
+    Urb->Request = PortExtension->MsOsVendorCode;
+    Urb->Value = 0;
+    Urb->Index = USBHUB_MS_EXT_COMPAT_ID_INDEX;
+
+    Status = USBH_SyncSubmitUrb(PortExtension->Common.SelfDevice, (PURB)Urb);
+    if (NT_SUCCESS(Status) && USBD_SUCCESS(Urb->Hdr.Status))
+    {
+        *Transferred = Urb->TransferBufferLength;
+    }
+    else if (NT_SUCCESS(Status))
+    {
+        Status = STATUS_UNSUCCESSFUL;
+    }
+
+    ExFreePoolWithTag(Urb, USB_HUB_TAG);
+    return Status;
+}
+
+static
+VOID
+USBH_CopyMsCompatibleString(OUT PCHAR Destination,
+                            IN const CHAR *Source)
+{
+    ULONG ix;
+
+    RtlZeroMemory(Destination, 9);
+    for (ix = 0; ix < 8 && Source[ix]; ix++)
+    {
+        if (Source[ix] < 0x20 || Source[ix] > 0x7E || Source[ix] == ',')
+        {
+            RtlZeroMemory(Destination, 9);
+            return;
+        }
+        Destination[ix] = Source[ix];
+    }
+}
+
+VOID
+NTAPI
+USBH_QueryMsOsDescriptors(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension)
+{
+    RTL_QUERY_REGISTRY_TABLE QueryTable[2];
+    PUSB_DEVICE_DESCRIPTOR DeviceDescriptor = &PortExtension->DeviceDescriptor;
+    PUSBHUB_MS_EXT_COMPAT_HEADER Header;
+    PUSBHUB_MS_EXT_COMPAT_FUNCTION Function;
+    POS_STRING OsString;
+    WCHAR KeyPath[64];
+    UCHAR Osvc[2] = {0, 0};
+    BOOLEAN Cached = FALSE;
+    ULONG Length, Transferred, ix;
+    NTSTATUS Status;
+
+    PortExtension->MsOsVendorCodeValid = FALSE;
+    PortExtension->MsOsVendorCode = 0;
+    RtlZeroMemory(PortExtension->MsCompatibleId, sizeof(PortExtension->MsCompatibleId));
+    RtlZeroMemory(PortExtension->MsSubCompatibleId, sizeof(PortExtension->MsSubCompatibleId));
+
+    RtlStringCbPrintfW(KeyPath,
+                       sizeof(KeyPath),
+                       L"usbflags\\%04X%04X%04X",
+                       DeviceDescriptor->idVendor,
+                       DeviceDescriptor->idProduct,
+                       DeviceDescriptor->bcdDevice);
+
+    RtlZeroMemory(QueryTable, sizeof(QueryTable));
+    QueryTable[0].QueryRoutine = USBH_GetOsvcValue;
+    QueryTable[0].Flags = RTL_QUERY_REGISTRY_REQUIRED;
+    QueryTable[0].Name = L"osvc";
+    QueryTable[0].EntryContext = Osvc;
+    QueryTable[0].DefaultType = REG_NONE;
+
+    Status = RtlQueryRegistryValues(RTL_REGISTRY_CONTROL,
+                                    KeyPath,
+                                    QueryTable,
+                                    &Cached,
+                                    NULL);
+
+    if (!NT_SUCCESS(Status) || !Cached)
+    {
+        OsString = ExAllocatePoolWithTag(NonPagedPool, sizeof(OS_STRING), USB_HUB_TAG);
+        if (!OsString)
+        {
+            return;
+        }
+
+        RtlZeroMemory(OsString, sizeof(OS_STRING));
+        Status = USBH_SyncGetStringDescriptor(PortExtension->Common.SelfDevice,
+                                              OS_STRING_DESCRIPTOR_INDEX,
+                                              0,
+                                              (PUSB_STRING_DESCRIPTOR)OsString,
+                                              sizeof(OS_STRING),
+                                              NULL,
+                                              FALSE);
+
+        Osvc[0] = 0;
+        Osvc[1] = 0;
+        if (NT_SUCCESS(Status) &&
+            OsString->bLength >= sizeof(OS_STRING) &&
+            OsString->bDescriptorType == USB_STRING_DESCRIPTOR_TYPE &&
+            RtlCompareMemory(OsString->MicrosoftString,
+                             MS_OS_STRING_SIGNATURE,
+                             sizeof(MS_OS_STRING_SIGNATURE) - sizeof(WCHAR)) ==
+                sizeof(MS_OS_STRING_SIGNATURE) - sizeof(WCHAR))
+        {
+            Osvc[0] = 1;
+            Osvc[1] = OsString->bVendorCode;
+        }
+
+        ExFreePoolWithTag(OsString, USB_HUB_TAG);
+
+        RtlCreateRegistryKey(RTL_REGISTRY_CONTROL, L"usbflags");
+        RtlCreateRegistryKey(RTL_REGISTRY_CONTROL, KeyPath);
+        RtlWriteRegistryValue(RTL_REGISTRY_CONTROL,
+                              KeyPath,
+                              L"osvc",
+                              REG_BINARY,
+                              Osvc,
+                              sizeof(Osvc));
+    }
+
+    if (Osvc[0] != 1)
+    {
+        return;
+    }
+
+    PortExtension->MsOsVendorCodeValid = TRUE;
+    PortExtension->MsOsVendorCode = Osvc[1];
+
+    Length = sizeof(USBHUB_MS_EXT_COMPAT_HEADER) +
+             USBHUB_MS_EXT_COMPAT_MAX_FUNCTIONS * sizeof(USBHUB_MS_EXT_COMPAT_FUNCTION);
+    Header = ExAllocatePoolWithTag(NonPagedPool, Length, USB_HUB_TAG);
+    if (!Header)
+    {
+        return;
+    }
+
+    RtlZeroMemory(Header, Length);
+    Status = USBH_GetMsExtendedCompatId(PortExtension,
+                                        Header,
+                                        sizeof(USBHUB_MS_EXT_COMPAT_HEADER),
+                                        &Transferred);
+    if (NT_SUCCESS(Status) &&
+        Transferred == sizeof(USBHUB_MS_EXT_COMPAT_HEADER) &&
+        Header->wIndex == USBHUB_MS_EXT_COMPAT_ID_INDEX &&
+        Header->bCount != 0 &&
+        Header->dwLength >= sizeof(USBHUB_MS_EXT_COMPAT_HEADER) + sizeof(USBHUB_MS_EXT_COMPAT_FUNCTION))
+    {
+        Length = min(Header->dwLength, Length);
+        Status = USBH_GetMsExtendedCompatId(PortExtension, Header, Length, &Transferred);
+        if (NT_SUCCESS(Status) && Transferred >= sizeof(USBHUB_MS_EXT_COMPAT_HEADER))
+        {
+            Function = (PUSBHUB_MS_EXT_COMPAT_FUNCTION)(Header + 1);
+            for (ix = 0; ix < Header->bCount; ix++, Function++)
+            {
+                if ((PUCHAR)(Function + 1) > (PUCHAR)Header + Transferred)
+                {
+                    break;
+                }
+
+                if (Function->bFirstInterfaceNumber == 0)
+                {
+                    USBH_CopyMsCompatibleString(PortExtension->MsCompatibleId,
+                                                Function->CompatibleID);
+                    if (PortExtension->MsCompatibleId[0])
+                    {
+                        USBH_CopyMsCompatibleString(PortExtension->MsSubCompatibleId,
+                                                    Function->SubCompatibleID);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    ExFreePoolWithTag(Header, USB_HUB_TAG);
+}
+
 NTSTATUS
 NTAPI
 USBH_GetSerialNumberString(IN PDEVICE_OBJECT DeviceObject,
@@ -6289,6 +6531,8 @@ USBH_CreateDevice(IN PUSBHUB_FDO_EXTENSION HubExtension,
     }
 
     USBH_LogNewDevice(PortExtension);
+
+    USBH_QueryMsOsDescriptors(PortExtension);
 
     Status = USBH_ProcessDeviceInformation(PortExtension);
 
