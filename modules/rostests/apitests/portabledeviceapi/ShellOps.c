@@ -280,6 +280,55 @@ START_TEST(ShellOps)
         ILFree(Item);
     }
 
+    Item = FindChild(Storage, L"hello", FALSE);
+    Renamed = FindChild(Storage, L"docs", FALSE);
+    if (Item && Renamed)
+    {
+        PCUITEMID_CHILD Pair[2] = { Item, Renamed };
+        IDataObject *Data;
+
+        hr = IShellFolder_GetUIObjectOf(Storage, NULL, 2, Pair, &IID_IDataObject, NULL, (void **)&Data);
+        trace("mixed: GetUIObjectOf(IDataObject) hr 0x%08lX\n", hr);
+        if (SUCCEEDED(hr))
+        {
+            DumpFormats(Data);
+            IDataObject_Release(Data);
+        }
+    }
+    if (Item && Renamed)
+    {
+        PCUITEMID_CHILD Pair[2] = { Renamed, Item };
+        IDataObject *Data;
+
+        hr = IShellFolder_GetUIObjectOf(Storage, NULL, 2, Pair, &IID_IDataObject, NULL, (void **)&Data);
+        trace("mixed folder first: GetUIObjectOf(IDataObject) hr 0x%08lX\n", hr);
+        if (SUCCEEDED(hr))
+        {
+            DumpFormats(Data);
+            IDataObject_Release(Data);
+        }
+    }
+    if (Item)
+        ILFree(Item);
+    Item = FindChild(Storage, L"music", FALSE);
+    if (Item && Renamed)
+    {
+        PCUITEMID_CHILD Pair[2] = { Renamed, Item };
+        IDataObject *Data;
+
+        hr = IShellFolder_GetUIObjectOf(Storage, NULL, 2, Pair, &IID_IDataObject, NULL, (void **)&Data);
+        trace("two folders: GetUIObjectOf(IDataObject) hr 0x%08lX\n", hr);
+        if (SUCCEEDED(hr))
+        {
+            DumpFormats(Data);
+            IDataObject_Release(Data);
+        }
+    }
+    if (Item)
+        ILFree(Item);
+    if (Renamed)
+        ILFree(Renamed);
+
     Item = FindChild(Storage, L"notes", FALSE);
     if (Item)
     {
@@ -294,6 +343,14 @@ START_TEST(ShellOps)
             trace("rename: SetNameOf back hr 0x%08lX\n", hr);
             ILFree(Renamed);
         }
+        ILFree(Item);
+    }
+    PumpWait(2000);
+    Item = FindChild(Storage, L"renamed", FALSE);
+    if (Item)
+    {
+        hr = IShellFolder_SetNameOf(Storage, NULL, Item, L"notes", SHGDN_INFOLDER | SHGDN_FOREDITING, NULL);
+        trace("rename: SetNameOf back with an enumerated item hr 0x%08lX\n", hr);
         ILFree(Item);
     }
     PumpWait(2000);

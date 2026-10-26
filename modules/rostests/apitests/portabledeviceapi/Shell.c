@@ -32,7 +32,7 @@ DumpItem(IShellFolder *Folder, PCUITEMID_CHILD Item, const char *Prefix)
                         SFGAO_NONENUMERATED | SFGAO_NEWCONTENT | SFGAO_VALIDATE;
     SHELLDETAILS Details;
     WCHAR Text[512];
-    UINT Column;
+    UINT Column, Index;
     HRESULT hr;
 
     DumpName(Folder, Item, SHGDN_NORMAL, "normal", Prefix);
@@ -57,7 +57,21 @@ DumpItem(IShellFolder *Folder, PCUITEMID_CHILD Item, const char *Prefix)
             }
             Text[0] = 0;
             StrRetToBufW(&Details.str, Item, Text, ARRAYSIZE(Text));
-            trace("%scolumn %u \"%ls\"\n", Prefix, Column, Text);
+            for (Index = 0; Text[Index] && (Text[Index] >= 0x20 && Text[Index] < 0x7F); Index++)
+                ;
+            if (Text[Index])
+            {
+                char Hex[512];
+                UINT Used = 0;
+
+                for (Index = 0; Text[Index] && Used + 6 < sizeof(Hex); Index++)
+                    Used += sprintf(Hex + Used, "%04X ", Text[Index]);
+                trace("%scolumn %u hex %s\n", Prefix, Column, Hex);
+            }
+            else
+            {
+                trace("%scolumn %u \"%ls\"\n", Prefix, Column, Text);
+            }
         }
         IShellFolder2_Release(Folder2);
     }
@@ -142,6 +156,8 @@ DumpFolder(IShellFolder *Folder, int Depth, BOOL DevicesOnly)
         else
         {
             trace("%sother \"%ls\"\n", Prefix, Parsing);
+            if (DevicesOnly && wcslen(Parsing) == 3 && Parsing[1] == L':')
+                DumpItem(Folder, Item, Prefix);
         }
         ILFree(Item);
     }
@@ -171,6 +187,7 @@ START_TEST(Shell)
         ok(hr == S_OK, "BindToObject(This PC) hr 0x%08lX\n", hr);
         if (SUCCEEDED(hr))
         {
+            DumpColumns(Computer, "  ");
             DumpFolder(Computer, 0, TRUE);
             IShellFolder_Release(Computer);
         }
