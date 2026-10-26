@@ -85,6 +85,7 @@ MiSpaceInitialize(
     RtlZeroMemory(Space, sizeof(*Space));
     Space->System = System;
     Space->IsSystem = IsSystem;
+    Space->Granularity = MI_ALLOCATION_GRANULARITY;
     Space->LowestVa = IsSystem ? Arch->SystemAddressStart : Arch->UserAddressStart;
     Space->HighestVa = IsSystem ? Arch->SystemAddressEnd : Arch->UserAddressEnd;
     MI_RW_INIT(&Space->Lock);

@@ -531,7 +531,7 @@ MiReserveVirtualMemory(
 {
     PMI_VAD Vad = NULL;
     ULONG64 Start, End;
-    ULONG64 Granularity = (Alignment != 0) ? Alignment : MI_ALLOCATION_GRANULARITY;
+    ULONG64 Granularity = (Alignment != 0) ? Alignment : Space->Granularity;
     LONG64 Charged = 0;
     NTSTATUS Status = STATUS_SUCCESS;
 

@@ -97,6 +97,7 @@ typedef struct _MI_ADDRESS_SPACE
     ULONG LockRangeCount;
     ULONG LockRangeCapacity;
     ULONG64 LockedPages;
+    ULONG64 Granularity;
 } MI_ADDRESS_SPACE, *PMI_ADDRESS_SPACE;
 
 typedef struct _MI_SYSTEM

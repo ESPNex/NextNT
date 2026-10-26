@@ -1061,6 +1061,49 @@ VmLockRanges(void)
     WorldDestroy(&World);
 }
 
+static void
+VmAllocationGranularity(void)
+{
+    TEST_WORLD World;
+    MI_ADDRESS_SPACE Space;
+    ULONG64 Base, Size;
+
+    WorldCreate(&World, 64, 1, 64);
+    ProcessCreate(&World, &Space);
+    CHECK(Space.Granularity == MI_ALLOCATION_GRANULARITY);
+    Base = 0x40003000ULL;
+    Size = PAGE_SIZE;
+    CHECK(NT_SUCCESS(MiAllocateVirtualMemory(&Space, &Base, &Size, MI_MEM_RESERVE, MI_PROT_READWRITE)));
+    CHECK(Base == 0x40000000ULL);
+    Size = 0;
+    CHECK(NT_SUCCESS(MiFreeVirtualMemory(&Space, &Base, &Size, MI_MEM_RELEASE)));
+
+    Space.Granularity = PAGE_SIZE;
+    Base = 0x40003000ULL;
+    Size = PAGE_SIZE;
+    CHECK(NT_SUCCESS(MiAllocateVirtualMemory(&Space, &Base, &Size, MI_MEM_RESERVE | MI_MEM_COMMIT, MI_PROT_READWRITE)));
+    CHECK(Base == 0x40003000ULL && Size == PAGE_SIZE);
+    Base = 0x40004000ULL;
+    Size = PAGE_SIZE;
+    CHECK(NT_SUCCESS(MiAllocateVirtualMemory(&Space, &Base, &Size, MI_MEM_RESERVE, MI_PROT_READWRITE)));
+    CHECK(Base == 0x40004000ULL);
+    Size = 0;
+    CHECK(NT_SUCCESS(MiFreeVirtualMemory(&Space, &Base, &Size, MI_MEM_RELEASE)));
+    Base = 0x40003000ULL;
+    Size = 0;
+    CHECK(NT_SUCCESS(MiFreeVirtualMemory(&Space, &Base, &Size, MI_MEM_RELEASE)));
+    Base = 0;
+    Size = PAGE_SIZE;
+    CHECK(NT_SUCCESS(MiAllocateVirtualMemory(&Space, &Base, &Size, MI_MEM_RESERVE, MI_PROT_READWRITE)));
+    CHECK(Base != 0 && (Base & (PAGE_SIZE - 1)) == 0);
+    Size = 0;
+    CHECK(NT_SUCCESS(MiFreeVirtualMemory(&Space, &Base, &Size, MI_MEM_RELEASE)));
+
+    ProcessDestroy(&World, &Space);
+    WorldExpectClean(&World, 64);
+    WorldDestroy(&World);
+}
+
 void
 TestVm(void)
 {
@@ -1077,6 +1120,7 @@ TestVm(void)
     VmWorkingSetEx();
     VmWorkingSetList();
     VmLockRanges();
+    VmAllocationGranularity();
 }
 
 static

@@ -897,6 +897,7 @@ SysBootAdoption(void)
 
     World.Machine.SystemRoot = 2;
     CHECK(NT_SUCCESS(MiAddressSpaceAdopt(System, &System->SystemSpace, 2, TRUE)));
+    CHECK(System->SystemSpace.Granularity == MI_ALLOCATION_GRANULARITY);
     MiPfnMarkInUse(&System->Pfn, 1, 15);
     MiPfnMarkInUse(&System->Pfn, 512, 512);
     MiPfnDbAddRange(&System->Pfn, 16, 512 - 16);

@@ -27,6 +27,7 @@ MiSpaceAdoptCommon(
     RtlZeroMemory(Space, sizeof(*Space));
     Space->System = System;
     Space->IsSystem = IsSystem;
+    Space->Granularity = MI_ALLOCATION_GRANULARITY;
     Space->RootFrame = RootFrame;
     Space->LowestVa = IsSystem ? Arch->SystemAddressStart : Arch->UserAddressStart;
     Space->HighestVa = IsSystem ? Arch->SystemAddressEnd : Arch->UserAddressEnd;

@@ -2005,8 +2005,8 @@ MiMapViewInternal(
     PMI_VAD Placeholder = NULL;
     BOOLEAN Replace = (BOOLEAN)((AllocationType & MI_MEM_REPLACE_PLACEHOLDER) != 0);
 
-    if ((SectionOffset & (MI_ALLOCATION_GRANULARITY - 1)) ||
-        (Start & ((Replace ? PAGE_SIZE : MI_ALLOCATION_GRANULARITY) - 1)) ||
+    if ((SectionOffset & (Space->Granularity - 1)) ||
+        (Start & ((Replace ? PAGE_SIZE : Space->Granularity) - 1)) ||
         (Replace && (Start == 0 || (AllocationType & MI_MEM_LARGE_PAGES))))
         return STATUS_INVALID_PARAMETER;
 
@@ -2055,7 +2055,7 @@ MiMapViewInternal(
     if (Start == 0)
     {
         ULONG64 Vpn;
-        BOOLEAN Found = MiSpaceFindEmptyRange(Space, Pages, MI_ALLOCATION_GRANULARITY >> PAGE_SHIFT, 0,
+        BOOLEAN Found = MiSpaceFindEmptyRange(Space, Pages, Space->Granularity >> PAGE_SHIFT, 0,
                                               HighestAddress >> PAGE_SHIFT,
                                               (BOOLEAN)((AllocationType & MI_MEM_TOP_DOWN) != 0), &Vpn);
 
