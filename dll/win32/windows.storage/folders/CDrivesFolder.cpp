@@ -22,6 +22,7 @@
  */
 
 #include <precomp.h>
+#include <propkey.h>
 #include <process.h>
 
 EXTERN_C HRESULT CFSPropertyStoreFactory_CreateInstance(PCIDLIST_ABSOLUTE pidlFolder, IShellFolder2 *psf,
@@ -823,10 +824,17 @@ class CDrivesFolderEnum :
 static const shvheader MyComputerSFHeader[] = {
     {IDS_SHV_COLUMN_NAME, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT, LVCFMT_LEFT, 15},
     {IDS_SHV_COLUMN_TYPE, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT, LVCFMT_LEFT, 10},
-    {IDS_SHV_COLUMN_DISK_CAPACITY, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT, LVCFMT_RIGHT, 10},
-    {IDS_SHV_COLUMN_DISK_AVAILABLE, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT, LVCFMT_RIGHT, 10},
-    {IDS_SHV_COLUMN_COMMENTS, SHCOLSTATE_TYPE_STR, LVCFMT_LEFT, 10},
+    {IDS_SHV_COLUMN_DISK_CAPACITY, SHCOLSTATE_TYPE_INT | SHCOLSTATE_ONBYDEFAULT | SHCOLSTATE_SLOW, LVCFMT_RIGHT, 10},
+    {IDS_SHV_COLUMN_DISK_AVAILABLE, SHCOLSTATE_TYPE_INT | SHCOLSTATE_ONBYDEFAULT | SHCOLSTATE_SLOW, LVCFMT_RIGHT, 10},
+    {IDS_SHV_COLUMN_FILESYSTEM, SHCOLSTATE_TYPE_STR | SHCOLSTATE_SLOW, LVCFMT_LEFT, 10},
+    {IDS_SHV_COLUMN_COMMENTS, SHCOLSTATE_TYPE_STR | SHCOLSTATE_SLOW, LVCFMT_LEFT, 10},
+    {IDS_SHV_COLUMN_NETLOCATION, SHCOLSTATE_TYPE_STR | SHCOLSTATE_SLOW, LVCFMT_LEFT, 10},
+    {IDS_SHV_COLUMN_PERCENTFULL, SHCOLSTATE_TYPE_INT | SHCOLSTATE_SLOW, LVCFMT_LEFT, 10},
+    {IDS_SHV_COLUMN_FREESPACE, SHCOLSTATE_TYPE_STR | SHCOLSTATE_SLOW | SHCOLSTATE_HIDDEN, LVCFMT_LEFT, 15},
 };
+
+static const SHCOLUMNID MyComputerNetworkLocationScid =
+    { { 0x28636aa6, 0x953d, 0x11d2, { 0xb5, 0xd6, 0x00, 0xc0, 0x4f, 0xd9, 0x18, 0xd0 } }, 4 };
 
 static const DWORD dwComputerAttributes =
     SFGAO_CANRENAME | SFGAO_CANDELETE | SFGAO_HASPROPSHEET | SFGAO_DROPTARGET |
@@ -1190,6 +1198,10 @@ HRESULT WINAPI CDrivesFolder::CompareIDs(LPARAM lParam, PCUIDLIST_RELATIVE pidl1
         }
         case IDS_SHV_COLUMN_TYPE:
         case IDS_SHV_COLUMN_COMMENTS:
+        case IDS_SHV_COLUMN_FILESYSTEM:
+        case IDS_SHV_COLUMN_NETLOCATION:
+        case IDS_SHV_COLUMN_PERCENTFULL:
+        case IDS_SHV_COLUMN_FREESPACE:
         {
             /* We want to return immediately because SHELL32_CompareDetails also compares children. */
             return SHELL32_CompareDetails(this, lParam, pidl1, pidl2);
@@ -1631,8 +1643,10 @@ HRESULT WINAPI CDrivesFolder::GetDetailsOf(PCUITEMID_CHILD pidl, UINT iColumn, S
 
     TRACE("(%p)->(%p %i %p)\n", this, pidl, iColumn, psd);
 
-    if (!psd || iColumn >= _countof(MyComputerSFHeader))
+    if (!psd)
         return E_INVALIDARG;
+    if (iColumn >= _countof(MyComputerSFHeader))
+        return pidl ? E_INVALIDARG : E_NOTIMPL;
 
     if (!pidl)
     {
@@ -1654,12 +1668,8 @@ HRESULT WINAPI CDrivesFolder::GetDetailsOf(PCUITEMID_CHILD pidl, UINT iColumn, S
         {
             case IDS_SHV_COLUMN_NAME:
                 return GetDisplayNameOf(pidl, SHGDN_NORMAL | SHGDN_INFOLDER, &psd->str);
-            case IDS_SHV_COLUMN_TYPE:
-            case IDS_SHV_COLUMN_DISK_CAPACITY:
-            case IDS_SHV_COLUMN_DISK_AVAILABLE:
-            case IDS_SHV_COLUMN_COMMENTS:
+            default:
                 return SHSetStrRetEmpty(&psd->str);
-            DEFAULT_UNREACHABLE;
         }
     }
     else if (!IsSimpleDriveItem(pidl))
@@ -1670,12 +1680,10 @@ HRESULT WINAPI CDrivesFolder::GetDetailsOf(PCUITEMID_CHILD pidl, UINT iColumn, S
                 return m_regFolder->GetDetailsOf(pidl, SHFSF_COL_NAME, psd);
             case IDS_SHV_COLUMN_TYPE:
                 return m_regFolder->GetDetailsOf(pidl, SHFSF_COL_TYPE, psd);
-            case IDS_SHV_COLUMN_DISK_CAPACITY:
-            case IDS_SHV_COLUMN_DISK_AVAILABLE:
-                return SHSetStrRetEmpty(&psd->str);
             case IDS_SHV_COLUMN_COMMENTS:
                 return m_regFolder->GetDetailsOf(pidl, SHFSF_COL_COMMENT, psd);
-            DEFAULT_UNREACHABLE;
+            default:
+                return SHSetStrRetEmpty(&psd->str);
         }
     }
     else
@@ -1707,16 +1715,53 @@ HRESULT WINAPI CDrivesFolder::GetDetailsOf(PCUITEMID_CHILD pidl, UINT iColumn, S
                 if (GetVolumeInformationW(szDrive, NULL, 0, NULL, NULL, NULL, NULL, 0))
                 {
                     GetDiskFreeSpaceExW(szDrive, &ulFreeBytes, &ulTotalBytes, NULL);
-                    if (iColumn == 2)
+                    if (MyComputerSFHeader[iColumn].colnameid == IDS_SHV_COLUMN_DISK_CAPACITY)
                         StrFormatByteSize64A(ulTotalBytes.QuadPart, psd->str.cStr, MAX_PATH);
                     else
                         StrFormatByteSize64A(ulFreeBytes.QuadPart, psd->str.cStr, MAX_PATH);
                 }
                 hr = S_OK;
                 break;
-            case IDS_SHV_COLUMN_COMMENTS:
-                hr = SHSetStrRetEmpty(&psd->str); /* FIXME: comments */
+            case IDS_SHV_COLUMN_FILESYSTEM:
+            {
+                WCHAR szFileSystem[MAX_PATH];
+                if (GetVolumeInformationW(szDrive, NULL, 0, NULL, NULL, NULL, szFileSystem, _countof(szFileSystem)))
+                    hr = SHSetStrRet(&psd->str, szFileSystem);
+                else
+                    hr = SHSetStrRetEmpty(&psd->str);
                 break;
+            }
+            case IDS_SHV_COLUMN_COMMENTS:
+                hr = E_FAIL;
+                break;
+            case IDS_SHV_COLUMN_NETLOCATION:
+                hr = SHSetStrRetEmpty(&psd->str);
+                break;
+            case IDS_SHV_COLUMN_PERCENTFULL:
+            case IDS_SHV_COLUMN_FREESPACE:
+            {
+                WCHAR szText[MAX_PATH], szFree[64], szTotal[64], szFormat[64];
+                szText[0] = UNICODE_NULL;
+                if (GetVolumeInformationW(szDrive, NULL, 0, NULL, NULL, NULL, NULL, 0) &&
+                    GetDiskFreeSpaceExW(szDrive, &ulFreeBytes, &ulTotalBytes, NULL) && ulTotalBytes.QuadPart)
+                {
+                    if (MyComputerSFHeader[iColumn].colnameid == IDS_SHV_COLUMN_PERCENTFULL)
+                    {
+                        ULONGLONG Used = ulTotalBytes.QuadPart - min(ulFreeBytes.QuadPart, ulTotalBytes.QuadPart);
+                        StringCchPrintfW(szText, _countof(szText), L"\x200E%u%%",
+                                         (UINT)((Used * 100 + ulTotalBytes.QuadPart / 2) / ulTotalBytes.QuadPart));
+                    }
+                    else if (LoadStringW(shell32_hInstance, IDS_COMPUTER_FREE_SPACE, szFormat, _countof(szFormat)))
+                    {
+                        StrFormatByteSizeW(ulFreeBytes.QuadPart, szFree, _countof(szFree));
+                        StrFormatByteSizeW(ulTotalBytes.QuadPart, szTotal, _countof(szTotal));
+                        szText[0] = 0x200E;
+                        StringCchPrintfW(szText + 1, _countof(szText) - 1, szFormat, szFree, szTotal);
+                    }
+                }
+                hr = SHSetStrRet(&psd->str, szText);
+                break;
+            }
             DEFAULT_UNREACHABLE;
         }
     }
@@ -1730,7 +1775,13 @@ HRESULT WINAPI CDrivesFolder::MapColumnToSCID(UINT column, SHCOLUMNID *pscid)
     {
         case IDS_SHV_COLUMN_NAME: return MakeSCID(*pscid, FMTID_Storage, PID_STG_NAME);
         case IDS_SHV_COLUMN_TYPE: return MakeSCID(*pscid, FMTID_Storage, PID_STG_STORAGETYPE);
+        case IDS_SHV_COLUMN_DISK_CAPACITY: return MakeSCID(*pscid, PKEY_Capacity.fmtid, PKEY_Capacity.pid);
+        case IDS_SHV_COLUMN_DISK_AVAILABLE: return MakeSCID(*pscid, PKEY_FreeSpace.fmtid, PKEY_FreeSpace.pid);
+        case IDS_SHV_COLUMN_FILESYSTEM: return MakeSCID(*pscid, PKEY_Volume_FileSystem.fmtid, PKEY_Volume_FileSystem.pid);
         case IDS_SHV_COLUMN_COMMENTS: return MakeSCID(*pscid, FMTID_SummaryInformation, PIDSI_COMMENTS);
+        case IDS_SHV_COLUMN_NETLOCATION: *pscid = MyComputerNetworkLocationScid; return S_OK;
+        case IDS_SHV_COLUMN_PERCENTFULL: return MakeSCID(*pscid, PKEY_PercentFull.fmtid, PKEY_PercentFull.pid);
+        case IDS_SHV_COLUMN_FREESPACE: return MakeSCID(*pscid, PKEY_Computer_DecoratedFreeSpace.fmtid, PKEY_Computer_DecoratedFreeSpace.pid);
     }
     return E_INVALIDARG;
 }
