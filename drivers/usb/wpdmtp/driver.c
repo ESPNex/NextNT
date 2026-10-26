@@ -253,6 +253,7 @@ WpdMtpEvtDeviceAdd(
 {
     WDF_PNPPOWER_EVENT_CALLBACKS Callbacks;
     WDF_OBJECT_ATTRIBUTES Attributes;
+    WDF_DEVICE_PNP_CAPABILITIES PnpCapabilities;
     WDF_FILEOBJECT_CONFIG FileConfig;
     WDF_IO_QUEUE_CONFIG QueueConfig;
     WDF_WORKITEM_CONFIG WorkItemConfig;
@@ -278,6 +279,10 @@ WpdMtpEvtDeviceAdd(
     Status = WdfDeviceCreate(&DeviceInit, &Attributes, &Device);
     if (!NT_SUCCESS(Status))
         return Status;
+
+    WDF_DEVICE_PNP_CAPABILITIES_INIT(&PnpCapabilities);
+    PnpCapabilities.SurpriseRemovalOK = WdfTrue;
+    WdfDeviceSetPnpCapabilities(Device, &PnpCapabilities);
 
     Dev = WpdMtpGetDevice(Device);
     Dev->Device = Device;
