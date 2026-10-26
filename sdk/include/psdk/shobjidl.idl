@@ -360,6 +360,29 @@ interface IShellFolder2 : IShellFolder
     HRESULT MapColumnToSCID( [in] UINT iColumn, [in] SHCOLUMNID *pscid );
 }
 
+cpp_quote("#pragma pack(push, 1)")
+typedef struct DELEGATEITEMID
+{
+    WORD cbSize;
+    WORD wOuter;
+    WORD cbInner;
+    BYTE rgb[1];
+} DELEGATEITEMID;
+cpp_quote("#pragma pack(pop)")
+cpp_quote("typedef const DELEGATEITEMID UNALIGNED *PCDELEGATEITEMID;")
+cpp_quote("typedef DELEGATEITEMID UNALIGNED *PDELEGATEITEMID;")
+
+[
+    object,
+    local,
+    uuid(add8ba80-002b-11d0-8f0f-00c04fd7d062),
+    pointer_default(unique)
+]
+interface IDelegateFolder : IUnknown
+{
+    HRESULT SetItemAlloc( [in] IMalloc *pmalloc );
+}
+
 /*****************************************************************************
  * IParentAndItem interface
  */
