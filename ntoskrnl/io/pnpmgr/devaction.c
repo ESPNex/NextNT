@@ -1708,6 +1708,7 @@ PiInitializeDevNode(
     HANDLE InstanceKey = NULL;
     UNICODE_STRING InstancePathU;
     PDEVICE_OBJECT OldDeviceObject;
+    DEVICE_CAPABILITIES DeviceCapabilities;
 
     DPRINT("PiProcessNewDevNode(%p)\n", DeviceNode);
     DPRINT("PDO 0x%p\n", DeviceNode->PhysicalDeviceObject);
@@ -1797,6 +1798,8 @@ PiInitializeDevNode(
     IopQueryHardwareIds(DeviceNode, InstanceKey);
 
     IopQueryCompatibleIds(DeviceNode, InstanceKey);
+
+    IopQueryDeviceCapabilities(DeviceNode, &DeviceCapabilities);
 
     PiSetDevNodeFlag(DeviceNode, DNF_IDS_QUERIED);
 
