@@ -263,7 +263,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Fo
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","ValueName",0x00000000,"HideFileExt"
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","CheckedValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","UncheckedValue",0x00010001,0x00000000
-HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","DefaultValue",0x00010001,0x00000000
+HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","DefaultValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","HelpID",0x00000000,""
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler",,0x00000012
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler","Type",0x00000000,"checkbox"
