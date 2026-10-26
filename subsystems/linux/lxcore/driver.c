@@ -84,11 +84,11 @@ LxPicoDispatchException(
     {
         return TRUE;
     }
-    if (Thread->FaultBus)
+    if (Thread->FaultBus != 0)
     {
-        Thread->FaultBus = FALSE;
         Signal = LX_SIGBUS;
-        Code = LX_BUS_ADRERR;
+        Code = Thread->FaultBus;
+        Thread->FaultBus = 0;
     }
 
     RtlZeroMemory(&Info, sizeof(Info));
@@ -110,6 +110,8 @@ LxPicoDispatchException(
             (ExceptionRecord->NumberParameters >= 2) ?
                 (PVOID)ExceptionRecord->ExceptionInformation[1] : NULL);
 
+    if (LxSignalDumpsCore(Signal) && LxCoreDump(Thread, TrapFrame, ExceptionFrame, Signal))
+        Signal |= 0x80;
     LxProcessExitGroup(Thread->Process, Signal);
     return LxVforkFinish(TrapFrame, ExceptionFrame);
 }
@@ -162,7 +164,9 @@ LxPicoThreadExit(
     _In_ PETHREAD EThread)
 {
     PLX_THREAD Thread = PsPicoGetThreadContext(EThread);
+    PLX_PROCESS Process;
     ULONG Zero = 0;
+    BOOLEAN Last;
 
     if (Thread == NULL)
         return;
@@ -175,7 +179,13 @@ LxPicoThreadExit(
             LxFutexWake(Thread->ClearChildTid, 1);
     }
 
-    LxThreadDetach(Thread);
+    Last = LxThreadDetach(Thread);
+    Process = Thread->Process;
+    if (Last &&
+        (Process->SharedVm || ((Process->Mm == Process) && (Process->VmUsers != 0) && !Process->OwnerGone)))
+    {
+        LxSharedVmExited(Process);
+    }
     LxThreadFree(Thread);
 }
 
@@ -194,10 +204,28 @@ LxPicoProcessExit(
         LxProcessDereference(Process);
         return;
     }
+    if (Process->OwnerGone)
+    {
+        LxMmLock(Process);
+        LxMmRelease(Process);
+        LxMmUnlock(Process);
+        if (Process->ExeDeny != NULL)
+        {
+            ObDereferenceObject(Process->ExeDeny);
+            Process->ExeDeny = NULL;
+        }
+        LxProcessDereference(Process);
+        return;
+    }
 
     LxMmLock(Process);
     LxMmRelease(Process);
     LxMmUnlock(Process);
+    if (Process->ExeDeny != NULL)
+    {
+        ObDereferenceObject(Process->ExeDeny);
+        Process->ExeDeny = NULL;
+    }
     LxProcessUsage(Process, EProcess, &Process->ExitUsage);
     Process->ExitUsageValid = TRUE;
     LxProcessExited(Process, PsGetProcessExitStatus(EProcess));

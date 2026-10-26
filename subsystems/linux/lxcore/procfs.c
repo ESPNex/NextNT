@@ -1631,6 +1631,108 @@ LxWritePidOomScoreAdj(
 }
 
 static
+VOID
+LxGenPidCoreFilter(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    PLX_PROCESS Process = LxProcessLookup(Self->Instance, Synth->Pid);
+
+    if (Process == NULL)
+        return;
+    LxTextPrintf(Text, "%08lx\n", Process->CoreFilter);
+    LxProcessDereference(Process);
+}
+
+static
+LONG
+LxWritePidCoreFilter(
+    _In_ PLX_FILE File,
+    _In_reads_bytes_(Length) PCSTR Data,
+    _In_ ULONG Length)
+{
+    PLX_THREAD Current = LxCurrentThread();
+    PLX_PROCESS Process;
+    ULONG64 Value = 0;
+    ULONG Index = 0, Base = 10, Digits = 0;
+
+    if (Current == NULL)
+        return -LX_ESRCH;
+    while ((Length != 0) && ((Data[Length - 1] == '\n') || (Data[Length - 1] == '\0')))
+        Length--;
+    if ((Length >= 2) && (Data[0] == '0') && ((Data[1] == 'x') || (Data[1] == 'X')))
+    {
+        Base = 16;
+        Index = 2;
+    }
+    else if ((Length >= 2) && (Data[0] == '0'))
+    {
+        Base = 8;
+        Index = 1;
+    }
+    for (; Index < Length; Index++, Digits++)
+    {
+        CHAR Character = Data[Index];
+        ULONG Digit;
+
+        if ((Character >= '0') && (Character <= '9'))
+            Digit = (ULONG)(Character - '0');
+        else if ((Character >= 'a') && (Character <= 'f'))
+            Digit = (ULONG)(Character - 'a' + 10);
+        else if ((Character >= 'A') && (Character <= 'F'))
+            Digit = (ULONG)(Character - 'A' + 10);
+        else
+            return -LX_EINVAL;
+        if (Digit >= Base)
+            return -LX_EINVAL;
+        Value = Value * Base + Digit;
+        if (Value > MAXULONG)
+            return -LX_ERANGE;
+    }
+    if ((Digits == 0) && (Base != 8))
+        return -LX_EINVAL;
+    Process = LxProcessLookup(Current->Process->Instance, (ULONG)(ULONG_PTR)File->HandlerContext);
+    if (Process == NULL)
+        return -LX_ESRCH;
+    Process->CoreFilter = (ULONG)Value;
+    LxProcessDereference(Process);
+    return 0;
+}
+
+static
+VOID
+LxGenCorePattern(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    CHAR Pattern[256];
+
+    UNREFERENCED_PARAMETER(Self);
+    UNREFERENCED_PARAMETER(Synth);
+    LxCoreGetPattern(Pattern, sizeof(Pattern));
+    LxTextPrintf(Text, "%s\n", Pattern);
+}
+
+static
+LONG
+LxWriteCorePattern(
+    _In_ PLX_FILE File,
+    _In_reads_bytes_(Length) PCSTR Data,
+    _In_ ULONG Length)
+{
+    PLX_THREAD Current = LxCurrentThread();
+
+    UNREFERENCED_PARAMETER(File);
+    if (Current == NULL)
+        return -LX_ESRCH;
+    if (!LxCapable(Current->Process, LX_CAP_SYS_ADMIN))
+        return -LX_EPERM;
+    return LxCoreSetPattern(Data, Length);
+}
+
+static
 LONG
 LxWriteAccept(
     _In_ PLX_FILE File,
@@ -1729,7 +1831,7 @@ LxGenSmapsEntry(
                  "mr ",
                  (Vma->Flags & LX_VMA_NOMAYWRITE) ? "" : "mw ",
                  "me ",
-                 (Vma->Flags & LX_VMA_STACK) ? "gd " : "",
+                 (Vma->Flags & (LX_VMA_STACK | LX_MAP_GROWSDOWN)) ? "gd " : "",
                  (Vma->Flags & LX_VMA_LOCKED) ? "lo " : "",
                  (!Shared && (Vma->Prot & LX_PROT_WRITE)) ? "ac " : "");
 }
@@ -1769,7 +1871,7 @@ LxGenPidMapsCommon(
     }
 
     LxMmLock(Process);
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    for (Entry = Process->Mm->Vmas.Flink; Entry != &Process->Mm->Vmas; Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
         PCSTR Name = NULL;
@@ -2024,6 +2126,155 @@ LxWritePidSetgroups(
     return Error;
 }
 
+static
+HANDLE
+LxPagemapHandle(
+    _In_ PLX_PROCESS Target)
+{
+    PEPROCESS EProcess;
+    HANDLE Handle = NULL;
+
+    if (Target->Mm->NtPid == HandleToUlong(PsGetCurrentProcessId()))
+        return NtCurrentProcess();
+    if (NT_SUCCESS(PsLookupProcessByProcessId(ULongToHandle(Target->Mm->NtPid), &EProcess)))
+    {
+        if (!NT_SUCCESS(ObOpenObjectByPointer(EProcess, OBJ_KERNEL_HANDLE, NULL, PROCESS_QUERY_INFORMATION,
+                                              *PsProcessType, KernelMode, &Handle)))
+        {
+            Handle = NULL;
+        }
+        ObDereferenceObject(EProcess);
+    }
+    return Handle;
+}
+
+static
+LONG64
+LxPagemapRead(
+    _In_ PLX_FILE File,
+    _In_ ULONG64 Buffer,
+    _In_ ULONG64 Length,
+    _Inout_opt_ PLONG64 Offset)
+{
+    PLX_PROCESS Target = File->PidProcess;
+    PLX_THREAD Current = LxCurrentThread();
+    ULONG64 Entries[512], Limit = (ULONG64)(ULONG_PTR)MmHighestUserAddress + 1;
+    LONG64 Position = (Offset != NULL) ? *Offset : File->Position, Done = 0, Result = 0;
+    BOOLEAN Frames;
+    HANDLE Handle;
+
+    if ((Position < 0) || (Position % sizeof(ULONG64)) || (Length % sizeof(ULONG64)))
+        return -LX_EINVAL;
+    if ((Target == NULL) || Target->Exited)
+        return 0;
+    Handle = LxPagemapHandle(Target);
+    if (Handle == NULL)
+        return 0;
+    Frames = (Handle == NtCurrentProcess()) && (Current != NULL) && LxCapable(Current->Process, LX_CAP_SYS_ADMIN);
+
+    while ((ULONG64)Done < Length)
+    {
+        ULONG64 Address = ((ULONG64)(Position + Done) / sizeof(ULONG64)) * LX_PAGE_SIZE;
+        ULONG Pages;
+
+        if (Address >= Limit)
+            break;
+        Pages = (ULONG)min(min((Length - (ULONG64)Done) / sizeof(ULONG64), RTL_NUMBER_OF(Entries)),
+                           (Limit - Address) / LX_PAGE_SIZE);
+        LxMmPagemap(Target, Handle, Address, Pages, Frames, Entries);
+        Result = LxCopyToUser(Buffer + (ULONG64)Done, Entries, (SIZE_T)Pages * sizeof(ULONG64));
+        if (Result != 0)
+            break;
+        Done += (LONG64)Pages * sizeof(ULONG64);
+    }
+    if (Handle != NtCurrentProcess())
+        ZwClose(Handle);
+    if (Done == 0)
+        return Result;
+    if (Offset != NULL)
+        *Offset = Position + Done;
+    else
+        File->Position = Position + Done;
+    return Done;
+}
+
+static
+LONG64
+LxPagemapSeek(
+    _In_ PLX_FILE File,
+    _In_ LONG64 Offset,
+    _In_ ULONG Whence)
+{
+    LONG64 Base;
+
+    if (Whence == LX_SEEK_SET)
+        Base = 0;
+    else if (Whence == LX_SEEK_CUR)
+        Base = File->Position;
+    else
+        return -LX_EINVAL;
+    if (Base + Offset < 0)
+        return -LX_EINVAL;
+    File->Position = Base + Offset;
+    return File->Position;
+}
+
+static
+LONG
+LxPagemapStat(
+    _In_ PLX_FILE File,
+    _Out_ PLX_STAT Stat)
+{
+    RtlZeroMemory(Stat, sizeof(*Stat));
+    Stat->Mode = LX_S_IFREG | 0400;
+    Stat->Nlink = 1;
+    Stat->Ino = File->Ino;
+    Stat->BlkSize = 4096;
+    Stat->Dev = (File->Mount != NULL) ? File->Mount->Dev : 0;
+    return 0;
+}
+
+static const LX_FILE_OPS LxPagemapOps =
+{
+    LxPagemapRead, NULL, NULL, NULL, LxPagemapStat, LxPagemapSeek, NULL, NULL, NULL
+};
+
+static
+LONG
+LxPagemapOpen(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG Pid,
+    _In_ ULONG Flags,
+    _Out_ PLX_FILE *Result)
+{
+    PLX_PROCESS Target = LxProcessLookup(Process->Instance, Pid);
+    PLX_FILE File;
+
+    *Result = NULL;
+    if (Target == NULL)
+        return -LX_ESRCH;
+    if ((Flags & LX_O_ACCMODE) != LX_O_RDONLY)
+    {
+        LxProcessDereference(Target);
+        return -LX_EACCES;
+    }
+    if ((Target != Process) && !LxPtraceMayRead(Process, Target))
+    {
+        LxProcessDereference(Target);
+        return -LX_EACCES;
+    }
+    File = LxFileAlloc(&LxPagemapOps, LX_O_RDONLY, LX_S_IFREG);
+    if (File == NULL)
+    {
+        LxProcessDereference(Target);
+        return -LX_ENOMEM;
+    }
+    File->Mode = 0400;
+    File->PidProcess = Target;
+    *Result = File;
+    return 0;
+}
+
 static const LX_PID_ENTRY LxPidEntries[] =
 {
     { "attr", LX_S_IFDIR, 0555, NULL, NULL, NULL },
@@ -2032,7 +2283,7 @@ static const LX_PID_ENTRY LxPidEntries[] =
     { "children", LX_S_IFREG, 0444, NULL, LxGenTaskChildren, NULL },
     { "cmdline", LX_S_IFREG, 0444, NULL, LxGenPidCmdline, NULL },
     { "comm", LX_S_IFREG, 0644, NULL, LxGenPidComm, LxWritePidComm },
-    { "coredump_filter", LX_S_IFREG, 0644, "00000033\n", NULL, LxWriteAccept },
+    { "coredump_filter", LX_S_IFREG, 0644, NULL, LxGenPidCoreFilter, LxWritePidCoreFilter },
     { "cwd", LX_S_IFLNK, 0777, NULL, NULL, NULL },
     { "environ", LX_S_IFREG, 0400, NULL, LxGenPidEnviron, NULL },
     { "exe", LX_S_IFLNK, 0777, NULL, NULL, NULL },
@@ -2051,6 +2302,7 @@ static const LX_PID_ENTRY LxPidEntries[] =
     { "oom_adj", LX_S_IFREG, 0644, "0\n", NULL, LxWriteAccept },
     { "oom_score", LX_S_IFREG, 0444, "0\n", NULL, NULL },
     { "oom_score_adj", LX_S_IFREG, 0644, NULL, LxGenPidOomScoreAdj, LxWritePidOomScoreAdj },
+    { "pagemap", LX_S_IFREG, 0400, NULL, NULL, NULL },
     { "personality", LX_S_IFREG, 0400, "00000000\n", NULL, NULL },
     { "root", LX_S_IFLNK, 0777, NULL, NULL, NULL },
     { "sessionid", LX_S_IFREG, 0444, "4294967295", NULL, NULL },
@@ -2464,6 +2716,114 @@ LxWriteMaxUserNamespaces(
     return (Error != 0) ? Error : LxUserNsSetMax(Current->Process, Value);
 }
 
+static volatile LONG64 LxTainted;
+
+static
+VOID
+LxGenTainted(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    UNREFERENCED_PARAMETER(Self);
+    UNREFERENCED_PARAMETER(Synth);
+    LxTextPrintf(Text, "%llu\n", (ULONG64)LxTainted);
+}
+
+static
+LONG
+LxWriteTainted(
+    _In_ PLX_FILE File,
+    _In_reads_bytes_(Length) PCSTR Data,
+    _In_ ULONG Length)
+{
+    PLX_THREAD Current = LxCurrentThread();
+    ULONG Value;
+    LONG Error;
+
+    UNREFERENCED_PARAMETER(File);
+    if (Current == NULL)
+        return -LX_ESRCH;
+    if (!LxCapable(Current->Process, LX_CAP_SYS_ADMIN))
+        return -LX_EPERM;
+    if (Length == 0)
+        return 0;
+    Error = LxParseWrittenNumber(Data, Length, &Value);
+    if (Error == 0)
+        InterlockedOr64(&LxTainted, Value);
+    return Error;
+}
+
+static
+VOID
+LxGenMaxMapCount(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    UNREFERENCED_PARAMETER(Self);
+    UNREFERENCED_PARAMETER(Synth);
+    LxTextPrintf(Text, "%ld\n", LxMaxMapCount);
+}
+
+static
+LONG
+LxWriteMaxMapCount(
+    _In_ PLX_FILE File,
+    _In_reads_bytes_(Length) PCSTR Data,
+    _In_ ULONG Length)
+{
+    ULONG Value;
+    LONG Error;
+
+    UNREFERENCED_PARAMETER(File);
+    if (Length == 0)
+        return 0;
+    Error = LxParseWrittenNumber(Data, Length, &Value);
+    if ((Error == 0) && (Value > MAXLONG))
+        Error = -LX_EINVAL;
+    if (Error == 0)
+        InterlockedExchange(&LxMaxMapCount, (LONG)Value);
+    return Error;
+}
+
+static const PCSTR LxNetSysctlPaths[LX_NET_SYSCTL_COUNT] =
+{
+    "net/core/somaxconn",
+    "net/ipv4/conf/all/tag",
+    "net/ipv4/conf/default/tag",
+    "net/ipv4/conf/lo/tag"
+};
+
+static
+LONG
+LxNetSysctlIndex(
+    _In_ PCSTR Path)
+{
+    LONG Index;
+
+    for (Index = 0; Index < LX_NET_SYSCTL_COUNT; Index++)
+    {
+        if (strcmp(LxNetSysctlPaths[Index], Path) == 0)
+            return Index;
+    }
+    return -1;
+}
+
+static
+VOID
+LxGenNetSysctl(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text);
+
+static
+LONG
+LxWriteNetSysctl(
+    _In_ PLX_FILE File,
+    _In_reads_bytes_(Length) PCSTR Data,
+    _In_ ULONG Length);
+
 static const LX_TABLE_ENTRY LxProcSysTable[] =
 {
     { "fs/file-max", 0644, "9223372036854775807\n", NULL, LxWriteAccept },
@@ -2483,7 +2843,7 @@ static const LX_TABLE_ENTRY LxProcSysTable[] =
     { "fs/protected_symlinks", 0644, "1\n", NULL, LxWriteAccept },
     { "fs/suid_dumpable", 0644, "2\n", NULL, LxWriteAccept },
     { "kernel/cap_last_cap", 0444, "40\n", NULL, NULL },
-    { "kernel/core_pattern", 0644, "core\n", NULL, LxWriteAccept },
+    { "kernel/core_pattern", 0644, NULL, LxGenCorePattern, LxWriteCorePattern },
     { "kernel/core_pipe_limit", 0644, "0\n", NULL, LxWriteAccept },
     { "kernel/dmesg_restrict", 0644, "0\n", NULL, LxWriteAccept },
     { "kernel/domainname", 0644, NULL, LxGenDomainname, LxWriteDomainname },
@@ -2503,17 +2863,65 @@ static const LX_TABLE_ENTRY LxProcSysTable[] =
     { "kernel/random/poolsize", 0444, "256\n", NULL, NULL },
     { "kernel/random/uuid", 0444, NULL, LxGenUuid, NULL },
     { "kernel/sysrq", 0644, "176\n", NULL, LxWriteAccept },
+    { "kernel/tainted", 0644, NULL, LxGenTainted, LxWriteTainted },
     { "kernel/threads-max", 0644, "63429\n", NULL, LxWriteAccept },
     { "kernel/unprivileged_bpf_disabled", 0644, "2\n", NULL, LxWriteAccept },
     { "kernel/version", 0444, LX_KERNEL_UTS_VERSION "\n", NULL, NULL },
     { "lxcore/trace", 0200, "", NULL, LxWriteTrace },
-    { "net/core/somaxconn", 0644, "4096\n", NULL, LxWriteAccept },
+    { "net/core/somaxconn", 0644, NULL, LxGenNetSysctl, LxWriteNetSysctl },
+    { "net/ipv4/conf/all/tag", 0644, NULL, LxGenNetSysctl, LxWriteNetSysctl },
+    { "net/ipv4/conf/default/tag", 0644, NULL, LxGenNetSysctl, LxWriteNetSysctl },
+    { "net/ipv4/conf/lo/tag", 0644, NULL, LxGenNetSysctl, LxWriteNetSysctl },
     { "net/unix/max_dgram_qlen", 0644, "512\n", NULL, LxWriteAccept },
     { "user/max_user_namespaces", 0644, NULL, LxGenMaxUserNamespaces, LxWriteMaxUserNamespaces },
-    { "vm/max_map_count", 0644, "65530\n", NULL, LxWriteAccept },
+    { "vm/max_map_count", 0644, NULL, LxGenMaxMapCount, LxWriteMaxMapCount },
     { "vm/overcommit_memory", 0644, "0\n", NULL, LxWriteAccept },
     { "vm/swappiness", 0644, "60\n", NULL, LxWriteAccept },
 };
+
+static
+VOID
+LxGenNetSysctl(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    LONG Index = LxNetSysctlIndex(LxProcSysTable[Synth->Index].Path);
+
+    if (Index >= 0)
+        LxTextPrintf(Text, "%ld\n", LxProcessNs(Self, LxNsNet)->Net.Sysctl[Index]);
+}
+
+static
+LONG
+LxWriteNetSysctl(
+    _In_ PLX_FILE File,
+    _In_reads_bytes_(Length) PCSTR Data,
+    _In_ ULONG Length)
+{
+    PLX_THREAD Current = LxCurrentThread();
+    ULONG Table = (ULONG)(ULONG_PTR)File->HandlerContext;
+    CHAR Buffer[32];
+    LONG64 Value;
+    LONG Index, Error;
+
+    if (Current == NULL)
+        return -LX_ESRCH;
+    if (Table >= RTL_NUMBER_OF(LxProcSysTable))
+        return -LX_EINVAL;
+    Index = LxNetSysctlIndex(LxProcSysTable[Table].Path);
+    if ((Index < 0) || (Length == 0) || (Length >= sizeof(Buffer)))
+        return -LX_EINVAL;
+    RtlCopyMemory(Buffer, Data, Length);
+    Buffer[Length] = '\0';
+    Error = LxParseWriteNumber(Buffer, &Value);
+    if (Error != 0)
+        return Error;
+    if ((Value < -(LONG64)MAXLONG - 1) || (Value > MAXLONG))
+        return -LX_EINVAL;
+    LxProcessNs(Current->Process, LxNsNet)->Net.Sysctl[Index] = (LONG)Value;
+    return 0;
+}
 
 static
 VOID
@@ -2532,11 +2940,200 @@ LxGenCpuOnline(
         LxTextPrintf(Text, "0-%lu\n", Count - 1);
 }
 
+#define LX_FIRMWARE_RSMB 0x52534D42
+
+typedef struct _LX_SMBIOS_RAW
+{
+    UCHAR Used20CallingMethod;
+    UCHAR MajorVersion;
+    UCHAR MinorVersion;
+    UCHAR DmiRevision;
+    ULONG Length;
+    UCHAR Data[ANYSIZE_ARRAY];
+} LX_SMBIOS_RAW, *PLX_SMBIOS_RAW;
+
+typedef enum _LX_DMI_KIND
+{
+    LxDmiText,
+    LxDmiRelease,
+    LxDmiChassisType,
+    LxDmiUuid
+} LX_DMI_KIND;
+
+typedef struct _LX_DMI_FIELD
+{
+    PCSTR Name;
+    UCHAR Type;
+    UCHAR Offset;
+    LX_DMI_KIND Kind;
+} LX_DMI_FIELD;
+
+static const LX_DMI_FIELD LxDmiFields[] =
+{
+    { "bios_date", 0, 0x08, LxDmiText },
+    { "bios_release", 0, 0x14, LxDmiRelease },
+    { "bios_vendor", 0, 0x04, LxDmiText },
+    { "bios_version", 0, 0x05, LxDmiText },
+    { "board_asset_tag", 2, 0x08, LxDmiText },
+    { "board_name", 2, 0x05, LxDmiText },
+    { "board_serial", 2, 0x07, LxDmiText },
+    { "board_vendor", 2, 0x04, LxDmiText },
+    { "board_version", 2, 0x06, LxDmiText },
+    { "chassis_asset_tag", 3, 0x08, LxDmiText },
+    { "chassis_serial", 3, 0x07, LxDmiText },
+    { "chassis_type", 3, 0x05, LxDmiChassisType },
+    { "chassis_vendor", 3, 0x04, LxDmiText },
+    { "chassis_version", 3, 0x06, LxDmiText },
+    { "ec_firmware_release", 0, 0x16, LxDmiRelease },
+    { "product_family", 1, 0x1A, LxDmiText },
+    { "product_name", 1, 0x05, LxDmiText },
+    { "product_serial", 1, 0x07, LxDmiText },
+    { "product_sku", 1, 0x19, LxDmiText },
+    { "product_uuid", 1, 0x08, LxDmiUuid },
+    { "product_version", 1, 0x06, LxDmiText },
+    { "sys_vendor", 1, 0x04, LxDmiText },
+};
+
+static
+PCSTR
+LxDmiStructureString(
+    _In_reads_bytes_(Limit) PUCHAR Structure,
+    _In_ PUCHAR Limit,
+    _In_ UCHAR Index)
+{
+    PUCHAR Cursor = Structure + Structure[1];
+    PCSTR Blank;
+
+    if (Index == 0)
+        return NULL;
+    while ((--Index != 0) && (Cursor < Limit) && (*Cursor != 0))
+    {
+        while ((Cursor < Limit) && (*Cursor != 0))
+            Cursor++;
+        Cursor++;
+    }
+    if ((Cursor >= Limit) || (*Cursor == 0))
+        return NULL;
+    for (Blank = (PCSTR)Cursor; *Blank == ' '; Blank++)
+        ;
+    return (*Blank != 0) ? (PCSTR)Cursor : NULL;
+}
+
+static
+VOID
+LxGenDmi(
+    _In_ PLX_PROCESS Self,
+    _In_ PLX_SYNTH Synth,
+    _Inout_ PLX_TEXT Text)
+{
+    PCSTR Name = strrchr(Synth->Prefix, '/');
+    const LX_DMI_FIELD *Field = NULL;
+    PLX_SMBIOS_RAW Raw = NULL;
+    ULONG Length = 0, Index;
+    PUCHAR Cursor, Limit;
+
+    UNREFERENCED_PARAMETER(Self);
+    Name = (Name != NULL) ? Name + 1 : Synth->Prefix;
+    for (Index = 0; Index < RTL_NUMBER_OF(LxDmiFields); Index++)
+    {
+        if (strcmp(LxDmiFields[Index].Name, Name) == 0)
+            Field = &LxDmiFields[Index];
+    }
+    if ((Field == NULL) ||
+        (ExGetSystemFirmwareTable(LX_FIRMWARE_RSMB, 0, NULL, 0, &Length) != STATUS_BUFFER_TOO_SMALL) ||
+        (Length <= FIELD_OFFSET(LX_SMBIOS_RAW, Data)) || ((Raw = LxAllocPaged(Length)) == NULL) ||
+        !NT_SUCCESS(ExGetSystemFirmwareTable(LX_FIRMWARE_RSMB, 0, Raw, Length, &Length)))
+    {
+        LxFreePaged(Raw);
+        LxTextAppend(Text, "\n", 1);
+        return;
+    }
+    Limit = Raw->Data + min(Raw->Length, Length - FIELD_OFFSET(LX_SMBIOS_RAW, Data));
+    for (Cursor = Raw->Data; (Cursor + 4 <= Limit) && (Cursor[1] >= 4) && (Cursor[0] != 127);)
+    {
+        PUCHAR Next = Cursor + Cursor[1];
+
+        if (Cursor[0] == Field->Type)
+            break;
+        while ((Next + 1 < Limit) && ((Next[0] != 0) || (Next[1] != 0)))
+            Next++;
+        Cursor = Next + 2;
+    }
+    if ((Cursor + 4 > Limit) || (Cursor[0] != Field->Type) || (Field->Offset >= Cursor[1]))
+    {
+        LxTextAppend(Text, "\n", 1);
+    }
+    else if (Field->Kind == LxDmiText)
+    {
+        PCSTR Value = LxDmiStructureString(Cursor, Limit, Cursor[Field->Offset]);
+
+        LxTextPrintf(Text, "%s\n", (Value != NULL) ? Value : "");
+    }
+    else if (Field->Kind == LxDmiRelease)
+    {
+        if ((Field->Offset + 1 < Cursor[1]) && (Cursor[Field->Offset] != 0xFF))
+            LxTextPrintf(Text, "%u.%u\n", Cursor[Field->Offset], Cursor[Field->Offset + 1]);
+        else
+            LxTextAppend(Text, "\n", 1);
+    }
+    else if (Field->Kind == LxDmiChassisType)
+    {
+        LxTextPrintf(Text, "%u\n", Cursor[Field->Offset] & 0x7F);
+    }
+    else if (Field->Offset + 16 <= Cursor[1])
+    {
+        PUCHAR Uuid = Cursor + Field->Offset;
+
+        if (((Raw->MajorVersion << 8) | Raw->MinorVersion) >= 0x0206)
+        {
+            LxTextPrintf(Text, "%02x%02x%02x%02x-%02x%02x-%02x%02x-", Uuid[3], Uuid[2], Uuid[1], Uuid[0],
+                         Uuid[5], Uuid[4], Uuid[7], Uuid[6]);
+        }
+        else
+        {
+            LxTextPrintf(Text, "%02x%02x%02x%02x-%02x%02x-%02x%02x-", Uuid[0], Uuid[1], Uuid[2], Uuid[3],
+                         Uuid[4], Uuid[5], Uuid[6], Uuid[7]);
+        }
+        LxTextPrintf(Text, "%02x%02x-%02x%02x%02x%02x%02x%02x\n", Uuid[8], Uuid[9], Uuid[10], Uuid[11],
+                     Uuid[12], Uuid[13], Uuid[14], Uuid[15]);
+    }
+    else
+    {
+        LxTextAppend(Text, "\n", 1);
+    }
+    LxFreePaged(Raw);
+}
+
+#define LX_DMI_ENTRIES(Root) \
+    { Root "/bios_date", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/bios_release", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/bios_vendor", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/bios_version", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/board_asset_tag", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/board_name", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/board_serial", 0400, NULL, LxGenDmi, NULL }, \
+    { Root "/board_vendor", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/board_version", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/chassis_asset_tag", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/chassis_serial", 0400, NULL, LxGenDmi, NULL }, \
+    { Root "/chassis_type", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/chassis_vendor", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/chassis_version", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/ec_firmware_release", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/product_family", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/product_name", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/product_serial", 0400, NULL, LxGenDmi, NULL }, \
+    { Root "/product_sku", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/product_uuid", 0400, NULL, LxGenDmi, NULL }, \
+    { Root "/product_version", 0444, NULL, LxGenDmi, NULL }, \
+    { Root "/sys_vendor", 0444, NULL, LxGenDmi, NULL }
+
 static const LX_TABLE_ENTRY LxSysTable[] =
 {
     { "block", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "bus", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "class/block", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
+    LX_DMI_ENTRIES("class/dmi/id"),
     { "class/input", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "class/mem", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "class/misc", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
@@ -2550,6 +3147,7 @@ static const LX_TABLE_ENTRY LxSysTable[] =
     { "devices/system/cpu/possible", 0444, NULL, LxGenCpuOnline, NULL },
     { "devices/system/cpu/present", 0444, NULL, LxGenCpuOnline, NULL },
     { "devices/virtual", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
+    LX_DMI_ENTRIES("devices/virtual/dmi/id"),
     { "firmware", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "fs/bpf", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
     { "fs/cgroup", 0755 | LX_S_IFDIR, NULL, NULL, NULL },
@@ -4825,6 +5423,7 @@ LxSynthOpen(
                 else
                     LxTextAppend(&Text, LxProcSysTable[Synth.Index].Text, (ULONG)strlen(LxProcSysTable[Synth.Index].Text));
                 Writer = LxProcSysTable[Synth.Index].Writer;
+                Context = (PVOID)(ULONG_PTR)Synth.Index;
                 break;
 
             case LxSysDevNode:
@@ -4857,6 +5456,19 @@ LxSynthOpen(
                 break;
 
             case LxProcPidFile:
+                if ((Synth.Index < RTL_NUMBER_OF(LxPidEntries)) &&
+                    (strcmp(LxPidEntries[Synth.Index].Name, "pagemap") == 0))
+                {
+                    Error = LxPagemapOpen(Process, Synth.Pid, Flags, &File);
+                    if (Error != 0)
+                        goto Exit;
+                    File->Ino = LxSynthIno(Node);
+                    File->Mount = Node->Mount;
+                    File->Path = LxStrDup(Node->Path);
+                    *Result = File;
+                    File = NULL;
+                    goto Exit;
+                }
                 if (Synth.Index == MAXULONG)
                 {
                     LxTextAppend(&Text, "unconfined\n", 11);

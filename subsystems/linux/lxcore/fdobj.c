@@ -1331,6 +1331,7 @@ LX_SYSCALL(LxSysMemfdCreate)
     WCHAR Suffix[32];
     ULONG Flags = (ULONG)Call->Args[1];
     PLX_INSTANCE Instance = Call->Process->Instance;
+    PFILE_OBJECT FileObject;
     HANDLE Handle;
     PLX_FILE File;
     PSTR Name;
@@ -1375,8 +1376,29 @@ LX_SYSCALL(LxSysMemfdCreate)
     }
     File->Path = LxStrPrintf("/memfd:%s (deleted)", Name);
     File->Mode = 0777;
-    File->Seals = (Flags & LX_MFD_ALLOW_SEALING) ? 0 : LX_F_SEAL_SEAL;
+    File->Memfd = LxAlloc(sizeof(*File->Memfd));
+    if (File->Memfd == NULL)
+    {
+        LxFileDereference(File);
+        LxFree(Name);
+        return -LX_ENOMEM;
+    }
+    File->Memfd->RefCount = 1;
+    File->Memfd->Seals = (Flags & LX_MFD_ALLOW_SEALING) ? 0 : LX_F_SEAL_SEAL;
+    File->Memfd->WritableMaps = 0;
     LxFree(Name);
+    Status = ObReferenceObjectByHandle(Handle, 0, *IoFileObjectType, KernelMode, (PVOID*)&FileObject, NULL);
+    if (NT_SUCCESS(Status))
+    {
+        Status = ObOpenObjectByPointer(FileObject, OBJ_KERNEL_HANDLE, NULL, SYNCHRONIZE, *IoFileObjectType, KernelMode,
+                                       &File->Memfd->Owner);
+        ObDereferenceObject(FileObject);
+    }
+    if (!NT_SUCCESS(Status))
+    {
+        LxFileDereference(File);
+        return -LxStatusToErrno(Status);
+    }
     return LxInstallNewFile(Call->Process, File, (Flags & LX_MFD_CLOEXEC) != 0);
 }
 

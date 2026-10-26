@@ -51,22 +51,25 @@ LxThreadAttach(
     LxSchedApplyAffinity(Thread);
 }
 
-VOID
+BOOLEAN
 LxThreadDetach(
     _In_ PLX_THREAD Thread)
 {
     PLX_PROCESS Process = Thread->Process;
+    BOOLEAN Last;
 
     if (Thread->EThread == NULL)
-        return;
+        return FALSE;
 
     ExAcquireFastMutex(&Process->Lock);
     RemoveEntryList(&Thread->Link);
     InitializeListHead(&Thread->Link);
+    Last = IsListEmpty(&Process->Threads);
     ExReleaseFastMutex(&Process->Lock);
 
     ObDereferenceObject(Thread->EThread);
     Thread->EThread = NULL;
+    return Last;
 }
 
 static
@@ -117,7 +120,7 @@ LxSignalTerminate(
 
     if (Target->Trace || (Target->Pid == 1))
         DPRINT1("Linux process %lu (%s) is killed by signal %ld\n", Target->Pid, Target->Comm, Signal);
-    if (Target->Mm != Target)
+    if ((Target->Mm != Target) || (Target->VmUsers != 0))
     {
         PLX_THREAD Current = LxCurrentThread();
 
@@ -127,6 +130,11 @@ LxSignalTerminate(
             return;
         }
         LxProcessExitStatus(Target, Signal);
+        if (Target->SharedVm || (Target->Mm == Target))
+        {
+            LxSharedVmTerminate(Target, 128 + Signal, FALSE);
+            return;
+        }
         InterlockedOr64(&Target->Pending, (LONG64)LX_SIGNAL_BIT(LX_SIGKILL));
         LxSignalWake(Target, 0);
         return;
@@ -144,6 +152,19 @@ LxSignalTerminate(
         ZwClose(Handle);
     }
     ObDereferenceObject(EProcess);
+}
+
+static
+BOOLEAN
+LxSignalTakenByCurrent(
+    _In_ PLX_PROCESS Target,
+    _In_opt_ PLX_THREAD TargetThread,
+    _In_ ULONG64 Bit)
+{
+    PLX_THREAD Current = LxCurrentThread();
+
+    return (Current != NULL) && (Current->Process == Target) && (Target->Mm == Target) &&
+           ((TargetThread == NULL) || (TargetThread == Current)) && !(Current->SigMask & Bit);
 }
 
 static
@@ -243,7 +264,8 @@ LxSignalSend(
         if ((Handler == LX_SIG_IGN) || ((Handler == LX_SIG_DFL) && LxSignalIgnoredByDefault(Signal)))
             return;
     }
-    if (!Blocked && ((Signal == LX_SIGKILL) || (Handler == LX_SIG_DFL)))
+    if (!Blocked && ((Signal == LX_SIGKILL) || (Handler == LX_SIG_DFL)) &&
+        !((Signal != LX_SIGKILL) && LxSignalDumpsCore(Signal) && LxSignalTakenByCurrent(Target, TargetThread, Bit)))
     {
         LxSignalTerminate(Target, Signal);
         return;
@@ -414,6 +436,8 @@ LxSignalCheckPending(
         {
             if (LxSignalIgnoredByDefault(Signal) || (Process->Pid == 1) || LxPidNsIsInit(Process))
                 continue;
+            if (LxSignalDumpsCore(Signal) && LxCoreDump(Thread, TrapFrame, ExceptionFrame, Signal))
+                Signal |= 0x80;
             LxProcessExitGroup(Process, Signal);
             return;
         }

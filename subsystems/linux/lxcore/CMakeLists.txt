@@ -1,6 +1,7 @@
 
 list(APPEND SOURCE
     bpf.c
+    coredump.c
     cred.c
     driver.c
     exec.c

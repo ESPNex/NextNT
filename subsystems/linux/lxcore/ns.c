@@ -153,6 +153,13 @@ LxNsCreate(
 
         case LxNsNet:
             Ns->Net.LoopbackUp = (From == NULL);
+            Ns->Net.Sysctl[LxNetSomaxconn] = 4096;
+            if ((From != NULL) && (Instance->RootNs[LxNsNet] != NULL))
+            {
+                Ns->Net.Sysctl[LxNetConfAllTag] = Instance->RootNs[LxNsNet]->Net.Sysctl[LxNetConfAllTag];
+                Ns->Net.Sysctl[LxNetConfDefaultTag] = Instance->RootNs[LxNsNet]->Net.Sysctl[LxNetConfDefaultTag];
+            }
+            Ns->Net.Sysctl[LxNetConfLoTag] = Ns->Net.Sysctl[LxNetConfDefaultTag];
             break;
 
         case LxNsCgroup:

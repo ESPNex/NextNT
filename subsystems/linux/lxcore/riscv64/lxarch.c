@@ -129,6 +129,22 @@ LxArchCaptureContext(
     Context->ContextFlags = CONTEXT_FULL;
 }
 
+ULONG
+LxArchCoreRegisters(
+    _In_ PKTRAP_FRAME TrapFrame,
+    _In_opt_ PKEXCEPTION_FRAME ExceptionFrame,
+    _Out_writes_(LX_CORE_MAX_REGISTERS) PULONG64 Registers)
+{
+    CONTEXT Context;
+    ULONG Index;
+
+    LxArchCaptureContext(TrapFrame, ExceptionFrame, &Context);
+    Registers[0] = Context.Pc;
+    for (Index = 1; Index < 32; Index++)
+        Registers[Index] = Context.X[Index];
+    return 32;
+}
+
 VOID
 LxArchSetForkContext(
     _Inout_ PCONTEXT Context,

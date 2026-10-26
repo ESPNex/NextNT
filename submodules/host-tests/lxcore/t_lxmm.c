@@ -6,6 +6,7 @@
  */
 
 #include "lxhost.h"
+#include <time.h>
 
 #define RX (LX_PROT_READ | LX_PROT_EXEC)
 #define RW (LX_PROT_READ | LX_PROT_WRITE)
@@ -124,6 +125,7 @@ ProcInit(LX_TEST_PROC *Proc)
         Proc->Lx.Limits[Index].Cur = Proc->Lx.Limits[Index].Max = LX_RLIM_INFINITY;
     Proc->Lx.Limits[LX_RLIMIT_MEMLOCK].Cur = Proc->Lx.Limits[LX_RLIMIT_MEMLOCK].Max = 8ULL * 1024 * 1024;
     InitializeListHead(&Proc->Lx.Vmas);
+    InitializeListHead(&Proc->Lx.Guards);
     KeInitializeEvent(&Proc->Lx.MmLock, SynchronizationEvent, TRUE);
     Proc->Thread.Process = &Proc->Lx;
     Proc->EProcess.Space = &Proc->Space;
@@ -1068,6 +1070,28 @@ ResidentPages(LX_TEST_PROC *Proc, ULONG64 Vector, ULONG64 Base, ULONG Pages)
 }
 
 static
+ULONG64
+Pinned(LX_TEST_PROC *Proc, ULONG64 Base, ULONG Pages)
+{
+    return MiLockRangePages(&Proc->Space, Base, Base + (ULONG64)Pages * LX_PAGE_SIZE);
+}
+
+static
+ULONG
+ValidPages(LX_TEST_PROC *Proc, ULONG64 Base, ULONG Pages)
+{
+    MI_WORKING_SET_EX_INFORMATION Ws;
+    ULONG Index, Count = 0;
+
+    for (Index = 0; Index < Pages; Index++)
+    {
+        if (NT_SUCCESS(MiQueryWorkingSetEx(&Proc->Space, Base + (ULONG64)Index * LX_PAGE_SIZE, &Ws)) && Ws.Valid)
+            Count++;
+    }
+    return Count;
+}
+
+static
 void
 LockSemantics(void)
 {
@@ -1087,12 +1111,14 @@ LockSemantics(void)
     CHECK(Syscall(&Proc, LxSysMlock, Private, LX_PAGE_SIZE + 1, 0, 0) == 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 2 * LX_PAGE_SIZE);
     CHECK(ResidentPages(&Proc, Vector, Private, 8) == 2);
+    CHECK(Pinned(&Proc, Private, 8) == 2);
     CHECK(Syscall(&Proc, LxSysMlock2, Private, 2 * LX_PAGE_SIZE, 0, 0) == 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 2 * LX_PAGE_SIZE);
     CHECK(Syscall(&Proc, LxSysMsync, Private, LX_PAGE_SIZE, LX_MS_INVALIDATE, 0) == -LX_EBUSY);
     CHECK(Syscall(&Proc, LxSysMadvise, Private, LX_PAGE_SIZE, LX_MADV_DONTNEED, 0) == -LX_EINVAL);
     CHECK(Syscall(&Proc, LxSysMunlock, Private, 8 * LX_PAGE_SIZE, 0, 0) == 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 0);
+    CHECK(Pinned(&Proc, Private, 8) == 0);
     CHECK(VmaCount(&Proc) == Vmas);
     Base = (ULONG64)Map(&Proc, 0, LX_PAGE_SIZE, RO, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
     CHECK(Unmap(&Proc, Base, LX_PAGE_SIZE) == 0);
@@ -1105,11 +1131,36 @@ LockSemantics(void)
     CHECK(Syscall(&Proc, LxSysMlock2, Shared, 8 * LX_PAGE_SIZE, LX_MLOCK_ONFAULT, 0) == 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 8 * LX_PAGE_SIZE);
     CHECK(ResidentPages(&Proc, Vector, Shared, 8) == 4);
+    CHECK(Pinned(&Proc, Shared, 8) == 4);
     CHECK(Syscall(&Proc, LxSysMlock2, Shared, 8 * LX_PAGE_SIZE, 0, 0) == 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 8 * LX_PAGE_SIZE);
     CHECK(ResidentPages(&Proc, Vector, Shared, 8) == 8);
+    CHECK(Pinned(&Proc, Shared, 8) == 8);
     CHECK(Syscall(&Proc, LxSysMunlockall, 0, 0, 0, 0) == 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 0);
+    CHECK(Pinned(&Proc, Shared, 8) == 0);
+
+    Base = (ULONG64)Map(&Proc, 0, 16 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK((LONG64)Base > 0);
+    CHECK(Syscall(&Proc, LxSysMlock2, Base, 16 * LX_PAGE_SIZE, LX_MLOCK_ONFAULT, 0) == 0);
+    CHECK(Pinned(&Proc, Base, 16) == 0);
+    CHECK(Write8(&Proc, Base + 3 * LX_PAGE_SIZE, 1) == 0);
+    CHECK(Pinned(&Proc, Base + 3 * LX_PAGE_SIZE, 1) == 1);
+    CHECK(Unmap(&Proc, Base, 16 * LX_PAGE_SIZE) == 0);
+    CHECK(Pinned(&Proc, Base, 16) == 0);
+
+    Base = (ULONG64)Map(&Proc, 0, 128 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK((LONG64)Base > 0);
+    Index = LxHostQuotaRaises;
+    CHECK(Syscall(&Proc, LxSysMlock, Base, 128 * LX_PAGE_SIZE, 0, 0) == 0);
+    CHECK(Pinned(&Proc, Base, 128) == 128 && LxHostQuotaRaises != Index);
+    MiTrimAddressSpace(&Proc.Space, ~0u, TRUE);
+    CHECK(ValidPages(&Proc, Base, 128) == 128);
+    CHECK(Syscall(&Proc, LxSysMunlock, Base, 128 * LX_PAGE_SIZE, 0, 0) == 0);
+    CHECK(Pinned(&Proc, Base, 128) == 0);
+    MiTrimAddressSpace(&Proc.Space, ~0u, TRUE);
+    CHECK(ValidPages(&Proc, Base, 128) == 0);
+    CHECK(Unmap(&Proc, Base, 128 * LX_PAGE_SIZE) == 0);
 
     Proc.Lx.CapEffective = 0;
     Proc.Lx.Limits[LX_RLIMIT_MEMLOCK].Cur = LX_PAGE_SIZE - 1;
@@ -1140,11 +1191,15 @@ LockSemantics(void)
     CHECK((LONG64)Base > 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 4 * LX_PAGE_SIZE);
     CHECK(ResidentPages(&Proc, Vector, Base, 4) == 4);
+    CHECK(Pinned(&Proc, Base, 4) == 4);
     ProcFork(&Proc, &Child);
     CHECK(LxMmLockedBytes(&Child.Lx) == 0);
+    CHECK(Pinned(&Child, Base, 4) == 0);
     CHECK(LxMmLockedBytes(&Proc.Lx) == 4 * LX_PAGE_SIZE);
+    CHECK(Pinned(&Proc, Base, 4) == 4);
     ProcDestroy(&Child);
     CHECK(Unmap(&Proc, Base, 4 * LX_PAGE_SIZE) == 0);
+    CHECK(Pinned(&Proc, Base, 4) == 0);
 
     CHECK(Syscall(&Proc, LxSysMlockall, LX_MCL_ONFAULT, 0, 0, 0) == -LX_EINVAL);
     CHECK(Syscall(&Proc, LxSysMlockall, 8, 0, 0, 0) == -LX_EINVAL);
@@ -1170,6 +1225,257 @@ LockSemantics(void)
     CHECK(ResidentPages(&Proc, Vector, Base, 4) == 0);
     LxMmReset(&Proc.Lx);
     CHECK(Proc.Lx.MmLockDefault == 0);
+    ProcDestroy(&Proc);
+}
+
+static
+ULONG
+TreeWalk(PRTL_BALANCED_NODE Node, PLX_VMA *Order, ULONG Count, ULONG Max)
+{
+    if (Node == NULL)
+        return Count;
+    Count = TreeWalk(Node->Left, Order, Count, Max);
+    if (Count < Max)
+        Order[Count] = CONTAINING_RECORD(Node, LX_VMA, TreeNode);
+    Count++;
+    return TreeWalk(Node->Right, Order, Count, Max);
+}
+
+static
+void
+CheckVmaIndex(LX_TEST_PROC *Proc)
+{
+    static PLX_VMA Order[70000];
+    PLIST_ENTRY Entry;
+    ULONG Count = TreeWalk(Proc->Lx.VmaTree.Root, Order, 0, RTL_NUMBER_OF(Order)), Index = 0;
+    ULONG64 Last = 0;
+
+    CHECK(Count == (ULONG)Proc->Lx.VmaCount);
+    for (Entry = Proc->Lx.Vmas.Flink; Entry != &Proc->Lx.Vmas; Entry = Entry->Flink, Index++)
+    {
+        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+
+        CHECK(Vma->Start < Vma->End);
+        CHECK(Vma->Start >= Last);
+        CHECK((Index < Count) && (Order[Index] == Vma));
+        Last = Vma->End;
+    }
+    CHECK(Index == Count);
+}
+
+static
+void
+VmaIndexAndLimits(void)
+{
+    LX_TEST_PROC Proc;
+    ULONG64 Base, Va, Start;
+    ULONG Round, Mapped = 0, Index;
+    LONG SavedLimit = LxMaxMapCount;
+    struct timespec Begin, Finish;
+    UCHAR Value = 0;
+
+    ProcInit(&Proc);
+    Base = (ULONG64)Map(&Proc, 0, 512 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK((LONG64)Base > 0);
+    srand(7);
+    for (Round = 0; Round < 3000; Round++)
+    {
+        ULONG Page = (ULONG)rand() % 500, Pages = 1 + (ULONG)rand() % 12;
+
+        Va = Base + (ULONG64)Page * LX_PAGE_SIZE;
+        switch (rand() % 4)
+        {
+            case 0:
+                CHECK(Unmap(&Proc, Va, Pages * LX_PAGE_SIZE) == 0);
+                break;
+            case 1:
+                CHECK(Map(&Proc, Va, Pages * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS | LX_MAP_FIXED,
+                          NULL, 0) == (LONG64)Va);
+                break;
+            case 2:
+                Syscall(&Proc, LxSysMprotect, Va, Pages * LX_PAGE_SIZE, (rand() & 1) ? RO : RW, 0);
+                break;
+            default:
+                if (Syscall(&Proc, LxSysMprotect, Va, LX_PAGE_SIZE, RW, 0) == 0)
+                    CHECK(Write8(&Proc, Va, (UCHAR)Round) == 0);
+                break;
+        }
+        if ((Round % 50) == 0)
+            CheckVmaIndex(&Proc);
+    }
+    CheckVmaIndex(&Proc);
+    CHECK(Unmap(&Proc, Base, 512 * LX_PAGE_SIZE) == 0);
+    CHECK(Proc.Lx.VmaCount == 0);
+
+    LxMaxMapCount = 600;
+    Start = 0x10000000ULL;
+    for (Index = 0; Index < 2000; Index++)
+    {
+        LONG64 Result = Map(&Proc, Start + (ULONG64)Index * 6 * LX_PAGE_SIZE, 3 * LX_PAGE_SIZE, LX_PROT_NONE,
+                            LX_MAP_PRIVATE | LX_MAP_ANONYMOUS | LX_MAP_FIXED_NOREPLACE, NULL, 0);
+
+        if (Result < 0)
+        {
+            CHECK(Result == -LX_ENOMEM);
+            break;
+        }
+        Mapped++;
+    }
+    CHECK((Mapped > 0) && (Mapped < 2000));
+    CHECK(Proc.Lx.VmaCount == LxMaxMapCount + 1);
+    CHECK(Unmap(&Proc, Start + 2 * 6 * LX_PAGE_SIZE + LX_PAGE_SIZE, LX_PAGE_SIZE) == -LX_ENOMEM);
+    CHECK(Unmap(&Proc, Start + 2 * 6 * LX_PAGE_SIZE, 3 * LX_PAGE_SIZE) == 0);
+    CheckVmaIndex(&Proc);
+    for (Index = 0; Index < Mapped; Index++)
+        Unmap(&Proc, Start + (ULONG64)Index * 6 * LX_PAGE_SIZE, 3 * LX_PAGE_SIZE);
+    CHECK(Proc.Lx.VmaCount == 0);
+    LxMaxMapCount = SavedLimit;
+
+    clock_gettime(CLOCK_MONOTONIC, &Begin);
+    for (Index = 0; Index < 20000; Index++)
+        CHECK(Map(&Proc, Start + (ULONG64)Index * 2 * LX_PAGE_SIZE, LX_PAGE_SIZE, LX_PROT_NONE,
+                  LX_MAP_PRIVATE | LX_MAP_ANONYMOUS | LX_MAP_FIXED_NOREPLACE, NULL, 0) ==
+              (LONG64)(Start + (ULONG64)Index * 2 * LX_PAGE_SIZE));
+    for (Index = 0; Index < 20000; Index += 7)
+        CHECK(Syscall(&Proc, LxSysMprotect, Start + (ULONG64)Index * 2 * LX_PAGE_SIZE, LX_PAGE_SIZE, RO, 0) == 0);
+    clock_gettime(CLOCK_MONOTONIC, &Finish);
+    CHECK(Proc.Lx.VmaCount == 20000);
+    CheckVmaIndex(&Proc);
+    fprintf(stderr, "  20000 mappings: %.1f ms\n",
+            (Finish.tv_sec - Begin.tv_sec) * 1e3 + (Finish.tv_nsec - Begin.tv_nsec) / 1e6);
+    for (Index = 0; Index < 20000; Index++)
+        Unmap(&Proc, Start + (ULONG64)Index * 2 * LX_PAGE_SIZE, LX_PAGE_SIZE);
+    CHECK(Proc.Lx.VmaCount == 0);
+
+    Base = (ULONG64)Map(&Proc, 0, 4 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK(Write8(&Proc, Base + LX_PAGE_SIZE, 5) == 0);
+    CHECK(Syscall(&Proc, LxSysMadvise, Base, LX_PAGE_SIZE, 1212, 0) == -LX_EINVAL);
+    CHECK(Syscall(&Proc, LxSysMadvise, Base, LX_PAGE_SIZE, LX_MADV_MERGEABLE, 0) == -LX_EINVAL);
+    CHECK(Syscall(&Proc, LxSysMadvise, Base + 1, LX_PAGE_SIZE, LX_MADV_NORMAL, 0) == -LX_EINVAL);
+    CHECK(Syscall(&Proc, LxSysMadvise, Base, 0, LX_MADV_WIPEONFORK, 0) == 0);
+    CHECK(Syscall(&Proc, LxSysMadvise, Base, LX_PAGE_SIZE, LX_MADV_WIPEONFORK, 0) == 0);
+    CHECK(Syscall(&Proc, LxSysMadvise, Base, LX_PAGE_SIZE, LX_MADV_REMOVE, 0) == -LX_EINVAL);
+    CHECK(Syscall(&Proc, LxSysMadvise, Base, LX_PAGE_SIZE, LX_MADV_KEEPONFORK, 0) == 0);
+    Proc.Lx.CapEffective = 0;
+    CHECK(Syscall(&Proc, LxSysMadvise, Base + LX_PAGE_SIZE, LX_PAGE_SIZE, LX_MADV_HWPOISON, 0) == -LX_EPERM);
+    Proc.Lx.CapEffective = ~0ULL;
+    CHECK(Syscall(&Proc, LxSysMadvise, Base + LX_PAGE_SIZE, LX_PAGE_SIZE, LX_MADV_HWPOISON, 0) == 0);
+    CHECK(Read8(&Proc, Base + LX_PAGE_SIZE, &Value) != 0);
+    CHECK(Proc.Thread.FaultBus == LX_BUS_MCEERR_AR);
+    Proc.Thread.FaultBus = 0;
+    CHECK(Read8(&Proc, Base, &Value) == 0);
+    CHECK(Unmap(&Proc, Base, 4 * LX_PAGE_SIZE) == 0);
+    CheckVmaIndex(&Proc);
+    ProcDestroy(&Proc);
+}
+
+static
+void
+RemapAndGrowth(void)
+{
+    LX_TEST_PROC Proc;
+    ULONG64 Old, Target, Moved, Stack, Guard;
+    UCHAR Value = 0;
+
+    ProcInit(&Proc);
+    Old = (ULONG64)Map(&Proc, 0, 2 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    Target = (ULONG64)Map(&Proc, 0, 2 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK(((LONG64)Old > 0) && ((LONG64)Target > 0));
+    CHECK(Write8(&Proc, Old, 0x11) == 0);
+    CHECK(Write8(&Proc, Old + LX_PAGE_SIZE, 0x22) == 0);
+    CHECK(Write8(&Proc, Target, 0x7f) == 0);
+
+    CHECK(Syscall(&Proc, LxSysMremap, Old, 2 * LX_PAGE_SIZE, 2 * LX_PAGE_SIZE, 8) == -LX_EINVAL);
+    CHECK(Syscall(&Proc, LxSysMremap, Old, 2 * LX_PAGE_SIZE, 2 * LX_PAGE_SIZE, LX_MREMAP_FIXED) == -LX_EINVAL);
+    CHECK(Syscall(&Proc, LxSysMremap, Old, 2 * LX_PAGE_SIZE, 4 * LX_PAGE_SIZE,
+                  LX_MREMAP_MAYMOVE | LX_MREMAP_DONTUNMAP) == -LX_EINVAL);
+
+    {
+        LX_CALL Call;
+
+        ProcUse(&Proc);
+        memset(&Call, 0, sizeof(Call));
+        Call.Thread = &Proc.Thread;
+        Call.Process = &Proc.Lx;
+        Call.Args[0] = Old;
+        Call.Args[1] = 2 * LX_PAGE_SIZE;
+        Call.Args[2] = 2 * LX_PAGE_SIZE;
+        Call.Args[3] = LX_MREMAP_MAYMOVE | LX_MREMAP_FIXED;
+        Call.Args[4] = Old + LX_PAGE_SIZE;
+        CHECK(LxSysMremap(&Call) == -LX_EINVAL);
+        Call.Args[4] = Target;
+        Moved = (ULONG64)LxSysMremap(&Call);
+    }
+    CHECK(Moved == Target);
+    CHECK((Read8(&Proc, Target, &Value) == 0) && (Value == 0x11));
+    CHECK((Read8(&Proc, Target + LX_PAGE_SIZE, &Value) == 0) && (Value == 0x22));
+    CHECK(Read8(&Proc, Old, &Value) != 0);
+
+    {
+        LX_CALL Call;
+
+        ProcUse(&Proc);
+        memset(&Call, 0, sizeof(Call));
+        Call.Thread = &Proc.Thread;
+        Call.Process = &Proc.Lx;
+        Call.Args[0] = Target;
+        Call.Args[1] = 2 * LX_PAGE_SIZE;
+        Call.Args[2] = 2 * LX_PAGE_SIZE;
+        Call.Args[3] = LX_MREMAP_MAYMOVE | LX_MREMAP_DONTUNMAP;
+        Moved = (ULONG64)LxSysMremap(&Call);
+    }
+    CHECK(((LONG64)Moved > 0) && (Moved != Target));
+    CHECK((Read8(&Proc, Moved, &Value) == 0) && (Value == 0x11));
+    CHECK((Read8(&Proc, Target, &Value) == 0) && (Value == 0));
+    CHECK(Unmap(&Proc, Moved, 2 * LX_PAGE_SIZE) == 0);
+    CHECK(Unmap(&Proc, Target, 2 * LX_PAGE_SIZE) == 0);
+    CheckVmaIndex(&Proc);
+
+    Stack = 0x30000000ULL;
+    CHECK(Map(&Proc, Stack + 300 * LX_PAGE_SIZE, 4 * LX_PAGE_SIZE, RW,
+              LX_MAP_PRIVATE | LX_MAP_ANONYMOUS | LX_MAP_FIXED | LX_MAP_GROWSDOWN, NULL, 0) ==
+          (LONG64)(Stack + 300 * LX_PAGE_SIZE));
+    CHECK(Write8(&Proc, Stack + 299 * LX_PAGE_SIZE, 1) == 0);
+    CHECK(Write8(&Proc, Stack + 280 * LX_PAGE_SIZE, 2) == 0);
+    {
+        PLIST_ENTRY Entry;
+        BOOLEAN Covered = FALSE;
+
+        for (Entry = Proc.Lx.Vmas.Flink; Entry != &Proc.Lx.Vmas; Entry = Entry->Flink)
+        {
+            PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+
+            if ((Vma->Start <= Stack + 280 * LX_PAGE_SIZE) && (Vma->End == Stack + 304 * LX_PAGE_SIZE))
+                Covered = TRUE;
+        }
+        CHECK(Covered);
+    }
+    Guard = Stack + 10 * LX_PAGE_SIZE;
+    CHECK(Map(&Proc, Guard, LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS | LX_MAP_FIXED, NULL, 0) ==
+          (LONG64)Guard);
+    CHECK(Write8(&Proc, Guard + 257 * LX_PAGE_SIZE, 3) == 0);
+    CHECK(Write8(&Proc, Guard + 255 * LX_PAGE_SIZE, 4) != 0);
+    CHECK(Unmap(&Proc, Guard, LX_PAGE_SIZE) == 0);
+    CheckVmaIndex(&Proc);
+
+    {
+        LX_TEST_PROC Child;
+        ULONG Vmas;
+        ULONG64 Base = (ULONG64)Map(&Proc, 0, 4 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+
+        CHECK(Write8(&Proc, Base + LX_PAGE_SIZE, 9) == 0);
+        Vmas = VmaCount(&Proc);
+        CHECK(Syscall(&Proc, LxSysMadvise, Base + LX_PAGE_SIZE, 2 * LX_PAGE_SIZE, LX_MADV_GUARD_INSTALL, 0) == 0);
+        CHECK(VmaCount(&Proc) == Vmas);
+        CHECK(Read8(&Proc, Base + LX_PAGE_SIZE, &Value) != 0);
+        CHECK(Read8(&Proc, Base, &Value) == 0);
+        ProcFork(&Proc, &Child);
+        CHECK(Read8(&Child, Base + 2 * LX_PAGE_SIZE, &Value) != 0);
+        ProcDestroy(&Child);
+        CHECK(Syscall(&Proc, LxSysMadvise, Base + LX_PAGE_SIZE, 2 * LX_PAGE_SIZE, LX_MADV_GUARD_REMOVE, 0) == 0);
+        CHECK((Read8(&Proc, Base + LX_PAGE_SIZE, &Value) == 0) && (Value == 0));
+        CHECK(Unmap(&Proc, Base, 4 * LX_PAGE_SIZE) == 0);
+    }
     ProcDestroy(&Proc);
 }
 
@@ -1204,6 +1510,8 @@ TestLxMm(void)
     RemapKeepsCopies();
     BeyondEndOfFile();
     LockSemantics();
+    VmaIndexAndLimits();
+    RemapAndGrowth();
     HeapFaultCost();
     ForkCost();
     ExecLoadCost();

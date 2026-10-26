@@ -427,6 +427,7 @@ LxFileDereference(
         File->Ops->Release(File);
     if (File->PidProcess != NULL)
         LxProcessDereference(File->PidProcess);
+    LxMemfdDereference(File->Memfd);
     if (File->Handle != NULL)
         ZwClose(File->Handle);
     LxFree(File->DirBuffer);
@@ -562,6 +563,117 @@ LxFileRead(
     return File->Ops->Read(File, Buffer, Length, Offset);
 }
 
+VOID
+LxMemfdDereference(
+    _In_opt_ PLX_MEMFD Memfd)
+{
+    if ((Memfd != NULL) && (InterlockedDecrement(&Memfd->RefCount) == 0))
+    {
+        if (Memfd->Owner != NULL)
+            ZwClose(Memfd->Owner);
+        LxFree(Memfd);
+    }
+}
+
+static
+LONG64
+LxMemfdSize(
+    _In_ PLX_FILE File)
+{
+    FILE_STANDARD_INFORMATION Standard;
+    IO_STATUS_BLOCK Iosb;
+
+    if ((File->Handle == NULL) ||
+        !NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Standard, sizeof(Standard), FileStandardInformation)))
+    {
+        return -1;
+    }
+    return Standard.EndOfFile.QuadPart;
+}
+
+LONG
+LxMemfdCheckWrite(
+    _In_ PLX_FILE File,
+    _In_ LONG64 Position,
+    _In_ ULONG64 Length)
+{
+    FILE_POSITION_INFORMATION Current;
+    IO_STATUS_BLOCK Iosb;
+    LONG Seals;
+    LONG64 Size;
+
+    if (File->Memfd == NULL)
+        return 0;
+    Seals = File->Memfd->Seals;
+    if (Seals & (LX_F_SEAL_WRITE | LX_F_SEAL_FUTURE_WRITE))
+        return -LX_EPERM;
+    if (!(Seals & LX_F_SEAL_GROW) || (Length == 0))
+        return 0;
+    Size = LxMemfdSize(File);
+    if (Size < 0)
+        return 0;
+    if (File->Flags & LX_O_APPEND)
+        Position = Size;
+    else if ((Position < 0) &&
+             NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Current, sizeof(Current), FilePositionInformation)))
+        Position = Current.CurrentByteOffset.QuadPart;
+    return ((Position >= 0) && ((ULONG64)Position + Length > (ULONG64)Size)) ? -LX_EPERM : 0;
+}
+
+LONG
+LxMemfdCheckSize(
+    _In_ PLX_FILE File,
+    _In_ LONG64 Size)
+{
+    LONG Seals;
+    LONG64 Current;
+
+    if (File->Memfd == NULL)
+        return 0;
+    Seals = File->Memfd->Seals;
+    if (!(Seals & (LX_F_SEAL_SHRINK | LX_F_SEAL_GROW)))
+        return 0;
+    Current = LxMemfdSize(File);
+    if (Current < 0)
+        return 0;
+    if (((Seals & LX_F_SEAL_SHRINK) && (Size < Current)) || ((Seals & LX_F_SEAL_GROW) && (Size > Current)))
+        return -LX_EPERM;
+    return 0;
+}
+
+LONG
+LxFileZeroRange(
+    _In_ PLX_FILE File,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    FILE_POSITION_INFORMATION Saved;
+    IO_STATUS_BLOCK Iosb;
+    LARGE_INTEGER Position;
+    NTSTATUS Status = STATUS_SUCCESS;
+    PUCHAR Zero;
+    ULONG64 Cursor;
+
+    if (File->Handle == NULL)
+        return -LX_ENODEV;
+    Zero = LxAllocPaged(LX_IO_CHUNK);
+    if (Zero == NULL)
+        return -LX_ENOMEM;
+    RtlZeroMemory(Zero, LX_IO_CHUNK);
+    if (!NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Saved, sizeof(Saved), FilePositionInformation)))
+        Saved.CurrentByteOffset.QuadPart = -1;
+    for (Cursor = Start; NT_SUCCESS(Status) && (Cursor < End); Cursor += LX_IO_CHUNK)
+    {
+        Position.QuadPart = (LONG64)Cursor;
+        Status = ZwWriteFile(File->Handle, NULL, NULL, NULL, &Iosb, Zero, (ULONG)min(End - Cursor, LX_IO_CHUNK),
+                             &Position, NULL);
+    }
+    if (Saved.CurrentByteOffset.QuadPart >= 0)
+        ZwSetInformationFile(File->Handle, &Iosb, &Saved, sizeof(Saved), FilePositionInformation);
+    LxFreePaged(Zero);
+    return NT_SUCCESS(Status) ? 0 : -LxStatusToErrno(Status);
+}
+
 LONG64
 LxFileWrite(
     _In_ PLX_FILE File,
@@ -577,6 +689,9 @@ LxFileWrite(
         return -LX_EINVAL;
     if (Length > 0x7FFFF000)
         Length = 0x7FFFF000;
+    Result = LxMemfdCheckWrite(File, (Offset != NULL) ? *Offset : -1, Length);
+    if (Result != 0)
+        return Result;
     Result = File->Ops->Write(File, Buffer, Length, Offset);
     if ((Result > 0) && (File->Mount != NULL))
     {
@@ -612,9 +727,10 @@ LxFileReadKernel(
     _In_ ULONG Length,
     _In_ ULONG64 Offset)
 {
+    FILE_POSITION_INFORMATION Saved;
     IO_STATUS_BLOCK Iosb;
     LARGE_INTEGER Position;
-    NTSTATUS Status;
+    NTSTATUS Status = STATUS_SUCCESS;
     ULONG Total = 0;
 
     if (File->Handle == NULL)
@@ -626,20 +742,25 @@ LxFileReadKernel(
         return Total;
     }
 
+    if (!NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Saved, sizeof(Saved), FilePositionInformation)))
+        Saved.CurrentByteOffset.QuadPart = -1;
     while (Total < Length)
     {
         Position.QuadPart = (LONG64)(Offset + Total);
         Status = ZwReadFile(File->Handle, NULL, NULL, NULL, &Iosb, (PUCHAR)Buffer + Total,
                             Length - Total, &Position, NULL);
         if (Status == STATUS_END_OF_FILE)
+        {
+            Status = STATUS_SUCCESS;
             break;
-        if (!NT_SUCCESS(Status))
-            return -LxStatusToErrno(Status);
-        if (Iosb.Information == 0)
+        }
+        if (!NT_SUCCESS(Status) || (Iosb.Information == 0))
             break;
         Total += (ULONG)Iosb.Information;
     }
-    return Total;
+    if (Saved.CurrentByteOffset.QuadPart >= 0)
+        ZwSetInformationFile(File->Handle, &Iosb, &Saved, sizeof(Saved), FilePositionInformation);
+    return NT_SUCCESS(Status) ? Total : -LxStatusToErrno(Status);
 }
 
 static
@@ -1106,6 +1227,8 @@ LxNtTruncate(
 
     EndOfFile.EndOfFile.QuadPart = Length;
     Status = ZwSetInformationFile(File->Handle, &Iosb, &EndOfFile, sizeof(EndOfFile), FileEndOfFileInformation);
+    if ((Status == STATUS_USER_MAPPED_FILE) && (LxMmTruncateViews(File->Handle) != 0))
+        Status = ZwSetInformationFile(File->Handle, &Iosb, &EndOfFile, sizeof(EndOfFile), FileEndOfFileInformation);
     return NT_SUCCESS(Status) ? 0 : -LxStatusToErrno(Status);
 }
 

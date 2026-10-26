@@ -230,6 +230,8 @@ LxNtOpenHandle(
             return -LX_EISDIR;
         if (Status == STATUS_NOT_A_DIRECTORY)
             return -LX_ENOTDIR;
+        if ((Status == STATUS_SHARING_VIOLATION) && (Access & (FILE_WRITE_DATA | FILE_APPEND_DATA)))
+            return -LX_ETXTBSY;
         return -LxStatusToErrno(Status);
     }
     return 0;
@@ -3593,6 +3595,66 @@ LxVfsOpenResolve(
     return Error;
 }
 
+static
+LONG
+LxVfsReopenMemfd(
+    _In_ PLX_FILE Source,
+    _In_ ULONG Flags,
+    _Out_ PLX_FILE *File)
+{
+    ULONG Size = sizeof(OBJECT_NAME_INFORMATION) + LX_PATH_MAX * sizeof(WCHAR), Returned = 0;
+    ULONG Access = Flags & LX_O_ACCMODE;
+    POBJECT_NAME_INFORMATION Name;
+    PLX_FILE Opened;
+    HANDLE Handle;
+    NTSTATUS Status;
+    LONG Error;
+
+    if ((Flags & LX_O_TRUNC) && (Access != LX_O_RDONLY))
+    {
+        Error = LxMemfdCheckSize(Source, 0);
+        if (Error != 0)
+            return Error;
+    }
+    Name = LxAllocPaged(Size);
+    if (Name == NULL)
+        return -LX_ENOMEM;
+    Status = ZwQueryObject(Source->Handle, ObjectNameInformation, Name, Size, &Returned);
+    if (!NT_SUCCESS(Status) || (Name->Name.Length == 0))
+    {
+        LxFreePaged(Name);
+        return -LxStatusToErrno(Status);
+    }
+    Error = LxNtOpenHandle(&Name->Name,
+                           (Access == LX_O_RDONLY) ? FILE_GENERIC_READ :
+                           (Access == LX_O_WRONLY) ? FILE_GENERIC_WRITE : (FILE_GENERIC_READ | FILE_GENERIC_WRITE),
+                           FILE_OPEN, FILE_NON_DIRECTORY_FILE, 0, &Handle);
+    LxFreePaged(Name);
+    if (Error != 0)
+        return Error;
+    Opened = LxFileFromNtHandle(Handle, Flags & (LX_O_ACCMODE | LX_O_APPEND | LX_O_NONBLOCK));
+    if (Opened == NULL)
+    {
+        ZwClose(Handle);
+        return -LX_ENOMEM;
+    }
+    Opened->Path = LxStrDup(Source->Path);
+    Opened->Mode = Source->Mode;
+    InterlockedIncrement(&Source->Memfd->RefCount);
+    Opened->Memfd = Source->Memfd;
+    if ((Flags & LX_O_TRUNC) && (Access != LX_O_RDONLY) && (Opened->Ops->Truncate != NULL))
+    {
+        Error = Opened->Ops->Truncate(Opened, 0);
+        if (Error != 0)
+        {
+            LxFileDereference(Opened);
+            return Error;
+        }
+    }
+    *File = Opened;
+    return 0;
+}
+
 LONG
 LxVfsReopen(
     _In_ PLX_PROCESS Process,
@@ -3607,6 +3669,8 @@ LxVfsReopen(
     LONG Error;
 
     *File = NULL;
+    if ((Source->Memfd != NULL) && (Source->Handle != NULL))
+        return LxVfsReopenMemfd(Source, Flags, File);
     if ((Source->Mount == NULL) || (Source->Mount->Kind != LxFsNt) || (Source->Handle == NULL) || (Source->Path == NULL))
         return 1;
 
@@ -3641,6 +3705,11 @@ LxVfsReopen(
 
     Error = LxVfsOpenNode(Process, &Node, Flags & ~(LX_O_CREAT | LX_O_EXCL | LX_O_NOFOLLOW), 0, File);
     LxNodeFree(&Node);
+    if ((Error == 0) && (Source->Memfd != NULL))
+    {
+        InterlockedIncrement(&Source->Memfd->RefCount);
+        (*File)->Memfd = Source->Memfd;
+    }
     return Error;
 }
 
@@ -4397,6 +4466,8 @@ LxVfsTruncate(
         return Error;
     EndOfFile.EndOfFile.QuadPart = Length;
     Status = ZwSetInformationFile(Handle, &Iosb, &EndOfFile, sizeof(EndOfFile), FileEndOfFileInformation);
+    if ((Status == STATUS_USER_MAPPED_FILE) && (LxMmTruncateViews(Handle) != 0))
+        Status = ZwSetInformationFile(Handle, &Iosb, &EndOfFile, sizeof(EndOfFile), FileEndOfFileInformation);
     ZwClose(Handle);
     LxVcacheInvalidatePath(Node->Mount->Ns, Node->Path);
     return NT_SUCCESS(Status) ? 0 : -LxStatusToErrno(Status);

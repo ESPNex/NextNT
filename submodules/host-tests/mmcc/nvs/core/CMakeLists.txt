@@ -61,7 +61,9 @@ add_custom_command(OUTPUT ${LXCORE_COPY}/mm.c ${LXCORE_COPY}/lxcore.h
 set(LXCORE_TESTS ${LXCORE_HOST}/t_lxmm.c ${LXCORE_HOST}/lxshim.c ${LXCORE_COPY}/mm.c)
 set_source_files_properties(${LXCORE_TESTS} PROPERTIES
     INCLUDE_DIRECTORIES "${LXCORE_HOST};${CMAKE_CURRENT_SOURCE_DIR};${LXCORE_SOURCE};${LXCORE_SOURCE}/arm64")
-list(APPEND MM_TESTS ${LXCORE_TESTS})
+set_source_files_properties(${REACTOS_HOST_SOURCE_ROOT}/ntoskrnl/rtl/rbtree.c PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../../../rtl/include")
+list(APPEND MM_TESTS ${LXCORE_TESTS} ${REACTOS_HOST_SOURCE_ROOT}/ntoskrnl/rtl/rbtree.c)
 
 set(MM_AREAS pfn pagetable vad vm large awe clone session fault fault_smp paging section image stress ccmm ntfile writeback ntpaging async sys process highmem lxmm)
 

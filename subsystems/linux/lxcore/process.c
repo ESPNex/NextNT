@@ -299,7 +299,7 @@ LxProcessDefaultLimits(
     for (Index = 0; Index < 16; Index++)
         Limits[Index].Cur = Limits[Index].Max = LX_RLIM_INFINITY;
     Limits[LX_RLIMIT_STACK].Cur = LX_STACK_SIZE;
-    Limits[4].Cur = Limits[4].Max = 0;
+    Limits[LX_RLIMIT_CORE].Cur = 0;
     Limits[6].Cur = Limits[6].Max = 63429;
     Limits[LX_RLIMIT_NOFILE].Cur = Limits[LX_RLIMIT_NOFILE].Max = LX_MAX_FDS;
     Limits[8].Cur = Limits[8].Max = 8ULL * 1024 * 1024;
@@ -327,6 +327,7 @@ LxProcessCreate(
     InitializeListHead(&Process->Threads);
     InitializeListHead(&Process->Timers);
     InitializeListHead(&Process->Vmas);
+    InitializeListHead(&Process->Guards);
     ExInitializeFastMutex(&Process->Lock);
     KeInitializeEvent(&Process->VforkDone, NotificationEvent, FALSE);
     KeInitializeEvent(&Process->MmLock, SynchronizationEvent, TRUE);
@@ -335,6 +336,7 @@ LxProcessCreate(
     LxPollHeadInit(&Process->ChildPoll);
     Process->Umask = 022;
     Process->Dumpable = 1;
+    Process->CoreFilter = 0x33;
     Process->ExitSignal = LX_SIGCHLD;
     Process->CapBounding = LX_CAP_FULL_SET & ~(1ULL << LX_CAP_SYS_TIME);
     Process->CapPermitted = Process->CapEffective = Process->CapBounding;
@@ -393,6 +395,7 @@ LxProcessFork(
     Process->CapBounding = Parent->CapBounding;
     Process->CapAmbient = Parent->CapAmbient;
     Process->Dumpable = Parent->Dumpable;
+    Process->CoreFilter = Parent->CoreFilter;
     Process->OomScoreAdj = Parent->OomScoreAdj;
     Process->Trace = Parent->Trace;
     for (Fd = 0; Fd < LX_MAX_FDS; Fd++)
@@ -420,6 +423,11 @@ LxProcessFork(
     if (Process->Tty != NULL)
         LxTtyReference(Process->Tty);
     Process->Umask = Parent->Umask;
+    if (Parent->ExeDeny != NULL)
+    {
+        ObReferenceObject(Parent->ExeDeny);
+        Process->ExeDeny = Parent->ExeDeny;
+    }
     Process->BrkBase = Parent->BrkBase;
     Process->BrkCurrent = Parent->BrkCurrent;
     Process->BrkCommitted = Parent->BrkCommitted;
@@ -471,6 +479,8 @@ LxProcessDereference(
     LxItimerRelease(Process);
     LxPosixTimersRelease(Process, TRUE);
     LxMmRelease(Process);
+    if (Process->ExeDeny != NULL)
+        ObDereferenceObject(Process->ExeDeny);
     if (Process->Tty != NULL)
         LxTtyDereference(Process->Tty);
     LxNsReleaseProcess(Process);
@@ -702,20 +712,85 @@ LxProcessExitGroup(
     PLX_THREAD Thread;
 
     LxProcessExitStatus(Process, WaitStatus);
-    if (Process->Mm != Process)
-    {
-        Thread = LxCurrentThread();
-        if ((Thread != NULL) && (Thread->Process == Process))
-            Thread->VforkExited = TRUE;
-        return;
-    }
     if ((WaitStatus & 0x7F) == 0)
         ExitCode = (WaitStatus >> 8) & 0xFF;
     else
         ExitCode = 128 + (WaitStatus & 0x7F);
+    Thread = LxCurrentThread();
+    if ((Process->Mm != Process) && !Process->SharedVm)
+    {
+        if ((Thread != NULL) && (Thread->Process == Process))
+            Thread->VforkExited = TRUE;
+        return;
+    }
+    if (Process->SharedVm || (Process->VmUsers != 0))
+    {
+        LxSharedVmTerminate(Process, ExitCode, FALSE);
+        if ((Thread != NULL) && (Thread->Process == Process))
+            PsPicoTerminateCurrentThread(ExitCode);
+        return;
+    }
 
     ZwTerminateProcess(NtCurrentProcess(), ExitCode);
     PsPicoTerminateCurrentThread(ExitCode);
+}
+
+VOID
+LxSharedVmTerminate(
+    _In_ PLX_PROCESS Process,
+    _In_ NTSTATUS ExitCode,
+    _In_ BOOLEAN CurrentNtProcessOnly)
+{
+    PETHREAD Current = PsGetCurrentThread(), *Threads;
+    ULONG Capacity = (ULONG)max(Process->ThreadCount, 0) + 8, Count = 0, Index;
+    PLIST_ENTRY Entry;
+
+    Threads = LxAlloc(Capacity * sizeof(*Threads));
+    if (Threads == NULL)
+        return;
+    ExAcquireFastMutex(&Process->Lock);
+    for (Entry = Process->Threads.Flink; (Entry != &Process->Threads) && (Count < Capacity); Entry = Entry->Flink)
+    {
+        PLX_THREAD Thread = CONTAINING_RECORD(Entry, LX_THREAD, Link);
+
+        if ((Thread->EThread == NULL) || (Thread->EThread == Current))
+            continue;
+        if (CurrentNtProcessOnly && (IoThreadToProcess(Thread->EThread) != PsGetCurrentProcess()))
+            continue;
+        ObReferenceObject(Thread->EThread);
+        Threads[Count++] = Thread->EThread;
+    }
+    ExReleaseFastMutex(&Process->Lock);
+    for (Index = 0; Index < Count; Index++)
+    {
+        PsPicoTerminateThread(Threads[Index], ExitCode);
+        ObDereferenceObject(Threads[Index]);
+    }
+    LxFree(Threads);
+}
+
+VOID
+LxSharedVmExited(
+    _In_ PLX_PROCESS Process)
+{
+    PLX_PROCESS Owner = Process->Mm;
+
+    LxProcessUsage(Process, NULL, &Process->ExitUsage);
+    Process->ExitUsageValid = TRUE;
+    if (Process->SharedVm)
+    {
+        Process->SharedVm = FALSE;
+        Process->Mm = Process;
+        Process->NtPid = 0;
+        LxProcessExited(Process, 0);
+        InterlockedDecrement((PLONG)&Process->Instance->ProcessCount);
+        InterlockedDecrement(&Owner->VmUsers);
+        LxProcessDereference(Process);
+        return;
+    }
+    Process->OwnerGone = TRUE;
+    LxProcessExited(Process, 0);
+    InterlockedDecrement((PLONG)&Process->Instance->ProcessCount);
 }
 
 VOID

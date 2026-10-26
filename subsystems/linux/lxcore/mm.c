@@ -10,6 +10,10 @@
 #define NDEBUG
 #include <debug.h>
 
+volatile LONG LxMaxMapCount = 65530;
+
+#define LX_STACK_GUARD_GAP  (256 * LX_PAGE_SIZE)
+
 VOID
 LxMmLock(
     _In_ PLX_PROCESS Process)
@@ -164,23 +168,93 @@ LxVmFlushCode(
 }
 
 static
+PLIST_ENTRY
+LxVmaEntryAbove(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Address)
+{
+    PRTL_BALANCED_NODE Node = Process->VmaTree.Root;
+    PLX_VMA Best = NULL;
+
+    while (Node != NULL)
+    {
+        PLX_VMA Vma = CONTAINING_RECORD(Node, LX_VMA, TreeNode);
+
+        if (Vma->Start <= Address)
+        {
+            Best = Vma;
+            Node = Node->Right;
+        }
+        else
+        {
+            Node = Node->Left;
+        }
+    }
+    if (Best == NULL)
+        return Process->Vmas.Flink;
+    return (Best->End > Address) ? &Best->Link : Best->Link.Flink;
+}
+
+static
 PLX_VMA
 LxVmaFind(
     _In_ PLX_PROCESS Process,
     _In_ ULONG64 Address)
 {
-    PLIST_ENTRY Entry;
+    PLIST_ENTRY Entry = LxVmaEntryAbove(Process, Address);
+    PLX_VMA Vma;
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    if (Entry == &Process->Vmas)
+        return NULL;
+    Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+    return (Vma->Start <= Address) ? Vma : NULL;
+}
+
+static
+VOID
+LxVmaAccountMemfd(
+    _In_ PLX_VMA Vma,
+    _In_ LONG Delta)
+{
+    if ((Vma->File != NULL) && (Vma->File->Memfd != NULL) && (Vma->Flags & LX_MAP_SHARED) &&
+        !(Vma->Flags & LX_VMA_NOMAYWRITE))
     {
-        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
-
-        if (Address < Vma->Start)
-            return NULL;
-        if (Address < Vma->End)
-            return Vma;
+        InterlockedExchangeAdd(&Vma->File->Memfd->WritableMaps, Delta);
     }
-    return NULL;
+}
+
+static
+VOID
+LxVmaLink(
+    _In_ PLX_PROCESS Process,
+    _In_ PLX_VMA Vma,
+    _In_ PLIST_ENTRY Before)
+{
+    PRTL_BALANCED_NODE Node = Process->VmaTree.Root, Parent = NULL;
+    BOOLEAN Right = FALSE;
+
+    while (Node != NULL)
+    {
+        Parent = Node;
+        Right = (Vma->Start > CONTAINING_RECORD(Node, LX_VMA, TreeNode)->Start);
+        Node = Node->Children[Right];
+    }
+    RtlRbInsertNodeEx(&Process->VmaTree, Parent, Right, &Vma->TreeNode);
+    InsertTailList(Before, &Vma->Link);
+    Process->VmaCount++;
+    LxVmaAccountMemfd(Vma, 1);
+}
+
+static
+VOID
+LxVmaUnlink(
+    _In_ PLX_PROCESS Process,
+    _In_ PLX_VMA Vma)
+{
+    RtlRbRemoveNode(&Process->VmaTree, &Vma->TreeNode);
+    RemoveEntryList(&Vma->Link);
+    Process->VmaCount--;
+    LxVmaAccountMemfd(Vma, -1);
 }
 
 static
@@ -208,6 +282,8 @@ LxVmaSplit(
 
     if ((Vma == NULL) || (Vma->Start == Address))
         return 0;
+    if (Process->VmaCount >= LxMaxMapCount)
+        return -LX_ENOMEM;
 
     Tail = LxAlloc(sizeof(*Tail));
     if (Tail == NULL)
@@ -229,7 +305,7 @@ LxVmaSplit(
     if ((Tail->Flags & LX_VMA_SHM) && (Tail->Section != NULL))
         LxIpcShmVmaOpen(Tail->Section);
     Vma->End = Address;
-    InsertHeadList(&Vma->Link, &Tail->Link);
+    LxVmaLink(Process, Tail, Vma->Link.Flink);
     return 0;
 }
 
@@ -240,8 +316,10 @@ LxVmaMerge(
     _In_ ULONG64 Start,
     _In_ ULONG64 End)
 {
-    PLIST_ENTRY Entry = Process->Vmas.Flink;
+    PLIST_ENTRY Entry = LxVmaEntryAbove(Process, Start);
 
+    if (Entry->Blink != &Process->Vmas)
+        Entry = Entry->Blink;
     while ((Entry != &Process->Vmas) && (Entry->Flink != &Process->Vmas))
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
@@ -252,19 +330,136 @@ LxVmaMerge(
         if ((Next->End >= Start) &&
             (Vma->End == Next->Start) &&
             (Vma->Prot == Next->Prot) &&
-            (Vma->Flags == Next->Flags) &&
+            (((Vma->Flags ^ Next->Flags) & ~LX_VMA_TOUCHED) == 0) &&
             (Vma->File == Next->File) &&
             (Vma->Section == Next->Section) &&
             (Vma->ViewBase == Next->ViewBase) &&
             (((Vma->File == NULL) && (Vma->Section == NULL)) || (Vma->Offset + (Vma->End - Vma->Start) == Next->Offset)))
         {
             Vma->End = Next->End;
-            RemoveEntryList(&Next->Link);
+            Vma->Flags |= Next->Flags & LX_VMA_TOUCHED;
+            LxVmaUnlink(Process, Next);
             LxVmaFree(Next);
             continue;
         }
         Entry = Entry->Flink;
     }
+}
+
+typedef struct _LX_GUARD
+{
+    LIST_ENTRY Link;
+    ULONG64 Start;
+    ULONG64 End;
+} LX_GUARD, *PLX_GUARD;
+
+static
+VOID
+LxMmGuardRemove(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    PLIST_ENTRY Entry = Process->Guards.Flink;
+
+    while (Entry != &Process->Guards)
+    {
+        PLX_GUARD Guard = CONTAINING_RECORD(Entry, LX_GUARD, Link);
+
+        Entry = Entry->Flink;
+        if ((Guard->End <= Start) || (Guard->Start >= End))
+            continue;
+        if ((Guard->Start < Start) && (Guard->End > End))
+        {
+            PLX_GUARD Tail = LxAlloc(sizeof(*Tail));
+
+            if (Tail != NULL)
+            {
+                Tail->Start = End;
+                Tail->End = Guard->End;
+                InsertHeadList(&Guard->Link, &Tail->Link);
+            }
+            Guard->End = Start;
+        }
+        else if (Guard->Start < Start)
+        {
+            Guard->End = Start;
+        }
+        else if (Guard->End > End)
+        {
+            Guard->Start = End;
+        }
+        else
+        {
+            RemoveEntryList(&Guard->Link);
+            LxFree(Guard);
+        }
+    }
+}
+
+static
+LONG
+LxMmGuardAdd(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    PLX_GUARD Guard = LxAlloc(sizeof(*Guard));
+    PLIST_ENTRY Entry;
+
+    if (Guard == NULL)
+        return -LX_ENOMEM;
+    LxMmGuardRemove(Process, Start, End);
+    Guard->Start = Start;
+    Guard->End = End;
+    for (Entry = Process->Guards.Flink; Entry != &Process->Guards; Entry = Entry->Flink)
+    {
+        if (CONTAINING_RECORD(Entry, LX_GUARD, Link)->Start > Start)
+            break;
+    }
+    InsertTailList(Entry, &Guard->Link);
+    return 0;
+}
+
+static
+VOID
+LxMmGuardClip(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Address,
+    _Inout_ PULONG64 Start,
+    _Inout_ PULONG64 End)
+{
+    PLIST_ENTRY Entry;
+
+    for (Entry = Process->Guards.Flink; Entry != &Process->Guards; Entry = Entry->Flink)
+    {
+        PLX_GUARD Guard = CONTAINING_RECORD(Entry, LX_GUARD, Link);
+
+        if ((Guard->End <= Address) && (Guard->End > *Start))
+            *Start = Guard->End;
+        if ((Guard->Start > Address) && (Guard->Start < *End))
+            *End = Guard->Start;
+    }
+}
+
+static
+BOOLEAN
+LxMmGuardHit(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Address)
+{
+    PLIST_ENTRY Entry;
+
+    for (Entry = Process->Guards.Flink; Entry != &Process->Guards; Entry = Entry->Flink)
+    {
+        PLX_GUARD Guard = CONTAINING_RECORD(Entry, LX_GUARD, Link);
+
+        if (Guard->Start > Address)
+            break;
+        if (Address < Guard->End)
+            return TRUE;
+    }
+    return FALSE;
 }
 
 static
@@ -282,8 +477,10 @@ LxVmaRemove(
         Error = LxVmaSplit(Process, End);
     if (Error != 0)
         return Error;
+    if (!IsListEmpty(&Process->Guards))
+        LxMmGuardRemove(Process, Start, End);
 
-    Entry = Process->Vmas.Flink;
+    Entry = LxVmaEntryAbove(Process, Start);
     while (Entry != &Process->Vmas)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
@@ -293,7 +490,7 @@ LxVmaRemove(
             break;
         if (Vma->Start >= Start)
         {
-            RemoveEntryList(&Vma->Link);
+            LxVmaUnlink(Process, Vma);
             LxVmaFree(Vma);
         }
     }
@@ -316,7 +513,6 @@ LxVmaInsertView(
     _In_ ULONG64 MapEnd)
 {
     PLX_VMA Vma = LxAlloc(sizeof(*Vma));
-    PLIST_ENTRY Entry;
     LONG Error;
 
     if (Vma == NULL)
@@ -345,12 +541,7 @@ LxVmaInsertView(
     if ((Flags & LX_VMA_SHM) && (Section != NULL))
         LxIpcShmVmaOpen(Section);
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
-    {
-        if (CONTAINING_RECORD(Entry, LX_VMA, Link)->Start >= End)
-            break;
-    }
-    InsertTailList(Entry, &Vma->Link);
+    LxVmaLink(Process, Vma, LxVmaEntryAbove(Process, Start));
     LxVmaMerge(Process, Start, End);
     return 0;
 }
@@ -377,18 +568,9 @@ LxVmaOverlaps(
     _In_ ULONG64 Start,
     _In_ ULONG64 End)
 {
-    PLIST_ENTRY Entry;
+    PLIST_ENTRY Entry = LxVmaEntryAbove(Process, Start);
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
-    {
-        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
-
-        if (Vma->Start >= End)
-            return FALSE;
-        if (Vma->End > Start)
-            return TRUE;
-    }
-    return FALSE;
+    return (Entry != &Process->Vmas) && (CONTAINING_RECORD(Entry, LX_VMA, Link)->Start < End);
 }
 
 static
@@ -401,7 +583,7 @@ LxVmaCovers(
     PLIST_ENTRY Entry;
     ULONG64 Cursor = Start;
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    for (Entry = LxVmaEntryAbove(Process, Start); Entry != &Process->Vmas; Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
@@ -433,7 +615,7 @@ LxVmaSetProt(
     if (Error != 0)
         return Error;
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    for (Entry = LxVmaEntryAbove(Process, Start); Entry != &Process->Vmas; Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
@@ -448,11 +630,12 @@ LxVmaSetProt(
 
 static
 LONG
-LxVmaSetLock(
+LxVmaSetFlags(
     _In_ PLX_PROCESS Process,
     _In_ ULONG64 Start,
     _In_ ULONG64 End,
-    _In_ ULONG Lock)
+    _In_ ULONG Mask,
+    _In_ ULONG Bits)
 {
     PLIST_ENTRY Entry;
     LONG Error;
@@ -463,17 +646,28 @@ LxVmaSetLock(
     if (Error != 0)
         return Error;
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    for (Entry = LxVmaEntryAbove(Process, Start); Entry != &Process->Vmas; Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
         if (Vma->Start >= End)
             break;
         if (Vma->Start >= Start)
-            Vma->Flags = (Vma->Flags & ~LX_VMA_LOCK_MASK) | Lock;
+            Vma->Flags = (Vma->Flags & ~Mask) | Bits;
     }
     LxVmaMerge(Process, Start, End);
     return 0;
+}
+
+static
+LONG
+LxVmaSetLock(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End,
+    _In_ ULONG Lock)
+{
+    return LxVmaSetFlags(Process, Start, End, LX_VMA_LOCK_MASK, Lock);
 }
 
 static
@@ -486,7 +680,7 @@ LxMmLockedIn(
     PLIST_ENTRY Entry;
     ULONG64 Bytes = 0;
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    for (Entry = LxVmaEntryAbove(Process, Start); Entry != &Process->Vmas; Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
@@ -769,7 +963,7 @@ LxVmaAccessibleIn(
 {
     PLIST_ENTRY Entry;
 
-    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    for (Entry = LxVmaEntryAbove(Process, Start); Entry != &Process->Vmas; Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
@@ -1457,7 +1651,7 @@ LxMmGrowView(
 {
     ULONG64 Base = Vma->ViewBase, FileOffset = Vma->ViewOffset, MapEnd = Base, FileEnd, NewSize, OldEnd = Base;
     PLX_FILE File = Vma->File;
-    BOOLEAN Writable = ((File->Flags & LX_O_ACCMODE) == LX_O_RDWR), AnyWrite = FALSE;
+    BOOLEAN Writable = ((File->Flags & LX_O_ACCMODE) == LX_O_RDWR);
     FILE_STANDARD_INFORMATION Standard;
     MEMORY_BASIC_INFORMATION Information;
     OBJECT_ATTRIBUTES ObjectAttributes;
@@ -1478,14 +1672,12 @@ LxMmGrowView(
         if (Piece->ViewBase != Base)
             continue;
         MapEnd = max(MapEnd, min(Piece->End, Piece->MapEnd));
-        if (Piece->Prot & LX_PROT_WRITE)
-            AnyWrite = TRUE;
     }
     if (!NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Standard, sizeof(Standard), FileStandardInformation)))
         return -LX_EFAULT;
     FileEnd = (ULONG64)Standard.EndOfFile.QuadPart;
     if (FileEnd <= FileOffset + (LX_ALIGN_DOWN(Address, LX_PAGE_SIZE) - Base))
-        return -LX_EFAULT;
+        return -LX_ENXIO;
     NewSize = min(FileEnd - FileOffset, MapEnd - Base);
 
     if (NT_SUCCESS(LxVmQuery(Base, &Information)) && (Information.Type == MEM_MAPPED) &&
@@ -1507,7 +1699,7 @@ LxMmGrowView(
         ViewSize = (SIZE_T)NewSize;
         SectionOffset.QuadPart = (LONG64)FileOffset;
         Status = ZwMapViewOfSection(Section, NtCurrentProcess(), &View, 0, 0, &SectionOffset, &ViewSize, ViewShare, 0,
-                                    (Writable && AnyWrite) ? PAGE_READWRITE : PAGE_READONLY);
+                                    Writable ? PAGE_READWRITE : PAGE_READONLY);
         ZwClose(Section);
     }
     if (LX_ALIGN_UP(Base + NewSize, LX_ALLOC_GRANULARITY) < LX_ALIGN_UP(MapEnd, LX_ALLOC_GRANULARITY))
@@ -1554,6 +1746,10 @@ LxMmPopulate(
 
         if ((Vma == NULL) || !LxProtAllows(Vma->Prot, Access))
             return -LX_EFAULT;
+        if (Vma->Flags & LX_VMA_POISON)
+            return -LX_EHWPOISON;
+        if (!IsListEmpty(&Process->Guards) && LxMmGuardHit(Process, Cursor))
+            return -LX_EFAULT;
         if ((Vma->Flags & LX_VMA_VIEW) && (Vma->MapEnd != 0) &&
             (!NT_SUCCESS(LxVmQuery(Cursor, &Information)) || (Information.State != MEM_COMMIT)))
         {
@@ -1598,14 +1794,99 @@ LxMmPopulate(
         {
             FillStart = max(max(RegionStart, Vma->Start), LX_ALIGN_DOWN(Cursor, LX_ALLOC_GRANULARITY));
             FillEnd = min(RegionEnd, LX_ALIGN_UP(Cursor + 1, LX_ALLOC_GRANULARITY));
+            if (!IsListEmpty(&Process->Guards))
+                LxMmGuardClip(Process, Cursor, &FillStart, &FillEnd);
         }
         Error = LxMmPopulateRun(Vma, FillStart, FillEnd);
         if (Error != 0)
             return Error;
+        if (!(Vma->Flags & LX_MAP_SHARED))
+            Vma->Flags |= LX_VMA_TOUCHED;
         Populated++;
         Cursor = FillEnd;
     }
     return Populated;
+}
+
+static
+VOID
+LxMmPinRegion(
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    QUOTA_LIMITS Quota;
+    PVOID Base = (PVOID)(ULONG_PTR)Start;
+    SIZE_T Size = (SIZE_T)(End - Start);
+
+    if (ZwLockVirtualMemory(NtCurrentProcess(), &Base, &Size, MAP_PROCESS) != STATUS_WORKING_SET_QUOTA)
+        return;
+    if (!NT_SUCCESS(ZwQueryInformationProcess(NtCurrentProcess(), ProcessQuotaLimits, &Quota, sizeof(Quota), NULL)))
+        return;
+    Quota.MinimumWorkingSetSize += (SIZE_T)(End - Start);
+    if (Quota.MaximumWorkingSetSize < Quota.MinimumWorkingSetSize)
+        Quota.MaximumWorkingSetSize = Quota.MinimumWorkingSetSize;
+    if (!NT_SUCCESS(ZwSetInformationProcess(NtCurrentProcess(), ProcessQuotaLimits, &Quota, sizeof(Quota))))
+        return;
+    Base = (PVOID)(ULONG_PTR)Start;
+    Size = (SIZE_T)(End - Start);
+    ZwLockVirtualMemory(NtCurrentProcess(), &Base, &Size, MAP_PROCESS);
+}
+
+static
+VOID
+LxMmPin(
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End,
+    _In_ BOOLEAN Pin)
+{
+    MEMORY_BASIC_INFORMATION Information;
+    ULONG64 Cursor = Start;
+
+    while (Cursor < End)
+    {
+        ULONG64 RegionEnd;
+
+        if (!NT_SUCCESS(LxVmQuery(Cursor, &Information)))
+            break;
+        RegionEnd = min((ULONG64)(ULONG_PTR)Information.BaseAddress + Information.RegionSize, End);
+        if (RegionEnd <= Cursor)
+            break;
+        if (Information.State == MEM_COMMIT)
+        {
+            if (!Pin)
+            {
+                PVOID Base = (PVOID)(ULONG_PTR)Cursor;
+                SIZE_T Size = (SIZE_T)(RegionEnd - Cursor);
+
+                ZwUnlockVirtualMemory(NtCurrentProcess(), &Base, &Size, MAP_PROCESS);
+            }
+            else if (!(Information.Protect & (PAGE_NOACCESS | PAGE_GUARD)))
+            {
+                LxMmPinRegion(Cursor, RegionEnd);
+            }
+        }
+        Cursor = RegionEnd;
+    }
+}
+
+static
+VOID
+LxMmUnpinLocked(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    PLIST_ENTRY Entry;
+
+    for (Entry = LxVmaEntryAbove(Process, Start); Entry != &Process->Vmas; Entry = Entry->Flink)
+    {
+        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+
+        if (Vma->Start >= End)
+            break;
+        if (Vma->Flags & LX_VMA_LOCKED)
+            LxMmPin(max(Vma->Start, Start), min(Vma->End, End), FALSE);
+    }
 }
 
 static
@@ -1619,34 +1900,63 @@ LxMmLockPopulate(
 
     while (Cursor < End)
     {
-        PLIST_ENTRY Entry;
-        PLX_VMA Vma = NULL;
+        PLIST_ENTRY Entry = LxVmaEntryAbove(Process, Cursor);
+        PLX_VMA Vma;
         ULONG64 Stop;
         UCHAR Byte;
 
-        for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
-        {
-            Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
-            if (Vma->End > Cursor)
-                break;
-            Vma = NULL;
-        }
-        if ((Vma == NULL) || (Vma->Start >= End))
+        if (Entry == &Process->Vmas)
+            break;
+        Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+        if (Vma->Start >= End)
             break;
 
         Cursor = max(Cursor, Vma->Start);
         Stop = min(Vma->End, End);
         if (((Vma->Flags & LX_VMA_LOCK_MASK) == LX_VMA_LOCKED) && (Vma->Prot & (LX_PROT_READ | LX_PROT_WRITE | LX_PROT_EXEC)))
         {
+            ULONG64 First = Cursor;
+
             LxMmPopulate(Process, Cursor, Stop, LX_PROT_READ, FALSE);
             for (; Cursor < Stop; Cursor += LX_PAGE_SIZE)
             {
                 if (LxCopyFromUser(&Byte, Cursor, 1) != 0)
                     break;
             }
+            LxMmPin(First, Stop, TRUE);
         }
         Cursor = Stop;
     }
+}
+
+static
+VOID
+LxMmGrowDown(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Page)
+{
+    PLIST_ENTRY Entry = LxVmaEntryAbove(Process, Page);
+    ULONG64 Limit = Process->Limits[LX_RLIMIT_STACK].Cur;
+    PLX_VMA Vma, Prev;
+
+    if ((Entry == &Process->Vmas) || (Page < LX_MMAP_MIN_ADDR))
+        return;
+    Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+    if (!(Vma->Flags & LX_MAP_GROWSDOWN) || (Vma->Start <= Page))
+        return;
+    if (Entry->Blink != &Process->Vmas)
+    {
+        Prev = CONTAINING_RECORD(Entry->Blink, LX_VMA, Link);
+        if (!(Prev->Flags & LX_MAP_GROWSDOWN) && (Prev->Prot & (LX_PROT_READ | LX_PROT_WRITE | LX_PROT_EXEC)) &&
+            (Page - Prev->End < LX_STACK_GUARD_GAP))
+        {
+            return;
+        }
+    }
+    if ((Limit != LX_RLIM_INFINITY) && (Vma->End - Page > Limit))
+        return;
+    if (LxVmPlace(Process, Page, Vma->Start, LX_PLACE_FRESH) == 0)
+        Vma->Start = Page;
 }
 
 BOOLEAN
@@ -1657,17 +1967,28 @@ LxMmHandleFault(
 {
     ULONG64 Page = LX_ALIGN_DOWN(Address, LX_PAGE_SIZE);
     PLX_THREAD Thread = LxCurrentThread();
+    BOOLEAN OnFault;
+    PLX_VMA Vma;
     LONG Result;
 
     Process = Process->Mm;
     LxMmLock(Process);
+    if (LxVmaFind(Process, Page) == NULL)
+        LxMmGrowDown(Process, Page);
     Result = LxMmPopulate(Process, Page, Page + LX_PAGE_SIZE, Access, TRUE);
+    Vma = LxVmaFind(Process, Page);
+    OnFault = (Result >= 0) && (Vma != NULL) && (Vma->Flags & LX_VMA_LOCKONFAULT) &&
+              (Vma->Prot & (LX_PROT_READ | LX_PROT_WRITE | LX_PROT_EXEC));
     LxMmUnlock(Process);
+    if (OnFault)
+        LxMmPin(Page, Page + LX_PAGE_SIZE, TRUE);
 
     if (Result < 0)
     {
         if ((Result == -LX_ENXIO) && (Thread != NULL))
-            Thread->FaultBus = TRUE;
+            Thread->FaultBus = LX_BUS_ADRERR;
+        else if ((Result == -LX_EHWPOISON) && (Thread != NULL))
+            Thread->FaultBus = LX_BUS_MCEERR_AR;
         return FALSE;
     }
     if ((Result > 0) || (Thread == NULL) || (Thread->FaultAddress != Page))
@@ -1828,6 +2149,9 @@ LxMmMapView(
     LARGE_INTEGER MaximumSize, SectionOffset;
     ULONG64 Delta = Offset & (LX_ALLOC_GRANULARITY - 1);
     BOOLEAN Writable = (File == NULL) || ((File->Flags & LX_O_ACCMODE) == LX_O_RDWR);
+    ULONG Maximum = Writable ? PAGE_READWRITE : PAGE_READONLY;
+    ULONG Protect = !(Prot & (LX_PROT_READ | LX_PROT_WRITE)) ? PAGE_NOACCESS :
+                    (Prot & LX_PROT_WRITE) ? PAGE_READWRITE : PAGE_READONLY;
     BOOLEAN Grow = FALSE;
     SIZE_T ViewSize = (SIZE_T)(Length + Delta);
     PVOID Base = NULL;
@@ -1893,15 +2217,15 @@ LxMmMapView(
                 return 6;
             SectionOffset.QuadPart = (LONG64)(Offset - Delta);
             Status = ZwMapViewOfSection(Section, NtCurrentProcess(), &Base, 0, 0, &SectionOffset, &ViewSize, ViewShare,
-                                        0, (Prot & LX_PROT_WRITE) ? PAGE_READWRITE : PAGE_READONLY);
+                                        0, Maximum);
             ZwClose(Section);
             if (!NT_SUCCESS(Status))
             {
                 DPRINT1("Linux shared mapping cannot map a view at %p: 0x%08lx\n", Base, Status);
                 return 7;
             }
-            if ((Prot & (LX_PROT_READ | LX_PROT_WRITE)) == LX_PROT_NONE)
-                LxVmProtect((ULONG64)(ULONG_PTR)Base, ViewSize, PAGE_NOACCESS);
+            if (Protect != Maximum)
+                LxVmProtect((ULONG64)(ULONG_PTR)Base, ViewSize, Protect);
         }
         Tail = LX_ALIGN_UP((ULONG64)(ULONG_PTR)Base + ViewSize, LX_ALLOC_GRANULARITY);
         if ((Tail < (ULONG64)(ULONG_PTR)Base + Region) &&
@@ -1933,12 +2257,12 @@ LxMmMapView(
 
     SectionOffset.QuadPart = (LONG64)(Offset - Delta);
     Status = ZwMapViewOfSection(Section, NtCurrentProcess(), &Base, 0, 0, &SectionOffset, &ViewSize, ViewShare, 0,
-                                (Prot & LX_PROT_WRITE) ? PAGE_READWRITE : PAGE_READONLY);
+                                Maximum);
     if (!NT_SUCCESS(Status) && !Fixed && (Base != NULL))
     {
         Base = NULL;
         Status = ZwMapViewOfSection(Section, NtCurrentProcess(), &Base, 0, 0, &SectionOffset, &ViewSize, ViewShare, 0,
-                                    (Prot & LX_PROT_WRITE) ? PAGE_READWRITE : PAGE_READONLY);
+                                    Maximum);
     }
     if (NT_SUCCESS(Status) && (File == NULL) &&
         !NT_SUCCESS(ObReferenceObjectByHandle(Section, 0, NULL, KernelMode, SectionObject, NULL)))
@@ -1952,8 +2276,8 @@ LxMmMapView(
         return 7;
     }
 
-    if ((Prot & (LX_PROT_READ | LX_PROT_WRITE)) == LX_PROT_NONE)
-        LxVmProtect((ULONG64)(ULONG_PTR)Base, Length + Delta, PAGE_NOACCESS);
+    if (Protect != Maximum)
+        LxVmProtect((ULONG64)(ULONG_PTR)Base, Length + Delta, Protect);
     *Result = (ULONG64)(ULONG_PTR)Base + Delta;
     return 0;
 }
@@ -2148,7 +2472,8 @@ LxMmMap(
     _In_ ULONG64 Offset)
 {
     BOOLEAN Fixed = (Flags & (LX_MAP_FIXED | LX_MAP_FIXED_NOREPLACE)) != 0;
-    ULONG VmaFlags = Flags & (LX_MAP_SHARED | LX_MAP_PRIVATE | LX_VMA_HEAP | LX_VMA_STACK | LX_VMA_NOMAYWRITE);
+    ULONG VmaFlags = Flags & (LX_MAP_SHARED | LX_MAP_PRIVATE | LX_MAP_GROWSDOWN | LX_VMA_HEAP | LX_VMA_STACK |
+                              LX_VMA_NOMAYWRITE);
     PLX_PROCESS Caller = Process;
     BOOLEAN Fresh = FALSE;
     ULONG64 Base = 0, GrowBase = 0;
@@ -2171,6 +2496,11 @@ LxMmMap(
         return -LX_EPERM;
 
     LxMmLock(Process);
+    if (Process->VmaCount > LxMaxMapCount)
+    {
+        LxMmUnlock(Process);
+        return -LX_ENOMEM;
+    }
     Lock = Process->MmLockDefault | ((Flags & LX_MAP_LOCKED) ? LX_VMA_LOCKED : 0);
     if ((Lock != 0) && !LxMmLockAllowed(Caller, Process, Length))
     {
@@ -2406,7 +2736,17 @@ LxMmRelease(
     _In_ PLX_PROCESS Process)
 {
     while (!IsListEmpty(&Process->Vmas))
-        LxVmaFree(CONTAINING_RECORD(RemoveHeadList(&Process->Vmas), LX_VMA, Link));
+    {
+        PLX_VMA Vma = CONTAINING_RECORD(RemoveHeadList(&Process->Vmas), LX_VMA, Link);
+
+        LxVmaAccountMemfd(Vma, -1);
+        LxVmaFree(Vma);
+    }
+    Process->VmaTree.Root = NULL;
+    Process->VmaTree.Min = NULL;
+    Process->VmaCount = 0;
+    while (!IsListEmpty(&Process->Guards))
+        LxFree(CONTAINING_RECORD(RemoveHeadList(&Process->Guards), LX_GUARD, Link));
 }
 
 LONG
@@ -2420,8 +2760,11 @@ LxMmFork(
     for (Entry = Parent->Vmas.Flink; Entry != &Parent->Vmas; Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
-        PLX_VMA Copy = LxAlloc(sizeof(*Copy));
+        PLX_VMA Copy;
 
+        if (Vma->Flags & LX_VMA_DONTFORK)
+            continue;
+        Copy = LxAlloc(sizeof(*Copy));
         if (Copy == NULL)
         {
             LxMmRelease(Child);
@@ -2431,6 +2774,8 @@ LxMmFork(
         Copy->End = Vma->End;
         Copy->Prot = Vma->Prot;
         Copy->Flags = Vma->Flags & ~LX_VMA_LOCK_MASK;
+        if (!(Vma->Flags & LX_MAP_SHARED) && (Vma->Flags & (LX_VMA_TOUCHED | LX_VMA_DIRTY)))
+            Copy->Flags |= LX_VMA_FORKED;
         Copy->File = Vma->File;
         Copy->Offset = Vma->Offset;
         Copy->Section = Vma->Section;
@@ -2443,9 +2788,47 @@ LxMmFork(
             ObReferenceObject(Copy->Section);
         if ((Copy->Flags & LX_VMA_SHM) && (Copy->Section != NULL))
             LxIpcShmVmaOpen(Copy->Section);
-        InsertTailList(&Child->Vmas, &Copy->Link);
+        LxVmaLink(Child, Copy, &Child->Vmas);
+    }
+    for (Entry = Parent->Guards.Flink; Entry != &Parent->Guards; Entry = Entry->Flink)
+    {
+        PLX_GUARD Guard = CONTAINING_RECORD(Entry, LX_GUARD, Link);
+        PLX_GUARD Copy = LxAlloc(sizeof(*Copy));
+
+        if (Copy == NULL)
+        {
+            LxMmRelease(Child);
+            return -LX_ENOMEM;
+        }
+        Copy->Start = Guard->Start;
+        Copy->End = Guard->End;
+        InsertTailList(&Child->Guards, &Copy->Link);
     }
     return 0;
+}
+
+VOID
+LxMmForkChild(
+    _In_ PLX_PROCESS Parent,
+    _In_ HANDLE ProcessHandle)
+{
+    PLIST_ENTRY Entry;
+
+    Parent = Parent->Mm;
+    for (Entry = Parent->Vmas.Flink; Entry != &Parent->Vmas; Entry = Entry->Flink)
+    {
+        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+        PVOID Base = (PVOID)(ULONG_PTR)Vma->Start;
+        SIZE_T Size = (SIZE_T)(Vma->End - Vma->Start);
+        ULONG OldProtect;
+
+        if (!(Vma->Flags & (LX_VMA_DONTFORK | LX_VMA_WIPEONFORK)))
+            continue;
+        if (Vma->Flags & LX_VMA_VIEW)
+            ZwProtectVirtualMemory(ProcessHandle, &Base, &Size, PAGE_NOACCESS, &OldProtect);
+        else
+            ZwFreeVirtualMemory(ProcessHandle, &Base, &Size, MEM_DECOMMIT);
+    }
 }
 
 VOID
@@ -2533,6 +2916,11 @@ LX_SYSCALL(LxSysMmap)
     {
         Result = -LX_EACCES;
     }
+    else if ((File != NULL) && (File->Memfd != NULL) && (Type != LX_MAP_PRIVATE) && (Prot & LX_PROT_WRITE) &&
+             (File->Memfd->Seals & (LX_F_SEAL_WRITE | LX_F_SEAL_FUTURE_WRITE)))
+    {
+        Result = -LX_EPERM;
+    }
     else if ((File != NULL) && (((File->Handle == NULL) && (File->Data == NULL)) || File->Directory || File->NtPipe))
     {
         Zero = (File->Type == LX_S_IFCHR) && (File->Rdev == ((1 << 8) | 5));
@@ -2544,8 +2932,12 @@ LX_SYSCALL(LxSysMmap)
     {
         if (Type == LX_MAP_SHARED_VALIDATE)
             Flags = (Flags & ~LX_MAP_TYPE) | LX_MAP_SHARED;
-        if ((File != NULL) && (Type != LX_MAP_PRIVATE) && (Access != LX_O_RDWR))
+        if ((File != NULL) && (Type != LX_MAP_PRIVATE) &&
+            ((Access != LX_O_RDWR) ||
+             ((File->Memfd != NULL) && (File->Memfd->Seals & (LX_F_SEAL_WRITE | LX_F_SEAL_FUTURE_WRITE)))))
+        {
             Flags |= LX_VMA_NOMAYWRITE;
+        }
         Result = LxMmMap(Call->Process, Call->Args[0], Call->Args[1], Prot, Flags, Zero ? NULL : File, Call->Args[5]);
     }
     if (File != NULL)
@@ -2612,6 +3004,98 @@ LxMmPrepareRemote(
     return (Result == -LX_ENXIO) ? -LX_EFAULT : ((Result < 0) ? Result : 0);
 }
 
+static
+BOOLEAN
+LxMadviseKnown(
+    _In_ ULONG Advice)
+{
+    return (Advice <= 4) || ((Advice >= 8) && (Advice <= 25)) || (Advice == LX_MADV_HWPOISON) ||
+           (Advice == LX_MADV_SOFT_OFFLINE) || (Advice == LX_MADV_GUARD_INSTALL) || (Advice == LX_MADV_GUARD_REMOVE);
+}
+
+static
+LONG
+LxMadviseCheck(
+    _In_ PLX_VMA Vma,
+    _In_ ULONG Advice)
+{
+    BOOLEAN Locked = (Vma->Flags & LX_VMA_LOCKED) != 0;
+    BOOLEAN PrivateAnon = !(Vma->Flags & LX_MAP_SHARED) && (Vma->File == NULL) && !(Vma->Flags & LX_VMA_SHM);
+
+    switch (Advice)
+    {
+        case LX_MADV_DONTNEED:
+        case LX_MADV_COLD:
+        case LX_MADV_PAGEOUT:
+            return Locked ? -LX_EINVAL : 0;
+        case LX_MADV_FREE:
+            return (Locked || !PrivateAnon) ? -LX_EINVAL : 0;
+        case LX_MADV_REMOVE:
+            if (Locked || !(Vma->Flags & LX_MAP_SHARED))
+                return -LX_EINVAL;
+            return (Vma->Flags & LX_VMA_NOMAYWRITE) ? -LX_EACCES : 0;
+        case LX_MADV_WIPEONFORK:
+            return PrivateAnon ? 0 : -LX_EINVAL;
+        case LX_MADV_GUARD_INSTALL:
+        case LX_MADV_GUARD_REMOVE:
+            return (PrivateAnon && !Locked) ? 0 : -LX_EINVAL;
+        default:
+            return 0;
+    }
+}
+
+static
+LONG
+LxMadviseRemove(
+    _In_ PLX_VMA Vma,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    FILE_POSITION_INFORMATION Saved;
+    IO_STATUS_BLOCK Iosb;
+    LARGE_INTEGER Offset;
+    PUCHAR Zero;
+    ULONG64 Cursor;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    if ((Vma->File != NULL) && (Vma->File->Handle != NULL))
+    {
+        Zero = LxAllocPaged(LX_IO_CHUNK);
+        if (Zero == NULL)
+            return -LX_ENOMEM;
+        RtlZeroMemory(Zero, LX_IO_CHUNK);
+        if (!NT_SUCCESS(ZwQueryInformationFile(Vma->File->Handle, &Iosb, &Saved, sizeof(Saved),
+                                               FilePositionInformation)))
+        {
+            Saved.CurrentByteOffset.QuadPart = -1;
+        }
+        for (Cursor = Start; NT_SUCCESS(Status) && (Cursor < End); Cursor += LX_IO_CHUNK)
+        {
+            Offset.QuadPart = (LONG64)(Vma->Offset + (Cursor - Vma->Start));
+            Status = ZwWriteFile(Vma->File->Handle, NULL, NULL, NULL, &Iosb, Zero,
+                                 (ULONG)min(End - Cursor, LX_IO_CHUNK), &Offset, NULL);
+        }
+        if (Saved.CurrentByteOffset.QuadPart >= 0)
+            ZwSetInformationFile(Vma->File->Handle, &Iosb, &Saved, sizeof(Saved), FilePositionInformation);
+        LxFreePaged(Zero);
+        return NT_SUCCESS(Status) ? 0 : -LX_EIO;
+    }
+
+    if (!NT_SUCCESS(LxVmProtect(Start, End - Start, PAGE_READWRITE)))
+        return -LX_EINVAL;
+    _SEH2_TRY
+    {
+        RtlZeroMemory((PVOID)(ULONG_PTR)Start, (SIZE_T)(End - Start));
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = _SEH2_GetExceptionCode();
+    }
+    _SEH2_END;
+    LxVmProtect(Start, End - Start, LxVmaNtProtect(Vma));
+    return NT_SUCCESS(Status) ? 0 : -LX_EFAULT;
+}
+
 LX_SYSCALL(LxSysMadvise)
 {
     PLX_PROCESS Process = Call->Process->Mm;
@@ -2621,53 +3105,193 @@ LX_SYSCALL(LxSysMadvise)
     PLIST_ENTRY Entry;
     LONG64 Result = 0;
 
-    if ((Address & (LX_PAGE_SIZE - 1)) || (End < Address))
+    if (!LxMadviseKnown(Advice) || (Advice == LX_MADV_MERGEABLE) || (Advice == LX_MADV_UNMERGEABLE))
         return -LX_EINVAL;
+    if ((Address & (LX_PAGE_SIZE - 1)) || (End < Address) || ((Call->Args[1] != 0) && (End == Address)))
+        return -LX_EINVAL;
+    if (((Advice == LX_MADV_HWPOISON) || (Advice == LX_MADV_SOFT_OFFLINE)) &&
+        !LxCapable(Call->Process, LX_CAP_SYS_ADMIN))
+    {
+        return -LX_EPERM;
+    }
     if (End == Address)
         return 0;
 
     LxMmLock(Process);
-    if ((Advice == LX_MADV_DONTNEED) && (LxMmLockedIn(Process, Address, End) != 0))
+    for (Entry = Process->Vmas.Flink; (Result == 0) && (Entry != &Process->Vmas); Entry = Entry->Flink)
     {
-        Result = -LX_EINVAL;
+        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+
+        if (Vma->Start >= End)
+            break;
+        if (Vma->End > Address)
+            Result = LxMadviseCheck(Vma, Advice);
     }
-    else if (!LxVmaCovers(Process, Address, End))
-    {
+    if ((Result == 0) && !LxVmaCovers(Process, Address, End))
         Result = -LX_ENOMEM;
-    }
-    else if ((Advice == LX_MADV_DONTNEED) || (Advice == LX_MADV_FREE))
+    if (Result != 0)
     {
-        for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
-        {
-            PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+        LxMmUnlock(Process);
+        return Result;
+    }
 
-            if (Vma->Start >= End)
-                break;
-            if ((Vma->End <= Address) || (Vma->Flags & LX_MAP_SHARED))
-                continue;
-            if ((Advice == LX_MADV_FREE) && (Vma->File != NULL))
-                continue;
-            if (LxVmaIsCow(Vma))
+    switch (Advice)
+    {
+        case LX_MADV_DONTNEED:
+        case LX_MADV_DONTNEED_LOCKED:
+        case LX_MADV_FREE:
+            for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
             {
-                ULONG64 From = max(Vma->Start, Address), To = min(Vma->End, End);
+                PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
-                if (Vma->ViewBase != 0)
-                    To = min(To, LxVmAllocationEnd(Vma->ViewBase));
-                if ((Vma->Flags & LX_VMA_DIRTY) && (Vma->ViewBase != 0) && (From < To))
+                if (Vma->Start >= End)
+                    break;
+                if ((Vma->End <= Address) || (Vma->Flags & LX_MAP_SHARED))
+                    continue;
+                if (LxVmaIsCow(Vma))
                 {
-                    LxVmProtect(From, To - From, PAGE_WRITECOPY);
-                    LxMmFill(From, To - From, Vma->File, Vma->Offset + (From - Vma->Start));
-                    LxVmProtect(From, To - From, LxCowProtToNt(Vma->Prot));
+                    ULONG64 From = max(Vma->Start, Address), To = min(Vma->End, End);
+
+                    if (Vma->ViewBase != 0)
+                        To = min(To, LxVmAllocationEnd(Vma->ViewBase));
+                    if ((Vma->Flags & LX_VMA_DIRTY) && (Vma->ViewBase != 0) && (From < To))
+                    {
+                        LxVmProtect(From, To - From, PAGE_WRITECOPY);
+                        LxMmFill(From, To - From, Vma->File, Vma->Offset + (From - Vma->Start));
+                        LxVmProtect(From, To - From, LxCowProtToNt(Vma->Prot));
+                    }
+                    continue;
                 }
-                continue;
+                LxVmDecommitRange(max(Vma->Start, Address), min(Vma->End, End));
+                if ((Vma->File != NULL) && !(Vma->Flags & LX_VMA_VIEW))
+                    LxMmPopulateRun(Vma, max(Vma->Start, Address), min(Vma->End, End));
             }
-            LxVmDecommitRange(max(Vma->Start, Address), min(Vma->End, End));
-            if ((Vma->File != NULL) && !(Vma->Flags & LX_VMA_VIEW))
-                LxMmPopulateRun(Vma, max(Vma->Start, Address), min(Vma->End, End));
-        }
+            break;
+
+        case LX_MADV_REMOVE:
+            for (Entry = Process->Vmas.Flink; (Result == 0) && (Entry != &Process->Vmas); Entry = Entry->Flink)
+            {
+                PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+
+                if (Vma->Start >= End)
+                    break;
+                if (Vma->End > Address)
+                    Result = LxMadviseRemove(Vma, max(Vma->Start, Address), min(Vma->End, End));
+            }
+            break;
+
+        case LX_MADV_WIPEONFORK:
+        case LX_MADV_KEEPONFORK:
+            Result = LxVmaSetFlags(Process, Address, End, LX_VMA_WIPEONFORK,
+                                   (Advice == LX_MADV_WIPEONFORK) ? LX_VMA_WIPEONFORK : 0);
+            break;
+
+        case LX_MADV_GUARD_INSTALL:
+            LxVmDecommitRange(Address, End);
+            Result = LxMmGuardAdd(Process, Address, End);
+            break;
+
+        case LX_MADV_GUARD_REMOVE:
+            LxMmGuardRemove(Process, Address, End);
+            break;
+
+        case LX_MADV_DONTDUMP:
+        case LX_MADV_DODUMP:
+            Result = LxVmaSetFlags(Process, Address, End, LX_VMA_DONTDUMP,
+                                   (Advice == LX_MADV_DONTDUMP) ? LX_VMA_DONTDUMP : 0);
+            break;
+
+        case LX_MADV_DONTFORK:
+        case LX_MADV_DOFORK:
+            Result = LxVmaSetFlags(Process, Address, End, LX_VMA_DONTFORK,
+                                   (Advice == LX_MADV_DONTFORK) ? LX_VMA_DONTFORK : 0);
+            break;
+
+        case LX_MADV_POPULATE_READ:
+        case LX_MADV_POPULATE_WRITE:
+            if (LxMmPopulate(Process, Address, End,
+                             (Advice == LX_MADV_POPULATE_WRITE) ? LX_PROT_WRITE : LX_PROT_READ, FALSE) < 0)
+            {
+                Result = -LX_EFAULT;
+            }
+            break;
+
+        case LX_MADV_HWPOISON:
+            Result = LxVmaSetFlags(Process, Address, End, LX_VMA_POISON, LX_VMA_POISON);
+            for (Entry = Process->Vmas.Flink; (Result == 0) && (Entry != &Process->Vmas); Entry = Entry->Flink)
+            {
+                PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+
+                if (Vma->Start >= End)
+                    break;
+                if (Vma->End <= Address)
+                    continue;
+                if (Vma->Flags & LX_VMA_VIEW)
+                    LxVmProtect(Vma->Start, Vma->End - Vma->Start, PAGE_NOACCESS);
+                else
+                    LxVmDecommitRange(Vma->Start, Vma->End);
+            }
+            break;
+
+        default:
+            break;
     }
     LxMmUnlock(Process);
     return Result;
+}
+
+LX_SYSCALL(LxSysRemapFilePages)
+{
+    PLX_PROCESS Process = Call->Process->Mm;
+    ULONG64 Start = LX_ALIGN_DOWN(Call->Args[0], LX_PAGE_SIZE);
+    ULONG64 Size = LX_ALIGN_DOWN(Call->Args[1], LX_PAGE_SIZE);
+    ULONG64 PageOffset = Call->Args[3];
+    ULONG Flags = LX_MAP_SHARED | LX_MAP_FIXED | LX_MAP_POPULATE | ((ULONG)Call->Args[4] & LX_MAP_NONBLOCK);
+    PLIST_ENTRY Entry;
+    PLX_VMA Vma, Last;
+    PLX_FILE File;
+    ULONG Prot;
+    LONG64 Result;
+
+    if ((Call->Args[2] != 0) || (Start + Size <= Start) || (PageOffset + (Size / LX_PAGE_SIZE) < PageOffset) ||
+        (PageOffset > (MAXULONG64 / LX_PAGE_SIZE)))
+    {
+        return -LX_EINVAL;
+    }
+
+    LxMmLock(Process);
+    Vma = LxVmaFind(Process, Start);
+    if ((Vma == NULL) || !(Vma->Flags & LX_MAP_SHARED) || (Vma->File == NULL))
+    {
+        LxMmUnlock(Process);
+        return -LX_EINVAL;
+    }
+    for (Last = Vma, Entry = Vma->Link.Flink; Start + Size > Last->End; Entry = Entry->Flink)
+    {
+        PLX_VMA Next;
+
+        if (Entry == &Process->Vmas)
+        {
+            LxMmUnlock(Process);
+            return -LX_EINVAL;
+        }
+        Next = CONTAINING_RECORD(Entry, LX_VMA, Link);
+        if ((Next->Start != Last->End) || (Next->File != Vma->File) || (Next->Flags != Vma->Flags))
+        {
+            LxMmUnlock(Process);
+            return -LX_EINVAL;
+        }
+        Last = Next;
+    }
+    Prot = Vma->Prot;
+    File = Vma->File;
+    if (Vma->Flags & LX_VMA_LOCKED)
+        Flags |= LX_MAP_LOCKED;
+    LxFileReference(File);
+    Result = LxMmMap(Call->Process, Start, Size, Prot, Flags, File, PageOffset * LX_PAGE_SIZE);
+    LxFileDereference(File);
+    LxMmUnlock(Process);
+    return (Result < 0) ? Result : 0;
 }
 
 LX_SYSCALL(LxSysMsync)
@@ -2716,6 +3340,99 @@ LX_SYSCALL(LxSysMsync)
     return Result;
 }
 
+typedef struct _LX_WS_EX_ENTRY
+{
+    PVOID VirtualAddress;
+    ULONG_PTR Attributes;
+} LX_WS_EX_ENTRY;
+
+static
+VOID
+LxMmResidentRun(
+    _In_ HANDLE ProcessHandle,
+    _In_ PLX_VMA Vma,
+    _In_ ULONG64 Start,
+    _In_ ULONG Pages,
+    _Out_writes_(Pages) PUCHAR Vector)
+{
+    LX_WS_EX_ENTRY Entries[64];
+    MEMORY_BASIC_INFORMATION Information;
+    ULONG Index;
+
+    if ((Vma->Flags & LX_MAP_SHARED) && (Vma->File == NULL) && (Pages <= RTL_NUMBER_OF(Entries)))
+    {
+        for (Index = 0; Index < Pages; Index++)
+        {
+            Entries[Index].VirtualAddress = (PVOID)(ULONG_PTR)(Start + Index * LX_PAGE_SIZE);
+            Entries[Index].Attributes = 0;
+        }
+        if (NT_SUCCESS(ZwQueryVirtualMemory(ProcessHandle, NULL, MemoryWorkingSetExList, Entries,
+                                            Pages * sizeof(Entries[0]), NULL)))
+        {
+            for (Index = 0; Index < Pages; Index++)
+                Vector[Index] = (UCHAR)(Entries[Index].Attributes & 1);
+            return;
+        }
+    }
+
+    for (Index = 0; Index < Pages;)
+    {
+        ULONG64 Address = Start + Index * LX_PAGE_SIZE, RegionEnd = Address + LX_PAGE_SIZE;
+        UCHAR Value = 0;
+
+        if (NT_SUCCESS(ZwQueryVirtualMemory(ProcessHandle, (PVOID)(ULONG_PTR)Address, MemoryBasicInformation,
+                                            &Information, sizeof(Information), NULL)))
+        {
+            Value = (Information.State == MEM_COMMIT) ? 1 : 0;
+            RegionEnd = max(RegionEnd, (ULONG64)(ULONG_PTR)Information.BaseAddress + Information.RegionSize);
+        }
+        for (; (Index < Pages) && (Start + Index * LX_PAGE_SIZE < RegionEnd); Index++)
+            Vector[Index] = Value;
+    }
+}
+
+static
+VOID
+LxMmPinResident(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    UCHAR Vector[64];
+    ULONG64 Address = Start;
+
+    while (Address < End)
+    {
+        PLIST_ENTRY Entry = LxVmaEntryAbove(Process, Address);
+        PLX_VMA Vma;
+        ULONG Pages, Page, Run;
+
+        if (Entry == &Process->Vmas)
+            break;
+        Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+        if (Vma->Start >= End)
+            break;
+        Address = max(Address, Vma->Start);
+        if (!(Vma->Prot & (LX_PROT_READ | LX_PROT_WRITE | LX_PROT_EXEC)))
+        {
+            Address = min(Vma->End, End);
+            continue;
+        }
+        Pages = (ULONG)min((min(Vma->End, End) - Address) / LX_PAGE_SIZE, sizeof(Vector));
+        LxMmResidentRun(NtCurrentProcess(), Vma, Address, Pages, Vector);
+        for (Page = 0; Page < Pages; Page = Run)
+        {
+            for (Run = Page; (Run < Pages) && (Vector[Run] & 1); Run++)
+                ;
+            if (Run > Page)
+                LxMmPin(Address + (ULONG64)Page * LX_PAGE_SIZE, Address + (ULONG64)Run * LX_PAGE_SIZE, TRUE);
+            else
+                Run++;
+        }
+        Address += (ULONG64)Pages * LX_PAGE_SIZE;
+    }
+}
+
 static
 LONG64
 LxMmLockRange(
@@ -2742,9 +3459,15 @@ LxMmLockRange(
     else if ((Lock != 0) && !LxMmLockAllowed(Caller, Process, (End - Start) - LxMmLockedIn(Process, Start, End)))
         Error = -LX_ENOMEM;
     else
+    {
+        if (Lock == 0)
+            LxMmUnpinLocked(Process, Start, End);
         Error = LxVmaSetLock(Process, Start, End, Lock);
+    }
     if ((Error == 0) && (Lock == LX_VMA_LOCKED))
         LxMmLockPopulate(Process, Start, End);
+    else if ((Error == 0) && (Lock != 0))
+        LxMmPinResident(Process, Start, End);
     LxMmUnlock(Process);
     return Error;
 }
@@ -2820,6 +3543,8 @@ LX_SYSCALL(LxSysMlockall)
         LxMmSetLockAll(Process, Lock);
         if (Lock == LX_VMA_LOCKED)
             LxMmLockPopulate(Process, 0, MAXULONG64);
+        else
+            LxMmPinResident(Process, 0, MAXULONG64);
     }
     LxMmUnlock(Process);
     return 0;
@@ -2831,6 +3556,7 @@ LX_SYSCALL(LxSysMunlockall)
 
     LxMmLock(Process);
     Process->MmLockDefault = 0;
+    LxMmUnpinLocked(Process, 0, MAXULONG64);
     LxMmSetLockAll(Process, 0);
     LxMmUnlock(Process);
     return 0;
@@ -2849,55 +3575,130 @@ LxMmLockedBytes(
     return Bytes;
 }
 
-typedef struct _LX_WS_EX_ENTRY
+static
+PVOID
+LxMmHandleKey(
+    _In_opt_ HANDLE Handle)
 {
-    PVOID VirtualAddress;
-    ULONG_PTR Attributes;
-} LX_WS_EX_ENTRY;
+    PFILE_OBJECT FileObject;
+    PVOID Key;
+
+    if ((Handle == NULL) ||
+        !NT_SUCCESS(ObReferenceObjectByHandle(Handle, 0, *IoFileObjectType, KernelMode, (PVOID *)&FileObject, NULL)))
+    {
+        return NULL;
+    }
+    Key = FileObject->SectionObjectPointer;
+    ObDereferenceObject(FileObject);
+    return Key;
+}
 
 static
-VOID
-LxMmResidentRun(
-    _In_ HANDLE ProcessHandle,
-    _In_ PLX_VMA Vma,
-    _In_ ULONG64 Start,
-    _In_ ULONG Pages,
-    _Out_writes_(Pages) PUCHAR Vector)
+ULONG
+LxMmReleaseFileViews(
+    _In_ PLX_PROCESS Process,
+    _In_ PVOID Key)
 {
-    LX_WS_EX_ENTRY Entries[64];
     MEMORY_BASIC_INFORMATION Information;
-    ULONG Index;
+    PLIST_ENTRY Entry, Other;
+    ULONG Changed = 0;
 
-    if ((Vma->Flags & LX_MAP_SHARED) && (Vma->File == NULL) && (Pages <= RTL_NUMBER_OF(Entries)))
+    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
     {
-        for (Index = 0; Index < Pages; Index++)
+        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+        ULONG64 Base, ViewOffset, MapEnd;
+
+        if (((Vma->Flags & (LX_VMA_VIEW | LX_MAP_SHARED)) != (LX_VMA_VIEW | LX_MAP_SHARED)) || (Vma->File == NULL) ||
+            (LxMmHandleKey(Vma->File->Handle) != Key))
         {
-            Entries[Index].VirtualAddress = (PVOID)(ULONG_PTR)(Start + Index * LX_PAGE_SIZE);
-            Entries[Index].Attributes = 0;
+            continue;
         }
-        if (NT_SUCCESS(ZwQueryVirtualMemory(ProcessHandle, NULL, MemoryWorkingSetExList, Entries,
-                                            Pages * sizeof(Entries[0]), NULL)))
+        if (!NT_SUCCESS(LxVmQuery(Vma->Start, &Information)) || (Information.Type != MEM_MAPPED) ||
+            (Information.State == MEM_FREE))
         {
-            for (Index = 0; Index < Pages; Index++)
-                Vector[Index] = (UCHAR)(Entries[Index].Attributes & 1);
-            return;
+            continue;
+        }
+        Base = (ULONG64)(ULONG_PTR)Information.AllocationBase;
+        ViewOffset = Vma->Offset - (Vma->Start - Base);
+
+        MapEnd = Vma->End;
+        for (Other = Process->Vmas.Flink; Other != &Process->Vmas; Other = Other->Flink)
+        {
+            PLX_VMA Piece = CONTAINING_RECORD(Other, LX_VMA, Link);
+
+            if ((Piece->File == Vma->File) && (Piece->Flags & LX_VMA_VIEW) && (Piece->Start >= Base) &&
+                (Piece->Offset - (Piece->Start - Base) == ViewOffset))
+            {
+                MapEnd = max(MapEnd, Piece->End);
+                Piece->ViewBase = Base;
+                Piece->ViewOffset = ViewOffset;
+                Piece->MapEnd = max(Piece->MapEnd, Piece->End);
+            }
+        }
+
+        ZwUnmapViewOfSection(NtCurrentProcess(), (PVOID)(ULONG_PTR)Base);
+        LxVmAllocate(&Base, LX_ALIGN_UP(MapEnd, LX_ALLOC_GRANULARITY) - Base, MEM_RESERVE, PAGE_NOACCESS);
+        Changed++;
+    }
+    return Changed;
+}
+
+ULONG
+LxMmTruncateViews(
+    _In_ HANDLE Handle)
+{
+    PVOID Key = LxMmHandleKey(Handle);
+    PLX_PROCESS *Processes;
+    PLIST_ENTRY Entry;
+    ULONG Count = 0, Capacity = 0, Index, Changed = 0;
+
+    if (Key == NULL)
+        return 0;
+    ExAcquireFastMutex(&LxProcessListLock);
+    for (Entry = LxProcessList.Flink; Entry != &LxProcessList; Entry = Entry->Flink)
+        Capacity++;
+    Processes = (Capacity != 0) ? LxAlloc(Capacity * sizeof(*Processes)) : NULL;
+    for (Entry = LxProcessList.Flink; (Processes != NULL) && (Entry != &LxProcessList); Entry = Entry->Flink)
+    {
+        PLX_PROCESS Process = CONTAINING_RECORD(Entry, LX_PROCESS, GlobalLink);
+
+        if ((Process->Mm == Process) && !Process->Exited && (Process->NtPid != 0))
+        {
+            LxProcessReference(Process);
+            Processes[Count++] = Process;
         }
     }
+    ExReleaseFastMutex(&LxProcessListLock);
 
-    for (Index = 0; Index < Pages;)
+    for (Index = 0; Index < Count; Index++)
     {
-        ULONG64 Address = Start + Index * LX_PAGE_SIZE, RegionEnd = Address + LX_PAGE_SIZE;
-        UCHAR Value = 0;
+        PLX_PROCESS Process = Processes[Index];
+        PEPROCESS EProcess = NULL;
+        KAPC_STATE ApcState;
+        BOOLEAN Attached = FALSE;
 
-        if (NT_SUCCESS(ZwQueryVirtualMemory(ProcessHandle, (PVOID)(ULONG_PTR)Address, MemoryBasicInformation,
-                                            &Information, sizeof(Information), NULL)))
+        if (Process->NtPid != HandleToUlong(PsGetCurrentProcessId()))
         {
-            Value = (Information.State == MEM_COMMIT) ? 1 : 0;
-            RegionEnd = max(RegionEnd, (ULONG64)(ULONG_PTR)Information.BaseAddress + Information.RegionSize);
+            if (!NT_SUCCESS(PsLookupProcessByProcessId(ULongToHandle(Process->NtPid), &EProcess)))
+            {
+                LxProcessDereference(Process);
+                continue;
+            }
+            KeStackAttachProcess((PKPROCESS)EProcess, &ApcState);
+            Attached = TRUE;
         }
-        for (; (Index < Pages) && (Start + Index * LX_PAGE_SIZE < RegionEnd); Index++)
-            Vector[Index] = Value;
+        LxMmLock(Process);
+        Changed += LxMmReleaseFileViews(Process, Key);
+        LxMmUnlock(Process);
+        if (Attached)
+        {
+            KeUnstackDetachProcess(&ApcState);
+            ObDereferenceObject(EProcess);
+        }
+        LxProcessDereference(Process);
     }
+    LxFree(Processes);
+    return Changed;
 }
 
 LONG64
@@ -2931,6 +3732,55 @@ LxMmMincore(
     return Result;
 }
 
+VOID
+LxMmPagemap(
+    _In_ PLX_PROCESS Process,
+    _In_ HANDLE ProcessHandle,
+    _In_ ULONG64 Address,
+    _In_ ULONG Pages,
+    _In_ BOOLEAN Frames,
+    _Out_writes_(Pages) PULONG64 Entries)
+{
+    UCHAR Vector[64];
+    ULONG Index = 0, Run, Page;
+
+    Process = Process->Mm;
+    LxMmLock(Process);
+    while (Index < Pages)
+    {
+        ULONG64 Va = Address + (ULONG64)Index * LX_PAGE_SIZE;
+        PLIST_ENTRY Entry = LxVmaEntryAbove(Process, Va);
+        PLX_VMA Vma = (Entry != &Process->Vmas) ? CONTAINING_RECORD(Entry, LX_VMA, Link) : NULL;
+
+        if ((Vma == NULL) || (Vma->Start > Va))
+        {
+            Run = (Vma == NULL) ? (Pages - Index) : (ULONG)min(Pages - Index, (Vma->Start - Va) / LX_PAGE_SIZE);
+            RtlZeroMemory(&Entries[Index], (SIZE_T)Run * sizeof(ULONG64));
+            Index += Run;
+            continue;
+        }
+        Run = (ULONG)min(min(Pages - Index, (Vma->End - Va) / LX_PAGE_SIZE), sizeof(Vector));
+        LxMmResidentRun(ProcessHandle, Vma, Va, Run, Vector);
+        for (Page = 0; Page < Run; Page++)
+        {
+            ULONG64 Value = LX_PM_SOFT_DIRTY;
+
+            if (Vector[Page])
+            {
+                Value |= LX_PM_PRESENT;
+                if ((Vma->File != NULL) || (Vma->Flags & LX_MAP_SHARED))
+                    Value |= LX_PM_FILE;
+                if (Frames)
+                    Value |= (ULONG64)MmGetPhysicalAddress((PVOID)(ULONG_PTR)(Va + (ULONG64)Page * LX_PAGE_SIZE)).QuadPart >>
+                             PAGE_SHIFT;
+            }
+            Entries[Index + Page] = Value;
+        }
+        Index += Run;
+    }
+    LxMmUnlock(Process);
+}
+
 ULONG64
 LxMmVmaResident(
     _In_ HANDLE ProcessHandle,
@@ -2957,6 +3807,8 @@ LX_SYSCALL(LxSysMremap)
     ULONG64 OldLength = LX_ALIGN_UP(Call->Args[1], LX_PAGE_SIZE);
     ULONG64 NewLength = LX_ALIGN_UP(Call->Args[2], LX_PAGE_SIZE);
     ULONG Flags = (ULONG)Call->Args[3];
+    ULONG64 Fixed = (Flags & LX_MREMAP_FIXED) ? Call->Args[4] : 0;
+    BOOLEAN KeepOld = (Flags & LX_MREMAP_DONTUNMAP) != 0;
     MEMORY_BASIC_INFORMATION Information;
     ULONG64 New = 0, Cursor, Offset;
     ULONG Prot, VmaFlags, Lock;
@@ -2964,10 +3816,24 @@ LX_SYSCALL(LxSysMremap)
     PLX_VMA Vma;
     LONG64 Result;
 
-    if ((Old & (LX_PAGE_SIZE - 1)) || (OldLength == 0) || (NewLength == 0) || (Flags & ~LX_MREMAP_MAYMOVE))
+    if (Flags & ~(LX_MREMAP_MAYMOVE | LX_MREMAP_FIXED | LX_MREMAP_DONTUNMAP))
+        return -LX_EINVAL;
+    if ((Flags & (LX_MREMAP_FIXED | LX_MREMAP_DONTUNMAP)) && !(Flags & LX_MREMAP_MAYMOVE))
+        return -LX_EINVAL;
+    if (KeepOld && (OldLength != NewLength))
+        return -LX_EINVAL;
+    if ((Old & (LX_PAGE_SIZE - 1)) || (OldLength == 0) || (NewLength == 0))
         return -LX_EINVAL;
     if ((Old + OldLength < Old) || (Old + NewLength < Old))
         return -LX_EINVAL;
+    if (Flags & LX_MREMAP_FIXED)
+    {
+        if ((Fixed & (LX_PAGE_SIZE - 1)) || (Fixed + NewLength < Fixed) ||
+            ((Fixed < Old + OldLength) && (Old < Fixed + NewLength)))
+        {
+            return -LX_EINVAL;
+        }
+    }
 
     LxMmLock(Process);
     Vma = LxVmaFind(Process, Old);
@@ -2977,7 +3843,13 @@ LX_SYSCALL(LxSysMremap)
         return -LX_EFAULT;
     }
 
-    if (NewLength <= OldLength)
+    if ((Flags & LX_MREMAP_FIXED) && (NewLength < OldLength))
+    {
+        LxMmUnmapRange(Process, Old + NewLength, Old + OldLength);
+        OldLength = NewLength;
+        Vma = LxVmaFind(Process, Old);
+    }
+    else if ((NewLength <= OldLength) && !(Flags & (LX_MREMAP_FIXED | LX_MREMAP_DONTUNMAP)))
     {
         if (NewLength < OldLength)
             LxMmUnmap(Process, Old + NewLength, OldLength - NewLength);
@@ -2986,10 +3858,43 @@ LX_SYSCALL(LxSysMremap)
     }
 
     Lock = Vma->Flags & LX_VMA_LOCK_MASK;
-    if ((Lock != 0) && !LxMmLockAllowed(Call->Process, Process, NewLength - OldLength))
+    if ((Lock != 0) && (NewLength > OldLength) && !LxMmLockAllowed(Call->Process, Process, NewLength - OldLength))
     {
         LxMmUnlock(Process);
         return -LX_EAGAIN;
+    }
+    if (Flags & LX_MREMAP_FIXED)
+    {
+        Result = LxMmUnmapRange(Process, Fixed, Fixed + NewLength);
+        if (Result != 0)
+        {
+            LxMmUnlock(Process);
+            return Result;
+        }
+    }
+
+    if ((Vma->Flags & (LX_VMA_VIEW | LX_MAP_SHARED)) == (LX_VMA_VIEW | LX_MAP_SHARED))
+    {
+        if (!(Flags & LX_MREMAP_MAYMOVE) || (Vma->File == NULL))
+        {
+            LxMmUnlock(Process);
+            return -LX_ENOMEM;
+        }
+        Prot = Vma->Prot;
+        File = Vma->File;
+        Offset = Vma->Offset + (Old - Vma->Start);
+        LxFileReference(File);
+        Result = LxMmMap(Process, Fixed, NewLength, Prot,
+                         LX_MAP_SHARED | (Fixed ? LX_MAP_FIXED : 0) | (Vma->Flags & LX_VMA_NOMAYWRITE), File, Offset);
+        if ((Result >= 0) && !KeepOld)
+            LxMmUnmap(Process, Old, OldLength);
+        if ((Result >= 0) && (Lock != 0))
+            LxVmaSetLock(Process, (ULONG64)Result, (ULONG64)Result + NewLength, Lock);
+        if ((Result >= 0) && (Lock == LX_VMA_LOCKED))
+            LxMmLockPopulate(Process, (ULONG64)Result, (ULONG64)Result + NewLength);
+        LxFileDereference(File);
+        LxMmUnlock(Process);
+        return Result;
     }
 
     if (LxVmaIsCow(Vma))
@@ -3009,7 +3914,7 @@ LX_SYSCALL(LxSysMremap)
         InitializeListHead(&Saved);
         Result = Dirty ? LxMmCopySave(&Saved, Old, min(Old + OldLength, Vma->End), Prot, LxCowProtToNt(Prot)) : 0;
         if (Result == 0)
-            Result = LxMmMap(Process, 0, NewLength, Prot, LX_MAP_PRIVATE, File, Offset);
+            Result = LxMmMap(Process, Fixed, NewLength, Prot, LX_MAP_PRIVATE | (Fixed ? LX_MAP_FIXED : 0), File, Offset);
         if ((Result >= 0) && !IsListEmpty(&Saved))
         {
             PLX_MM_COPY Copy = CONTAINING_RECORD(Saved.Flink, LX_MM_COPY, Link);
@@ -3033,7 +3938,8 @@ LX_SYSCALL(LxSysMremap)
         }
         if (Result >= 0)
         {
-            LxMmUnmap(Process, Old, OldLength);
+            if (!KeepOld)
+                LxMmUnmap(Process, Old, OldLength);
             if (Lock != 0)
                 LxVmaSetLock(Process, (ULONG64)Result, (ULONG64)Result + NewLength, Lock);
             if (Lock == LX_VMA_LOCKED)
@@ -3056,7 +3962,8 @@ LX_SYSCALL(LxSysMremap)
     if (File != NULL)
         LxFileReference(File);
 
-    if (!LxVmaOverlaps(Process, Old + OldLength, Old + NewLength) &&
+    if (!(Flags & (LX_MREMAP_FIXED | LX_MREMAP_DONTUNMAP)) &&
+        !LxVmaOverlaps(Process, Old + OldLength, Old + NewLength) &&
         (LxVmPlace(Process, Old + OldLength, Old + NewLength, LX_PLACE_FRESH) == 0))
     {
         Result = LxVmaInsert(Process, Old + OldLength, Old + NewLength, Prot, VmaFlags, File,
@@ -3070,14 +3977,18 @@ LX_SYSCALL(LxSysMremap)
     {
         Result = -LX_ENOMEM;
     }
-    else if (!NT_SUCCESS(LxVmAllocate(&New, LX_ALIGN_UP(NewLength, LX_ALLOC_GRANULARITY), MEM_RESERVE, PAGE_NOACCESS)))
+    else if (Fixed ? (LxVmPlace(Process, Fixed, Fixed + NewLength, LX_PLACE_FRESH | LX_PLACE_SPLIT) != 0) :
+                     !NT_SUCCESS(LxVmAllocate(&New, LX_ALIGN_UP(NewLength, LX_ALLOC_GRANULARITY), MEM_RESERVE,
+                                              PAGE_NOACCESS)))
     {
         Result = -LX_ENOMEM;
     }
     else
     {
+        if (Fixed)
+            New = Fixed;
         Result = LxVmaInsert(Process, New, New + NewLength, Prot, VmaFlags, File, Offset, NULL);
-        if (Result != 0)
+        if ((Result != 0) && !Fixed)
             LxVmFree(New, 0, MEM_RELEASE);
 
         for (Cursor = Old; (Result == 0) && (Cursor < Old + OldLength);)
@@ -3114,6 +4025,8 @@ LX_SYSCALL(LxSysMremap)
                     break;
                 if (LxProtToNt(Prot) != PAGE_READWRITE)
                     LxVmProtect(Target, RegionEnd - Cursor, LxProtToNt(Prot));
+                if ((Information.Protect & 0xFF) == PAGE_NOACCESS)
+                    LxVmProtect(Cursor, RegionEnd - Cursor, PAGE_NOACCESS);
                 if (Prot & LX_PROT_EXEC)
                     LxVmFlushCode(Target, RegionEnd - Cursor);
             }
@@ -3124,7 +4037,10 @@ LX_SYSCALL(LxSysMremap)
             Result = LxMmFillPrivateFile(Process, New + OldLength, New + NewLength);
         if (Result == 0)
         {
-            LxMmUnmap(Process, Old, OldLength);
+            if (!KeepOld)
+                LxMmUnmap(Process, Old, OldLength);
+            else if (File == NULL)
+                LxVmDecommitRange(Old, Old + OldLength);
             Result = (LONG64)New;
         }
         else if (New != 0)

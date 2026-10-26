@@ -87,6 +87,7 @@
 #define LX_ENOMEDIUM        123
 #define LX_ECANCELED        125
 #define LX_ENOKEY           126
+#define LX_EHWPOISON        133
 
 #define LX_O_ACCMODE        03
 #define LX_O_RDONLY         00
@@ -140,6 +141,11 @@
 #define LX_F_SEAL_GROW      0x0004
 #define LX_F_SEAL_WRITE     0x0008
 #define LX_F_SEAL_FUTURE_WRITE 0x0010
+#define LX_F_SEAL_EXEC      0x0020
+
+#define LX_FALLOC_FL_KEEP_SIZE  0x01
+#define LX_FALLOC_FL_PUNCH_HOLE 0x02
+#define LX_FALLOC_FL_ZERO_RANGE 0x10
 #define LX_F_RDLCK          0
 #define LX_F_WRLCK          1
 #define LX_F_UNLCK          2
@@ -280,8 +286,33 @@ typedef struct _LX_SCHED_ATTR
 #define LX_MS_INVALIDATE    2
 #define LX_MS_SYNC          4
 
+#define LX_MADV_NORMAL      0
+#define LX_MADV_WILLNEED    3
 #define LX_MADV_DONTNEED    4
 #define LX_MADV_FREE        8
+#define LX_MADV_REMOVE      9
+#define LX_MADV_DONTFORK    10
+#define LX_MADV_DOFORK      11
+#define LX_MADV_MERGEABLE   12
+#define LX_MADV_UNMERGEABLE 13
+#define LX_MADV_COLLAPSE    25
+#define LX_MADV_DONTDUMP    16
+#define LX_MADV_DODUMP      17
+#define LX_MADV_WIPEONFORK  18
+#define LX_MADV_KEEPONFORK  19
+#define LX_MADV_COLD        20
+#define LX_MADV_PAGEOUT     21
+#define LX_MADV_POPULATE_READ 22
+#define LX_MADV_POPULATE_WRITE 23
+#define LX_MADV_DONTNEED_LOCKED 24
+#define LX_MADV_HWPOISON    100
+#define LX_MADV_GUARD_INSTALL 102
+#define LX_MADV_GUARD_REMOVE 103
+#define LX_MADV_SOFT_OFFLINE 101
+
+#define LX_PM_SOFT_DIRTY    (1ULL << 55)
+#define LX_PM_FILE          (1ULL << 61)
+#define LX_PM_PRESENT       (1ULL << 63)
 
 #define LX_MLOCK_ONFAULT    0x01
 #define LX_MCL_CURRENT      1
@@ -454,6 +485,7 @@ typedef struct _LX_SCHED_ATTR
 #define LX_ILL_ILLOPC       1
 #define LX_BUS_ADRALN       1
 #define LX_BUS_ADRERR       2
+#define LX_BUS_MCEERR_AR    4
 #define LX_TRAP_BRKPT       1
 #define LX_FPE_INTDIV       1
 #define LX_CLD_EXITED       1
@@ -885,6 +917,7 @@ typedef struct _LX_ROBUST_LIST_HEAD
 } LX_ROBUST_LIST_HEAD, *PLX_ROBUST_LIST_HEAD;
 
 #define LX_RLIMIT_STACK     3
+#define LX_RLIMIT_CORE      4
 #define LX_RLIMIT_NOFILE    7
 #define LX_RLIMIT_MEMLOCK   8
 #define LX_RLIM_INFINITY    (~0ULL)

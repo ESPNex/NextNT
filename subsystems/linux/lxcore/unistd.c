@@ -228,6 +228,7 @@ static LX_SYSCALL_ENTRY LxGenericSyscalls[] =
     LX_ENTRY(231, LxSysMunlockall, "munlockall"),
     LX_ENTRY(232, LxSysMincore, "mincore"),
     LX_ENTRY(233, LxSysMadvise, "madvise"),
+    LX_ENTRY(234, LxSysRemapFilePages, "remap_file_pages"),
     LX_ENTRY(240, LxSysRtTgsigqueueinfo, "rt_tgsigqueueinfo"),
     LX_ENTRY(242, LxSysAccept4, "accept4"),
     LX_ENTRY(243, LxSysRecvmmsg, "recvmmsg"),

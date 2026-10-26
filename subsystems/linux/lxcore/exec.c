@@ -700,6 +700,43 @@ LxExecKillOtherThreads(
     ExReleaseFastMutex(&Process->Lock);
 }
 
+static
+LONG
+LxExecDenyWrite(
+    _In_ PLX_FILE File,
+    _Out_ PVOID *Object)
+{
+    ULONG Size = sizeof(OBJECT_NAME_INFORMATION) + LX_PATH_MAX * sizeof(WCHAR), Returned = 0;
+    POBJECT_NAME_INFORMATION Name;
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    IO_STATUS_BLOCK Iosb;
+    HANDLE Handle;
+    NTSTATUS Status;
+
+    *Object = NULL;
+    if ((File->Mount == NULL) || (File->Mount->Kind != LxFsNt) || (File->Handle == NULL))
+        return 0;
+    Name = LxAllocPaged(Size);
+    if (Name == NULL)
+        return -LX_ENOMEM;
+    Status = ZwQueryObject(File->Handle, ObjectNameInformation, Name, Size, &Returned);
+    if (NT_SUCCESS(Status) && (Name->Name.Length != 0))
+    {
+        InitializeObjectAttributes(&ObjectAttributes, &Name->Name, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+        Status = ZwCreateFile(&Handle, FILE_EXECUTE | SYNCHRONIZE, &ObjectAttributes, &Iosb, NULL, 0,
+                              FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OPEN,
+                              FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_REPARSE_POINT, NULL, 0);
+        if (NT_SUCCESS(Status))
+        {
+            if (!NT_SUCCESS(ObReferenceObjectByHandle(Handle, 0, *IoFileObjectType, KernelMode, Object, NULL)))
+                *Object = NULL;
+            ZwClose(Handle);
+        }
+    }
+    LxFreePaged(Name);
+    return (Status == STATUS_SHARING_VIOLATION) ? -LX_ETXTBSY : 0;
+}
+
 NTSTATUS
 LxExecImage(
     _In_ PLX_THREAD Thread,
@@ -716,6 +753,7 @@ LxExecImage(
     ULONG64 StackPointer, Entry, Device;
     ULONG Depth, Mode, FileUid, FileGid;
     BOOLEAN SetUid = FALSE, SetGid = FALSE;
+    PVOID Deny = NULL;
     LX_CRED_SAVE Old;
     LONG Error;
     LONG Sig;
@@ -772,6 +810,8 @@ LxExecImage(
         if (ExecPath == NULL)
             Error = -LX_ENOMEM;
     }
+    if (Error == 0)
+        Error = LxExecDenyWrite(Main.File, &Deny);
     if ((Error == 0) && !Process->NoNewPrivs &&
         (LxNtReadLxAttributes(Main.File->Handle, &Mode, &FileUid, &FileGid, &Device) == 0) && (Mode != MAXULONG))
     {
@@ -780,6 +820,8 @@ LxExecImage(
     }
     if (Error != 0)
     {
+        if (Deny != NULL)
+            ObDereferenceObject(Deny);
         LxElfClose(&Main);
         LxElfClose(&Interp);
         LxFree(FileName);
@@ -797,6 +839,9 @@ LxExecImage(
     LxExecKillOtherThreads(Thread);
     LxFutexExitRobustList(Thread);
     LxMmReset(Process);
+    if (Process->ExeDeny != NULL)
+        ObDereferenceObject(Process->ExeDeny);
+    Process->ExeDeny = Deny;
     LxFdCloseOnExec(Process);
     ExAcquireFastMutex(&Process->Lock);
     for (Sig = 0; Sig < LX_NSIG; Sig++)

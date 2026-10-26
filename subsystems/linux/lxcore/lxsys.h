@@ -137,6 +137,7 @@ LX_SYSCALL(LxSysMprotect);
 LX_SYSCALL(LxSysMremap);
 LX_SYSCALL(LxSysMadvise);
 LX_SYSCALL(LxSysMsync);
+LX_SYSCALL(LxSysRemapFilePages);
 LX_SYSCALL(LxSysMlock);
 LX_SYSCALL(LxSysMlock2);
 LX_SYSCALL(LxSysMunlock);

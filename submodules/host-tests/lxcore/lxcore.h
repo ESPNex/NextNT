@@ -46,6 +46,11 @@ typedef struct _IO_STATUS_BLOCK
     ULONG_PTR Information;
 } IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 
+typedef struct _FILE_POSITION_INFORMATION
+{
+    LARGE_INTEGER CurrentByteOffset;
+} FILE_POSITION_INFORMATION, *PFILE_POSITION_INFORMATION;
+
 typedef struct _FILE_STANDARD_INFORMATION
 {
     LARGE_INTEGER AllocationSize;
@@ -101,8 +106,22 @@ typedef enum _SECTION_INHERIT { ViewShare = 1, ViewUnmap = 2 } SECTION_INHERIT;
 typedef enum _EVENT_TYPE { NotificationEvent, SynchronizationEvent } EVENT_TYPE;
 typedef enum _KWAIT_REASON { Executive = 0, UserRequest = 6 } KWAIT_REASON;
 typedef enum _MEMORY_INFORMATION_CLASS { MemoryBasicInformation = 0, MemoryWorkingSetExList = 4 } MEMORY_INFORMATION_CLASS;
-typedef enum _FILE_INFORMATION_CLASS { FileStandardInformation = 5 } FILE_INFORMATION_CLASS;
+typedef enum _FILE_INFORMATION_CLASS { FileStandardInformation = 5, FilePositionInformation = 14 } FILE_INFORMATION_CLASS;
 typedef enum _SECTION_INFORMATION_CLASS { SectionBasicInformation = 0 } SECTION_INFORMATION_CLASS;
+typedef enum _PROCESSINFOCLASS { ProcessQuotaLimits = 1 } PROCESSINFOCLASS;
+
+typedef struct _QUOTA_LIMITS
+{
+    SIZE_T PagedPoolLimit;
+    SIZE_T NonPagedPoolLimit;
+    SIZE_T MinimumWorkingSetSize;
+    SIZE_T MaximumWorkingSetSize;
+    SIZE_T PagefileLimit;
+    LARGE_INTEGER TimeLimit;
+} QUOTA_LIMITS, *PQUOTA_LIMITS;
+
+#define MAP_PROCESS 1
+#define STATUS_NOT_LOCKED ((NTSTATUS)0xC000002A)
 
 #define KernelMode 0
 #define IO_NO_INCREMENT 0
@@ -110,6 +129,12 @@ typedef enum _SECTION_INFORMATION_CLASS { SectionBasicInformation = 0 } SECTION_
 #define OBJ_KERNEL_HANDLE 0x00000200
 #define MEM_COMMIT 0x00001000
 #define MAXULONG64 (~(ULONG64)0)
+#define InterlockedExchangeAdd(p, v) __atomic_fetch_add((p), (v), __ATOMIC_SEQ_CST)
+#define HandleToUlong(h) ((ULONG)(ULONG_PTR)(h))
+#define ULongToHandle(u) ((HANDLE)(ULONG_PTR)(u))
+typedef struct _FAST_MUTEX { LONG Unused; } FAST_MUTEX, *PFAST_MUTEX;
+#define ExAcquireFastMutex(m) ((void)(m))
+#define ExReleaseFastMutex(m) ((void)(m))
 #define MEM_RESERVE 0x00002000
 #define MEM_DECOMMIT 0x00004000
 #define MEM_RELEASE 0x00008000
@@ -175,6 +200,12 @@ void LxHostCopy(void *Destination, const void *Source, SIZE_T Length);
 #define LX_IO_CHUNK         (64 * 1024)
 #define LX_BRK_RESERVE      (1024ULL * 1024 * 1024)
 #define LX_MMAP_MIN_ADDR    0x10000ULL
+#define LX_VMA_DONTDUMP     0x00040000
+#define LX_VMA_TOUCHED      0x00080000
+#define LX_VMA_WIPEONFORK   0x00100000
+#define LX_VMA_DONTFORK     0x00200000
+#define LX_VMA_POISON       0x00400000
+#define LX_VMA_FORKED       0x00800000
 #define LX_VMA_NOMAYWRITE   0x01000000
 #define LX_VMA_LOCKONFAULT  0x02000000
 #define LX_VMA_LOCKED       0x04000000
@@ -187,6 +218,8 @@ void LxHostCopy(void *Destination, const void *Source, SIZE_T Length);
 #define LX_ALIGN_DOWN(v, a) ((v) & ~((ULONG64)(a) - 1))
 #define LX_ALIGN_UP(v, a)   (((v) + (ULONG64)(a) - 1) & ~((ULONG64)(a) - 1))
 
+#include "../rtl/include/rtltree.h"
+
 typedef struct _LX_FILE LX_FILE, *PLX_FILE;
 typedef struct _LX_PROCESS LX_PROCESS, *PLX_PROCESS;
 typedef struct _LX_THREAD LX_THREAD, *PLX_THREAD;
@@ -194,6 +227,7 @@ typedef struct _LX_THREAD LX_THREAD, *PLX_THREAD;
 typedef struct _LX_VMA
 {
     LIST_ENTRY Link;
+    RTL_BALANCED_NODE TreeNode;
     ULONG64 Start;
     ULONG64 End;
     ULONG Prot;
@@ -206,6 +240,14 @@ typedef struct _LX_VMA
     ULONG64 MapEnd;
 } LX_VMA, *PLX_VMA;
 
+typedef struct _LX_MEMFD
+{
+    volatile LONG RefCount;
+    volatile LONG Seals;
+    volatile LONG WritableMaps;
+    HANDLE Owner;
+} LX_MEMFD, *PLX_MEMFD;
+
 struct _LX_FILE
 {
     volatile LONG RefCount;
@@ -217,16 +259,23 @@ struct _LX_FILE
     BOOLEAN Directory;
     BOOLEAN NtPipe;
     ULONG64 Rdev;
+    PLX_MEMFD Memfd;
 };
 
 struct _LX_PROCESS
 {
     struct _LX_PROCESS *Mm;
     ULONG Pid;
+    ULONG NtPid;
+    BOOLEAN Exited;
+    LIST_ENTRY GlobalLink;
     KEVENT MmLock;
     PKTHREAD MmLockOwner;
     ULONG MmLockDepth;
     LIST_ENTRY Vmas;
+    RTL_RB_TREE VmaTree;
+    LONG VmaCount;
+    LIST_ENTRY Guards;
     ULONG64 BrkBase;
     ULONG64 BrkCurrent;
     ULONG64 BrkCommitted;
@@ -242,7 +291,7 @@ struct _LX_THREAD
     PLX_PROCESS Process;
     ULONG64 FaultAddress;
     ULONG FaultRetries;
-    BOOLEAN FaultBus;
+    UCHAR FaultBus;
 };
 
 typedef struct _LX_CALL
@@ -276,12 +325,19 @@ typedef struct _LX_CALL
 #define ZwQueryVirtualMemory LxHostZwQueryVirtualMemory
 #define ZwFlushInstructionCache LxHostZwFlushInstructionCache
 #define ZwFlushVirtualMemory LxHostZwFlushVirtualMemory
+#define ZwLockVirtualMemory LxHostZwLockVirtualMemory
+#define ZwUnlockVirtualMemory LxHostZwUnlockVirtualMemory
+#define ZwQueryInformationProcess LxHostZwQueryInformationProcess
+#define ZwSetInformationProcess LxHostZwSetInformationProcess
 #define ZwCreateSection LxHostZwCreateSection
 #define ZwMapViewOfSection LxHostZwMapViewOfSection
 #define ZwUnmapViewOfSection LxHostZwUnmapViewOfSection
 #define ZwQuerySection LxHostZwQuerySection
 #define ZwQueryInformationFile LxHostZwQueryInformationFile
 #define ZwClose LxHostZwClose
+#define ZwWriteFile LxHostZwWriteFile
+#define ZwSetInformationFile LxHostZwSetInformationFile
+#define MmGetPhysicalAddress LxHostMmGetPhysicalAddress
 
 PKTHREAD KeGetCurrentThread(void);
 void KeEnterCriticalRegion(void);
@@ -311,6 +367,18 @@ NTSTATUS ZwQueryVirtualMemory(HANDLE Process, PVOID BaseAddress, MEMORY_INFORMAT
                               SIZE_T Length, PSIZE_T ReturnLength);
 NTSTATUS ZwFlushInstructionCache(HANDLE Process, PVOID BaseAddress, SIZE_T Length);
 NTSTATUS ZwFlushVirtualMemory(HANDLE Process, PVOID *BaseAddress, PSIZE_T RegionSize, PIO_STATUS_BLOCK Iosb);
+NTSTATUS ZwLockVirtualMemory(HANDLE Process, PVOID *BaseAddress, PSIZE_T RegionSize, ULONG MapType);
+NTSTATUS ZwUnlockVirtualMemory(HANDLE Process, PVOID *BaseAddress, PSIZE_T RegionSize, ULONG MapType);
+NTSTATUS ZwQueryInformationProcess(HANDLE Process, PROCESSINFOCLASS Class, PVOID Information, ULONG Length,
+                                   PULONG ReturnLength);
+NTSTATUS ZwSetInformationProcess(HANDLE Process, PROCESSINFOCLASS Class, PVOID Information, ULONG Length);
+extern SIZE_T LxHostWsMinimum;
+extern ULONG LxHostQuotaRaises;
+NTSTATUS ZwSetInformationFile(HANDLE FileHandle, PIO_STATUS_BLOCK Iosb, PVOID Information, ULONG Length,
+                              FILE_INFORMATION_CLASS Class);
+LARGE_INTEGER MmGetPhysicalAddress(PVOID BaseAddress);
+NTSTATUS ZwWriteFile(HANDLE FileHandle, HANDLE Event, PVOID ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK Iosb,
+                     PVOID Buffer, ULONG Length, PLARGE_INTEGER ByteOffset, PULONG Key);
 NTSTATUS ZwCreateSection(PHANDLE Section, ACCESS_MASK Access, POBJECT_ATTRIBUTES Attributes, PLARGE_INTEGER MaximumSize,
                          ULONG PageProtection, ULONG AllocationAttributes, HANDLE File);
 NTSTATUS ZwMapViewOfSection(HANDLE Section, HANDLE Process, PVOID *BaseAddress, ULONG_PTR ZeroBits, SIZE_T CommitSize,
@@ -329,6 +397,12 @@ PVOID LxAllocPaged(_In_ SIZE_T Size);
 VOID LxFreePaged(_In_opt_ PVOID Buffer);
 LONG LxStatusToErrno(_In_ NTSTATUS Status);
 LONG64 LxCopyToUser(_In_ ULONG64 Destination, _In_reads_bytes_(Length) const VOID *Source, _In_ SIZE_T Length);
+extern LIST_ENTRY LxProcessList;
+extern FAST_MUTEX LxProcessListLock;
+VOID LxProcessReference(_In_ PLX_PROCESS Process);
+VOID LxProcessDereference(_In_ PLX_PROCESS Process);
+HANDLE PsGetCurrentProcessId(VOID);
+NTSTATUS PsLookupProcessByProcessId(HANDLE ProcessId, PEPROCESS *Process);
 LONG64 LxCopyFromUser(_Out_writes_bytes_(Length) PVOID Destination, _In_ ULONG64 Source, _In_ SIZE_T Length);
 BOOLEAN LxCapable(_In_ PLX_PROCESS Process, _In_ ULONG Capability);
 LONG64 LxZeroUser(_In_ ULONG64 Destination, _In_ SIZE_T Length);
@@ -366,6 +440,8 @@ LX_SYSCALL(LxSysMunlock);
 LX_SYSCALL(LxSysMlockall);
 LX_SYSCALL(LxSysMunlockall);
 ULONG64 LxMmLockedBytes(_In_ PLX_PROCESS Process);
+VOID LxMmForkChild(_In_ PLX_PROCESS Parent, _In_ HANDLE ProcessHandle);
+extern volatile LONG LxMaxMapCount;
 LONG64 LxMmMincore(_In_ PLX_PROCESS Process, _In_ ULONG64 Address, _In_ ULONG64 End, _In_ ULONG64 Output);
 ULONG64 LxMmVmaResident(_In_ HANDLE ProcessHandle, _In_ PLX_VMA Vma);
 LX_SYSCALL(LxSysBrk);

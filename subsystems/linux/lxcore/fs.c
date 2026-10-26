@@ -579,19 +579,39 @@ LX_SYSCALL(LxSysFcntl)
             break;
 
         case LX_F_ADD_SEALS:
-            if ((File->Path == NULL) || (strncmp(File->Path, "/memfd:", 7) != 0))
-                Result = -LX_EINVAL;
-            else if (File->Seals & LX_F_SEAL_SEAL)
+        {
+            ULONG Seals = (ULONG)Call->Args[2];
+            LONG Old;
+
+            if ((File->Flags & LX_O_ACCMODE) == LX_O_RDONLY)
                 Result = -LX_EPERM;
+            else if (Seals & ~(LX_F_SEAL_SEAL | LX_F_SEAL_SHRINK | LX_F_SEAL_GROW | LX_F_SEAL_WRITE |
+                               LX_F_SEAL_FUTURE_WRITE | LX_F_SEAL_EXEC))
+                Result = -LX_EINVAL;
+            else if (File->Memfd == NULL)
+                Result = -LX_EINVAL;
             else
-                File->Seals |= (ULONG)Call->Args[2] & 0x1F;
+            {
+                do
+                {
+                    Old = File->Memfd->Seals;
+                    if (Old & LX_F_SEAL_SEAL)
+                    {
+                        Result = -LX_EPERM;
+                        break;
+                    }
+                    if ((Seals & LX_F_SEAL_WRITE) && !(Old & LX_F_SEAL_WRITE) && (File->Memfd->WritableMaps != 0))
+                    {
+                        Result = -LX_EBUSY;
+                        break;
+                    }
+                } while (InterlockedCompareExchange(&File->Memfd->Seals, Old | (LONG)Seals, Old) != Old);
+            }
             break;
+        }
 
         case LX_F_GET_SEALS:
-            if ((File->Path == NULL) || (strncmp(File->Path, "/memfd:", 7) != 0))
-                Result = -LX_EINVAL;
-            else
-                Result = File->Seals;
+            Result = (File->Memfd != NULL) ? File->Memfd->Seals : -LX_EINVAL;
             break;
 
         default:
@@ -1369,7 +1389,7 @@ LX_SYSCALL(LxSysFtruncate)
         Result = -LX_EINVAL;
     else if (File->Ops->Truncate == NULL)
         Result = -LX_EINVAL;
-    else
+    else if ((Result = LxMemfdCheckSize(File, (LONG64)Call->Args[1])) == 0)
         Result = File->Ops->Truncate(File, (LONG64)Call->Args[1]);
     if ((File->Mount != NULL) && (File->Path != NULL))
         LxVcacheInvalidatePath(File->Mount->Ns, File->Path);
@@ -1387,17 +1407,34 @@ LX_SYSCALL(LxSysFallocate)
 
     if (File == NULL)
         return -LX_EBADF;
-    if ((Offset < 0) || (Length <= 0))
+    if ((Offset < 0) || (Length <= 0) || (Offset + Length < Offset))
         Result = -LX_EINVAL;
-    else if (Mode & ~1UL)
+    else if (Mode & ~(LX_FALLOC_FL_KEEP_SIZE | LX_FALLOC_FL_PUNCH_HOLE | LX_FALLOC_FL_ZERO_RANGE))
         Result = -LX_EOPNOTSUPP;
+    else if ((Mode & LX_FALLOC_FL_PUNCH_HOLE) && !(Mode & LX_FALLOC_FL_KEEP_SIZE))
+        Result = -LX_EOPNOTSUPP;
+    else if ((Mode & LX_FALLOC_FL_PUNCH_HOLE) && (Mode & LX_FALLOC_FL_ZERO_RANGE))
+        Result = -LX_EINVAL;
+    else if ((File->Flags & LX_O_ACCMODE) == LX_O_RDONLY)
+        Result = -LX_EBADF;
     else if ((File->Handle == NULL) || File->Directory || (File->Ops->Truncate == NULL))
         Result = -LX_ENODEV;
-    else if (!(Mode & 1))
+    else if ((Mode & (LX_FALLOC_FL_PUNCH_HOLE | LX_FALLOC_FL_ZERO_RANGE)) && (File->Memfd != NULL) &&
+             (File->Memfd->Seals & (LX_F_SEAL_WRITE | LX_F_SEAL_FUTURE_WRITE)))
+        Result = -LX_EPERM;
+    else
     {
         Result = LxFileStat(File, &Stat);
-        if ((Result == 0) && (Stat.Size < Offset + Length))
-            Result = File->Ops->Truncate(File, Offset + Length);
+        if ((Result == 0) && !(Mode & LX_FALLOC_FL_KEEP_SIZE) && (Stat.Size < Offset + Length))
+        {
+            Result = LxMemfdCheckSize(File, Offset + Length);
+            if (Result == 0)
+                Result = File->Ops->Truncate(File, Offset + Length);
+            if (Result == 0)
+                Stat.Size = Offset + Length;
+        }
+        if ((Result == 0) && (Mode & (LX_FALLOC_FL_PUNCH_HOLE | LX_FALLOC_FL_ZERO_RANGE)) && (Offset < Stat.Size))
+            Result = LxFileZeroRange(File, (ULONG64)Offset, (ULONG64)min(Offset + Length, Stat.Size));
         if ((File->Mount != NULL) && (File->Path != NULL))
             LxVcacheInvalidatePath(File->Mount->Ns, File->Path);
     }

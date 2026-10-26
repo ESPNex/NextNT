@@ -35,6 +35,12 @@
 #define LX_BRK_RESERVE      (1024ULL * 1024 * 1024)
 #define LX_AUXV_WORDS       40
 #define LX_MMAP_MIN_ADDR    0x10000ULL
+#define LX_VMA_DONTDUMP     0x00040000
+#define LX_VMA_TOUCHED      0x00080000
+#define LX_VMA_WIPEONFORK   0x00100000
+#define LX_VMA_DONTFORK     0x00200000
+#define LX_VMA_POISON       0x00400000
+#define LX_VMA_FORKED       0x00800000
 #define LX_VMA_NOMAYWRITE   0x01000000
 #define LX_VMA_LOCKONFAULT  0x02000000
 #define LX_VMA_LOCKED       0x04000000
@@ -54,6 +60,15 @@
 
 #define LX_ALIGN_DOWN(v, a) ((v) & ~((ULONG64)(a) - 1))
 #define LX_ALIGN_UP(v, a)   (((v) + (ULONG64)(a) - 1) & ~((ULONG64)(a) - 1))
+
+typedef enum _LX_NET_SYSCTL
+{
+    LxNetSomaxconn,
+    LxNetConfAllTag,
+    LxNetConfDefaultTag,
+    LxNetConfLoTag,
+    LX_NET_SYSCTL_COUNT
+} LX_NET_SYSCTL;
 
 typedef struct _LX_FILE LX_FILE, *PLX_FILE;
 typedef struct _LX_PROCESS LX_PROCESS, *PLX_PROCESS;
@@ -97,6 +112,7 @@ typedef struct _LX_ID_MAP
 typedef struct _LX_VMA
 {
     LIST_ENTRY Link;
+    RTL_BALANCED_NODE TreeNode;
     ULONG64 Start;
     ULONG64 End;
     ULONG Prot;
@@ -131,6 +147,14 @@ typedef struct _LX_EVENT_SOURCE
     LX_POLL_HEAD Poll;
     volatile LONG64 Generation;
 } LX_EVENT_SOURCE, *PLX_EVENT_SOURCE;
+
+typedef struct _LX_MEMFD
+{
+    volatile LONG RefCount;
+    volatile LONG Seals;
+    volatile LONG WritableMaps;
+    HANDLE Owner;
+} LX_MEMFD, *PLX_MEMFD;
 
 typedef struct _LX_FILE_OPS
 {
@@ -213,7 +237,7 @@ struct _LX_FILE
     ULONG64 Rdev;
     LONG (*WriteHandler)(_In_ PLX_FILE File, _In_reads_bytes_(Length) PCSTR Data, _In_ ULONG Length);
     PVOID HandlerContext;
-    ULONG Seals;
+    PLX_MEMFD Memfd;
     ULONG Mode;
     BOOLEAN Written;
     PLX_EVENT_SOURCE EventSource;
@@ -324,6 +348,7 @@ struct _LX_NS
         struct
         {
             BOOLEAN LoopbackUp;
+            LONG Sysctl[LX_NET_SYSCTL_COUNT];
         } Net;
         struct
         {
@@ -492,12 +517,20 @@ struct _LX_PROCESS
     PKTHREAD MmLockOwner;
     ULONG MmLockDepth;
     LIST_ENTRY Vmas;
+    RTL_RB_TREE VmaTree;
+    LONG VmaCount;
+    LIST_ENTRY Guards;
     ULONG64 BrkBase;
     ULONG64 BrkCurrent;
     ULONG64 BrkCommitted;
     ULONG64 BrkLimit;
     BOOLEAN BrkReserved;
     ULONG MmLockDefault;
+    BOOLEAN SharedVm;
+    BOOLEAN OwnerGone;
+    volatile LONG VmUsers;
+    PVOID ExeDeny;
+    ULONG CoreFilter;
     LX_SIGACTION SigAction[LX_NSIG];
     LIST_ENTRY Children;
     LIST_ENTRY Threads;
@@ -614,7 +647,7 @@ struct _LX_THREAD
     PETHREAD EThread;
     ULONG64 FaultAddress;
     ULONG FaultRetries;
-    BOOLEAN FaultBus;
+    UCHAR FaultBus;
     LIST_ENTRY Link;
     volatile LONG64 Pending;
     LX_STACK AltStack;
@@ -708,14 +741,24 @@ C_ASSERT(sizeof(LX_ELF64_PHDR) == 56);
 #define LX_ELFDATA2LSB  1
 #define LX_ET_EXEC      2
 #define LX_ET_DYN       3
+#define LX_ET_CORE      4
 #define LX_PT_LOAD      1
 #define LX_PT_INTERP    3
+#define LX_PT_NOTE      4
 #define LX_PT_PHDR      6
 #define LX_PF_X         1
 #define LX_PF_W         2
 #define LX_PF_R         4
 
 extern LIST_ENTRY LxProcessList;
+extern volatile LONG LxMaxMapCount;
+
+NTSYSAPI VOID NTAPI RtlRbInsertNodeEx(_Inout_ PRTL_RB_TREE Tree, _In_opt_ PRTL_BALANCED_NODE Parent,
+                                      _In_ BOOLEAN Right, _Inout_ PRTL_BALANCED_NODE Node);
+NTSYSAPI VOID NTAPI RtlRbRemoveNode(_Inout_ PRTL_RB_TREE Tree, _In_ PRTL_BALANCED_NODE Node);
+NTKERNELAPI NTSTATUS ExGetSystemFirmwareTable(_In_ ULONG FirmwareTableProviderSignature, _In_ ULONG FirmwareTableID,
+                                              _Out_writes_bytes_to_opt_(BufferLength, *ReturnLength) PVOID FirmwareTableBuffer,
+                                              _In_ ULONG BufferLength, _Out_opt_ PULONG ReturnLength);
 extern FAST_MUTEX LxProcessListLock;
 extern LIST_ENTRY LxInstanceList;
 extern FAST_MUTEX LxInstanceListLock;
@@ -789,6 +832,10 @@ VOID LxFdCloseOnExec(_In_ PLX_PROCESS Process);
 LONG64 LxFileRead(_In_ PLX_FILE File, _In_ ULONG64 Buffer, _In_ ULONG64 Length, _Inout_opt_ PLONG64 Offset);
 LONG64 LxFileWrite(_In_ PLX_FILE File, _In_ ULONG64 Buffer, _In_ ULONG64 Length, _Inout_opt_ PLONG64 Offset);
 LONG64 LxFileReadKernel(_In_ PLX_FILE File, _Out_writes_bytes_(Length) PVOID Buffer, _In_ ULONG Length, _In_ ULONG64 Offset);
+LONG LxMemfdCheckWrite(_In_ PLX_FILE File, _In_ LONG64 Position, _In_ ULONG64 Length);
+LONG LxMemfdCheckSize(_In_ PLX_FILE File, _In_ LONG64 Size);
+LONG LxFileZeroRange(_In_ PLX_FILE File, _In_ ULONG64 Start, _In_ ULONG64 End);
+VOID LxMemfdDereference(_In_opt_ PLX_MEMFD Memfd);
 LONG LxFileStat(_In_ PLX_FILE File, _Out_ PLX_STAT Stat);
 PLX_FILE LxFileFromNtHandle(_In_ HANDLE Handle, _In_ ULONG Flags);
 PLX_FILE LxDataFileCreate(_In_ PCSTR Path, _In_ PVOID Data, _In_ ULONG Length, _In_ ULONG Mode);
@@ -1141,8 +1188,14 @@ VOID LxMmReset(_In_ PLX_PROCESS Process);
 VOID LxMmLock(_In_ PLX_PROCESS Process);
 BOOLEAN LxMmHasVmaAbove(_In_ PLX_PROCESS Process, _In_ ULONG64 Address);
 ULONG64 LxMmLockedBytes(_In_ PLX_PROCESS Process);
+VOID LxSharedVmTerminate(_In_ PLX_PROCESS Process, _In_ NTSTATUS ExitCode, _In_ BOOLEAN CurrentNtProcessOnly);
+VOID LxSharedVmExited(_In_ PLX_PROCESS Process);
+ULONG LxMmTruncateViews(_In_ HANDLE Handle);
+VOID LxMmForkChild(_In_ PLX_PROCESS Parent, _In_ HANDLE ProcessHandle);
 LONG64 LxMmMincore(_In_ PLX_PROCESS Process, _In_ ULONG64 Address, _In_ ULONG64 End, _In_ ULONG64 Output);
 ULONG64 LxMmVmaResident(_In_ HANDLE ProcessHandle, _In_ PLX_VMA Vma);
+VOID LxMmPagemap(_In_ PLX_PROCESS Process, _In_ HANDLE ProcessHandle, _In_ ULONG64 Address, _In_ ULONG Pages,
+                 _In_ BOOLEAN Frames, _Out_writes_(Pages) PULONG64 Entries);
 BOOLEAN LxMmMapsPath(_In_ PLX_PROCESS Process, _In_opt_ PCSTR Path);
 VOID LxMmSetBrk(_In_ PLX_PROCESS Process, _In_ ULONG64 StartBrk, _In_ ULONG64 Brk);
 PLX_FILE LxMmFileAt(_In_ PLX_PROCESS Process, _In_ ULONG64 Start, _In_ ULONG64 End);
@@ -1182,7 +1235,7 @@ VOID LxSignalSend(_In_ PLX_PROCESS Target, _In_opt_ PLX_THREAD TargetThread, _In
 VOID LxSignalCheckPending(_In_ PLX_THREAD Thread, _Inout_ PKTRAP_FRAME TrapFrame, _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame);
 BOOLEAN LxSignalDeliverFault(_In_ PLX_THREAD Thread, _Inout_ PKTRAP_FRAME TrapFrame, _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame, _In_ LONG Signal, _In_ PLX_SIGINFO Info);
 VOID LxThreadAttach(_In_ PLX_THREAD Thread);
-VOID LxThreadDetach(_In_ PLX_THREAD Thread);
+BOOLEAN LxThreadDetach(_In_ PLX_THREAD Thread);
 BOOLEAN LxSignalIgnoredByDefault(_In_ LONG Signal);
 ULONG64 LxSignalDequeue(_In_ PLX_THREAD Thread, _In_ ULONG64 Mask, _Out_ PLX_SIGINFO Info);
 VOID LxSignalNotifyFds(_In_ PLX_PROCESS Process);
@@ -1190,6 +1243,14 @@ VOID LxSignalNotifyFds(_In_ PLX_PROCESS Process);
 LONG64 LxSysCall(_Inout_ PLX_CALL Call);
 
 ULONG LxArchElfMachine(VOID);
+#define LX_CORE_MAX_REGISTERS 64
+ULONG LxArchCoreRegisters(_In_ PKTRAP_FRAME TrapFrame, _In_opt_ PKEXCEPTION_FRAME ExceptionFrame,
+                          _Out_writes_(LX_CORE_MAX_REGISTERS) PULONG64 Registers);
+BOOLEAN LxSignalDumpsCore(_In_ LONG Signal);
+BOOLEAN LxCoreDump(_In_ PLX_THREAD Thread, _In_ PKTRAP_FRAME TrapFrame, _In_opt_ PKEXCEPTION_FRAME ExceptionFrame,
+                   _In_ LONG Signal);
+VOID LxCoreGetPattern(_Out_writes_(Size) PSTR Buffer, _In_ ULONG Size);
+LONG LxCoreSetPattern(_In_reads_bytes_(Length) PCSTR Data, _In_ ULONG Length);
 ULONG64 LxArchHwcap(VOID);
 PCSTR LxArchPlatform(VOID);
 VOID LxArchGetSyscall(_In_ PKTRAP_FRAME TrapFrame, _Out_ PULONG Number, _Out_writes_(6) PULONG64 Args);

@@ -358,6 +358,73 @@ ZwFlushVirtualMemory(HANDLE Process, PVOID *BaseAddress, PSIZE_T RegionSize, PIO
     return STATUS_SUCCESS;
 }
 
+SIZE_T LxHostWsMinimum = 50 * PAGE_SIZE;
+ULONG LxHostQuotaRaises;
+
+NTSTATUS
+ZwLockVirtualMemory(HANDLE Process, PVOID *BaseAddress, PSIZE_T RegionSize, ULONG MapType)
+{
+    ULONG64 Start = (ULONG64)(ULONG_PTR)*BaseAddress & ~(ULONG64)(PAGE_SIZE - 1);
+    ULONG64 End = ((ULONG64)(ULONG_PTR)*BaseAddress + *RegionSize + PAGE_SIZE - 1) & ~(ULONG64)(PAGE_SIZE - 1);
+    NTSTATUS Status;
+
+    MI_RW_ACQUIRE_EXCLUSIVE(&LxHostSpace->Lock);
+    if (LxHostSpace->LockedPages + ((End - Start) >> PAGE_SHIFT) - MiLockRangePages(LxHostSpace, Start, End) >
+        LxHostWsMinimum / PAGE_SIZE)
+        Status = STATUS_WORKING_SET_QUOTA;
+    else
+        Status = MiLockRangeAdd(LxHostSpace, Start, End);
+    MI_RW_RELEASE_EXCLUSIVE(&LxHostSpace->Lock);
+    return Status;
+}
+
+NTSTATUS
+ZwUnlockVirtualMemory(HANDLE Process, PVOID *BaseAddress, PSIZE_T RegionSize, ULONG MapType)
+{
+    ULONG64 Start = (ULONG64)(ULONG_PTR)*BaseAddress & ~(ULONG64)(PAGE_SIZE - 1);
+    ULONG64 End = ((ULONG64)(ULONG_PTR)*BaseAddress + *RegionSize + PAGE_SIZE - 1) & ~(ULONG64)(PAGE_SIZE - 1);
+    ULONG64 Locked;
+
+    MI_RW_ACQUIRE_EXCLUSIVE(&LxHostSpace->Lock);
+    Locked = MiLockRangePages(LxHostSpace, Start, End);
+    MI_RW_RELEASE_EXCLUSIVE(&LxHostSpace->Lock);
+    if (Locked != ((End - Start) >> PAGE_SHIFT))
+        MiTrimRange(LxHostSpace, Start, End);
+    MI_RW_ACQUIRE_EXCLUSIVE(&LxHostSpace->Lock);
+    MiLockRangeRemove(LxHostSpace, Start, End);
+    MI_RW_RELEASE_EXCLUSIVE(&LxHostSpace->Lock);
+    return (Locked != ((End - Start) >> PAGE_SHIFT)) ? STATUS_NOT_LOCKED : STATUS_SUCCESS;
+}
+
+NTSTATUS
+ZwQueryInformationProcess(HANDLE Process, PROCESSINFOCLASS Class, PVOID Information, ULONG Length,
+                          PULONG ReturnLength)
+{
+    PQUOTA_LIMITS Quota = Information;
+
+    if ((Class != ProcessQuotaLimits) || (Length < sizeof(*Quota)))
+        return STATUS_INVALID_PARAMETER;
+    memset(Quota, 0, sizeof(*Quota));
+    Quota->MinimumWorkingSetSize = LxHostWsMinimum;
+    Quota->MaximumWorkingSetSize = (LxHostWsMinimum > 345 * PAGE_SIZE) ? LxHostWsMinimum : 345 * PAGE_SIZE;
+    if (ReturnLength != NULL)
+        *ReturnLength = sizeof(*Quota);
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS
+ZwSetInformationProcess(HANDLE Process, PROCESSINFOCLASS Class, PVOID Information, ULONG Length)
+{
+    PQUOTA_LIMITS Quota = Information;
+
+    if ((Class != ProcessQuotaLimits) || (Length < sizeof(*Quota)) ||
+        (Quota->MinimumWorkingSetSize > Quota->MaximumWorkingSetSize))
+        return STATUS_INVALID_PARAMETER;
+    LxHostWsMinimum = Quota->MinimumWorkingSetSize;
+    LxHostQuotaRaises++;
+    return STATUS_SUCCESS;
+}
+
 NTSTATUS
 ZwCreateSection(PHANDLE SectionHandle, ACCESS_MASK Access, POBJECT_ATTRIBUTES Attributes, PLARGE_INTEGER MaximumSize,
                 ULONG PageProtection, ULONG AllocationAttributes, HANDLE FileHandle)
@@ -505,6 +572,37 @@ ZwQueryInformationFile(HANDLE FileHandle, PIO_STATUS_BLOCK Iosb, PVOID Informati
     return STATUS_SUCCESS;
 }
 
+NTSTATUS
+ZwSetInformationFile(HANDLE FileHandle, PIO_STATUS_BLOCK Iosb, PVOID Information, ULONG Length,
+                     FILE_INFORMATION_CLASS Class)
+{
+    return STATUS_INVALID_PARAMETER;
+}
+
+LARGE_INTEGER
+MmGetPhysicalAddress(PVOID BaseAddress)
+{
+    LARGE_INTEGER Address = { 0 };
+
+    return Address;
+}
+
+NTSTATUS
+ZwWriteFile(HANDLE FileHandle, HANDLE Event, PVOID ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK Iosb,
+            PVOID Buffer, ULONG Length, PLARGE_INTEGER ByteOffset, PULONG Key)
+{
+    PLX_HOST_FILE File = LxHostHandleObject(FileHandle);
+    ULONG64 Offset = (ULONG64)ByteOffset->QuadPart;
+
+    if ((File == NULL) || (File->Object.Header.Kind != LX_HOST_OBJECT_FILE))
+        return STATUS_INVALID_HANDLE;
+    if (Offset < File->Data->Size)
+        memcpy(File->Data->Data + Offset, Buffer, (size_t)min(Length, File->Data->Size - Offset));
+    Iosb->Status = STATUS_SUCCESS;
+    Iosb->Information = Length;
+    return STATUS_SUCCESS;
+}
+
 static
 __attribute__((noreturn))
 void
@@ -645,6 +743,31 @@ LxCopyFromUser(PVOID Destination, ULONG64 Source, SIZE_T Length)
             break;
     }
     return NT_SUCCESS(Status) ? 0 : -LX_EFAULT;
+}
+
+LIST_ENTRY LxProcessList = { &LxProcessList, &LxProcessList };
+FAST_MUTEX LxProcessListLock;
+
+VOID
+LxProcessReference(PLX_PROCESS Process)
+{
+}
+
+VOID
+LxProcessDereference(PLX_PROCESS Process)
+{
+}
+
+HANDLE
+PsGetCurrentProcessId(VOID)
+{
+    return NULL;
+}
+
+NTSTATUS
+PsLookupProcessByProcessId(HANDLE ProcessId, PEPROCESS *Process)
+{
+    return STATUS_INVALID_PARAMETER;
 }
 
 BOOLEAN
