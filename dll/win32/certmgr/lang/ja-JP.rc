@@ -1,0 +1,25 @@
+/*
+ * PROJECT:     LiberNT Certificates Snap-in
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_SNAPIN_NAME          "証明書"
+    IDS_SNAPIN_DESCRIPTION   "ユーザー アカウント用に保存されている証明書を参照します。"
+    IDS_SNAPIN_PROVIDER      "LiberNT"
+    IDS_ROOT_CURRENT_USER    "証明書 - 現在のユーザー"
+    IDS_COLUMN_ISSUED_TO     "発行先"
+    IDS_COLUMN_ISSUED_BY     "発行者"
+    IDS_COLUMN_EXPIRATION    "有効期限"
+    IDS_COLUMN_PURPOSES      "目的"
+    IDS_COLUMN_FRIENDLY_NAME "フレンドリ名"
+    IDS_COLUMN_OBJECT_TYPE   "オブジェクトの種類"
+    IDS_FOLDER_CERTIFICATES  "証明書"
+    IDS_PURPOSES_ALL         "<すべて>"
+    IDS_FRIENDLY_NAME_NONE   "<なし>"
+END

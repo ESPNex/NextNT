@@ -1,0 +1,184 @@
+/*
+ * PROJECT:     LiberNT Driver Installer
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDD_FRAME DIALOGEX 0, 0, 420, 240
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "LiberNT ドライバー インストーラー"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "", IDC_FRAME_TITLE, 120, 10, 290, 14, SS_NOPREFIX
+    LTEXT "", IDC_FRAME_SUBTITLE, 120, 26, 290, 18, SS_NOPREFIX
+    LTEXT "", IDC_FRAME_PAGE, 120, 48, 290, 160, NOT WS_VISIBLE
+    CONTROL "", -1, "Static", SS_ETCHEDHORZ, 120, 212, 300, 1
+    PUSHBUTTON "戻る(&B)", IDC_FRAME_BACK, 250, 219, 50, 14
+    DEFPUSHBUTTON "次へ(&N)", IDC_FRAME_NEXT, 305, 219, 50, 14
+    PUSHBUTTON "キャンセル", IDCANCEL, 360, 219, 50, 14
+END
+
+IDD_DEVICES DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "", IDC_DEVICES_STATUS, 0, 0, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+    CONTROL "", IDC_DEVICES, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 0, 12, 290, 116
+    LTEXT "", IDC_DEVICES_NOTE, 0, 132, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+    PUSHBUTTON "詳細(&D)", IDC_DETAILS, 0, 146, 56, 14
+    PUSHBUTTON "すべて選択(&A)", IDC_SELECT_ALL, 60, 146, 56, 14
+    PUSHBUTTON "すべてクリア(&C)", IDC_SELECT_NONE, 120, 146, 56, 14
+    PUSHBUTTON "履歴(&H)", IDC_HISTORY, 234, 146, 56, 14
+END
+
+IDD_PROGRESS DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "", IDC_PROGRESS_TEXT, 0, 44, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT "", IDC_PROGRESS_DETAIL, 0, 58, 290, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+END
+
+IDD_DONE DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL "", IDC_RESULTS, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 0, 0, 290, 136
+    LTEXT "", IDC_DONE_NOTE, 0, 140, 290, 18, SS_NOPREFIX
+END
+
+IDD_HISTORY DIALOGEX 0, 0, 290, 160
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL "", IDC_HISTORY_LIST, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 0, 0, 290, 140
+    PUSHBUTTON "ロールバック(&R)", IDC_ROLLBACK, 0, 146, 56, 14
+    PUSHBUTTON "ドライバーの削除(&V)", IDC_REMOVE, 60, 146, 64, 14
+    LTEXT "", IDC_HISTORY_NOTE, 130, 149, 160, 9, SS_NOPREFIX | SS_ENDELLIPSIS
+END
+
+IDD_DETAILS DIALOGEX 0, 0, 300, 200
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "デバイスの詳細"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    EDITTEXT IDC_DETAILS_TEXT, 7, 7, 286, 166, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | ES_AUTOHSCROLL | WS_VSCROLL | WS_HSCROLL
+    DEFPUSHBUTTON "OK", IDOK, 243, 179, 50, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CAPTION "LiberNT ドライバー インストーラー"
+    IDS_BACK "戻る(&B)"
+    IDS_NEXT "次へ(&N)"
+    IDS_CANCEL "キャンセル"
+    IDS_INSTALL "インストール(&I)"
+    IDS_FINISH "完了(&F)"
+    IDS_DEVICES_TITLE "この PC のドライバー"
+    IDS_DEVICES_SUBTITLE "ドライバーがないか、サードパーティ製ドライバーを使用していて、Microsoft Update カタログに新しいドライバーがあるデバイスです。インストールするデバイスにチェックを付けてください。"
+    IDS_INSTALL_TITLE "ドライバーをインストールしています"
+    IDS_INSTALL_SUBTITLE "ドライバーのインストールが完了するまでお待ちください。"
+    IDS_DONE_TITLE "完了しました"
+    IDS_DONE_SUBTITLE "各デバイスの結果です。"
+    IDS_HISTORY_TITLE "カタログからインストールされたドライバー"
+    IDS_HISTORY_SUBTITLE "LiberNT ドライバー インストーラーがこの PC に加えたすべての変更 (新しい順)。"
+    IDS_COL_DEVICE "デバイス"
+    IDS_COL_VERSION "バージョン"
+    IDS_COL_DRIVER "ドライバー"
+    IDS_COL_RESULT "結果"
+    IDS_COL_DATE "日付"
+    IDS_COL_ACTION "操作"
+    IDS_DEVICES_NOTE "デバイス %1 個、ドライバーなし %2 個、チェック済み %3 個。%4 用のドライバーを検索します。"
+    IDS_INSTALL_START "%1 個のドライバーをインストールしています"
+    IDS_INSTALL_STEP "ドライバー %1/%2: %3"
+    IDS_INSTALL_CANCELLING "現在の手順の完了後に停止します..."
+    IDS_PROGRESS_QUERY "Microsoft Update カタログにパッケージを問い合わせています"
+    IDS_PROGRESS_DOWNLOAD "%1 をダウンロードしています (%2 KB)"
+    IDS_PROGRESS_UNPACK "%1 を展開しています"
+    IDS_PROGRESS_VERIFY "パッケージの署名を確認しています"
+    IDS_PROGRESS_CHECK "ドライバーがこのデバイスに適合するか確認しています"
+    IDS_PROGRESS_INSTALL "%1 のドライバーをインストールしています"
+    IDS_RESULT_INSTALLED "インストール済み"
+    IDS_RESULT_REBOOT "インストール済み (再起動が必要)"
+    IDS_RESULT_SKIPPED "既にドライバーがあります"
+    IDS_RESULT_FILE "%1 (%2)"
+    IDS_DONE_FAILED "%1 個のドライバーをインストールできませんでした。"
+    IDS_DONE_OK "ドライバーがインストールされました。"
+    IDS_DONE_REBOOT "インストールを完了するには PC を再起動してください。"
+    IDS_DONE_CANCELLED "インストールは停止されました。"
+    IDS_ACTION_INSTALL "インストール"
+    IDS_ACTION_ROLLBACK "ロールバック"
+    IDS_ACTION_REMOVE "削除"
+    IDS_ROLLBACK_CONFIRM "%1 が以前に使用していたドライバー (バージョン %2) に戻しますか?"
+    IDS_REMOVE_CONFIRM "%1 からカタログのドライバーを削除しますか? その後、LiberNT はこのデバイス用に残っている最適なドライバーをインストールします。"
+    IDS_ACTION_DONE "完了しました。"
+    IDS_ACTION_DONE_REBOOT "完了しました。完了するには PC を再起動してください。"
+    IDS_ACTION_FAILED "変更に失敗しました: %1"
+    IDS_HISTORY_WORKING "処理中..."
+    IDS_ADMIN_REQUIRED "ドライバーのインストールと削除には管理者権限が必要です。"
+    IDS_ADMIN_RESTART "LiberNT ドライバー インストーラーを管理者として再起動しますか?"
+    IDS_WORKER_FAILED "ワーカー スレッドを開始できません: %1"
+    IDS_ERROR_CHECKSUM "ダウンロードした内容が、カタログで公開されているチェックサムと一致しません。"
+    IDS_ERROR_SERVER "Microsoft Update カタログから予期しない応答が返されました。"
+    IDS_ERROR_CANCELLED "キャンセルされました。"
+    IDS_ERROR_NOT_BETTER "既にインストールされているドライバーの方がこのデバイスに適合しています。"
+    IDS_ERROR_NO_COMPAT "このパッケージには、この PC 上のこのデバイス用のドライバーがありません。"
+    IDS_ERROR_FORMAT "Microsoft Update カタログのページが変更されたため読み取れません。LiberNT ドライバー インストーラーの更新が必要です。"
+    IDS_ERROR_PROGRAM "このカタログ パッケージはドライバー パッケージではなくプログラムです。信頼できる場合はご自身で実行してください。"
+    IDS_ERROR_ALREADY "このドライバーは既にインストールされています。"
+    IDS_ERROR_NOT_NEWER "インストールされているドライバーの方が新しいです。"
+    IDS_ERROR_NOT_COVERED "パッケージ内のファイルが署名の対象外です。"
+    IDS_ERROR_NOT_IN_USE "デバイスはこのカタログのドライバーを使用しなくなりました。"
+    IDS_ERROR_NO_SIGNATURE "パッケージに署名がありません。"
+    IDS_ERROR_OFFLINE "Microsoft Update カタログに接続できません。この PC がインターネットに接続されていることを確認してください。"
+    IDS_ERROR_SIGNATURE "パッケージの署名は信頼されていません: %1"
+    IDS_ERROR_CODE "エラー %1"
+    IDS_STATUS_MISSING "ドライバーがありません"
+    IDS_STATUS_PROBLEM "問題コード %1"
+    IDS_STATUS_WORKING "正常に動作"
+    IDS_STATUS_STOPPED "開始されていません"
+    IDS_SOURCE_CATALOG "Microsoft Update カタログ"
+    IDS_SOURCE_THIRD_PARTY "サードパーティ"
+    IDS_DETAIL_NAME "名前: %1"
+    IDS_DETAIL_STATUS "状態: %1"
+    IDS_DETAIL_CLASS "クラス: %1"
+    IDS_DETAIL_INSTANCE "インスタンス ID: %1"
+    IDS_DETAIL_DRIVER "ドライバー: %1 %2 %3"
+    IDS_DETAIL_INF "INF: %1"
+    IDS_DETAIL_SOURCE "ソース: %1"
+    IDS_DETAIL_SERVICE "サービス: %1"
+    IDS_DETAIL_HARDWARE "ハードウェア ID:"
+    IDS_DETAIL_COMPATIBLE "互換 ID:"
+    IDS_DETAIL_QUERIES "カタログで検索した ID:"
+    IDS_DETAIL_NONE "なし"
+    IDS_NOTE_NOT_SEARCHABLE "検索できません"
+    IDS_NOTE_NOT_FOUND "カタログにありません"
+    IDS_NOTE_FAILED "検索に失敗しました: %1"
+    IDS_NOTE_AVAILABLE "利用可能なドライバー: %1"
+    IDS_NOTE_NEWER "新しいドライバー: %1"
+    IDS_NOTE_CURRENT "最新"
+    IDS_CLI_LIST_ERROR "デバイスを一覧表示できません: %1"
+    IDS_CLI_LIST_TOTAL "デバイス %1 個、アーキテクチャ %2"
+    IDS_CLI_MISSING_TOTAL "ドライバーのないデバイス %1 個"
+    IDS_CLI_ALREADY "%1: 既にドライバーがあります"
+    IDS_CLI_INSTALLING "%1 (%2): インストールしています"
+    IDS_CLI_INSTALLED "%1: %2 をインストールしました"
+    IDS_CLI_INSTALLED_REBOOT "%1: %2 をインストールしました (再起動が必要)"
+    IDS_CLI_FAILED "%1: %2"
+    IDS_CLI_SUMMARY "インストール済み %1、カタログにない %2、失敗 %3。"
+    IDS_CLI_RESTART "再起動が必要です。"
+    IDS_CLI_NO_DEVICE "インスタンス ID %1 の接続されたデバイスはありません。"
+    IDS_CLI_USAGE "使用法: lntdrv [/list | /scan | /installall | /search <instance id> | /install <instance id> [update id]]"
+    IDS_NOTE_OTHER_ARCH "カタログに %1 用のドライバーはありません。%2 用のドライバーのみがあります"
+    IDS_NOTE_OTHER_WINDOWS "カタログには他の Windows バージョン用のドライバーのみがあります"
+    IDS_ERROR_OTHER_ARCH "カタログにはこの PC のアーキテクチャ用のドライバーがありません。"
+    IDS_CLI_GROUP "%1 (%2、デバイス %3 個)"
+    IDS_DONE_NOTHING "ドライバーはインストールされませんでした。"
+    IDS_SCAN_PROGRESS "Microsoft Update カタログを検索しています... デバイス %1/%2"
+    IDS_SCAN_FOUND "%1 個のデバイスで新しいドライバーが見つかりました。"
+    IDS_SCAN_NONE "Microsoft Update カタログには、この PC にインストールする新しいものはありません。"
+    IDS_RESULT_UNSIGNED "署名は検証されていません"
+END

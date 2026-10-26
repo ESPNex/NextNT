@@ -1,0 +1,176 @@
+/*
+ * PROJECT:     LiberNT Disk Management
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDD_NEWVOLUME DIALOGEX 0, 0, 360, 200
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "新しいボリューム"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "", IDC_SZ_TITLE, 12, 10, 336, 12
+    LTEXT "新しいボリュームで使用する空き領域のサイズを選択してください。", -1, 12, 24, 336, 10
+    CONTROL "", IDC_SZ_SLIDER, TRACKBAR_CLASSA, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 8, 42, 344, 20
+    LTEXT "", IDC_SZ_SUMMARY, 12, 74, 336, 10
+    LTEXT "サイズ (MB)(&S):", -1, 12, 94, 74, 10
+    EDITTEXT IDC_SZ_SIZE, 90, 92, 80, 14, ES_NUMBER
+    CONTROL "", IDC_SZ_SPIN, UPDOWN_CLASSA, UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT "", IDC_SZ_RANGE, 178, 94, 170, 10
+    LTEXT "名前(&N):", -1, 12, 114, 74, 10
+    EDITTEXT IDC_SZ_NAME, 90, 112, 150, 14, ES_AUTOHSCROLL
+    LTEXT "フォーマット(&F):", -1, 12, 134, 74, 10
+    COMBOBOX IDC_SZ_FS, 90, 132, 100, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "ドライブ文字(&D):", -1, 12, 154, 74, 10
+    COMBOBOX IDC_SZ_LETTER, 90, 152, 100, 120, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON "追加", IDOK, 232, 178, 58, 14
+    PUSHBUTTON "キャンセル", IDCANCEL, 294, 178, 58, 14
+END
+
+IDD_RESIZE DIALOGEX 0, 0, 360, 136
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "ボリュームのサイズ変更"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "", IDC_SZ_TITLE, 12, 10, 336, 12
+    LTEXT "ボリュームを縮小するか、後ろにある空き領域まで拡張します。", -1, 12, 24, 336, 10
+    CONTROL "", IDC_SZ_SLIDER, TRACKBAR_CLASSA, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 8, 42, 344, 20
+    LTEXT "", IDC_SZ_SUMMARY, 12, 74, 336, 10
+    LTEXT "サイズ (MB)(&S):", -1, 12, 94, 74, 10
+    EDITTEXT IDC_SZ_SIZE, 90, 92, 80, 14, ES_NUMBER
+    CONTROL "", IDC_SZ_SPIN, UPDOWN_CLASSA, UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT "", IDC_SZ_RANGE, 178, 94, 170, 10
+    DEFPUSHBUTTON "サイズ変更", IDOK, 232, 114, 58, 14
+    PUSHBUTTON "キャンセル", IDCANCEL, 294, 114, 58, 14
+END
+
+IDD_ERASE DIALOGEX 0, 0, 300, 150
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "消去"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "", IDC_ER_TITLE, 12, 10, 276, 12
+    LTEXT "消去すると保存されているすべてのデータが削除され、元に戻すことはできません。名前を入力し、フォーマットを選択してください。", -1, 12, 26, 276, 18
+    LTEXT "名前(&N):", -1, 12, 54, 64, 10
+    EDITTEXT IDC_ER_NAME, 80, 52, 150, 14, ES_AUTOHSCROLL
+    LTEXT "フォーマット(&F):", -1, 12, 74, 64, 10
+    COMBOBOX IDC_ER_FS, 80, 72, 100, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "方式(&S):", IDC_ER_SCHEME_LABEL, 12, 94, 64, 10
+    COMBOBOX IDC_ER_SCHEME, 80, 92, 150, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX "クイック消去(&Q)", IDC_ER_QUICK, 80, 94, 150, 10
+    DEFPUSHBUTTON "消去", IDOK, 174, 126, 58, 14
+    PUSHBUTTON "キャンセル", IDCANCEL, 236, 126, 58, 14
+END
+
+IDD_WORK DIALOGEX 0, 0, 260, 64
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION ""
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "", IDC_WORK_TEXT, 12, 10, 236, 10
+    LTEXT "", IDC_WORK_STATUS, 12, 24, 236, 10
+    CONTROL "", IDC_WORK_PROGRESS, PROGRESS_CLASSA, PBS_MARQUEE, 12, 40, 236, 10
+END
+
+IDD_CHECK DIALOGEX 0, 0, 320, 224
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION ""
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "", IDC_WORK_TEXT, 12, 10, 296, 10
+    LTEXT "", IDC_WORK_STATUS, 12, 24, 296, 10
+    CONTROL "", IDC_WORK_PROGRESS, PROGRESS_CLASSA, PBS_MARQUEE, 12, 38, 296, 10
+    EDITTEXT IDC_WORK_OUTPUT, 12, 54, 296, 140, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
+    PUSHBUTTON "キャンセル", IDCANCEL, 250, 202, 58, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_APPTITLE "ディスクの管理"
+    IDS_CAT_INTERNAL "内部"
+    IDS_CAT_EXTERNAL "外部"
+    IDS_CAT_IMAGE "ディスク イメージ"
+    IDS_DISK_N "ディスク %lu"
+    IDS_UNKNOWN "不明"
+    IDS_UNTITLED "名称未設定"
+    IDS_NONE "なし"
+    IDS_RAW "RAW"
+    IDS_KIND_DATA "ベーシック データ パーティション"
+    IDS_KIND_PRIMARY "プライマリ パーティション"
+    IDS_KIND_ESP "EFI システム パーティション"
+    IDS_KIND_MSR "Microsoft 予約済み"
+    IDS_KIND_RECOVERY "回復パーティション"
+    IDS_KIND_OTHER "パーティション"
+    IDS_KIND_FREE "未割り当て"
+    IDS_SCHEME_GPT "GUID パーティション テーブル"
+    IDS_SCHEME_MBR "マスター ブート レコード"
+    IDS_SCHEME_RAW "初期化されていません"
+    IDS_SYSTEM_VOLUME "LiberNT システム ボリューム"
+    IDS_BOOT_PARTITION "ブート マネージャーで使用"
+    IDS_CAPTION_PARTITIONS "%lu 個のパーティション"
+    IDS_LOCATION "ディスク %lu、パーティション %lu"
+    IDS_USAGE "%s 使用 • %s 空き"
+    IDS_COL_NAME "名前"
+    IDS_COL_TYPE "種類"
+    IDS_COL_FS "ファイル システム"
+    IDS_COL_CAPACITY "容量"
+    IDS_COL_FREE "空き"
+    IDS_INFO_UNALLOCATED "未割り当て:"
+    IDS_INFO_SECTOR "セクター サイズ:"
+    IDS_INFO_DEVICE "デバイス:"
+    IDS_INFO_DISKID "ディスク識別子:"
+    IDS_INFO_SERIAL "シリアル番号:"
+    IDS_INFO_MOUNT "マウント ポイント:"
+    IDS_INFO_OFFSET "オフセット:"
+    IDS_INFO_VOLSERIAL "ボリューム シリアル番号:"
+    IDS_TB_NEW "新規(&N)"
+    IDS_TB_DELETE "削除(&D)"
+    IDS_TB_CHECK "チェック(&K)"
+    IDS_TB_RESIZE "サイズ変更(&R)"
+    IDS_TB_ERASE "消去(&E)"
+    IDS_TB_MOUNT "マウント(&M)"
+    IDS_TB_UNMOUNT "マウント解除(&M)"
+    IDS_TB_INFO "情報(&I)"
+    IDS_TB_REFRESH "最新の情報に更新(&F)"
+    IDS_NEW_VOLUME "新しいボリューム"
+    IDS_NEW_TITLE "%s にボリュームを追加"
+    IDS_RESIZE_TITLE "%s のサイズ変更"
+    IDS_SIZE_RANGE "%s から %s の間"
+    IDS_RESIZE_GROW "%s (%s 拡張)"
+    IDS_RESIZE_SHRINK "%s (%s 解放)"
+    IDS_LETTER_AUTO "自動"
+    IDS_LETTER_NONE "なし"
+    IDS_DELETE_MAIN "%s を削除しますか?"
+    IDS_DELETE_CONTENT "パーティションはディスクから削除され、保存されているすべてのデータが失われます。"
+    IDS_ERASE_TITLE "%s の消去"
+    IDS_ERASE_MAIN "%s を消去しますか?"
+    IDS_ERASE_CONTENT "このボリュームに保存されているすべてのデータが失われます。"
+    IDS_ERASE_DISK_CONTENT "このディスク上のすべてのパーティションが削除され、保存されているすべてのデータが失われます。"
+    IDS_WORK_CREATE "ボリュームを作成しています"
+    IDS_WORK_ERASE "消去しています"
+    IDS_WORK_CHECK "ボリュームをチェックしています"
+    IDS_WORK_SHRINK "ボリュームを縮小しています"
+    IDS_WORK_EXTEND "ボリュームを拡張しています"
+    IDS_STATUS_PARTITION "パーティション テーブルを書き込んでいます..."
+    IDS_STATUS_WAITING "ボリュームが表示されるのを待っています..."
+    IDS_STATUS_FORMATTING "フォーマットしています..."
+    IDS_STATUS_ERASING "ディスクを消去しています..."
+    IDS_STATUS_SHRINKING "データを移動して縮小しています..."
+    IDS_STATUS_EXTENDING "拡張しています..."
+    IDS_STATUS_DONE "完了しました。"
+    IDS_STATUS_FAILED "操作に失敗しました。"
+    IDS_ERR_PARTITION "パーティション テーブルを更新できませんでした。"
+    IDS_ERR_NOVOLUME "新しいボリュームが表示されませんでした。"
+    IDS_ERR_FORMAT "ボリュームをフォーマットできませんでした。"
+    IDS_ERR_LETTER "ドライブ文字を変更できませんでした。"
+    IDS_ERR_CHECK "チェックでボリュームに問題が見つかりました。"
+    IDS_ERR_RESIZE "ボリュームのサイズを変更できませんでした。"
+    IDS_ERR_NOROOM "このボリュームのサイズは変更できません: 解放できる領域がなく、後ろにも空き領域がありません。"
+    IDS_ERR_INUSE "ボリュームは使用中です。使用しているプログラムを閉じてから、もう一度実行してください。"
+    IDS_ERR_BUSY "キャンセルされたチェックはまだ停止中です。しばらくしてからもう一度実行してください。"
+    IDS_ERR_READONLY "このボリュームは読み取り専用のため、サイズを変更できません。休止状態にしたか高速スタートアップでシャットダウンした Windows がインストールされている場合は、Windows を起動して完全にシャットダウンしてから、もう一度実行してください。"
+    IDS_CLOSE "閉じる"
+END

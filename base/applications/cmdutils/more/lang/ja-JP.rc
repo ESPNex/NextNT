@@ -1,0 +1,59 @@
+/*
+ * PROJECT:     LiberNT more
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "データを 1 画面ずつ表示します。\n\
+\n\
+MORE [/E [options]] < [drive:][path]filename\n\
+command | MORE [/E [options]]\n\
+\n\
+    [drive:][path]filename  内容を表示するファイルです。\n\
+    command                 出力を表示するコマンドです。\n\
+\n\
+拡張機能が有効な場合は、次の形式がサポートされます:\n\
+MORE [/E] [options] [files]\n\
+\n\
+オプション:\n\
+    /E       拡張機能を有効にします。\n\
+    拡張機能の既定の状態は、CMD.EXE の既定のレジストリ設定で\n\
+    制御されます。これらの設定を変更する方法の詳細については、\n\
+    CMD.EXE のヘルプの ""コマンド拡張機能"" のセクションを参照してください。\n\
+\n\
+    拡張機能が有効な場合は、次のオプションを使用できます:\n\
+    /C       ページを表示する前に画面を消去します。\n\
+    /P       改ページ文字を展開します。\n\
+    /S       連続する空白行を 1 行にまとめます。\n\
+    /Tn      タブを n 個の空白に展開します (既定: 8)。\n\
+\n\
+    これらのオプションは MORE 環境変数で指定できます。\n\
+\n\
+    +n       最初のファイルを n 行目から表示します。\n\
+    files    表示するファイルの一覧 (空白で区切ります)。\n\
+\n\
+拡張機能が有効な場合は、""-- 続く --"" プロンプトで次のコマンドを\n\
+使用できます:\n\
+\n\
+    P n      次の n 行を表示します。\n\
+    S n      次の n 行をスキップします。\n\
+    F        次のファイルを表示します。\n\
+    Q        終了します。\n\
+    =        行番号を表示します。\n\
+    ?        ヘルプ行を表示します。\n\
+    <Space>  次のページを表示します。\n\
+    <Enter>  次の行を表示します。\n"
+
+    IDS_BAD_FLAG "無効な引数です - '%s'\n"
+    IDS_FILE_ACCESS "ファイル %s にアクセスできません。\n"
+    IDS_CONTINUE_PROMPT  "-- 続く%1%2%3 --%4"
+    IDS_CONTINUE_PERCENT " (%d%%)"
+    IDS_CONTINUE_LINE_AT " [行: %d]"
+    IDS_CONTINUE_OPTIONS " [オプション: psfq=<Space><Enter>]"
+    IDS_CONTINUE_LINES   " 行数: "
+END

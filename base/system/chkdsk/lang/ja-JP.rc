@@ -1,0 +1,39 @@
+/*
+ * PROJECT:     LiberNT chkdsk
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\n\
+使用法: %s [drive:] [-F] [-V] [-R] [-C]\n\n\
+[drive:]    チェックするドライブを指定します。\n\
+-F          ディスクのエラーを修復します。\n\
+-V          ディスク上のすべてのファイルのフル パスを表示します。\n\
+-R          不良セクターを見つけ、読み取り可能な情報を回復します。\n\
+-C          ドライブがダーティな場合にのみチェックします。\n\
+\n"
+
+    IDS_PERCENT_COMPL "%d パーセント完了しました。\r"
+    IDS_FILE_SYSTEM "ファイル システムの種類は %s です (ボリューム %s)。\n"
+    IDS_ABOUT "\n\
+Chkdskx v1.0.1 by Mark Russinovich\n\
+Systems Internals - http://www.sysinternals.com\n\
+ReactOS adaptation 1999 by Emanuele Aliberti\n\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_VOLUME_IN_USE "ボリュームは使用中のため、ロックできません\n"
+    IDS_CHKDSK_FAIL "Chkdsk を正常に完了できませんでした。エラー: 0x%08X。\n"
+    IDS_NO_ENTRY_POINT "FMIFS のエントリ ポイントが見つかりませんでした。\n\n"
+    IDS_BAD_ARGUMENT "不明な引数です: %s\n"
+    IDS_NO_CURRENT_DIR "現在のディレクトリを取得できませんでした。エラー コード: "
+    IDS_NO_QUERY_VOL "ボリュームを照会できませんでした。エラー コード: "
+    IDS_VOLUME_IN_USE_PROC "ボリュームが別のプロセスで使用されているため、Chkdsk を実行できません。\n\n"
+    IDS_RUN_AGAIN "chkdsk をもう一度実行すると修復できる可能性があります。\n\n"
+END

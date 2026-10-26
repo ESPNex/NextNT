@@ -1,0 +1,75 @@
+/*
+ * PROJECT:     LiberNT eventcreate
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "使用法を表示するには ""EVENTCREATE /?"" と入力してください。\n"
+    IDS_HELP "\n\
+EVENTCREATE [/S computer [/U [domain\\]user [/P password]]] /ID EventID\n\
+            {[/L logname] | [/SO source]} /T type /C category /D description\n\
+\n\
+説明:\n\
+    このツールを使用すると、管理者は指定されたイベント ログに\n\
+    カスタム イベントを作成できます。\n\
+\n\
+パラメーター:\n\
+    /S  computer          接続先のリモート コンピューターを指定します。\n\
+\n\
+    /U  [domain\\]user     コマンドを実行するユーザー アカウントを\n\
+                          指定します。\n\
+\n\
+    /P  [password]        ユーザー アカウントのパスワードを指定します。\n\
+                          省略した場合は入力を求められます。\n\
+\n\
+    /L  logname           イベントを作成するログの名前を指定します。\n\
+                          有効な名前は次のとおりです:\n\
+                          Application、System、Security\n\
+                          (Security は SYSTEM アカウント専用です)。\n\
+\n\
+    /SO source            イベントに使用するソース名を指定します\n\
+                          (指定しない場合、既定のソース名は\n\
+                           'eventcreate' になります)。\n\
+                          有効なソースには任意の文字列を指定でき、\n\
+                          イベントを生成するアプリケーションまたは\n\
+                          コンポーネントを表す必要があります。\n\
+\n\
+    /T  type              作成するイベントの種類を指定します。\n\
+                          有効な種類は SUCCESS、ERROR、WARNING、\n\
+                          INFORMATION です。\n\
+\n\
+    /C  category          イベントのカテゴリ (整数) を指定します。\n\
+\n\
+    /ID EventID           イベントのイベント ID を指定します。0 から 65535 の\n\
+                          整数である必要があります。\n\
+\n\
+    /D  description       新しく作成するイベントの説明を指定します。\n\
+\n\
+    /?                    このヘルプ画面を表示します。\n\
+"
+    IDS_INVALIDSWITCH "無効なスイッチです - '%s'。\n"
+    IDS_BADSYNTAX_0 "コマンド ラインの構文が正しくありません。\n"
+    IDS_BADSYNTAX_1 "コマンド ラインの構文が正しくありません。オプション '%s' には値が必要です。\n"
+    IDS_BADSYNTAX_2 "コマンド ラインの構文が正しくありません。オプション '%s' の値を空にすることはできません。\n"
+    IDS_BADSYNTAX_3 "コマンド ラインの構文が正しくありません。値 '%s' はオプション '%s' に使用できません。\n"
+    IDS_BADSYNTAX_4 "コマンド ラインの構文が正しくありません。オプション '%s' に値は指定できません。\n"
+    IDS_BADSYNTAX_5 "コマンド ラインの構文が正しくありません。オプション '%s' は %lu 回を超えて指定できません。\n"
+    IDS_BADSYNTAX_6 "コマンド ラインの構文が正しくありません。必須オプション '%s' がありません。\n"
+    // IDS_BADSYNTAX_7 "コマンド ラインの構文が正しくありません。オプション '%s' の値が許容範囲外です。\n"
+    IDS_BADSYNTAX_7 "コマンド ラインの構文が正しくありません。オプション '%s' の値は %d から %d の間である必要があります。\n"
+
+    IDS_LOG_NOT_FOUND "ログ '%s' は存在しません。イベントを作成できません。\n"
+    IDS_SOURCE_NOCREATE "ログ名が指定されていないため、新しいソースを作成できません。\n/L スイッチを使用してログ名を指定してください。\n"
+    IDS_SOURCE_EXISTS "ソースはログ '%s' に既に存在するため、重複して作成できません。\n"
+    IDS_SOURCE_NOT_CUSTOM "Source パラメーターは、カスタム スクリプトやアプリケーション\n(インストールされたアプリケーションではありません) を識別するために使用されます。\n"
+
+    IDS_SUCCESS_1   "操作は成功しました: 種類 '%s' のイベントがログ '%s' に作成されました。\n"
+    IDS_SUCCESS_2   "操作は成功しました: 種類 '%s' のイベントがソース '%s' で作成されました。\n"
+    IDS_SUCCESS_3   "操作は成功しました: 種類 '%s' のイベントが\nログ '%s' にソース '%s' で作成されました。\n"
+    IDS_SWITCH_UNIMPLEMENTED "オプション '%s' は現在サポートされていません。ご不便をおかけして申し訳ありません。\n"
+END

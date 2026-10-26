@@ -1,0 +1,79 @@
+/*
+ * PROJECT:     LiberNT msutb.dll
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_OK               "OK"
+    IDS_CANCEL           "キャンセル"
+    IDS_ABORT            "中止(&A)"
+    IDS_RETRY            "再試行(&R)"
+    IDS_IGNORE           "無視(&I)"
+    IDS_YES              "はい(&Y)"
+    IDS_NO               "いいえ(&N)"
+
+    IDS_SETTINGS         "設定(&E)..."
+    IDS_RESTORELANGBAR   "言語バーを元に戻す"
+    IDS_LANGUAGE         "言語"
+    IDS_LANGUAGEBUTTON   "言語ボタン"
+    IDS_TRANSPARENCY     "透明度(&T)"
+    IDS_TEXTLABELS       "テキスト ラベル(&T)"
+    IDS_MINIMIZE         "最小化(&M)"
+    IDS_CLOSELANGBAR     "言語バーを閉じる(&C)"
+    IDS_EXTRAICONS       "タスク バーの追加アイコン(&A)"
+    IDS_LANGUAGEBAR      "言語バー"
+    IDS_RESTORELANGBAR2  "言語バーを元に戻す(&R)"
+    IDS_MENUWND          "メニュー ウィンドウ"
+    IDS_VERTICAL         "縦(&V)"
+    IDS_ADJUSTLANGBAND   "言語バンドの位置を調整(&A)"
+    IDS_LEFTCLICK        "左クリック"
+END
+
+IDD_CLOSELANGBARNOBAND DIALOGEX 0, 0, 200, 105
+CAPTION "言語バー"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "言語バーを閉じました。\r\n\r\n後で言語バーを使用するには、[テキスト サービス] コントロール パネルにある [言語バーの設定] ダイアログで ""デスクトップ上に言語バーを表示する"" をオンにしてください。", -1, 5, 5, 190, 60
+    AUTOCHECKBOX "今後、このメッセージを表示しない(&D)", IDC_CLOSELANGBAR_CHECK, 5, 70, 145, 10
+    DEFPUSHBUTTON "OK", IDOK, 80, 85, 55, 15
+    PUSHBUTTON "キャンセル", IDCANCEL, 140, 85, 55, 15
+}
+
+IDD_CLOSELANGBAR DIALOGEX 0, 0, 200, 105
+CAPTION "言語バー"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "言語バーを閉じました。\r\n\r\n後で言語バーを使用するには、[地域と言語のオプション] コントロール パネルにある [言語バーの設定] ダイアログで ""デスクトップ上に言語バーを表示する"" をオンにしてください。", -1, 5, 5, 190, 60
+    AUTOCHECKBOX "今後、このメッセージを表示しない(&D)", IDC_CLOSELANGBAR_CHECK, 5, 70, 145, 10
+    DEFPUSHBUTTON "OK", IDOK, 80, 85, 55, 15
+    PUSHBUTTON "キャンセル", IDCANCEL, 140, 85, 55, 15
+}
+
+IDD_MINIMIZELANGBARNOBAND DIALOGEX 0, 0, 205, 124
+CAPTION "言語バー"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "言語バーを最小化しました。元に戻すには、(時計の近くにある) 言語バーのアイコンをクリックし、ポップアップ メニューから ""言語バーを元に戻す"" を選択してください。", -1, 5, 5, 190, 50
+    CONTROL IDB_BITMAP154, -1, "STATIC", SS_BITMAP, 72, 63, 60, 60, WS_EX_STATICEDGE
+    AUTOCHECKBOX "今後、このメッセージを表示しない", IDC_MINIMIZELANGBAR_CHECK, 5, 95, 142, 10
+    DEFPUSHBUTTON "OK", IDOK, 140, 105, 60, 15
+}
+
+IDD_MINIMIZELANGBAR DIALOGEX 0, 0, 205, 124
+CAPTION "言語バー"
+STYLE WS_POPUPWINDOW | WS_CAPTION | DS_MODALFRAME
+FONT 8, "MS Shell Dlg"
+{
+    LTEXT "言語バーを最小化しました。元に戻すには、(時計の近くにある) 言語バーのアイコンをクリックし、ポップアップ メニューから ""言語バーを元に戻す"" を選択してください。", -1, 5, 5, 190, 50
+    CONTROL IDB_BITMAP155, -1, "STATIC", SS_BITMAP, 53, 67, 60, 60, WS_EX_STATICEDGE
+    AUTOCHECKBOX "今後、このメッセージを表示しない", IDC_MINIMIZELANGBAR_CHECK, 5, 95, 142, 10
+    DEFPUSHBUTTON "OK", IDOK, 140, 105, 60, 15
+}

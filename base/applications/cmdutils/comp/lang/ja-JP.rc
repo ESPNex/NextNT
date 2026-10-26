@@ -1,0 +1,30 @@
+/*
+ * PROJECT:     LiberNT comp
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_HELP "2 つのファイルまたはファイルのセットの内容を比較します。\n\n\
+COMP [/L] [/A] [data1] [data2]\n\n\
+  data1      比較する 1 つ目のファイルの場所と名前を指定します。\n\
+  data2      比較する 2 つ目のファイルの場所と名前を指定します。\n\
+  /A         相違点を ASCII 文字で表示します (既定: 16 進数)。\n\
+  /L         相違点の行番号を表示します。\n"
+    IDS_INVALIDSWITCH "無効なスイッチです - /%c\n"
+    IDS_BADSYNTAX "コマンド ラインの構文が正しくありません\n"
+    IDS_FILEERROR "ファイルが見つからないか開けません: %s\n"
+    IDS_COMPARING "%s と %s を比較しています...\n"
+    IDS_FILESIZEERROR "ファイルのサイズを特定できません: %s\n"
+    IDS_SIZEDIFFERS "ファイルのサイズが異なります。\n"
+    IDS_READERROR "ファイルの読み取りエラーです。\n"
+    IDS_MISMATCHLINE "行 %d で比較エラーがあります\n"
+    IDS_MISMATCHOFFSET "オフセット 0x%X で比較エラーがあります\n"
+    IDS_ASCIIDIFF "ファイル%d = %c\n"
+    IDS_HEXADECIMALDIFF "ファイル%d = %X\n"
+    IDS_MATCH "ファイルの比較は正常に終了しました\n"
+END

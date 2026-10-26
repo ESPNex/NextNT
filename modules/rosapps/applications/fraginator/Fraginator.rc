@@ -59,6 +59,9 @@ END
 #ifdef LANGUAGE_FR_FR
     #include "lang/fr-FR.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/ja-JP.rc"
+#endif
 #ifdef LANGUAGE_NO_NO
     #include "lang/no-NO.rc"
 #endif

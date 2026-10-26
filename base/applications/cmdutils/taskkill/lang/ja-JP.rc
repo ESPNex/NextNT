@@ -1,0 +1,32 @@
+/*
+ * PROJECT:     LiberNT taskkill
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+{
+    STRING_USAGE, "使用法: taskkill [/?] [/f] [/im ProcessName | /pid ProcessID] [/t]\n"
+    STRING_INVALID_OPTION, "エラー: 不明または無効なコマンド ライン オプションが指定されました。\n"
+    STRING_INVALID_PARAM, "エラー: 無効なコマンド ライン パラメーターが指定されました。\n"
+    STRING_MISSING_OPTION, "エラー: /im または /pid のいずれかのオプションを指定する必要があります。\n"
+    STRING_MISSING_PARAM, "エラー: オプション %1 にはコマンド ライン パラメーターが必要です。\n"
+    STRING_MUTUAL_EXCLUSIVE, "エラー: オプション /im と /pid は同時に指定できません。\n"
+    STRING_CLOSE_PID_SEARCH, "PID %1!u! のプロセスのトップレベル ウィンドウに終了メッセージを送信しました。\n"
+    STRING_CLOSE_PROC_SRCH, "PID %2!u! のプロセス ""%1"" のトップレベル ウィンドウに終了メッセージを送信しました。\n"
+    STRING_TERM_PID_SEARCH, "PID %1!u! のプロセスは強制終了されました。\n"
+    STRING_TERM_PROC_SEARCH, "PID %2!u! のプロセス ""%1"" は強制終了されました。\n"
+    STRING_SEARCH_FAILED, "エラー: プロセス ""%1"" が見つかりませんでした。\n"
+    STRING_ENUM_FAILED, "エラー: プロセスの一覧を列挙できません。\n"
+    STRING_TERMINATE_FAILED, "エラー: プロセス ""%1"" を終了できません。\n"
+    STRING_SELF_TERMINATION, "エラー: プロセス自身の終了は許可されていません。\n"
+    // STRING_CLOSE_CHILD, "PID %2!u! の子である PID %1!u! のプロセスに終了シグナルを送信しました。\n"
+    STRING_CLOSE_CHILD, "PID %2!u! の子である PID %1!u! のプロセスのトップレベル ウィンドウに終了メッセージを送信しました。\n"
+    STRING_TERM_CHILD, "PID %1!u! のプロセス (PID %2!u! の子プロセス) は強制終了されました。\n"
+    STRING_TERM_CHILD_FAILED, "エラー: PID %2!u! の子である PID %1!u! のプロセスを終了できません。\n"
+    STRING_PARAM_TOO_MUCH, "エラー: 無効な構文です。'%1' オプションは '%2!d!' 回を超えて指定できません。\n"
+    STRING_INVALID_SYNTAX, "エラー: 無効な構文です。\n"
+}

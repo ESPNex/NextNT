@@ -1,0 +1,266 @@
+/*
+ * PROJECT:     LiberNT Management Console
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDM_CONSOLE_SMALL MENU
+BEGIN
+    POPUP "ファイル(&F)"
+    BEGIN
+        MENUITEM "新規作成(&N)\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "開く(&O)...\tCtrl+O", IDM_FILE_OPEN
+        MENUITEM SEPARATOR
+        MENUITEM "終了(&X)\tAlt+F4", IDM_FILE_EXIT
+    END
+    POPUP "ヘルプ(&H)"
+    BEGIN
+        MENUITEM "ReactOS 管理コンソールのバージョン情報(&A)", IDM_HELP_ABOUT_MMC
+    END
+END
+
+IDM_CONSOLE_LARGE MENU
+BEGIN
+    POPUP "ファイル(&F)"
+    BEGIN
+        MENUITEM "新規作成(&N)\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "開く(&O)...\tCtrl+O", IDM_FILE_OPEN
+        MENUITEM "上書き保存(&S)\tCtrl+S", IDM_FILE_SAVE
+        MENUITEM "名前を付けて保存(&A)...", IDM_FILE_SAVEAS
+        MENUITEM SEPARATOR
+        MENUITEM "スナップインの追加と削除...\tCtrl+M", IDM_FILE_ADD
+        MENUITEM "オプション...", IDM_FILE_OPTIONS
+        MENUITEM SEPARATOR
+        MENUITEM "終了(&X)\tAlt+F4", IDM_FILE_EXIT
+    END
+    POPUP "操作(&A)"
+    BEGIN
+        MENUITEM "ここから新しいウィンドウ(&W)", IDM_ACTION_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "名前の変更(&M)", IDM_ACTION_RENAME
+        MENUITEM "一覧のエクスポート(&L)", IDM_ACTION_EXPORT_LIST
+    END
+    POPUP "表示(&V)"
+    BEGIN
+        MENUITEM "列の追加と削除", IDM_VIEW_COLUMNS
+        MENUITEM SEPARATOR
+        MENUITEM "大きいアイコン", IDM_VIEW_LARGE_ICONS
+        MENUITEM "小さいアイコン", IDM_VIEW_SMALL_ICONS
+        MENUITEM "一覧", IDM_VIEW_LIST
+        MENUITEM "詳細", IDM_VIEW_DETAILS
+        MENUITEM SEPARATOR
+        MENUITEM "カスタマイズ...", IDM_VIEW_CUSTOMIZE
+    END
+    POPUP "お気に入り(&O)"
+    BEGIN
+        MENUITEM "お気に入りに追加(&A)...", IDM_FAVORITES_ADD
+        MENUITEM "お気に入りの整理(&O)...", IDM_FAVORITES_ORGANIZE
+    END
+    POPUP "ウィンドウ(&W)"
+    BEGIN
+        MENUITEM "新しいウィンドウ(&N)\tCtrl+W", IDM_WINDOWS_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "重ねて表示(&C)", IDM_WINDOWS_CASCADE
+        MENUITEM "上下に並べて表示(&T)", IDM_WINDOWS_TILE
+        MENUITEM "アイコンの整列(&I)", IDM_WINDOWS_ARRANGE
+    END
+    POPUP "ヘルプ(&H)"
+    BEGIN
+        MENUITEM "ヘルプ トピック(&H)", IDM_HELP_TOPICS
+        MENUITEM SEPARATOR
+        MENUITEM "ReactOS 管理コンソールのバージョン情報(&A)", IDM_HELP_ABOUT_MMC
+    END
+END
+
+IDM_TREEVIEW_CONTEXT MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "ここから新しいウィンドウ(&W)", IDM_ACTION_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "名前の変更(&M)", IDM_ACTION_RENAME
+    END
+
+    POPUP ""
+    BEGIN
+        POPUP "表示"
+        BEGIN
+            MENUITEM "列の追加と削除", IDM_VIEW_COLUMNS
+            MENUITEM SEPARATOR
+            MENUITEM "大きいアイコン", IDM_VIEW_LARGE_ICONS
+            MENUITEM "小さいアイコン", IDM_VIEW_SMALL_ICONS
+            MENUITEM "一覧", IDM_VIEW_LIST
+            MENUITEM "詳細", IDM_VIEW_DETAILS
+            MENUITEM SEPARATOR
+            MENUITEM "カスタマイズ...", IDM_VIEW_CUSTOMIZE
+        END
+        MENUITEM "ここから新しいウィンドウ(&W)", IDM_ACTION_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "名前の変更(&M)", IDM_ACTION_RENAME
+    END
+END
+
+IDD_DIALOG_ADD DIALOGEX 0, 0, 471, 274
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_CAPTION
+CAPTION "スナップインの追加と削除"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "コンピューターで利用できるスナップインからこのコンソール用のスナップインを選択し、選択したスナップインのセットを構成できます。拡張可能なスナップインについては、有効にする拡張機能を構成できます。", IDC_STATIC, 8, 7, 457, 23 
+    LTEXT           "利用できるスナップイン:", IDC_STATIC, 7, 30, 163, 8
+    CONTROL         "", IDC_ADD_LIST_AVAILABLE, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_EX_FULLROWSELECT | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP, 7, 40, 163, 157
+    PUSHBUTTON      "追加(&A) >", IDC_ADD_BUTTON_ADD, 175, 40, 72, 14
+    PUSHBUTTON      "< 削除(&R)", IDC_ADD_BUTTON_REMOVE, 175, 58, 72, 14
+    LTEXT           "親スナップイン:", IDC_ADD_TEXT_PARENT, 256, 30, 127, 8, WS_CHILD | NOT WS_VISIBLE
+    CONTROL         "", IDC_ADD_LIST_PARENT, "ComboBoxEx32", CBS_DROPDOWNLIST | WS_CHILD | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 256, 40, 127, 81
+    LTEXT           "選択されたスナップイン:", IDC_ADD_TEXT_SELECTED, 256, 30, 127, 8
+    CONTROL         "", IDC_ADD_LIST_SELECTED, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 256, 40, 127, 157
+    PUSHBUTTON      "上へ移動(&U)", IDC_ADD_BUTTON_UP, 392, 40, 72, 14
+    PUSHBUTTON      "下へ移動(&D)", IDC_ADD_BUTTON_DOWN, 392, 58, 72, 14
+
+    PUSHBUTTON      "詳細設定...", IDC_ADD_ADVANCED, 392, 183, 72, 14
+
+    LTEXT           "説明:", IDC_STATIC, 7, 204, 162, 8
+    EDITTEXT        IDC_ADD_DESCRIPTION, 7, 214, 457, 33, ES_READONLY | ES_MULTILINE | WS_VSCROLL | WS_BORDER
+    DEFPUSHBUTTON   "OK", IDOK, 357, 254, 50, 14
+    PUSHBUTTON      "キャンセル", IDCANCEL, 414, 254, 50, 14
+END
+
+IDD_CUSTOMIZE DIALOGEX 0, 0, 214, 223
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_CAPTION
+CAPTION "表示のカスタマイズ"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT "コンソール ウィンドウの項目を表示または非表示にするには、チェック ボックスをオンまたはオフにしてください。", IDC_STATIC, 7, 7, 194, 22
+    GROUPBOX "MMC", IDC_STATIC, 7, 31, 200, 111
+    AUTOCHECKBOX "コンソール ツリー(&C)", IDC_CUSTOMIZE_SCOPEPANE, 13, 42, 160, 10
+    AUTOCHECKBOX "標準メニュー ([操作] と [表示])(&E)", IDC_CUSTOMIZE_MENUS, 13, 56, 160, 10
+    AUTOCHECKBOX "標準ツール バー(&B)", IDC_CUSTOMIZE_TOOLBAR, 13, 70, 160, 10
+    AUTOCHECKBOX "ステータス バー(&S)", IDC_CUSTOMIZE_STATUSBAR, 13, 84, 160, 10
+    AUTOCHECKBOX "説明バー(&D)", IDC_CUSTOMIZE_DESCRIPTIONBAR, 13, 98, 160, 10
+    AUTOCHECKBOX "タスクパッドのナビゲーション タブ(&N)", IDC_CUSTOMIZE_TABS, 13, 112, 160, 10
+    AUTOCHECKBOX "操作ウィンドウ(&A)", IDC_CUSTOMIZE_ACTIONSPANE, 13, 126, 160, 10
+    GROUPBOX "スナップイン", IDC_STATIC, 7, 150, 200, 42
+    AUTOCHECKBOX "メニュー(&M)", IDC_CUSTOMIZE_SNAPIN_MENUS, 13, 162, 160, 10
+    AUTOCHECKBOX "ツール バー(&T)", IDC_CUSTOMIZE_SNAPIN_TOOLBARS, 13, 176, 160, 10
+    DEFPUSHBUTTON "OK", IDOK, 157, 200, 50, 14
+END
+
+IDD_CONSOLEOPTIONS DIALOGEX 0, 0, 252, 218
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_CAPTION
+CAPTION "コンソール"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    ICON "", IDC_CONSOLEICON, 7, 7, 20, 20
+    EDITTEXT IDC_CONSOLENAME, 37, 11, 134, 12, NOT WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL
+    PUSHBUTTON "アイコンの変更(&H)...", IDC_CONSOLESYMBOL, 177, 10, 68, 14
+
+    LTEXT "これらのオプションは、次に MMC を開いたときに有効になります。", IDC_STATIC, 7, 44, 238, 19
+    LTEXT "コンソール モード(&C):", IDC_STATIC, 7, 70, 56, 8
+    COMBOBOX IDC_CONSOLEMODE, 67, 68, 178, 130, CBS_DROPDOWNLIST | WS_GROUP
+    GROUPBOX "説明", IDC_STATIC, 7, 87, 238, 60
+    LTEXT "", IDC_CONSOLEDESCRIPTION, 14, 100, 224, 43
+
+    AUTOCHECKBOX "このコンソールに変更を保存しない(&S)", IDC_CONSOLENOSAVE, 13, 160, 160, 10
+    AUTOCHECKBOX "ユーザーによる表示のカスタマイズを許可する(&V)", IDC_CONSOLECUSTOM, 13, 172, 160, 10
+
+    DEFPUSHBUTTON   "OK",IDOK,140,197,50,14,WS_TABSTOP
+    PUSHBUTTON      "キャンセル",IDCANCEL,194,197,50,14,WS_TABSTOP
+END
+
+IDD_ABOUT_SNAPIN DIALOGEX 0, 0, 206, 127
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "情報"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_ABOUT_ICON, 9, 9, 20, 20
+    EDITTEXT IDC_ABOUT_INFO, 53, 9, 136, 31, NOT WS_BORDER | ES_LEFT | ES_MULTILINE | ES_READONLY | ES_WANTRETURN | WS_CHILD | WS_VISIBLE | WS_TABSTOP
+    EDITTEXT IDC_ABOUT_DESCRIPTION, 9, 52, 188, 51, NOT WS_BORDER | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_WANTRETURN | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON "OK", IDOK, 149, 106, 50, 14 
+END
+
+IDD_ADVANCED DIALOGEX 0, 0, 300, 73
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "詳細設定"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT "既定では、スナップインはコンソール ルートに追加されます。このチェック ボックスをオンにすると、親スナップインを選択できます。", IDC_STATIC, 7, 7, 277, 27
+    AUTOCHECKBOX "親スナップインの変更を有効にする", IDC_ADVANCED_CHECK, 7, 37, 278, 10 
+    DEFPUSHBUTTON "OK", IDOK, 189, 53, 50, 14
+    PUSHBUTTON "キャンセル", IDCANCEL, 243, 53, 50, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_APPTITLE "ReactOS 管理コンソール"
+    IDS_CONSOLETITLE "コンソール%1!u!"
+    IDS_MODULE "モジュール"
+    IDS_VENDOR "ベンダー"
+    IDS_ABOUTTITLE "バージョン情報"
+
+    IDS_CONSOLEROOT "コンソール ルート"
+
+    IDS_AUTHORMODE "作成者モード"
+    IDS_USERMODE_FULL "ユーザー モード - フル アクセス"
+    IDS_USERMODE_MULTIPLE "ユーザー モード - アクセス制限、複数ウィンドウ"
+    IDS_USERMODE_SINGLE "ユーザー モード - アクセス制限、単一ウィンドウ"
+
+    IDS_AUTHORMODE_DESC "スナップインの追加と削除、新しいウィンドウの作成、タスクパッド ビューの作成、ツリーのすべての部分の表示など、MMC のすべての機能へのフル アクセスをユーザーに許可します。"
+    IDS_USERMODE_FULL_DESC "ユーザーがスナップインを追加または削除したり、スナップイン コンソールのプロパティを変更したりできないようにします。ユーザーはツリーにフル アクセスできます。"
+    IDS_USERMODE_MULTIPLE_DESC "スナップイン コンソール ウィンドウに表示されていないツリーの領域にユーザーがアクセスできないようにします。"
+    IDS_USERMODE_SINGLE_DESC "スナップイン コンソールを単一ウィンドウ モードで開き、そのスナップイン コンソール ウィンドウに表示されていないツリーの領域にユーザーがアクセスできないようにします。"
+
+    IDS_ABOUT_VERSION "バージョン: "
+    IDS_ABOUT_SNAPIN "%s のバージョン情報(&B)..."
+END
+
+STRINGTABLE
+BEGIN
+    IDM_TB_UNDO         "元に戻す"
+    IDM_TB_REDO         "やり直し"
+    IDM_TB_UP           "1 つ上のレベルへ"
+    IDM_TB_SCOPE_PANE   "コンソール ツリーの表示/非表示"
+    IDM_TB_EXPORT_LIST  "一覧のエクスポート"
+    IDM_TB_HELP         "ヘルプ"
+    IDM_TB_ACTIONS_PANE "操作ウィンドウの表示/非表示"
+END
+
+STRINGTABLE
+BEGIN
+    IDM_FILE_NEW      "新しいコンソールを作成します。"
+    IDM_FILE_OPEN     "既存のコンソールを開きます。"
+    IDM_FILE_SAVE     "現在のコンソールを保存します。"
+    IDM_FILE_SAVEAS   "現在のコンソールのコピーを別のファイルに保存します。"
+    IDM_FILE_ADD      "スナップイン コンソールにスナップインを追加したり、削除したりできます。"
+    IDM_FILE_OPTIONS  "ユーザーまたはスナップイン コンソールのオプションを変更します。"
+    IDM_FILE_RECENT1  "このスナップイン コンソールを開きます。"
+    IDM_FILE_RECENT2       "このスナップイン コンソールを開きます。"
+    IDM_FILE_RECENT3       "このスナップイン コンソールを開きます。"
+    IDM_FILE_RECENT4       "このスナップイン コンソールを開きます。"
+    IDM_FILE_EXIT          "プログラムを終了し、ドキュメントを保存するかどうかを確認します。"
+
+    IDM_ACTION_NEW         "このノードをルートとする新しいウィンドウを開きます。"
+    IDM_ACTION_RENAME      "現在の選択範囲の名前を変更します。"
+    IDM_ACTION_EXPORT_LIST "現在の一覧をファイルにエクスポートします。"
+
+    IDM_VIEW_COLUMNS       "結果ウィンドウの列を変更できるダイアログ ボックスを開きます。"
+    IDM_VIEW_LARGE_ICONS   "大きいアイコンを使って項目を表示します。"
+    IDM_VIEW_SMALL_ICONS   "小さいアイコンを使って項目を表示します。"
+    IDM_VIEW_LIST          "項目を一覧表示します。"
+    IDM_VIEW_DETAILS       "ウィンドウに各項目の情報を表示します。"
+    IDM_VIEW_CUSTOMIZE     "表示のオプションを変更します。"
+
+    IDM_FAVORITES_ADD      "現在の表示をお気に入りの一覧に追加します。"
+    IDM_FAVORITES_ORGANIZE "お気に入りをフォルダーに整理できます。"
+
+    IDM_WINDOWS_NEW        "新しいウィンドウ。"
+    IDM_WINDOWS_CASCADE    "ウィンドウを重ねて表示します。"
+    IDM_WINDOWS_TILE       "ウィンドウを並べて表示します。"
+    IDM_WINDOWS_ARRANGE    "ウィンドウの下部にアイコンを整列します。"
+
+    IDM_HELP_TOPICS        "ヘルプを開きます。"
+    IDM_HELP_ABOUT_MMC     "プログラム情報、バージョン番号、著作権を表示します。"
+    IDM_HELP_ABOUT_SNAPIN  "スナップイン情報、バージョン番号、著作権を表示します。"
+END

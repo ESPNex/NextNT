@@ -1,0 +1,66 @@
+/*
+ * PROJECT:     LiberNT ping
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\n\
+使用法: ping [-t] [-a] [-n count] [-l size] [-f] [-i TTL] [-v TOS]\n\
+            [-w timeout] [-4] [-6] target\n\
+\n\
+オプション:\n\
+    -t          停止されるまで、指定されたホストを Ping します。\n\
+                統計を表示して続行するには、Ctrl+Break を押してください。\n\
+                停止するには、Ctrl+C を押してください。\n\
+    -a          アドレスをホスト名に解決します。\n\
+    -n count    送信するエコー要求の数です。\n\
+    -l size     送信バッファーのサイズです。\n\
+    -f          パケット内の Don't Fragment フラグを設定します (IPv4 のみ)。\n\
+    -i TTL      Time To Live です。\n\
+    -v TOS      Type Of Service (IPv4 のみ。この設定は非推奨であり、\n\
+                IP ヘッダーのサービスの種類フィールドには影響しません)。\n\
+    -w timeout  各応答を待つタイムアウトの時間 (ミリ秒) です。\n\
+    -4          IPv4 の使用を強制します。\n\
+    -6          IPv6 の使用を強制します。\n\
+\n"
+
+    IDS_CTRL_BREAK "Ctrl+Break\n"
+    IDS_CTRL_C "Ctrl+C\n"
+    IDS_NO_RESOURCES "使用できるリソースが不足しています。\n"
+    IDS_MISSING_ADDRESS "IP アドレスを指定する必要があります。\n"
+    IDS_MISSING_VALUE "オプション %s には値を指定する必要があります。\n"
+    IDS_BAD_OPTION "無効なオプション %s です。\n"
+    IDS_BAD_PARAMETER "無効なパラメーター %s です。\n"
+    IDS_BAD_VALUE "オプション %s の値が無効です。有効な範囲は %u から %u です。\n"
+    IDS_WRONG_FAMILY "オプション %s は %s でのみサポートされています。\n"
+    IDS_UNKNOWN_HOST "Ping 要求ではホスト %s が見つかりませんでした。ホスト名を確認してもう一度実行してください。\n"
+    IDS_PINGING_ADDRESS "\n%s "
+    IDS_PINGING_HOSTNAME "\n%s [%s] "
+    IDS_SOURCE_ADDRESS "(%s %s から)"
+    IDS_PING_SIZE "に ping を送信しています %lu バイトのデータ:\n\n"
+    IDS_REPLY_FROM "%s からの応答: "
+    IDS_REPLY_BYTES "バイト数 =%d "
+    IDS_REPLY_TIME_MS "時間 =%lums "
+    IDS_REPLY_TIME_0MS "時間 <1ms "
+    IDS_REPLY_TTL "TTL=%d\n"
+    IDS_REPLY_STATUS "エコー応答は %lu を返しました。\n"
+    IDS_DEST_HOST_UNREACHABLE "宛先ホストに到達できません。\n"
+    IDS_DEST_NET_UNREACHABLE "宛先ネットワークに到達できません。\n"
+    IDS_REQUEST_TIMED_OUT "要求がタイムアウトしました。\n"
+    IDS_TTL_EXPIRED "転送中に TTL が期限切れになりました。\n"
+    IDS_TRANSMIT_FAILED "PING: 転送に失敗しました。(エラー %u)\n"
+
+    IDS_STATISTICS "\n\
+%s の ping 統計:\n\
+    パケット数: 送信 = %d、受信 = %d、損失 = %d (%d%% の損失)、\n"
+
+    IDS_APPROXIMATE_RTT "ラウンド トリップの概算時間 (ミリ秒):\n\
+    最小 = %lums、最大 = %lums、平均 = %lums\n"
+
+    IDS_WINSOCK_FAIL "WinSock を初期化できませんでした: %i\n"
+END

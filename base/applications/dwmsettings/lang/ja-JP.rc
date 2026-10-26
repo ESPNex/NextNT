@@ -1,0 +1,42 @@
+/*
+ * PROJECT:     LiberNT dwmsettings
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDD_SETTINGS DIALOGEX 0, 0, 282, 284
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "DWM の設定"
+FONT 9, "MS Shell Dlg"
+BEGIN
+    LTEXT "デスクトップ ウィンドウの効果をカスタマイズします。変更はすぐに保存されます。", -1, 12, 12, 258, 26
+    GROUPBOX "GPU ウィンドウ効果", IDC_EFFECTS_GROUP, 12, 42, 258, 110
+    AUTOCHECKBOX "ウィンドウのアニメーション(&W)", IDC_ANIMATIONS, 24, 58, 230, 12
+    AUTOCHECKBOX "ウィンドウの影(&S)", IDC_SHADOWS, 24, 76, 230, 12
+    AUTOCHECKBOX "ガラスの外観を有効にする(&G)", IDC_ACRYLIC, 24, 94, 230, 12
+    AUTOCHECKBOX "ウィンドウのタイトルをぼかす(&T)", IDC_BLUR, 36, 112, 218, 12
+    AUTOCHECKBOX "ウィンドウの内容をぼかす(&N)", IDC_CONTENT_BLUR, 36, 130, 218, 12
+    GROUPBOX "配色", IDC_SCHEME_GROUP, 12, 158, 258, 60
+    AUTORADIOBUTTON "ライト(&L)", IDC_SCHEME_LIGHT, 24, 176, 100, 12, WS_GROUP
+    AUTORADIOBUTTON "ダーク(&D)", IDC_SCHEME_DARK, 140, 176, 100, 12
+    LTEXT "ガラスの外観と配色を使用するには、先に Windows 8 ビジュアル スタイルを選択してください。", IDC_THEME_NOTE, 24, 194, 238, 18
+    LTEXT "", IDC_STATUS, 12, 228, 258, 28
+    DEFPUSHBUTTON "閉じる", IDCANCEL, 210, 262, 60, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ACTIVE "GPU 合成が有効です。変更は DWM を再起動しなくても適用されます。"
+    IDS_APPLIED "保存しました。DWM は次の GPU フレーム用に効果を再読み込みしました。再起動は不要です。"
+    IDS_INACTIVE "保存しました。DWM は次のソフトウェア フレーム用に効果を再読み込みしました。再起動は不要です。"
+    IDS_UNAVAILABLE "保存しました。DWM は変更を確認しませんでした。効果が更新されない場合は DWM を再起動してください。"
+    IDS_RELOAD_FAILED "保存しましたが、DWM はすべての設定を読み取れませんでした。一部の効果は以前の設定のままの可能性があります。"
+    IDS_READ_FAILED "保存された設定を読み取れませんでした。エラー %lu。"
+    IDS_WRITE_FAILED "変更を保存できませんでした。エラー %lu。"
+    IDS_MISMATCH "保存しましたが、有効な DWM の設定が異なります。もう一度オプションを選択して再試行してください。"
+    IDS_DISCONNECTED "DWM はこのパネルに接続されていません。変更は保存されます。適用されない場合は DWM を再起動してください。"
+    IDS_GPU_UNAVAILABLE "ソフトウェア合成が有効です。変更は DWM を再起動しなくても適用されます。"
+END

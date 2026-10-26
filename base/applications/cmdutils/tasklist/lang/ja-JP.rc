@@ -1,0 +1,27 @@
+/*
+ * PROJECT:     LiberNT Tasklist Command
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE, "使用法: TASKLIST [/?] [/NH]\n"
+    IDS_DESCRIPTION, "\n\
+説明:\
+    このツールは、コンピューターで現在実行中のプロセスの一覧を\n\
+    表示します。\n"
+    IDS_OPTION_TOO_MUCH, "エラー: 無効な構文です。'%1' オプションは '%2!d!' 回を超えて指定できません。\n"
+    IDS_INVALID_SYNTAX, "エラー: 無効な構文です。\n"
+    IDS_INVALID_OPTION, "エラー: 不明または無効なコマンド ライン オプションが指定されました。\n"
+    IDS_ENUM_FAILED, "エラー: プロセスの一覧を列挙できません。\n"
+    IDS_OUT_OF_MEMORY, "エラー: メモリが不足しています。\n"
+    IDS_HEADER_IMAGENAME, "イメージ名"
+    IDS_HEADER_PID, "PID"
+    IDS_HEADER_SESSION, "セッション#"
+    IDS_HEADER_MEMUSAGE, "メモリ使用量"
+    IDS_MEMORY_STR, "%s K"
+END

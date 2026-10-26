@@ -35,6 +35,9 @@ IDI_DOWN ICON     "res/down.ico"
 #ifdef LANGUAGE_FR_FR
     #include "lang/fr-FR.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/ja-JP.rc"
+#endif
 #ifdef LANGUAGE_PT_PT
     #include "lang/pt-PT.rc"
 #endif

@@ -1,0 +1,70 @@
+/*
+ * PROJECT:     LiberNT On-Screen Keyboard
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDR_OSK_MENU MENU
+BEGIN
+    POPUP "ファイル"
+    BEGIN
+        MENUITEM "終了(&X)", IDM_EXIT
+    END
+
+    POPUP "キーボード"
+    BEGIN
+        MENUITEM "拡張キーボード", IDM_ENHANCED_KB, CHECKED
+        MENUITEM "標準キーボード", IDM_STANDARD_KB
+        MENUITEM SEPARATOR
+        MENUITEM "標準レイアウト", IDM_REG_LAYOUT, CHECKED, GRAYED
+        MENUITEM "ブロック レイアウト", IDM_BLOCK_LAYOUT, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "101 キー", IDM_101_KEYS, CHECKED, GRAYED
+        MENUITEM "102 キー", IDM_102_KEYS, GRAYED
+        MENUITEM "106 キー", IDM_106_KEYS, GRAYED
+    END
+
+    POPUP "設定"
+    BEGIN
+        MENUITEM "常に手前に表示", IDM_ON_TOP, CHECKED
+        MENUITEM SEPARATOR
+        MENUITEM "クリック音を使用する(&U)", IDM_CLICK_SOUND
+        MENUITEM SEPARATOR
+        MENUITEM "入力モード(&T)...", IDM_TYPE_MODE, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "フォント(&F)...", IDM_FONT
+    END
+
+    POPUP "ヘルプ"
+    BEGIN
+        MENUITEM "ヘルプ トピック(&H)", IDM_HELP_TOPICS, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "スクリーン キーボードのバージョン情報(&A)...", IDM_ABOUT
+    END
+END
+
+STRINGTABLE
+BEGIN
+    IDS_OSK "スクリーン キーボード"
+    IDS_AUTHORS "Copyright Denis Robert"
+    IDS_NUMLOCK "Num"
+    IDS_CAPSLOCK "Caps"
+    IDS_SCROLLLOCK "Scroll"
+    /* Make sure the text fits onto the buttons */
+    IDS_ESCAPE "Esc"
+    IDS_PRN "Prn"
+    IDS_STOP "Stop"
+    IDS_ATTN "Attn"
+    IDS_INSERT "ins"
+    IDS_NUMLOCKKEY "nlk"
+    IDS_DELETE "del"
+    IDS_END "end"
+    IDS_CTRL "ctrl"
+    IDS_LEFTALT "alt"
+    IDS_RIGHTALT "alt"
+END
+
+/* EOF */

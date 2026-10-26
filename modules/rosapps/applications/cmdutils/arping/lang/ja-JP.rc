@@ -1,0 +1,32 @@
+/*
+ * PROJECT:     LiberNT arping utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\n使用法: arping [-t] [-n count] -s source-ip destination-host\n\n\
+オプション:\n\
+    -t             停止されるまで、指定されたホストを Ping します。\n\
+                   停止するには Ctrl+C を押してください。\n\
+    -n count       送信するプローブの数です。\n\
+    -s             この送信元 IP を使用します。\n\n\0"
+    IDS_BAD_OPTION_FORMAT "オプションの形式が無効です %1。\n\0"
+    IDS_BAD_OPTION "無効なオプション %1 です。\n\0"
+    IDS_BAD_PARAMETER "無効なパラメーター %1 です。\n\0"
+    IDS_DEST_MUST_BE_SPECIFIED "宛先ホストの名前または IP アドレスを指定する必要があります。\n\0"
+    IDS_COULD_NOT_INIT_WINSOCK "winsock dll を初期化できませんでした。\n\0"
+    IDS_UNKNOWN_HOST "不明なホスト %1 です。\n\0"
+    IDS_SRC_MUST_BE_SPECIFIED "送信元ホストの IP アドレスを指定する必要があります。\n\0"
+    IDS_BAD_VALUE_OPTION_N "オプション -n の値が無効です。有効な範囲は 1 から %1!u! です。\n\0"
+    IDS_ARPING_TO_FROM "ARPING %1 (送信元 %2)\n\0"
+    IDS_MS "ms\0"
+    IDS_1MS "1ms\0"
+    IDS_REPLY_FROM "%1 [%2] からのユニキャスト応答  %3%4\n\0"
+    IDS_ARPING_STATISTICS "%1!u! 個のプローブを送信しました\n\
+%2!u! 個の応答を受信しました\n\0"
+END

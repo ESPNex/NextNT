@@ -1,0 +1,22 @@
+/*
+ * PROJECT:     LiberNT find
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "FIND: 文字列を含むファイルのすべての行を表示します。\n\n\
+FIND [/V] [/C] [/N] [/I] [/OFF[LINE]] ""string"" [file...]\n\
+  /V         文字列を含まない行を表示します。\n\
+  /C         文字列を含む行の数を数えます。\n\
+  /N         表示する行に 1 から始まる行番号を付けます。\n\
+  /I         大文字と小文字を区別しません。\n\
+  /OFF[LINE] オフライン属性が設定されたファイルをスキップしません。"
+    IDS_NO_SUCH_FILE "FIND: %s: ファイルがありません\n"
+    IDS_CANNOT_OPEN "FIND: %s: ファイルを開けません\n"
+    IDS_INVALID_SWITCH "FIND: 無効なスイッチです\n"
+END

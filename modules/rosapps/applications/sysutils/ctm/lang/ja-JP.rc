@@ -1,0 +1,37 @@
+/*
+ * PROJECT:     LiberNT ctm
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+   IDS_APP_TITLE           "コンソール タスク マネージャー (作成: Aleksey Bragin <aleksey@reactos.org>)"
+
+   IDS_COLUMN_NUMBER       "# "
+   IDS_COLUMN_IMAGENAME    "イメージ名                  "
+   IDS_COLUMN_PID          "PID  "
+   IDS_COLUMN_CPU          "CPU"
+   IDS_COLUMN_MEM          "メモリ使用量"
+   IDS_COLUMN_MEM_UNIT     "KB"
+   IDS_COLUMN_PF           "ページ フォールト"
+
+   IDS_IDLE_PROCESS        "System Idle Process"
+   IDS_YES                 "Y"
+   IDS_NO                  "N"
+
+   IDS_MENU                "キー: q - 終了, k - プロセスの強制終了"
+   IDS_MENU_QUIT           "Q"
+   IDS_MENU_KILL_PROCESS   "K"
+
+   IDS_KILL_PROCESS        "このプロセスを強制終了しますか? (y/n)"
+   IDS_KILL_PROCESS_ERR1   "このプロセスを終了できません..."
+   IDS_KILL_PROCESS_ERR2   "プロセス %d を終了できません (OpenProcess に失敗しました)"
+
+   IDS_CTM_GENERAL_ERR1    "ctm: コンソールを使用できません。"
+   IDS_CTM_GENERAL_ERR2    "ctm: 入力コンソールに対して GetConsoleMode() を実行できません。"
+   IDS_CTM_GENERAL_ERR3    "ctm: 出力コンソールに対して GetConsoleMode() を実行できません。"
+END

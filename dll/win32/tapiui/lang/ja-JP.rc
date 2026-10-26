@@ -1,0 +1,453 @@
+/*
+ * PROJECT:     LiberNT tapiui
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+101 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "ダイヤル情報"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON 201, 2000, 7, 7, 21, 20
+    LTEXT "次の一覧は指定した所在地を表示しています。ダイヤルする所在地を選択してください。", -1, 35, 7, 210, 16
+    LTEXT "所在地(&L):", -1, 7, 35, 210, 8
+    CONTROL "", 1033, "SysListView32", WS_BORDER | WS_TABSTOP | 0x0000011D, 7, 46, 238, 105, WS_EX_CLIENTEDGE
+    PUSHBUTTON "新規(&N)...", 1030, 87, 155, 50, 14
+    PUSHBUTTON "編集(&E)...", 1031, 141, 155, 50, 14
+    PUSHBUTTON "削除(&D)", 1032, 195, 155, 50, 14
+    LTEXT "電話番号は次のようにダイヤルされます:", 1052, 7, 181, 100, 8
+    LTEXT "", 1053, 14, 195, 224, 16
+END
+
+102 DIALOGEX 0, 0, 252, 255
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "全般"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON 202, 2000, 7, 7, 20, 20
+    LTEXT "所在地名(&N):", -1, 35, 11, 56, 8, SS_CENTERIMAGE
+    EDITTEXT 1038, 96, 8, 149, 14, ES_AUTOHSCROLL
+    LTEXT "ダイヤルする所在地を指定してください。", 2001, 7, 33, 238, 8
+    LTEXT "国/地域(&R):", -1, 7, 49, 161, 8
+    COMBOBOX 1006, 7, 60, 175, 200, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    LTEXT "市外局番(&C):", -1, 190, 49, 48, 8
+    EDITTEXT 1034, 190, 60, 48, 12, ES_AUTOHSCROLL
+    GROUPBOX "ダイヤル情報", 2002, 7, 80, 238, 92
+    LTEXT "この所在地からダイヤルするときは、次の規則を使用する:", 2003, 14, 92, 224, 8
+    LTEXT "市内通話で外線にアクセスするためにダイヤルする番号(&L):", -1, 14, 106, 170, 8
+    EDITTEXT 1010, 190, 104, 48, 12, ES_AUTOHSCROLL
+    LTEXT "長距離通話で外線にアクセスするためにダイヤルする番号(&D):", -1, 14, 122, 170, 8
+    EDITTEXT 1011, 190, 120, 48, 12, ES_AUTOHSCROLL
+    LTEXT "長距離通話に使う市外通話用事業者番号(&E):", -1, 14, 138, 170, 8
+    EDITTEXT 1059, 190, 136, 48, 12, ES_AUTOHSCROLL
+    LTEXT "国際通話に使う国際通話用事業者番号(&I):", -1, 14, 154, 170, 8
+    EDITTEXT 1060, 190, 152, 48, 12, ES_AUTOHSCROLL
+    AUTOCHECKBOX "キャッチホンを無効にするためにダイヤルする番号(&W):", 1035, 14, 177, 170, 10
+    COMBOBOX 1013, 190, 176, 48, 73, CBS_DROPDOWN | CBS_SORT | WS_VSCROLL
+    LTEXT "ダイヤル方法:", -1, 14, 195, 40, 8
+    AUTORADIOBUTTON "トーン(&T)", 1036, 58, 194, 50, 10, NOT WS_TABSTOP
+    AUTORADIOBUTTON "パルス(&P)", 1037, 112, 194, 50, 10, NOT WS_TABSTOP
+    LTEXT "電話番号は次のようにダイヤルされます:", 1052, 7, 219, 100, 8
+    LTEXT "", 1053, 14, 232, 224, 16
+END
+
+103 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "市外局番の規則"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "市外局番の規則では、現在の市外局番から他の市外局番へ、および同じ市外局番内でどのように電話番号をダイヤルするかを決定します。", 2000, 7, 7, 238, 16
+    LTEXT "市外局番の規則(&C):", -1, 7, 31, 238, 8
+    CONTROL "", 1033, "SysListView32", WS_BORDER | WS_TABSTOP | 0x0000801D, 7, 42, 238, 99, WS_EX_CLIENTEDGE
+    PUSHBUTTON "新規(&N)...", 1030, 87, 147, 50, 14
+    PUSHBUTTON "編集(&E)...", 1031, 141, 147, 50, 14
+    PUSHBUTTON "削除(&D)", 1032, 195, 147, 50, 14
+    GROUPBOX "説明", 2006, 7, 166, 238, 45
+    LTEXT "", 1039, 14, 180, 224, 24
+END
+
+104 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "テレホン カード"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "使用するテレホン カードを選択するか、[新規] をクリックして別のカードを追加してください。", 2000, 7, 7, 238, 8
+    LTEXT "カードの種類(&T):", -1, 7, 23, 238, 8
+    CONTROL "", 1033, "SysListView32", WS_BORDER | WS_TABSTOP | 0x0000400D, 7, 34, 238, 63, WS_EX_CLIENTEDGE
+    PUSHBUTTON "新規(&N)...", 1030, 87, 103, 50, 14
+    PUSHBUTTON "編集(&E)...", 1031, 141, 103, 50, 14
+    PUSHBUTTON "削除(&D)", 1032, 195, 103, 50, 14
+    LTEXT "アカウント番号(&C):", -1, 7, 127, 91, 8
+    EDITTEXT 1018, 102, 125, 143, 12, ES_AUTOHSCROLL
+    LTEXT "暗証番号 (PIN)(&P):", -1, 7, 145, 91, 8
+    EDITTEXT 1019, 102, 143, 143, 12, ES_AUTOHSCROLL
+    GROUPBOX "アクセス番号", 2001, 7, 158, 238, 53
+    LTEXT "長距離通話:", -1, 14, 172, 84, 8
+    LTEXT "", 1042, 102, 172, 136, 8
+    LTEXT "国際通話:", -1, 14, 184, 84, 8
+    LTEXT "", 1043, 102, 184, 136, 8
+    LTEXT "市内通話:", -1, 14, 196, 84, 8
+    LTEXT "", 1051, 102, 196, 136, 8
+END
+
+105 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "全般"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON 203, 2000, 7, 7, 20, 20
+    LTEXT "テレホン カード名(&C):", -1, 35, 12, 64, 8, SS_CENTERIMAGE
+    EDITTEXT 1047, 105, 9, 140, 14, ES_AUTOHSCROLL
+    LTEXT "アカウント番号(&N):", -1, 7, 35, 238, 8
+    EDITTEXT 1018, 7, 46, 116, 14, ES_AUTOHSCROLL
+    LTEXT "暗証番号 (PIN)(&P):", -1, 7, 68, 238, 8
+    EDITTEXT 1019, 7, 80, 116, 14, ES_AUTOHSCROLL
+    LTEXT "このテレホン カードは次の場合に使用されます:", 1056, 14, 117, 224, 8
+    GROUPBOX "テレホン カードの詳細", 2001, 7, 105, 238, 66
+    LTEXT "", 1000, 22, 131, 216, 8
+    LTEXT "", 1001, 22, 143, 216, 8
+    LTEXT "", 1002, 22, 155, 216, 8
+END
+
+106 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "長距離"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "長距離通話のアクセス番号(&L):", -1, 7, 7, 238, 8
+    EDITTEXT 1044, 7, 18, 140, 14, ES_AUTOHSCROLL
+    LTEXT "下のボタンを使って、長距離通話をするときのダイヤル手順を入力してください。テレホン カードに記載されている順序どおりに入力してください。", 2000, 7, 40, 238, 24
+    LTEXT "テレホン カードのダイヤル手順(&R):", -1, 7, 72, 80, 8
+    CONTROL "List1", 1033, "SysListView32", WS_BORDER | WS_TABSTOP | 0x0000400D, 7, 83, 184, 74, WS_EX_CLIENTEDGE
+    PUSHBUTTON "上へ移動(&U)", 1022, 195, 83, 50, 14
+    PUSHBUTTON "下へ移動(&M)", 1023, 195, 101, 50, 14
+    PUSHBUTTON "削除(&D)", 1024, 195, 119, 50, 14
+    PUSHBUTTON "アクセス番号(&N)", 1025, 7, 161, 90, 14
+    PUSHBUTTON "アカウント番号(&C)", 1018, 101, 161, 90, 14
+    PUSHBUTTON "&PIN", 1019, 7, 179, 90, 14
+    PUSHBUTTON "宛先番号(&E)...", 1020, 101, 179, 90, 14
+    PUSHBUTTON "プロンプトを待つ(&W)...", 1017, 7, 197, 90, 14
+    PUSHBUTTON "番号の指定(&S)...", 1021, 101, 197, 90, 14
+END
+
+107 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "国際"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "国際通話のアクセス番号(&I):", -1, 7, 7, 238, 8
+    EDITTEXT 1045, 7, 18, 140, 14, ES_AUTOHSCROLL
+    LTEXT "下のボタンを使って、国際通話をするときのダイヤル手順を入力してください。テレホン カードに記載されている順序どおりに入力してください。", 2000, 7, 40, 244, 24
+    LTEXT "テレホン カードのダイヤル手順(&R):", -1, 7, 72, 80, 8
+    CONTROL "List1", 1033, "SysListView32", WS_BORDER | WS_TABSTOP | 0x0000400D, 7, 83, 184, 74, WS_EX_CLIENTEDGE
+    PUSHBUTTON "上へ移動(&U)", 1022, 195, 83, 50, 14
+    PUSHBUTTON "下へ移動(&M)", 1023, 195, 101, 50, 14
+    PUSHBUTTON "削除(&D)", 1024, 195, 119, 50, 14
+    PUSHBUTTON "アクセス番号(&N)", 1025, 7, 161, 90, 14
+    PUSHBUTTON "アカウント番号(&C)", 1018, 101, 161, 90, 14
+    PUSHBUTTON "&PIN", 1019, 7, 179, 90, 14
+    PUSHBUTTON "宛先番号(&E)...", 1020, 101, 179, 90, 14
+    PUSHBUTTON "プロンプトを待つ(&W)...", 1017, 7, 197, 90, 14
+    PUSHBUTTON "番号の指定(&S)...", 1021, 101, 197, 90, 14
+END
+
+108 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "市内通話"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "市内通話のアクセス番号(&L):", -1, 7, 7, 238, 8
+    EDITTEXT 1008, 7, 18, 140, 14, ES_AUTOHSCROLL
+    LTEXT "下のボタンを使って、市内通話をするときのダイヤル手順を入力してください。テレホン カードに記載されている順序どおりに入力してください。テレホン カードを使わずに市内通話をする場合は、このセクションを空白のままにしてください。", 2000, 7, 40, 238, 24
+    LTEXT "テレホン カードのダイヤル手順(&R):", -1, 7, 72, 238, 8
+    CONTROL "List1", 1033, "SysListView32", WS_BORDER | WS_TABSTOP | 0x0000400D, 7, 83, 184, 74, WS_EX_CLIENTEDGE
+    PUSHBUTTON "上へ移動(&U)", 1022, 195, 83, 50, 14
+    PUSHBUTTON "下へ移動(&M)", 1023, 195, 101, 50, 14
+    PUSHBUTTON "削除(&D)", 1024, 195, 119, 50, 14
+    PUSHBUTTON "アクセス番号(&N)", 1025, 7, 161, 90, 14
+    PUSHBUTTON "アカウント番号(&C)", 1018, 101, 161, 90, 14
+    PUSHBUTTON "&PIN", 1019, 7, 179, 90, 14
+    PUSHBUTTON "宛先番号(&E)...", 1020, 101, 179, 90, 14
+    PUSHBUTTON "プロンプトを待つ(&W)...", 1017, 7, 197, 90, 14
+    PUSHBUTTON "番号の指定(&S)...", 1021, 101, 197, 90, 14
+END
+
+109 DIALOGEX 0, 0, 252, 257
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "新しい市外局番の規則"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "この市外局番の規則は、下で指定する市外局番と市内局番の組み合わせへの通話にのみ適用されます。", 2000, 7, 6, 238, 16
+    LTEXT "発信先の市外局番:", -1, 7, 31, 110, 8
+    LTEXT "市外局番(&R):", -1, 7, 47, 36, 8
+    EDITTEXT 1034, 46, 44, 50, 14, ES_AUTOHSCROLL
+    LTEXT "この市外局番の規則に使用する市内局番を指定してください。", -1, 14, 78, 224, 8
+    AUTORADIOBUTTON "この市外局番内のすべての市内局番を含める(&I)", 1014, 14, 90, 224, 12, NOT WS_TABSTOP
+    AUTORADIOBUTTON "次の一覧の市内局番のみを含める(&O):", 1015, 14, 104, 224, 12, NOT WS_TABSTOP
+    LTEXT "含める市内局番(&P):", 1057, 26, 117, 119, 8
+    CONTROL "List1", 1033, "SysListView32", WS_BORDER | WS_TABSTOP | 0x0000411D, 25, 128, 66, 32, WS_EX_CLIENTEDGE
+    PUSHBUTTON "追加(&A)...", 1005, 95, 128, 50, 14
+    PUSHBUTTON "削除(&E)", 1024, 95, 146, 50, 14
+    LTEXT "上記の市内局番を含む電話番号をダイヤルするとき:", -1, 14, 184, 224, 8
+    AUTOCHECKBOX "ダイヤル(&D):", 1012, 14, 198, 30, 12
+    EDITTEXT 1007, 46, 196, 42, 14, ES_AUTOHSCROLL
+    AUTOCHECKBOX "市外局番を含める(&C)", 1029, 14, 214, 85, 12
+    DEFPUSHBUTTON "OK", 1, 141, 236, 50, 14
+    PUSHBUTTON "キャンセル", 2, 195, 236, 50, 14
+    RTEXT "市外局番", 2001, 133, 31, 51, 8
+    LTEXT "市内局番", 2002, 200, 31, 45, 8
+    CONTROL "", 2003, "STATIC", SS_BLACKFRAME | SS_SUNKEN, 180, 41, 1, 6
+    CONTROL "", 2004, "STATIC", SS_BLACKFRAME | SS_SUNKEN, 203, 41, 1, 6
+    RTEXT "X - X X X - X X X - X X X X", 2005, 133, 48, 112, 8
+    GROUPBOX "市内局番", -1, 7, 64, 238, 102
+    GROUPBOX "規則", -1, 7, 170, 238, 60
+END
+
+110 DIALOGEX 0, 0, 227, 82
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "", 1003, 7, 7, 213, 8
+    LTEXT "", 1039, 7, 23, 213, 8
+    EDITTEXT 1031, 7, 34, 213, 14, ES_AUTOHSCROLL
+    DEFPUSHBUTTON "OK", 1, 116, 62, 50, 14
+    PUSHBUTTON "キャンセル", 2, 170, 62, 50, 14
+END
+
+111 DIALOGEX 0, 0, 252, 124
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "待機"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "ダイヤルを続行する前に待つプロンプトの種類を選択してください。", 2000, 7, 7, 238, 16
+    AUTORADIOBUTTON "発信音を待つ(&D)", 1009, 7, 31, 238, 10, WS_GROUP
+    AUTORADIOBUTTON "音声メッセージが終わるのを待つ(&V)", 1016, 7, 47, 238, 10, NOT WS_TABSTOP
+    AUTORADIOBUTTON "指定した時間待つ(&T):", 1048, 7, 63, 238, 10, NOT WS_TABSTOP
+    EDITTEXT 1050, 18, 77, 36, 14, ES_AUTOHSCROLL | WS_GROUP
+    CONTROL "Spin1", 1049, "msctls_updown32", 0x00000036, 42, 78, 11, 14
+    LTEXT "秒(&S)", -1, 58, 79, 187, 8
+    DEFPUSHBUTTON "OK", 1, 141, 103, 50, 14
+    PUSHBUTTON "キャンセル", 2, 195, 103, 50, 14
+END
+
+112 DIALOGEX 0, 0, 252, 111
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "宛先番号"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "この手順では、ダイヤルする宛先番号をテレホン カードの手順に組み込みます。宛先番号をダイヤルするとき、番号のどの部分をダイヤルしますか?", 2000, 7, 7, 238, 24
+    AUTOCHECKBOX "国/地域番号をダイヤルする(&C)", 1027, 7, 39, 238, 10
+    AUTOCHECKBOX "市外局番をダイヤルする(&A)", 1034, 7, 55, 238, 10
+    AUTOCHECKBOX "番号をダイヤルする(&N)", 1008, 7, 71, 238, 10, WS_DISABLED
+    DEFPUSHBUTTON "OK", 1, 141, 92, 50, 14
+    PUSHBUTTON "キャンセル", 2, 195, 92, 50, 14
+END
+
+113 DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "詳細設定"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON 201, 2000, 7, 7, 20, 20
+    LTEXT "このコンピューターには次のテレフォニー プロバイダーがインストールされています:", -1, 40, 7, 205, 16
+    LTEXT "プロバイダー(&P):", -1, 7, 35, 238, 8
+    LISTBOX 1033, 7, 46, 238, 147, LBS_STANDARD | LBS_NOINTEGRALHEIGHT | WS_TABSTOP
+    PUSHBUTTON "追加(&D)...", 1005, 87, 197, 50, 14
+    PUSHBUTTON "削除(&R)", 1024, 141, 197, 50, 14
+    PUSHBUTTON "構成(&C)...", 1031, 195, 197, 50, 14
+END
+
+114 DIALOGEX 20, 15, 252, 135
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_CAPTION
+CAPTION "プロバイダーの追加"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "インストールするプロバイダーを次の一覧から選択し、[追加] をクリックしてください。", 2000, 7, 7, 241, 16
+    LTEXT "テレフォニー プロバイダー(&T):", -1, 7, 31, 144, 10
+    LISTBOX 1055, 7, 42, 238, 74, LBS_STANDARD | WS_TABSTOP
+    PUSHBUTTON "追加(&A)", 1005, 141, 114, 50, 14
+    DEFPUSHBUTTON "キャンセル", 2, 195, 114, 50, 14
+END
+
+115 DIALOGEX 10, 10, 303, 228
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "所在地情報"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL 302, 302, "STATIC", SS_BITMAP, 10, 10, 88, 155
+    LTEXT "電話またはモデムで接続する前に、LiberNT には現在の所在地に関する次の情報が必要です。", 2000, 107, 15, 188, 25
+    LTEXT "現在の国/地域(&W)", -1, 107, 43, 189, 10
+    COMBOBOX 1006, 107, 55, 180, 200, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    LTEXT "現在の市外局番(&C)", -1, 107, 74, 189, 10
+    EDITTEXT 1034, 107, 87, 45, 12, ES_AUTOHSCROLL
+    LTEXT "事業者番号を指定する必要がある場合は、その番号(&R)", -1, 107, 105, 189, 10
+    EDITTEXT 1058, 106, 118, 45, 12, ES_UPPERCASE | ES_AUTOHSCROLL
+    LTEXT "外線にアクセスするための番号がある場合は、その番号(&O)", -1, 107, 137, 189, 10
+    EDITTEXT 1010, 107, 149, 45, 12, ES_UPPERCASE | ES_AUTOHSCROLL
+    LTEXT "この所在地の電話のダイヤル方法:", -1, 107, 168, 189, 10
+    AUTORADIOBUTTON "トーン ダイヤル(&T)", 1036, 107, 178, 57, 14, WS_GROUP | NOT WS_TABSTOP
+    AUTORADIOBUTTON "パルス ダイヤル(&P)", 1037, 175, 178, 57, 14, NOT WS_TABSTOP
+    DEFPUSHBUTTON "OK", 1, 192, 204, 50, 14
+    PUSHBUTTON "キャンセル", 2, 246, 204, 50, 14
+END
+
+400 DIALOGEX 0, 0, 290, 151
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL 302, 302, "STATIC", SS_BITMAP, 0, 0, 88, 155
+    LTEXT "電話またはモデムで接続する前に、LiberNT には現在の所在地に関する次の情報が必要です。", 2000, 95, 2, 188, 25
+    LTEXT "現在の国/地域(&W)", -1, 95, 30, 188, 10
+    COMBOBOX 1006, 95, 41, 177, 68, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    LTEXT "現在の市外局番(&C)", -1, 95, 61, 188, 10
+    EDITTEXT 1034, 95, 73, 40, 14, ES_AUTOHSCROLL
+    LTEXT "外線にアクセスするための番号がある場合は、その番号(&O)", -1, 95, 96, 188, 10
+    EDITTEXT 1010, 95, 107, 40, 14, ES_UPPERCASE | ES_AUTOHSCROLL
+    LTEXT "この所在地の電話のダイヤル方法:", -1, 95, 129, 159, 10
+    AUTORADIOBUTTON "トーン ダイヤル(&T)", 1036, 95, 139, 55, 12, WS_GROUP | NOT WS_TABSTOP
+    AUTORADIOBUTTON "パルス ダイヤル(&P)", 1037, 155, 139, 55, 12, NOT WS_TABSTOP
+END
+
+500 DIALOGEX 0, 0, 235, 88
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUPWINDOW | WS_CAPTION
+CAPTION "LiberNT エクスプローラー"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON 504, 501, 13, 14, 21, 20
+    LTEXT "", 502, 47, 15, 180, 32
+    AUTOCHECKBOX "今後、このページを常に信頼する(&I)", 503, 50, 47, 147, 12
+    DEFPUSHBUTTON "OK(&O)", 505, 110, 65, 50, 14
+    PUSHBUTTON "キャンセル(&C)", 506, 164, 65, 50, 14
+END
+
+STRINGTABLE
+BEGIN
+    1 "電話とモデムのオプション"
+    2 "モデムを使用するためのダイヤル情報とプロパティを構成します。"
+    3 "所在地"
+    4 "新しい所在地を作成するには、[新規] をクリックしてください。"
+    5 "新しい所在地"
+    6 "所在地の編集"
+    7 "新しいテレホン カード"
+    8 "テレホン カードの編集"
+    9 "市外局番"
+    10 "市内局番"
+    11 "規則"
+    12 "入力された文字は無効です。\n\n有効な文字は、0 から 9、*、#、およびコンマです。"
+    13 "入力された文字は無効です。\n\n有効な文字は、0 から 9、*、#、スペース、およびコンマです。"
+    14 "入力された文字は無効です。\n\n有効な文字は 0 から 9 です。"
+    15 "入力された文字は無効です。"
+    16 "%1 をダイヤル"
+    17 "%1 と市外局番をダイヤル"
+    18 "市外局番をダイヤル"
+    19 "番号のみダイヤル"
+    20 "すべて"
+    21 "選択済み"
+    22 "市外局番の規則の編集"
+    23 "上の一覧で規則を選択すると説明が表示されます。規則を追加するには [新規] をクリックしてください。"
+    24 "市外局番 %1 内へのすべての通話で、番号の前に '%2' と市外局番をダイヤルします。"
+    25 "市外局番 %1 内へのすべての通話で、番号の前に '%2' をダイヤルします。"
+    26 "市外局番 %1 内へのすべての通話で、番号の前に市外局番をダイヤルします。"
+    27 "市外局番 %1 内へのすべての通話で、番号のみをダイヤルします。"
+    28 "指定した市内局番を含む市外局番 %1 内への通話で、番号の前に '%2' と市外局番をダイヤルします。"
+    29 "指定した市内局番を含む市外局番 %1 内への通話で、番号の前に '%2' をダイヤルします。"
+    30 "指定した市内局番を含む市外局番 %1 内への通話で、番号の前に市外局番をダイヤルします。"
+    31 "指定した市内局番を含む市外局番 %1 内への通話で、番号のみをダイヤルします。"
+    32 "他のすべての市外局番への通話では前に '1' をダイヤルし、すべての市内局番で市外局番を含めます。"
+    33 "市内局番の追加"
+    34 "スペースまたはコンマで区切って、1 つ以上の市内局番を入力してください。"
+    35 "番号の指定"
+    36 "ダイヤルする 1 つ以上の番号 (* と # を含む) を入力してください。"
+    37 "無効な文字を入力しようとしました。\n\n有効な文字は 0 から 9 とスペースです。"
+    38 "%1!d! 秒待ちます。"
+    39 "アクセス番号をダイヤルします。"
+    40 "アカウント番号をダイヤルします。"
+    41 "暗証番号をダイヤルします。"
+    42 "発信音を待ちます。"
+    43 "音声メッセージが終わるのを待ちます。"
+    44 "国/地域番号、市外局番、番号をダイヤルします。"
+    45 "国/地域番号と番号をダイヤルします。"
+    46 "市外局番と番号をダイヤルします。"
+    47 "国/地域番号をダイヤルします。"
+    48 "市外局番をダイヤルします。"
+    49 "番号をダイヤルします。"
+    50 "長距離通話をダイヤルするとき。"
+    51 "国際通話をダイヤルするとき。"
+    52 "市内通話をダイヤルするとき。"
+    53 "このテレホン カードの使用方法の規則が定義されていません。"
+    54 "この所在地の市外通話用事業者番号を入力する必要があります。"
+    55 "この所在地の名前を入力する必要があります。"
+    56 "この所在地の市外局番を入力する必要があります。"
+    57 "キャッチホンを無効にするためにダイヤルする番号を選択する必要があります。"
+    58 "発信元の国または地域を選択する必要があります。"
+    59 "情報が不足しています"
+    60 "入力された所在地名は既に使用されています。一意の名前を入力してください。"
+    61 "このテレホン カードには必要な情報が一部不足しています。このカードを使用するには、[編集] をクリックして情報を追加するか、別のカードを選択してください。"
+    62 "既定のテレホン カードを選択する必要があります。一覧からカードを選択するか、[新規] をクリックして新しいカードを作成してください。"
+    63 "テレホン カード名を入力する必要があります。"
+    64 "アカウント番号を入力する必要があります。"
+    65 "暗証番号を入力する必要があります。"
+    66 "このテレホン カードには規則が定義されていません。規則を作成するには、[長距離]、[国際]、または [市内通話] タブを選択してください。"
+    67 "長距離通話の規則には、テレホン カードの長距離アクセス番号が必要です。"
+    68 "国際通話の規則には、テレホン カードの国際アクセス番号が必要です。"
+    69 "市内通話の規則には、テレホン カードの市内アクセス番号が必要です。"
+    70 "なし"
+    71 "選択したテレフォニー サービス プロバイダーを削除しますか?"
+    72 "<サービス プロバイダーはインストールされていません>"
+    73 "この規則を適用する市内局番を入力する必要があります。"
+    74 "番号(&D):"
+    75 "市内局番(&P):"
+    76 "無効な文字を入力しようとしました。\n\n有効な文字は 0 から 9、スペース、およびコンマです。"
+    77 "削除の確認"
+    78 "この所在地を削除しますか?"
+    79 "このテレホン カードを削除しますか?"
+    80 "この市外局番の規則を削除しますか?"
+    81 "ダイヤルする番号を入力する必要があります。"
+    82 "入力されたテレホン カード名は既に使用されています。一意の名前を入力してください。"
+    83 "LiberNT には、ダイヤルする所在地の電話情報が必要です。この情報を入力せずにキャンセルすると、このプログラムはダイヤル時に正しく動作しない可能性があります。また、一部のアプリケーションは、このダイアログ ボックスをキャンセルするとすぐに再表示します。\nキャンセルしますか?"
+    84 "キャンセルの確認"
+    85 "現在の所在地"
+    86 "<インストールできるサービス プロバイダーはありません>"
+    87 "入力された文字は無効です。\n\n有効な文字は、0 から 9、A から D、*、#、+、!、スペース、およびコンマです。"
+    88 "この所在地の国際通話用事業者番号を入力する必要があります。"
+    89 "この所在地の事業者番号を入力する必要があります。"
+    90 "このページは、コンピューター上で電話の発信や監視、またはその他のマルチメディア接続を行おうとしています。\n続行を許可しますか?"
+    91 "このページは、ネットワーク上のディレクトリ情報にアクセスしようとしています。\n続行を許可しますか?"
+    92 "このページは、ネットワーク会議の情報にアクセスまたは変更しようとしています。\n続行を許可しますか?"
+    93 "このページは、レジストリ情報にアクセスまたは変更しようとしています。\n続行を許可しますか?"
+    1064 "電話とモデムのコントロール パネルを開けません。テレフォニー サービスの起動に問題がある可能性があります。"
+    1065 "プロバイダーの削除"
+    15800 "23"
+    15801 "0,""None (Direct Dial)"","""","""","""","""","""","""","""","""",1"
+    15802 "1,""AT&T Direct Dial via 1010ATT1"","""",""G"",""J1FG"",""J011EFG"","""","""",""1010288"",""1010288"",1"
+    15803 "2,""AT&T via 1010ATT0"","""",""G"",""J0FG$TH"",""J01EFG$TH"","""","""",""1010288"",""1010288"",1"
+    15804 "3,""AT&T via 1-800-321-0288"","""",""G"",""J$TFG$TH"",""J$T01EFG$TH"","""","""",""18003210288"",""18003210288"",1"
+    15805 "4,""MCI Direct Dial via 10102221"","""",""G"",""J1FG"",""J011EFG"","""","""",""1010222"",""1010222"",1"
+    15806 "5,""MCI via 10102220"","""",""G"",""J0FG$TH"",""J01EFG$TH"","""","""",""1010222"",""1010222"",1"
+    15807 "6,""MCI via 1-800-888-8000"","""",""G"",""J,,,,,,TH,,FG"",""J,,,,,,TH,,011EFG"","""","""",""18008888000"",""18008888000"",1"
+    15808 "7,""MCI via 1-800-674-0700"","""",""G"",""J,,,,,,TH,,FG"",""J,,,,,,TH,,011EFG"","""","""",""18006740700"",""18006740700"",1"
+    15809 "8,""MCI via 1-800-674-7000"","""",""G"",""J,,,,,,TH,,FG"",""J,,,,,,TH,,011EFG"","""","""",""18006747000"",""18006747000"",1"
+    15810 "9,""US Sprint Direct Dial via 10103331"","""",""G"",""J1FG"",""J011EFG"","""","""",""1010333"",""1010333"",1"
+    15811 "10,""US Sprint via 10103330"","""",""G"",""J0FG$TH"",""J01EFG$TH"","""","""",""1010333"",""1010333"",1"
+    15812 "11,""US Sprint via 1-800-877-8000"","""",""G"",""J,,,T0FG,,H"",""J,,,T01EFG#,H"","""","""",""18008778000"",""18008778000"",1"
+    15813 "12,""Calling Card via 0"","""",""G"",""0FG$TH"",""01EFG$TH"","""","""","""","""",1"
+    15814 "13,""Carte France Telecom"","""",""T3010,H,0FG#"",""T3010,H,0FG#"",""T3010,H,00EFG#"","""","""","""","""",1"
+    15815 "14,""Mercury (UK)"","""",""J$TH,0FG"",""J$TH,0FG"",""J$TH,0FG"","""",""0500800800"",""0500800800"",""0500800800"",1"
+    15816 "15,""British Telecom (UK)"","""",""J$H,0FG"",""J$H,0FG"",""J$H,00EFG"","""",""144"",""144"".""144"",1"
+    15817 "16,""CLEAR Communications (New Zealand)"","""",""J$TH,0FG"",""J$TH,0FG"",""J$TH,00EFG"","""",""0502333"",""0502333"",""0502333"",1"
+    15818 "17,""Telecom New Zealand"","""",""J,0FG?H"",""J,0FG?H"",""J,00EFG?H"","""",""012"",""012"",""012"",1"
+    15819 "18,""Global Card (Taiwan to USA)"","""",""G"",""0FG"",""J,102880$TFG$H"","""","""","""",""0080"",1"
+    15820 "19,""Telstra (Australia) via 1818 (voice)"","""",""J$TH,FG#"",""J$TH,FG#"",""J$TH,0011EFG#"","""",""1818"",""1818"",""1818"",1"
+    15821 "20,""Telstra (Australia) via 1818 (fax)"","""",""J$TH,FG#"",""J$TH,FG#"",""J$TH,0015EFG#"","""",""1818"",""1818"",""1818"",1"
+    15822 "21,""Optus (Australia) via 1812"","""",""FG"",""FG"",""J@TH,0011EFG"","""","""","""",""1812"",1"
+    15823 "22,""Optus (Australia) via 008551812"","""",""FG"",""FG"",""J@TH,0011EFG"","""","""","""",""008551812"",1"
+END

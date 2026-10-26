@@ -1,0 +1,19 @@
+/*
+ * PROJECT:     LiberNT INF Default Install
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_SUCCESS "操作は正常に完了しました。"
+    IDS_FAILED "インストールに失敗しました。"
+    IDS_UNSUPPORTED "選択した INF ファイルは、このインストール方法をサポートしていません"
+    IDS_USAGE "使用法: InfDefaultInstall.exe <INF ファイル>"
+    IDS_NO_SECTION "必要なセクションが INF に見つかりませんでした。"
+    IDS_ERROR_TITLE "エラー"
+    IDS_INSTALL_ERROR "インストール エラー"
+END

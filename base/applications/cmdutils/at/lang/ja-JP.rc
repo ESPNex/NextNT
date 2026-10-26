@@ -1,0 +1,61 @@
+/*
+ * PROJECT:     LiberNT at
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "AT コマンドは、指定された日時にコンピューターでコマンドやプログラムが\n\
+実行されるようにスケジュールします。AT コマンドを使用するには、\n\
+Schedule サービスが実行されている必要があります。\n\n\
+AT [\\\\computername] [ [id] [/DELETE] | /DELETE [/YES]]\n\
+AT [\\\\computername] time [/INTERACTIVE]\n\
+    [ /EVERY:date[,...] | /NEXT:date[,...]] ""command""\n\n\
+\\\\computername     リモート コンピューターを指定します。このパラメーターを省略した\n\
+                   場合は、ローカル コンピューターでコマンドがスケジュールされます。\n\
+id                 スケジュールされたコマンドに割り当てられた識別番号です。\n\
+/DELETE            スケジュールされたコマンドを取り消します。id を省略した場合は、\n\
+                   コンピューター上のスケジュールされたコマンドがすべて取り消されます。\n\
+/YES               すべてのジョブを取り消すコマンドで、確認を求めない場合に\n\
+                   使用します。\n\
+time               コマンドを実行する時刻を指定します。\n\
+/INTERACTIVE       ジョブの実行時にログオンしているユーザーのデスクトップと\n\
+                   ジョブが対話できるようにします。\n\
+/EVERY:date[,...]  毎週または毎月の指定された曜日または日にコマンドを実行します。\n\
+                   date を省略した場合は、その月の今日の日付が使用されます。\n\
+/NEXT:date[,...]   次に指定された日 (たとえば次の木曜日) にコマンドを\n\
+                   実行します。date を省略した場合は、その月の今日の日付が\n\
+                   使用されます。\n\
+""command""          実行するコマンドまたはバッチ プログラムです。\n"
+
+    IDS_DELETE_ALL "この操作により、スケジュールされたすべてのジョブが削除されます。\n"
+    IDS_NEW_JOB "ジョブ ID = %lu の新しいジョブを追加しました\n"
+    IDS_JOBS_LIST "状態 ID     日付                    時刻          コマンド ライン\n"
+    IDS_NO_ENTRIES "一覧にエントリがありません。\n"
+
+    IDS_CONFIRM_QUESTION "この操作を続行しますか? (Y/N) [N]: "
+    IDS_CONFIRM_INVALID  "\n無効な応答です。\n"
+    IDS_CONFIRM_YES "Y"
+    IDS_CONFIRM_NO "N"
+
+    IDS_TODAY "今日"
+    IDS_TOMORROW "明日"
+    IDS_EVERY "毎"
+    IDS_NEXT "次の"
+
+    IDS_YES "はい"
+    IDS_NO "いいえ"
+    IDS_ERROR "エラー"
+    IDS_OK "OK"
+
+    IDS_TASKID      "タスク ID:     %lu\n"
+    IDS_STATUS      "状態:          %s\n"
+    IDS_SCHEDULE    "スケジュール:  %s\n"
+    IDS_TIME        "時刻:          %s\n"
+    IDS_INTERACTIVE "対話:          %s\n"
+    IDS_COMMAND     "コマンド:      %s\n"
+END

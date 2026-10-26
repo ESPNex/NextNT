@@ -1,0 +1,176 @@
+/*
+ * PROJECT:     LiberNT old_wordpad
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDR_MAINMENU MENU
+BEGIN
+  POPUP "ファイル(&F)"
+  BEGIN
+    MENUITEM "新規(&N)...",         ID_NEW
+    MENUITEM "開く(&O)...",        ID_OPEN
+    MENUITEM SEPARATOR
+    MENUITEM "閉じる(&C)\tCtrl+F4", ID_CLOSE, GRAYED
+    MENUITEM "すべて閉じる(&L)",      ID_CLOSEALL, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "上書き保存(&S)",           ID_SAVE, GRAYED
+    MENUITEM "名前を付けて保存(&A)...",     ID_SAVEAS, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "印刷プレビュー(&V)",  ID_PRINTPRE, GRAYED
+    MENUITEM "印刷(&P)...",       ID_PRINT, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "ページ設定(&U)...",  ID_PAGESETUP, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "終了(&X)\tAlt+F4",   ID_EXIT
+  END
+  POPUP "編集(&E)"
+  BEGIN
+    MENUITEM "元に戻す(&U)",           ID_UNDO, GRAYED
+    MENUITEM "やり直し(&R)",           ID_REDO, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "切り取り(&T)",            ID_CUT, GRAYED
+    MENUITEM "コピー(&C)",           ID_COPY, GRAYED
+    MENUITEM "貼り付け(&P)",          ID_PASTE, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "クリア",           -1, GRAYED
+    MENUITEM "すべて選択(&A)",     ID_SELALL, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "検索(&F)...\tCtrl+F",-1, GRAYED
+    MENUITEM "次を検索",       -1, GRAYED
+    MENUITEM "置換\tCtrl+H", -1, GRAYED
+    MENUITEM SEPARATOR
+    MENUITEM "オブジェクトのプロパティ",-1, GRAYED
+    MENUITEM "オブジェクト",          -1, GRAYED
+  END
+  POPUP "表示(&V)"
+  BEGIN
+    MENUITEM "ツール バー(&T)",        -1, CHECKED
+    MENUITEM "書式バー(&F)",     -1, CHECKED
+    MENUITEM "ルーラー(&R)",          -1, CHECKED
+    MENUITEM "ステータス バー(&S)",     ID_STATUSBAR, CHECKED
+  END
+  POPUP "挿入(&I)"
+  BEGIN
+    MENUITEM "日付と時刻(&D)...",-1, GRAYED
+    MENUITEM "オブジェクト(&O)...",       -1, GRAYED
+  END
+  POPUP "書式(&F)"
+  BEGIN
+    MENUITEM "フォント(&F)...",        -1 GRAYED
+    MENUITEM "箇条書き",     -1, GRAYED
+    MENUITEM "段落...",    -1, GRAYED
+    MENUITEM "タブ...",         -1, GRAYED
+  END
+  POPUP "ウィンドウ(&W)"
+  BEGIN
+    MENUITEM "重ねて表示(&C)",           ID_WINDOW_CASCADE
+    MENUITEM "上下に並べて表示(&H)", ID_WINDOW_TILE_HORZ
+    MENUITEM "左右に並べて表示(&V)",   ID_WINDOW_TILE_VERT
+    MENUITEM "アイコンの整列(&A)",     ID_WINDOW_ARRANGE
+    MENUITEM SEPARATOR
+    MENUITEM "次へ(&T)\tCtrl+F6",     ID_WINDOW_NEXT
+  END
+  POPUP "ヘルプ(&H)"
+  BEGIN
+    MENUITEM "バージョン情報(&A)...",       ID_ABOUT
+  END
+END
+
+IDR_POPUP MENU
+BEGIN
+  POPUP "popup"
+  BEGIN
+
+    MENUITEM SEPARATOR
+
+  END
+END
+
+
+IDD_NEWDOCSEL DIALOGEX 6,6,159,67
+CAPTION "新規"
+FONT 8, "MS Shell Dlg",0,0
+STYLE DS_SHELLFONT | WS_BORDER | WS_DLGFRAME | DS_MODALFRAME
+BEGIN
+  LTEXT "新しいドキュメントの種類:", IDC_STATIC, 4, 3, 72, 9
+  LISTBOX IDC_LIST, 4, 16, 104, 46, WS_TABSTOP
+  PUSHBUTTON "OK(&O)", IDOK, 112, 16, 44, 13
+  PUSHBUTTON "キャンセル(&C)", IDCANCEL, 112, 33, 44, 13
+END
+
+
+IDD_ABOUTBOX DIALOGEX 22,16,190,182
+CAPTION "WordPad のバージョン情報"
+FONT 8, "MS Shell Dlg",0,0
+STYLE DS_SHELLFONT | WS_BORDER | WS_DLGFRAME | WS_SYSMENU | DS_MODALFRAME
+BEGIN
+  LTEXT "WordPad II v0.1\nCopyright (C) 2006\nGed Murphy (gedmurphy@gmail.com)", IDC_STATIC, 48, 7, 150, 36
+  PUSHBUTTON "閉じる", IDOK, 65, 162, 44, 15
+  ICON IDI_ICON, IDC_STATIC, 10, 10, 7, 30
+  EDITTEXT IDC_LICENSE_EDIT, 8, 40, 174, 110, WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | ES_READONLY | ES_MULTILINE
+END
+
+
+STRINGTABLE
+BEGIN
+  IDS_LICENSE           "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.\r\n\r\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\r\n\r\nYou should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA."
+  IDS_DEFAULT_NAME      "ドキュメント %1!u!"
+  IDS_READY             " 準備完了"
+END
+
+STRINGTABLE
+BEGIN
+  IDS_DOC_TYPE_RICH_TEXT    "リッチ テキスト ドキュメント"
+  IDS_DOC_TYPE_UNICODE_TEXT "テキスト ドキュメント"
+  IDS_DOC_TYPE_TEXT         "Unicode テキスト ドキュメント"
+END
+
+
+
+/* Tooltips */
+STRINGTABLE
+BEGIN
+  IDS_TOOLTIP_NEW       "新規"
+  IDS_TOOLTIP_OPEN      "開く"
+  IDS_TOOLTIP_SAVE      "保存"
+  IDS_TOOLTIP_PRINTPRE  "印刷プレビュー"
+  IDS_TOOLTIP_PRINT     "印刷"
+  IDS_TOOLTIP_CUT       "切り取り"
+  IDS_TOOLTIP_COPY      "コピー"
+  IDS_TOOLTIP_PASTE     "貼り付け"
+  IDS_TOOLTIP_UNDO      "元に戻す"
+  IDS_TOOLTIP_REDO      "やり直し"
+END
+
+/* Hints */
+STRINGTABLE
+BEGIN
+  IDS_HINT_BLANK        " "
+  IDS_HINT_NEW          " 新しいドキュメントを作成します。"
+  IDS_HINT_OPEN         " 既存のドキュメントを開きます。"
+  IDS_HINT_CLOSE        " このウィンドウを閉じます。"
+  IDS_HINT_CLOSEALL     " すべてのウィンドウを閉じます。"
+  IDS_HINT_SAVE         " 作業中のドキュメントを保存します。"
+  IDS_HINT_SAVEAS       " 作業中のドキュメントに新しい名前を付けて保存します。"
+  IDS_HINT_PRINT        " 作業中のドキュメントを印刷します。"
+  IDS_HINT_PRINTPRE     " 印刷イメージを表示します。"
+  IDS_HINT_PAGESETUP    " ページのレイアウト設定を変更します。"
+  IDS_HINT_EXIT         " このアプリケーションを終了します。"
+
+  IDS_HINT_CASCADE      " ウィンドウを重ねて表示します。"
+  IDS_HINT_TILE_HORZ    " ウィンドウを重ならないように並べて表示します。"
+  IDS_HINT_TILE_VERT    " ウィンドウを重ならないように並べて表示します。"
+  IDS_HINT_ARRANGE      " ウィンドウの下部にアイコンを整列します。"
+  IDS_HINT_NEXT         " 次のウィンドウをアクティブにします。"
+
+  IDS_HINT_SYS_RESTORE  " ウィンドウを通常のサイズに戻します。"
+  IDS_HINT_SYS_MOVE     " このウィンドウを移動します。"
+  IDS_HINT_SYS_SIZE     " このウィンドウのサイズを変更します。"
+  IDS_HINT_SYS_MINIMIZE " このウィンドウをアイコン化します。"
+  IDS_HINT_SYS_MAXIMIZE " このウィンドウを画面全体に拡大します。"
+END
+

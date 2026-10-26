@@ -1,0 +1,228 @@
+/*
+ * PROJECT:     LiberNT IP Helper Monitor
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_HLP_INTERFACE_SHOW "情報を表示します。\n"
+    IDS_HLP_INTERFACE_SHOW_INTERFACE "インターフェイスを表示します。\n"
+    IDS_HLP_INTERFACE_SHOW_INTERFACE_EX "\n使用法:\n"
+
+    IDS_HLP_IP_ADD "テーブルに構成エントリを追加します。\n"
+    IDS_HLP_IP_ADD_ADDRESS     "指定されたインターフェイスに IP アドレスを追加します。\n"
+    IDS_HLP_IP_ADD_ADDRESS_EX  "\n使用法: %1!s! [name=]<string> [[addr=]IP address [mask=]IP subnet mask]\n\
+       [[gateway=]IP address [gwmetric=]integer]\n\n\
+パラメーター:\n\n\
+      name         - IP インターフェイスの名前です。\n\
+      addr         - インターフェイスに追加する IP アドレスです。\n\
+      mask         - 指定された IP アドレスの IP サブネット マスクです。\n\
+      gateway      - 指定された IP アドレスの既定のゲートウェイです。\n\
+      gwmetric     - 既定のゲートウェイへのメトリックです。\n\n\
+注釈: インターフェイスに IP アドレスと既定のゲートウェイを追加します。\n\
+      インターフェイスで DHCP が有効な場合は、無効になります。\n\n\
+例:\n\n\
+       %1!s! ""ローカル エリア接続"" 10.0.0.2  255.0.0.0\n\
+       %1!s! ""ローカル エリア接続"" gateway=10.0.0.3 gwmetric=2\n\n\
+       最初のコマンドは、サブネット マスク 255.0.0.0 の静的 IP アドレス\n\
+       10.0.0.2 をローカル エリア接続インターフェイスに追加します。2 番目の\n\
+       コマンドは、IP アドレス 10.0.0.3 をこのインターフェイスの 2 番目の\n\
+       既定のゲートウェイとしてゲートウェイ メトリック 2 で追加します。\n"
+
+    IDS_HLP_IP_ADD_DNS    "静的 DNS サーバー アドレスを追加します。\n"
+    IDS_HLP_IP_ADD_DNS_EX "\n使用法: %1!s! [name=]<string> [addr=]<IP address> [[index=]<integer>]\n\n\
+パラメーター:\n\n\
+      タグ           値\n\
+      name         - DNS サーバーを追加するインターフェイスの名前です。\n\
+      addr         - 追加する DNS サーバーの IP アドレスです。\n\
+      index        - 指定された DNS サーバー アドレスのインデックス (優先順位) を\n\
+                     指定します。\n\n\
+注釈: 静的に構成された一覧に新しい DNS サーバーの IP アドレスを追加します。\n\
+      既定では、DNS サーバーは一覧の最後に追加されます。インデックスを\n\
+      指定した場合、DNS サーバーは一覧のその位置に配置され、他のサーバーは\n\
+      順に下に移動されます。DNS サーバーが以前に DHCP によって取得された\n\
+      場合は、新しいアドレスで以前の一覧が置き換えられます。\n\n\
+例:\n\n\
+       %1!s! ""ローカル エリア接続"" 10.0.0.1\n\
+       %1!s! ""ローカル エリア接続"" 10.0.0.3 index=2\n"
+
+    IDS_HLP_IP_DELETE            "テーブルから構成エントリを削除します。\n"
+    IDS_HLP_IP_DELETE_ADDRESS    "指定されたインターフェイスから IP アドレスまたは既定のゲートウェイを削除します。\n"
+    IDS_HLP_IP_DELETE_ADDRESS_EX "\n使用法: %1!s! [name=]<string> [[addr=]IP address] [[gateway=]IP address|ALL]\n\n\
+パラメーター:\n\n\
+      タグ           値\n\
+      name         - インターフェイスの名前です。\n\
+      addr         - name で指定されたインターフェイスの静的 IP アドレスです。\n\
+      gateway      - 次のいずれかの値です:\n\
+                     <IP address>: 削除する静的 IP アドレスの特定の既定の\n\
+                                   ゲートウェイの IP アドレスです。\n\
+                     ALL: 削除する静的 IP アドレスのすべての既定の\n\
+                          ゲートウェイ IP アドレスを削除します。\n\n\
+注釈: 複数の静的 IP アドレスを持つインターフェイスから IP アドレスを\n\
+      削除するか、指定されたインターフェイスから既定のゲートウェイを削除します。\n\n\
+例:\n\n\
+       %1!s! ""ローカル エリア接続"" addr=10.0.0.1 gateway=all\n"
+
+    IDS_HLP_IP_DELETE_ARPCACHE    "1 つまたはすべてのインターフェイスの ARP キャッシュをフラッシュします。\n"
+    IDS_HLP_IP_DELETE_ARPCACHE_EX "\n使用法: %1!s! [name=]<string>\n\n\
+パラメーター:\n\n\
+      タグ           値\n\
+      name         - 特定のインターフェイスのフレンドリ名です。名前を\n\
+                     指定しない場合は、すべてのインターフェイスの ARP\n\
+                     キャッシュがフラッシュされます。\n\n\
+注釈: 特定のインターフェイスまたはすべてのインターフェイスのアドレス解決\n\
+      プロトコル (ARP) キャッシュをフラッシュします。\n\n\
+例:\n\n\
+       %1!s!\n\
+       %1!s! name=""ローカル エリア接続""\n"
+
+    IDS_HLP_IP_DELETE_DNS    "指定されたインターフェイスから DNS サーバーを削除します。\n"
+    IDS_HLP_IP_DELETE_DNS_EX "\n使用法: %1!s! [name=]<string> [[addr=]<IP address>|ALL ]\n\n\
+パラメーター:\n\n\
+      タグ           値\n\
+      name         - DNS サーバーを削除するインターフェイスの名前です。\n\
+      addr         - 次のいずれかの値です:\n\
+                     <IP address>: 削除する DNS サーバーの特定の IP アドレスです。\n\
+                     ALL: 構成されているすべての DNS サーバーの IP アドレスを削除します。\n\n\
+注釈: 特定のインターフェイスの静的に構成された DNS サーバーの IP アドレスを\n\
+      削除します。\n\n\
+例:\n\n\
+       %1!s! ""ローカル エリア接続"" 10.0.0.1\n\
+       %1!s! ""ローカル エリア接続"" all\n"
+
+    IDS_HLP_IP_SET             "構成情報を設定します。\n"
+    IDS_HLP_IP_SET_ADDRESS     "指定されたインターフェイスに IP アドレスまたは既定のゲートウェイを設定します。\n"
+    IDS_HLP_IP_SET_ADDRESS_EX  "\n使用法: %1!s! [name=]<string> \n\
+       [[source=]dhcp | \n\
+        [source=] static [addr=]IP address [mask=]IP subnet mask]\n\
+       [[gateway=]<IP address>|none [gwmetric=]integer]\n\n\
+パラメーター:\n\n\
+      タグ           値\n\
+      name         - インターフェイスの名前です。\n\
+      source       - 次のいずれかの値です:\n\
+                     dhcp: 特定のインターフェイスの IP アドレスを構成する\n\
+                           ソースとして DHCP を設定します。\n\
+                     static: IP アドレスを構成するソースをローカルの\n\
+                             静的構成に設定します。\n\
+      gateway      - 次のいずれかの値です:\n\
+                     <IP address>: 設定する静的 IP アドレスの特定の\n\
+                                   既定のゲートウェイです。\n\
+                     none: 既定のゲートウェイを設定しません。\n\
+      gwmetric     - 既定のゲートウェイのメトリックです。gateway が 'none' に\n\
+                     設定されている場合は、このフィールドを設定しないでください。\n\
+      次のオプションは source が 'static' の場合にのみ使用されます:\n\
+      addr         - 指定されたインターフェイスの IP アドレスです。\n\
+      mask         - 指定された IP アドレスのサブネット マスクです。\n\n\
+注釈: IP アドレスの構成モードを DHCP から静的モードに、または静的モードから\n\
+      DHCP に変更するために使用します。静的 IP アドレスを使用する\n\
+      インターフェイスに IP アドレスを追加するか、既定のゲートウェイを追加します。\n\n\
+例:\n\n\
+       %1!s! name=""ローカル エリア接続"" source=dhcp\n\
+       %1!s! local static 10.0.0.9 255.0.0.0 10.0.0.1 1\n"
+
+    IDS_HLP_IP_SET_DNS         "DNS サーバーのモードとアドレスを設定します。\n"
+    IDS_HLP_IP_SET_DNS_EX      "\n使用法: %1!s! [name=]<string> [source=]dhcp|static [addr=]<IP address>|none\n\
+             [[register=]none|primary|both]\n\n\
+パラメーター:\n\n\
+      タグ           値\n\
+      name         - インターフェイスの名前です。\n\
+      source       - 次のいずれかの値です:\n\
+                     dhcp: 特定のインターフェイスの DNS サーバーを構成する\n\
+                           ソースとして DHCP を設定します。\n\
+                     static: DNS サーバーを構成するソースをローカルの\n\
+                             静的構成に設定します。\n\
+      addr         - 次のいずれかの値です:\n\
+                     <IP address>: DNS サーバーの IP アドレスです。\n\
+                     none: DNS サーバーの一覧を消去します。\n\
+      register     - 次のいずれかの値です:\n\
+                     none: 動的 DNS 登録を無効にします。\n\
+                     primary: プライマリ DNS サフィックスでのみ登録します。\n\
+                     both: プライマリ DNS サフィックスと接続固有の\n\
+                           サフィックスの両方で登録します。\n\n\
+注釈: DNS サーバーの構成を DHCP または静的モードに設定します。source が\n\
+      'static' の場合にのみ、指定されたインターフェイスの DNS サーバーの\n\
+      IP アドレスの静的な一覧を構成するために 'addr' オプションも使用できます。\n\n\
+例:\n\n\
+       %1!s! name=""ローカル エリア接続"" source=dhcp\n\
+       %1!s! ""ローカル エリア接続"" static 10.0.0.1 primary\n"
+
+    IDS_HLP_IP_SHOW              "IP 情報を表示します。\n"
+    IDS_HLP_IP_SHOW_ADDRESSES    "IP アドレスの構成を表示します。\n"
+    IDS_HLP_IP_SHOW_ADDRESSES_EX "\n使用法: %1!s! [[name=]string]\n\n\
+パラメーター:\n\n\
+      タグ            値\n\
+      name            特定のインターフェイスの名前です。\n\n\
+注釈: 1 つまたは複数の特定のインターフェイスの IP アドレス構成を表示します。\n\n\
+例:\n\n\
+      %1!s! ""ローカル エリア接続""\n"
+    IDS_HLP_IP_SHOW_CONFIG       "IP アドレスと追加情報を表示します。\n"
+    IDS_HLP_IP_SHOW_CONFIG_EX    "\n使用法: %1!s! [[name=]string]\n\n\
+パラメーター:\n\n\
+      タグ            値\n\
+      name            特定のインターフェイスの名前です。\n\n\
+注釈: 1 つまたは複数の特定のインターフェイスの IP アドレスと DNS サーバーの\n構成を表示します。\n\n\
+例:\n\n\
+      %1!s! ""ローカル エリア接続""\n"
+    IDS_HLP_IP_SHOW_DNS          "DNS サーバーのアドレスを表示します。\n"
+    IDS_HLP_IP_SHOW_DNS_EX       "\n使用法: %1!s! [[name=]string]\n\n\
+パラメーター:\n\n\
+      タグ            値\n\
+      name            特定のインターフェイスの名前です。\n\n\
+注釈: 1 つまたは複数の特定のインターフェイスの DNS サーバー構成を\n表示します。\n\n\
+例:\n\n\
+      %1!s! ""ローカル エリア接続""\n"
+
+    IDS_HLP_IP_RESET    "TCP/IP と関連コンポーネントを初期状態にリセットします。\n"
+    IDS_HLP_IP_RESET_EX "\n使用法: %1!s! [name=]<string>\n\n\
+パラメーター:\n\n\
+      タグ           値\n\
+      name         - リセットされた設定に関する情報を追加するファイルの\n\
+                     名前です。\n\n\
+注釈: TCP/IP と関連コンポーネントを初期状態にリセットします。\n\n\
+例:\n\n\
+       %1!s! resetlog.txt\n"
+
+    IDS_HLP_WINSOCK_RESET "Winsock カタログを初期状態にリセットします。\n"
+    IDS_HLP_WINSOCK_RESET_EX "\n使用法: %1!s!\n\n\
+注釈: Winsock カタログを初期状態にリセットします。\n"
+    IDS_HLP_WINSOCK_SHOW  "情報を表示します。\n"
+    IDS_HLP_WINSOCK_SHOW_CATALOG "Winsock カタログの内容を表示します。\n"
+    IDS_HLP_WINSOCK_SHOW_CATALOG_EX "\n使用法: %1!s! [[type=]full]\n\n\
+パラメーター:\n\n\
+    \n"
+
+    IDS_IP_HEADER        "\nインターフェイス ""%1!s!"" の構成\n"
+    IDS_DHCP_ON          "    DHCP 有効:                            はい\n"
+    IDS_DHCP_OFF         "    DHCP 有効:                            いいえ\n"
+    IDS_NOIPADDRESS      "    IP アドレス:                          なし\n"
+    IDS_IPADDRESS        "    IP アドレス:                          %1!s!\n"
+    IDS_IPADDRESSES      "    IP アドレス:                          %1!s!\n"
+    IDS_NOSUBNETMASK     "    サブネット マスク:                    なし\n"
+    IDS_SUBNETMASK       "    サブネット マスク:                    %1!s!\n"
+    IDS_SUBNETMASKS      "    サブネット マスク:                    %1!s!\n"
+    IDS_DEFAULTGATEWAY   "    デフォルト ゲートウェイ:              %1!s!\n"
+    IDS_GATEWAYMETRIC    "    ゲートウェイ メトリック:              %1!s!\n"
+    IDS_INTERFACEMETRIC  "    インターフェイス メトリック:          %1!s!\n"
+    IDS_STATICNAMESERVER "    静的に構成された DNS サーバー:        %1!s!\n"
+    IDS_DHCPNAMESERVER   "    DHCP 経由で構成された DNS サーバー:   %1!s!\n"
+    IDS_EMPTYLINE        "                                          %1!s!\n"
+
+    IDS_DUMP_NEWLINE     "\n"
+    IDS_DUMP_HEADERLINE  "# ----------------------------------\n"
+
+    IDS_DUMP_IP_HEADER    "# インターフェイス IP 構成\n"
+    IDS_DUMP_IP_INTERFACE "# ""%1!s!"" のインターフェイス IP 構成\n"
+    IDS_DUMP_IP_FOOTER    "# インターフェイス IP 構成の終わり\n"
+
+    IDS_ERROR_INVALID_INTERFACE  "\n無効なインターフェイス %1!s! が指定されました。\n"
+    IDS_ERROR_BAD_VALUE "\n%1!s! は %1!s! に使用できる値ではありません。\n"
+    IDS_ERROR_ALREADY_DHCP "\nこのインターフェイスでは DHCP が既に有効です。\n"
+    IDS_ERROR_GET_PROPERTIES "\nインターフェイス %1!s! の構成の取得中にエラーが発生しました。\n"
+
+    IDS_ERROR_ADD_DHCP_ADDRESS "\nDHCP 用に構成されたインターフェイスには静的 IP アドレスを追加できません。\n"
+    IDS_ERROR_DELETE_DHCP_ADDRESS "\nDHCP で構成された IP アドレスは削除できません。\n"
+END

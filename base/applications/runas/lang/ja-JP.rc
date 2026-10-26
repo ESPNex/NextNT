@@ -1,0 +1,38 @@
+/*
+ * PROJECT:     LiberNT runas utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE01 "RUNAS の使用法\n\n"
+    IDS_USAGE02 "RUNAS [ [/noprofile | /profile] [/env] [/savecred | /netonly] ]\n"
+    IDS_USAGE03 "      /user:<UserName> program\n\n"
+    IDS_USAGE04 "RUNAS [ [/noprofile | /profile] [/env] [/savecred | /netonly] ]\n"
+    IDS_USAGE05 "      /smartcard [/user:<UserName>] program\n\n"
+    IDS_USAGE06 "   /noprofile      ユーザーのプロファイルを読み込まないことを指定します。\n"
+    IDS_USAGE07 "                   これによりアプリケーションの読み込みは速くなりますが、\n"
+    IDS_USAGE08 "                   一部のアプリケーションが正しく動作しない場合があります。\n"
+    IDS_USAGE09 "   /profile        ユーザーのプロファイルを読み込むことを指定します。\n"
+    IDS_USAGE10 "                   これは既定値です。\n" 
+    IDS_USAGE11 "   /env            ユーザーの環境の代わりに現在の環境を使用します。\n"
+    IDS_USAGE12 "   /netonly        指定された資格情報がリモート アクセス専用である場合に\n"
+    IDS_USAGE13 "                   使用します。\n"
+    IDS_USAGE14 "   /savecred       まだ実装されていません。\n"
+    IDS_USAGE15 "   /smartcard      まだ実装されていません。\n"
+    IDS_USAGE16 "   /user           <UserName> は USER@DOMAIN または DOMAIN\\USER の形式で指定します\n"
+    IDS_USAGE17 "   program         EXE のコマンド ラインです。下の例を参照してください\n\n"
+    IDS_USAGE18 "例:\n"
+    IDS_USAGE19 "> runas /noprofile /user:mymachine\\administrator cmd\n\n"
+    IDS_USAGE20 "注意:  /profile は /netonly と同時に使用できません。\n"
+
+    IDS_START     "%s を開始しています。ユーザー ""%s\\%s""...\n"
+    IDS_RUN_ERROR "RUNAS エラー: %s を実行できません\n"
+    IDS_INTERNAL_ERROR "RUNAS エラー: 内部エラー %ld\n"
+
+    IDS_PASSWORD  """%s\\%s"" のパスワードを入力してください: "
+END

@@ -1,0 +1,40 @@
+/*
+ * PROJECT:     LiberNT timeout
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "LiberNT Timeout ユーティリティ\n\
+\n\
+TIMEOUT [/?] [/T] delay [/NOBREAK]\n\
+\n\
+説明:\n\
+    このツールは、指定された時間 (秒) が経過するか、いずれかのキーが\n\
+    押されるまで待機します。キーの押下を無視するパラメーターも\n\
+    指定できます。\n\
+\n\
+パラメーター:\n\
+    /?        このヘルプ画面を表示します。\n\
+\n\
+    /T delay  待機する秒数を指定します (-1 から 99999)。\n\
+              -1 を指定すると、キーが押されるまで待機します。\n\
+              ""/T"" の指定は省略可能で、待機時間の値だけを\n\
+              指定することもできます。\n\
+\n\
+    /NOBREAK  Ctrl+C 以外のキーボード入力をすべて無視します。\n\
+"
+    IDS_ERROR_OUT_OF_RANGE "エラー: タイマーの値は範囲内 (-1 から 99999) である必要があります。\n"
+    IDS_ERROR_INVALID_HANDLE_VALUE "エラー: コンソールの標準ハンドルを取得できません (エラー %lu)。\n"
+    IDS_ERROR_READ_INPUT "エラー: コンソール入力を読み取れません (エラー %lu)。\n"
+    IDS_ERROR_NO_TIMER_VALUE "エラー: タイマーの値を指定する必要があります (-1 から 99999)。\n"
+    IDS_ERROR_ONE_TIME "エラー: タイマーの値は 1 つだけ指定してください。\n"
+    IDS_NOBREAK_INPUT "終了するには Ctrl+C を押してください..."
+    IDS_USER_INPUT "続行するには何かキーを押してください..."
+    IDS_NOBREAK_INPUT_COUNT "%d 秒待っています。終了するには Ctrl+C を押してください..."
+    IDS_USER_INPUT_COUNT "%d 秒待っています。続行するには何かキーを押してください..."
+END

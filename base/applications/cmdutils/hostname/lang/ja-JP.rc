@@ -1,0 +1,15 @@
+/*
+ * PROJECT:     LiberNT hostname
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\n現在のホスト名を表示します。\n\nhostname\n"
+    IDS_NOSET "sethostname: ホスト名を変更するには、コントロール パネルの ""システム"" の\n""コンピューター名"" タブを開いてください。\nhostname -s はサポートされていません。\n"
+    IDS_ERROR "エラー: "
+END

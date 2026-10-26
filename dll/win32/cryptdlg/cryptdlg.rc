@@ -47,6 +47,9 @@
 #ifdef LANGUAGE_IT_IT
     #include "lang/cryptdlg_It.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/cryptdlg_Ja.rc"
+#endif
 #ifdef LANGUAGE_KO_KR
     #include "lang/cryptdlg_Ko.rc"
 #endif

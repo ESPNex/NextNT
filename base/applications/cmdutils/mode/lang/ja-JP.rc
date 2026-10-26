@@ -1,0 +1,79 @@
+/*
+ * PROJECT:     LiberNT mode
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "システム デバイスを構成します。\n\n\
+デバイスの状態:     MODE [device] [/STATUS]\n\
+シリアル ポート:    MODE COMm[:] [BAUD=b] [PARITY=p] [DATA=d] [STOP=s]\n\
+                                [to=on|off] [xon=on|off] [odsr=on|off]\n\
+                                [octs=on|off] [dtr=on|off|hs]\n\
+                                [rts=on|off|hs|tg] [idsr=on|off]\n\
+印刷のリダイレクト: MODE LPTn[:]=COMm[:]\n\
+コード ページの選択: MODE CON[:] CP SELECT=yyy\n\
+コード ページの状態: MODE CON[:] CP [/STATUS]\n\
+表示モード:         MODE CON[:] [COLS=c] [LINES=n]\n\
+タイプマティック速度: MODE CON[:] [RATE=r DELAY=d]\n"
+
+    IDS_QUERY_SERIAL_FOUND "シリアル デバイスが見つかりました - %s\n"
+    IDS_QUERY_PRINTER_FOUND "プリンター デバイスが見つかりました - %s\n"
+    IDS_QUERY_PARALLEL_FOUND "パラレル デバイスが見つかりました - %s\n"
+    IDS_QUERY_DOSDEV_FOUND "DOS デバイスが見つかりました - %s\n"
+    // IDS_QUERY_MISC_FOUND "その他のデバイスが見つかりました - %s\n"
+
+    // IDS_QUERY_DEVICE_FOUND "%s デバイスが見つかりました - %s\n"
+    // IDS_SERIAL  "シリアル"
+    // IDS_PRINTER "パラレル"
+    // IDS_OTHER   "その他"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DEVICE_STATUS_HEADER "デバイス %s の状態:"
+
+    IDS_COM_STATUS_BAUD             "    ボー レート:     %ld\n"
+    IDS_COM_STATUS_PARITY           "    パリティ:        %s\n"
+    IDS_COM_STATUS_DATA_BITS        "    データ ビット:   %d\n"
+    IDS_COM_STATUS_STOP_BITS        "    ストップ ビット: %s\n"
+    IDS_COM_STATUS_TIMEOUT          "    タイムアウト:    %s\n"
+    IDS_COM_STATUS_XON_XOFF         "    XON/XOFF:        %s\n"
+    IDS_COM_STATUS_CTS_HANDSHAKING  "    CTS ハンドシェイク: %s\n"
+    IDS_COM_STATUS_DSR_HANDSHAKING  "    DSR ハンドシェイク: %s\n"
+    IDS_COM_STATUS_DSR_SENSITIVITY  "    DSR 感度:        %s\n"
+    IDS_COM_STATUS_DTR_CIRCUIT      "    DTR 回線:        %s\n"
+    IDS_COM_STATUS_RTS_CIRCUIT      "    RTS 回線:        %s\n"
+
+    IDS_CONSOLE_STATUS_LINES    "    行数:           %d\n"
+    IDS_CONSOLE_STATUS_COLS     "    桁数:           %d\n"
+    IDS_CONSOLE_KBD_RATE        "    キーボード速度: %ld\n"
+    IDS_CONSOLE_KBD_DELAY       "    キーボード遅延: %ld\n"
+    IDS_CONSOLE_CODEPAGE        "    コード ページ:  %d\n"
+
+    IDS_PRINTER_OUTPUT_NOT_REROUTED     "    プリンター出力はリダイレクトされていません。\n"
+    IDS_PRINTER_OUTPUT_REROUTED_SERIAL  "    プリンター出力はシリアル ポート %s にリダイレクトされています。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ERROR_QUERY_DEVICES "エラー: DOS デバイスを照会できません (0x%lx)。\n"
+    IDS_ERROR_QUERY_DEVICES_FORM "    QueryDosDeviceW(%s) が認識できない形式 %s を返しました。\n"
+    IDS_ERROR_SET_PARALLEL_STATE "エラー: SetParallelState(%d) - DefineDosDevice(%s) (0x%lx)\n"
+    IDS_ERROR_INVALID_PARAMETER "無効なパラメーターです - %s\n"
+    IDS_ERROR_ILLEGAL_DEVICE_NAME "無効なデバイス名です - %s (0x%lx)\n"
+    IDS_ERROR_DEVICE_NOT_AVAILABLE "デバイス %s は現在使用できません。\n"
+    IDS_ERROR_STATUS_GET_DEVICE "デバイス %s の状態を取得できませんでした:\n"
+    IDS_ERROR_STATUS_SET_DEVICE "デバイス %s の状態を設定できませんでした:\n"
+    IDS_ERROR_TIMEOUT_GET_DEVICE "デバイス %s のタイムアウトを取得できませんでした:\n"
+    IDS_ERROR_TIMEOUT_SET_DEVICE "デバイス %s のタイムアウトを設定できませんでした:\n"
+    IDS_ERROR_INVALID_PARITY_BITS "エラー: パリティ ビットの値 %d が無効です:\n"
+    IDS_ERROR_INVALID_STOP_BITS "エラー: ストップ ビットの値 %d が無効です:\n"
+    IDS_ERROR_NO_MEMORY "エラー: メモリが不足しています。\n"
+    IDS_ERROR_SCREEN_LINES_COL "指定された行数と桁数に画面を設定できません。\n"
+    IDS_ERROR_INVALID_CODEPAGE "指定されたコード ページは無効です。\n"
+END

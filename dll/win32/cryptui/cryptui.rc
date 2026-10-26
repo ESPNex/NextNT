@@ -52,6 +52,9 @@ IDB_CERT_HEADER BITMAP "res/certheader.bmp"
 #ifdef LANGUAGE_EN_US
     #include "lang/cryptui_En.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/cryptui_Ja.rc"
+#endif
 #ifdef LANGUAGE_KO_KR
     #include "lang/cryptui_Ko.rc"
 #endif

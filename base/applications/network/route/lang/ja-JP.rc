@@ -1,0 +1,67 @@
+/*
+ * PROJECT:     LiberNT route utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE1 "\n\
+ネットワーク ルーティング テーブルを操作します。\n\n\
+ROUTE [-f] [-p] command [destination]\n\
+                [MASK netmask] [gateway] [METRIC metric]\n\n\
+  -f           コマンドを実行する前に、ルーティング テーブルからすべての\n\
+               ゲートウェイ エントリを消去します。ADD および DELETE\n\
+               コマンドと一緒に使用できます。\n\n\
+  -p           システムを再起動してもルートが保持されるようにします。\n\
+               既定では、システムを再起動するとルートは保持されません。\n\
+               ADD コマンドと一緒に使用できます。\n\n\
+  command      次のオプションのいずれかです:\n\
+                 PRINT   ルートを表示します。\n\
+                 ADD     ルートを追加します。\n\
+                 DELETE  ルートを削除します。\n\
+  destination  ホストを指定します。\n\
+  netmask      このルート エントリのサブネット マスク値を指定します。\n\
+               指定しない場合は、既定で 255.255.255.255 になります。\n\
+  gateway      ゲートウェイを指定します。\n\
+  metric       メトリック (宛先までのコスト) を指定します。\n\
+  interface    指定したルートのインターフェイス番号を指定します。\n"
+
+    IDS_USAGE2 "\n\
+route add の使用法:\n\
+route add <target> [mask <mask>] <gw> [metric <m>]\n\
+  IP ルート テーブルにルートを追加します。\n\
+  <target> はルートを追加するネットワークまたはホストです。\n\
+  <mask>   は使用するネットマスクです (指定しない場合は自動検出)\n\
+  <gw>     はネットワークへのアクセスに使用するゲートウェイです\n\
+  <m>      は使用するメトリックです (小さいほど優先)\n"
+
+    IDS_USAGE3 "\n\
+例:\n\
+    > route PRINT               ... すべてのルートを表示します\n\
+    > route PRINT 156*          ... 156* に一致するすべてのルートを表示します\n\
+    > route ADD 156.0.0.0 MASK 255.0.0.0 156.0.1.12 METRIC 5\n\
+             destination^       netmask^   gateway^  metric^\n\n\
+    > route DELETE 156.0.0.0    ... ルートを削除します\n\
+    > route DELETE 156*         ... 156* に一致するすべてのルートを削除します\n"
+
+    IDS_ROUTE_ADD_ERROR "ルートの追加に失敗しました\n"
+    IDS_ROUTE_DEL_ERROR "ルートの削除に失敗しました\n"
+    IDS_ROUTE_ENUM_ERROR "ルートの列挙に失敗しました\n"
+    IDS_SEPARATOR "===========================================================================\n"
+    IDS_INTERFACE_LIST "インターフェイス一覧\n"
+    IDS_INTERFACE_ENTRY "0x%-2lx ........................... %s\n"
+    IDS_ETHERNET_ENTRY "0x%-2lx ...%s...... %s\n"
+    IDS_IPV4_ROUTE_TABLE "\nIPv4 ルート テーブル\n"
+    IDS_ACTIVE_ROUTES "アクティブ ルート:\n"
+    IDS_ROUTES_ENTRY "  %15s  %15s  %15s  %15s  %6ld\n"
+    IDS_PERSISTENT_ROUTES "固定ルート:\n"
+    IDS_PERSISTENT_ENTRY "  %15s  %15s  %15s  %8s\n"
+    IDS_DEFAULT_GATEWAY "デフォルト ゲートウェイ:%18s\n"
+    IDS_ROUTES_HEADER " ネットワーク宛先     ネットマスク     ゲートウェイ インターフェイス メトリック\n"
+    IDS_PERSISTENT_HEADER " ネットワーク宛先     ネットマスク     ゲートウェイ メトリック\n"
+    IDS_NONE "  なし\n"
+END

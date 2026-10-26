@@ -1,0 +1,31 @@
+/*
+ * PROJECT:     LiberNT doskey
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_HELP "コマンド ラインの編集設定、履歴、マクロを管理します。\n\
+\n\
+DOSKEY [/INSERT | /OVERSTRIKE] [/EXENAME=exe] [/HISTORY] [/LISTSIZE=size]\n\
+       [/REINSTALL] [/MACROS[:exe | :ALL]] [/MACROFILE=file] [macroname=[text]]\n\
+\n\
+  /INSERT             挿入モードを有効にします。\n\
+  /OVERSTRIKE         挿入モードを無効にします。\n\
+  /EXENAME=exename    履歴とマクロを表示/変更するプログラムの名前を\n\
+                      設定します。既定は cmd.exe です。\n\
+  /HISTORY            コマンド履歴を表示します。\n\
+  /LISTSIZE=size      履歴バッファーあたりのコマンド数を設定します。\n\
+  /REINSTALL          コマンド履歴を消去します。\n\
+  /MACROS             マクロの定義を表示します。\n\
+  /MACROS:exename     特定のプログラムのマクロ定義を表示します。\n\
+  /MACROS:ALL         すべてのプログラムのマクロ定義を表示します。\n\
+  /MACROFILE=file     ファイルからマクロ定義を読み込みます。\n\
+  macroname           作成するマクロの名前を指定します。\n\
+  text                マクロの置換テキストを指定します。\n"
+    IDS_INVALID_MACRO_DEF "無効なマクロ定義です: %s\n"
+END

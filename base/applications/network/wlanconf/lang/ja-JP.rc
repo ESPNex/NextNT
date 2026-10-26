@@ -1,0 +1,44 @@
+/*
+ * PROJECT:     LiberNT wlanconf
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\nWLAN アダプターを構成します。\n\n\
+WLANCONF [-c SSID [-w WEP] [-a]] [-d] [-s]\n\n\
+\t-c SSID\t\t指定された SSID に接続します。\n\
+\t-w WEP\t\t使用する WEP キーを指定します。\n\
+\t-a\t\t接続先がアドホック ネットワークであることを指定します。\n\
+\t-d\t\t現在の AP から切断します。\n\
+\t-s\t\t範囲内のアクセス ポイントをスキャンして一覧を\n\
+\t\t\t表示します。\n\n\
+パラメーターを指定しない場合は、現在の WLAN 接続に関する情報を表示します。\n"
+    IDS_NO_NETWORK "範囲内にネットワークが見つかりません\n"
+    IDS_NO_WLAN_ADAPTER "システムに WLAN アダプターが見つかりません\n"
+    IDS_SUCCESS "操作は正常に完了しました。\n"
+    IDS_WLAN_DISCONNECT "\nWLAN が切断されました\n"
+    IDS_MSG_WEP_ENABLED "WEP 有効: %s\n"
+    IDS_MSG_NETWORK_MODE "ネットワーク モード: %s\n"
+    IDS_MSG_CURRENT_WIRELESS "\n現在のワイヤレス構成情報:\n\n"
+    IDS_MSG_ENCRYPTED "暗号化: %s\n"
+    IDS_MSG_NETWORK_TYPE "ネットワークの種類: %s\n"
+    IDS_MSG_RSSI "RSSI: %i dBm\n"
+    IDS_MSG_SUPPORT_RATE "サポートされる速度 (Mbps): "
+    IDS_MSG_TRANSMISSION_POWER "送信電力: %d mW\n"
+    IDS_MSG_ANTENNA_COUNT "アンテナ数: %d\n"
+    IDS_MSG_TRANSMIT_ANTENNA "送信アンテナ: %d\n"
+    IDS_MSG_TRANSMIT_ANTENNA_ANY "送信アンテナ: 任意\n"
+    IDS_MSG_RECEIVE_ANTENNA "受信アンテナ: %d\n"
+    IDS_MSG_RECEIVE_ANTENNA_ANY "受信アンテナ: 任意\n"
+    IDS_MSG_FRAGMENT_THRESHOLD "フラグメントのしきい値: %d バイト\n"
+    IDS_MSG_RTS_THRESHOLD "RTS のしきい値: %d バイト\n"
+    IDS_YES "はい"
+    IDS_NO "いいえ"
+    IDS_ADHOC "アドホック"
+    IDS_INFRASTRUCTURE "インフラストラクチャ"
+END

@@ -1,0 +1,92 @@
+/*
+ * PROJECT:     LiberNT NetSh
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+/* Basic application information */
+STRINGTABLE
+BEGIN
+    IDS_APP_USAGE "\n使用法: netsh [-a AliasFile] [-c Context] [-r RemoteMachine] \
+\n             [Command | -f ScriptFile]\n"
+    IDS_OPEN_FAILED      "ファイル %ls を開けませんでした。\n"
+    IDS_THIS_COMMANDS    "\nこのコンテキストで使用できるコマンド:\n"
+    IDS_CONTEXT_COMMANDS "\n%s コンテキストで使用できるコマンド:\n"
+    IDS_ALIAS_NOT_FOUND  "次のエイリアスが見つかりませんでした: %s。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_HELP_HEADER       "\n次のコマンドを利用できます:\n"
+    IDS_HELP_FOOTER       "\nコマンドのヘルプを表示するには、コマンドを入力し、空白を空けてから\n ? を入力してください。\n\n"
+    IDS_SUBCONTEXT_HEADER "\n次のサブコンテキストを利用できます:\n"
+
+    IDS_HLP_UP             "1 つ上のコンテキスト レベルに移動します。\n"
+    IDS_HLP_UP_EX          "\n使用法: %1!s!\n\n        1 つ上のコンテキスト レベルに移動します。\n"
+    IDS_HLP_EXIT           "プログラムを終了します。\n"
+    IDS_HLP_EXIT_EX        "\n使用法: %1!s!\n\n        プログラムを終了します。\n"
+    IDS_HLP_HELP           "コマンドの一覧を表示します。\n"
+    IDS_HLP_HELP_EX        "\n使用法: %1!s!\n\n        コマンドの一覧を表示します。\n"
+    IDS_HLP_POPD           "スタック上のコンテキストに変更します。\n"
+    IDS_HLP_POPD_EX        "\n使用法: %1!s!\n\n        スタック上のコンテキストに変更します。\n"
+    IDS_HLP_PUSHD          "現在のコンテキストをスタックに格納します。\n"
+    IDS_HLP_PUSHD_EX       "\n使用法: %1!s!\n\n        現在のコンテキストをスタックに格納します。\n"
+    IDS_HLP_EXEC           "スクリプト ファイルを実行します。\n"
+    IDS_HLP_EXEC_EX        "\n使用法: %1!s! <スクリプト ファイル名>\n\n        スクリプト ファイルを読み込んで実行します。\n"
+    IDS_HLP_DUMP           "構成スクリプトを表示します。\n"
+    IDS_HLP_DUMP_EX        "\n使用法: %1!s!\n\n        現在の構成を含むスクリプトを作成します。ファイルに保存した場合、\n\
+        このスクリプトを使用して変更された構成設定を復元できます。\n"
+    IDS_HLP_OFFLINE        "現在のモードをオフラインに設定します。\n"
+    IDS_HLP_OFFLINE_EX     "\n使用法: %1!s!\n\n        現在のモードをオフラインに設定します。オフライン モード中に行われた\n\
+        変更は保存され、モードがオンラインに戻ったときに実行中の構成に\n        適用されます。\n"
+    IDS_HLP_ONLINE         "現在のモードをオンラインに設定します。\n"
+    IDS_HLP_ONLINE_EX      "\n使用法: %1!s!\n\n        現在のモードをオンラインに設定します。オンライン モード中に行われた変更は\n\
+        すぐに実行中の構成に反映されます。オフライン モード中に変更が\n        行われた場合、それらはモードがオンラインに戻ったときに実行中の\n\
+        構成に反映されます。\n"
+    IDS_HLP_ABORT          "オフライン モード中に行われた変更を破棄します。\n"
+    IDS_HLP_ABORT_EX       "\n使用法: %1!s!\n\n        オフライン モード中に行われた変更を破棄します。オンライン モード中に\n\
+        行われた変更には影響しません。\n"
+    IDS_HLP_COMMIT         "オフライン モード中に行われた変更をコミットします。\n"
+    IDS_HLP_COMMIT_EX      "\n使用法: %1!s!\n\n        オフライン モード中に行われた変更を実行中の構成にコミットします。\n\
+        オンライン モード中は、このコマンドは何も行いません。\n"
+    IDS_HLP_ALIAS           "エイリアスを追加します。\n"
+    IDS_HLP_ALIAS_EX        "\n使用法 : %1!s! [alias-name] [string1 string 2 ...]\n\n        引数を指定しない場合は、すべてのエイリアスを表示します。\n\
+        alias-name を指定した場合は、それに相当する文字列を表示します\n        (見つかった場合)。\n\
+        1 つ以上の文字列を指定した場合は、alias-name にそれらの\n        文字列を設定します。\n"
+    IDS_HLP_UNALIAS         "エイリアスを削除します。\n"
+    IDS_HLP_UNALIAS_EX      "\n使用法 : %1!s! alias-name\n\n        エイリアス alias-name を削除します。\n"
+
+    IDS_HLP_ADD_HELPER     "ヘルパー DLL をインストールします。\n"
+    IDS_HLP_ADD_HELPER_EX  "\n使用法: %1!s! <dll ファイル名>\n\n        指定されたヘルパー DLL を netsh にインストールします。\n"
+
+    IDS_HLP_DEL_HELPER     "ヘルパー DLL を削除します。\n"
+    IDS_HLP_DEL_HELPER_EX  "\n使用法: %1!s! <dll ファイル名>\n\n        指定されたヘルパー DLL を netsh から削除します。\n"
+
+    IDS_HLP_SET_MACHINE    "操作対象の現在のコンピューターを設定します。\n"
+    IDS_HLP_SET_MACHINE_EX "\n使用法: %1!s! [[name=]<string>]\n\n        操作対象の現在のコンピューターを設定します。コンピューター名を\n\
+        指定しない場合は、ローカル コンピューターが使用されます。\n"
+    IDS_HLP_SET_MODE       "現在のモードをオンラインまたはオフラインに設定します。\n"
+    IDS_HLP_SET_MODE_EX    "\n使用法: %1!s! [mode=]{online|offline}\n\n        現在のモードをオンラインまたはオフラインに設定します。\n"
+
+    IDS_HLP_SHOW_ALIAS     "定義されているすべてのエイリアスを一覧表示します。\n"
+    IDS_HLP_SHOW_ALIAS_EX  "\n使用法: %1!s!\n\n        定義されているすべてのエイリアスを一覧表示します。\n"
+    IDS_HLP_SHOW_HELPER    "すべてのトップレベル ヘルパーを一覧表示します。\n"
+    IDS_HLP_SHOW_HELPER_EX "\n使用法: %1!s!\n\n        すべてのトップレベル ヘルパーを一覧表示します。\n"
+    IDS_HLP_SHOW_MODE      "現在のモードを表示します。\n"
+    IDS_HLP_SHOW_MODE_EX   "\n使用法: %1!s!\n\n        現在のモード (オフラインまたはオンライン) を表示します。\n"
+
+    IDS_HLP_GROUP_ADD      "エントリの一覧に構成エントリを追加します。\n"
+    IDS_HLP_GROUP_DELETE   "エントリの一覧から構成エントリを削除します。\n"
+    IDS_HLP_GROUP_SET      "構成設定を更新します。\n"
+    IDS_HLP_GROUP_SHOW     "情報を表示します。\n"
+END
+
+STRINGTABLE
+BEGIN
+    ERROR_INVALID_SYNTAX   "このコマンドに指定された構文は無効です。正しい構文についてはヘルプを確認してください。\n"
+    ERROR_CMD_NOT_FOUND    "次のコマンドが見つかりませんでした: %1!s!。\n"
+    ERROR_OKAY             "OK。\n"
+END

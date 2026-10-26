@@ -1,0 +1,54 @@
+/*
+ * PROJECT:     LiberNT System Information
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDM_MAIN MENU
+BEGIN
+    POPUP "ファイル(&F)"
+    BEGIN
+        MENUITEM "終了(&X)", IDM_EXIT
+    END
+    POPUP "表示(&V)"
+    BEGIN
+        MENUITEM "最新の情報に更新(&R)\tF5", IDM_REFRESH
+    END
+    POPUP "ヘルプ(&H)"
+    BEGIN
+        MENUITEM "システム情報のバージョン情報(&A)", IDM_ABOUT
+    END
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TITLE "システム情報"
+    IDS_COLUMN_ITEM "項目"
+    IDS_COLUMN_VALUE "値"
+    IDS_OS_NAME "OS 名"
+    IDS_VERSION "バージョン"
+    IDS_VERSION_FORMAT "%lu.%lu.%lu ビルド %lu"
+    IDS_SYSTEM_NAME "システム名"
+    IDS_MANUFACTURER "システム製造元"
+    IDS_MODEL "システム モデル"
+    IDS_SYSTEM_TYPE "システムの種類"
+    IDS_TYPE_X86 "x86 ベース PC"
+    IDS_TYPE_X64 "x64 ベース PC"
+    IDS_TYPE_ARM64 "ARM64 ベース PC"
+    IDS_PROCESSOR "プロセッサ"
+    IDS_PROCESSOR_FORMAT "%s、%lu 個のロジカル プロセッサ"
+    IDS_BIOS "BIOS バージョン/日付"
+    IDS_WINDOWS_DIRECTORY "Windows ディレクトリ"
+    IDS_SYSTEM_DIRECTORY "システム ディレクトリ"
+    IDS_LOCALE "ロケール"
+    IDS_USER_NAME "ユーザー名"
+    IDS_TIME_ZONE "タイム ゾーン"
+    IDS_TOTAL_PHYSICAL "合計物理メモリ"
+    IDS_AVAILABLE_PHYSICAL "利用可能な物理メモリ"
+    IDS_TOTAL_VIRTUAL "合計仮想メモリ"
+    IDS_AVAILABLE_VIRTUAL "利用可能な仮想メモリ"
+    IDS_PAGE_FILE "ページ ファイルの領域"
+END

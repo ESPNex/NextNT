@@ -1,0 +1,247 @@
+/*
+ * PROJECT:     LiberNT DISM
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_HEADER "\n展開イメージのサービスと管理ツール\nバージョン: %s\n\n"
+    IDS_ERROR_DECIMAL "\nエラー: %lu\n\n"
+    IDS_ERROR_HEX "\nエラー: 0x%08lx\n\n"
+    IDS_LOG_LOCATION "\nDISM ログ ファイルは %s にあります\n"
+    IDS_UNRECOGNIZED_TOKEN "DISM はコマンド ライン オプション ""%s"" を認識できません。\n詳細については、DISM.exe /? を実行してヘルプを参照してください。\n"
+    IDS_UNKNOWN_OPTION "%s オプションは不明です。\n詳細については、DISM.exe /? を実行してヘルプを参照してください。\n"
+    IDS_MISSING_OPTION "コマンド ラインに %s オプションがありません。\n詳細については、ヘルプを参照してください。\n"
+    IDS_OPTIONS_CONFLICT "%s と %s のオプションは、コマンド ラインで同時に使用できません。\n詳細については、ヘルプを参照してください。\n"
+    IDS_OPTION_REQUIRED "コマンド ラインに必須のオプションがありません。\n%s または %s が指定されていることを確認してください。\n"
+    IDS_IMAGE_NOT_FOUND "指定されたイメージは、指定されたイメージ コンテナーに存在しません。\n最初にイメージ コンテナー内の既存のイメージを確認してください。\n"
+    IDS_INVALID_ARGUMENTS "コマンドの処理中にエラーが発生しました。\nコマンド ライン引数が有効であることを確認してください。詳細については、ログ ファイルを確認してください。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DETAILS "イメージの詳細 : %s\n\n"
+    IDS_INDEX "インデックス : %d\n"
+    IDS_NAME "名前 : %s\n"
+    IDS_DESCRIPTION "説明 : %s\n"
+    IDS_SIZE "サイズ : %s バイト\n"
+    IDS_WIM_BOOTABLE "WIM ブート可能 : %s\n"
+    IDS_ARCHITECTURE "アーキテクチャ : %s\n"
+    IDS_HAL "Hal : %s\n"
+    IDS_VERSION "バージョン : %s\n"
+    IDS_SP_BUILD "ServicePack ビルド : %s\n"
+    IDS_SP_LEVEL "ServicePack レベル : %s\n"
+    IDS_EDITION "エディション : %s\n"
+    IDS_INSTALLATION "インストール : %s\n"
+    IDS_PRODUCT_TYPE "製品の種類 : %s\n"
+    IDS_PRODUCT_SUITE "製品スイート : %s\n"
+    IDS_SYSTEM_ROOT "システム ルート : %s\n"
+    IDS_DIRECTORIES "ディレクトリ : %s\n"
+    IDS_FILES "ファイル : %s\n"
+    IDS_CREATED "作成日時 : %s\n"
+    IDS_MODIFIED "更新日時 : %s\n"
+    IDS_LANGUAGES "言語 :\n"
+    IDS_LANGUAGES_UNDEFINED "言語 : <未定義>\n"
+    IDS_LANGUAGE "\t%s\n"
+    IDS_LANGUAGE_DEFAULT "\t%s (既定)\n"
+    IDS_UNDEFINED "<未定義>"
+    IDS_YES "はい"
+    IDS_NO "いいえ"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_APPLYING "イメージを適用しています\n"
+    IDS_SAVING "イメージを保存しています\n"
+    IDS_EXPORTING "イメージをエクスポートしています\n"
+    IDS_MOUNTED_IMAGES "マウントされたイメージ:\n\n\n"
+    IDS_NO_MOUNTED_IMAGES "マウントされたイメージは見つかりませんでした。\n\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_HELP_GENERAL "\nDISM.exe [dism_options] {Imaging_command} [<Imaging_arguments>]\n\
+\n\
+説明:\n\
+\n\
+  DISM は、Windows イメージ (WIM、ESD、SWM) ファイルのキャプチャ、適用、\n\
+  エクスポート、分割、検査を行います。\n\
+\n\
+WIM コマンド:\n\
+\n\
+  /List-Image             - イメージのファイルとフォルダーを一覧表示します。\n\
+  /Delete-Image           - 複数のイメージを含む WIM ファイルからイメージを\n\
+                            削除します。\n\
+  /Export-Image           - イメージを別の WIM または ESD ファイルにコピーします。\n\
+  /Append-Image           - ディレクトリを既存の WIM ファイルの新しいイメージ\n\
+                            としてキャプチャします。\n\
+  /Capture-Image          - ディレクトリを新しい WIM ファイルにキャプチャします。\n\
+  /Get-MountedWimInfo     - マウントされた WIM イメージを一覧表示します。\n\
+  /Get-WimInfo            - WIM ファイルのイメージを表示します。\n\
+  /Cleanup-Wim            - 破損した WIM マウントが残したリソースを削除します。\n\
+\n\
+汎用イメージング コマンド:\n\
+\n\
+  /Split-Image            - WIM ファイルを読み取り専用の分割 WIM (SWM)\n\
+                            ファイルに分割します。\n\
+  /Apply-Image            - イメージをディレクトリに適用します。\n\
+  /Get-MountedImageInfo   - マウントされたイメージを一覧表示します。\n\
+  /Get-ImageInfo          - WIM、ESD、または SWM ファイルのイメージを表示します。\n\
+  /Cleanup-Mountpoints    - 破損したマウントが残したリソースを削除します。\n\
+\n\
+DISM オプション:\n\
+\n\
+  /English                - コマンド ラインの出力を英語で表示します。\n\
+  /LogPath                - ログ ファイルのパスを設定します。\n\
+  /Quiet                  - エラー メッセージのみを表示します。\n\
+\n\
+コマンドのヘルプを表示するには、/? の直前にコマンドを指定してください。\n\
+\n\
+  例:\n\
+    DISM.exe /Apply-Image /?\n\
+    DISM.exe /Get-ImageInfo /?\n\
+\n"
+    IDS_HELP_GET_IMAGEINFO "\n/Get-ImageInfo /ImageFile:<image_file> [/Index:<image_index> | /Name:<image_name>]\n\
+\n\
+  WIM、ESD、または SWM ファイルのイメージを表示します。/Index または /Name を\n\
+  指定すると、そのイメージの詳細を表示します。\n\
+\n\
+    例:\n\
+      DISM.exe /Get-ImageInfo /ImageFile:C:\\images\\install.wim\n\
+      DISM.exe /Get-ImageInfo /ImageFile:C:\\images\\install.esd /Index:1\n\
+\n"
+    IDS_HELP_GET_WIMINFO "\n/Get-WimInfo /WimFile:<WIM_file> [/Index:<image_index> | /Name:<image_name>]\n\
+\n\
+  WIM ファイルのイメージを表示します。/Index または /Name を指定すると、\n\
+  そのイメージの詳細を表示します。\n\
+\n\
+    例:\n\
+      DISM.exe /Get-WimInfo /WimFile:C:\\images\\install.wim\n\
+      DISM.exe /Get-WimInfo /WimFile:C:\\images\\install.wim /Index:1\n\
+\n"
+    IDS_HELP_LIST_IMAGE "\n/List-Image /ImageFile:<path_to_image_file>\n\
+  [/Index:<image_index> | /Name:<image_name>]\n\
+\n\
+  イメージのファイルとフォルダーを一覧表示します。\n\
+  複数のイメージを含むファイルでは /Index または /Name が必要です。\n\
+\n\
+    例:\n\
+      DISM.exe /List-Image /ImageFile:install.wim /Index:1\n\
+\n"
+    IDS_HELP_APPLY_IMAGE "\n/Apply-Image /ImageFile:<path_to_image_file> /ApplyDir:<target_directory>\n\
+  [/Index:<image_index> | /Name:<image_name>] [/CheckIntegrity] [/Verify]\n\
+  [/NoRpFix] [/SWMFile:<pattern>] [/Compact] [/WIMBoot] [/EA]\n\
+\n\
+  イメージを既存のディレクトリに適用します。\n\
+  WIM ファイルの整合性テーブルが一致しない場合に停止するには /CheckIntegrity を使用します。\n\
+  適用されたデータを確認するには /Verify を使用します。\n\
+  再解析ポイントをキャプチャ時のまま保持するには /NoRpFix を使用します。\n\
+  分割 WIM の各部分をパスとパターンで指定するには /SWMFile を使用します。\n\
+  ファイルを圧縮して適用するには /Compact を使用します。\n\
+  イメージを WIMBoot モードで適用するには /WIMBoot を使用します。\n\
+  拡張属性を適用するには /EA を使用します。\n\
+  複数のイメージを含むファイルでは /Index または /Name が必要です。\n\
+\n\
+    例:\n\
+      DISM.exe /Apply-Image /ImageFile:install.wim /Index:1 /ApplyDir:D:\\\n\
+\n\
+      DISM.exe /Apply-Image /ImageFile:install.swm /SWMFile:install*.swm\n\
+        /ApplyDir:D:\\ /Index:1\n\
+\n"
+    IDS_HELP_CAPTURE_IMAGE "\n/Capture-Image /ImageFile:<path_to_image_file> /CaptureDir:<source_directory>\n\
+  /Name:<Name>\n\
+  [/Description:Description] [/ConfigFile:<wimscript.ini>]\n\
+  [/Compress:{fast|max|none}] [/Bootable] [/CheckIntegrity] [/Verify]\n\
+  [/NoRpFix] [/EA]\n\
+\n\
+  ディレクトリをすべてのサブフォルダーとともに新しい WIM ファイルにキャプチャします。\n\
+  キャプチャと圧縮から除外するパスを列挙したファイルを指定するには\n\
+  /ConfigFile を使用します。\n\
+  圧縮の種類を選択するには /Compress を使用します。既定は fast です。\n\
+  イメージをブート イメージとしてマークするには /Bootable を使用します。\n\
+  WIM ファイルに整合性テーブルを格納するには /CheckIntegrity を使用します。\n\
+  書き込まれた WIM ファイルを確認するには /Verify を使用します。\n\
+  再解析ポイントをそのまま保持するには /NoRpFix を使用します。\n\
+  拡張属性をキャプチャするには /EA を使用します。\n\
+\n\
+    例:\n\
+      DISM.exe /Capture-Image /ImageFile:install.wim /CaptureDir:D:\\\n\
+        /Name:Drive-D\n\
+\n"
+    IDS_HELP_APPEND_IMAGE "\n/Append-Image /ImageFile:<path_to_image_file> /CaptureDir:<source_directory>\n\
+  /Name:<Name>\n\
+  [/Description:Description] [/ConfigFile:<wimscript.ini>]\n\
+  [/Bootable] [/CheckIntegrity] [/Verify] [/NoRpFix] [/EA]\n\
+\n\
+  ディレクトリを既存の WIM ファイルの新しいイメージとしてキャプチャします。\n\
+  キャプチャと圧縮から除外するパスを列挙したファイルを指定するには\n\
+  /ConfigFile を使用します。\n\
+  イメージをブート イメージとしてマークするには /Bootable を使用します。\n\
+  WIM ファイルに整合性テーブルを格納するには /CheckIntegrity を使用します。\n\
+  書き込まれた WIM ファイルを確認するには /Verify を使用します。\n\
+  再解析ポイントをそのまま保持するには /NoRpFix を使用します。\n\
+  拡張属性をキャプチャするには /EA を使用します。\n\
+\n\
+    例:\n\
+      DISM.exe /Append-Image /ImageFile:install.wim /CaptureDir:D:\\\n\
+        /Name:Drive-D\n\
+\n"
+    IDS_HELP_EXPORT_IMAGE "\n/Export-Image /SourceImageFile:<path_to_image_file> [/SWMFile:<pattern>]\n\
+  [/SourceIndex:<image_index> | /SourceName:<image_name>]\n\
+  /DestinationImageFile:<path_to_image_file> [/DestinationName:<Name>]\n\
+  [/Compress:{fast|max|none|recovery}] [/Bootable] [/CheckIntegrity]\n\
+  複数のイメージを含むファイルでは /SourceIndex または /SourceName が必要です。\n\
+\n\
+  イメージを別の WIM または ESD ファイルにコピーします。エクスポート先の\n\
+  ファイルが既に存在する場合は、イメージが新しいイメージとして追加されます。\n\
+  分割 WIM の各部分をパスとパターンで指定するには /SWMFile を使用します。\n\
+  新しいエクスポート先ファイルの圧縮を選択するには /Compress を使用します。\n\
+  recovery を指定するとソリッド ESD ファイルが書き込まれます。指定しない場合、\n\
+  エクスポート先はソースの圧縮を使用します。\n\
+  イメージをブート イメージとしてマークするには /Bootable を使用します。\n\
+  エクスポート先に整合性テーブルを格納するには /CheckIntegrity を使用します。\n\
+\n\
+    例:\n\
+      DISM.exe /Export-Image /SourceImageFile:install.wim /SourceIndex:1\n\
+        /DestinationImageFile:install2.wim\n\
+\n"
+    IDS_HELP_DELETE_IMAGE "\n/Delete-Image /ImageFile:<path_to_image_file>\n\
+  {/Index:<image_index> | /Name:<image_name>} [/CheckIntegrity]\n\
+\n\
+  複数のイメージを含む WIM ファイルからイメージを削除します。\n\
+  整合性テーブルを確認して更新するには /CheckIntegrity を使用します。\n\
+\n\
+    例:\n\
+      DISM.exe /Delete-Image /ImageFile:install.wim /Index:1\n\
+\n"
+    IDS_HELP_SPLIT_IMAGE "\n/Split-Image\n\
+  /ImageFile:<path_to_image_file> /SWMFile:<path_to_swm> /FileSize:<MB-Size>\n\
+  [/CheckIntegrity]\n\
+\n\
+  WIM ファイルを読み取り専用の分割 WIM ファイルに分割します。\n\
+  各部分の最大サイズをメガバイト (MB) 単位で設定するには /FileSize を使用します。\n\
+  各部分に整合性テーブルを格納するには /CheckIntegrity を使用します。\n\
+\n\
+    例:\n\
+      DISM.exe /Split-Image /ImageFile:install.wim /SWMFile:split.swm\n\
+        /FileSize:650\n\
+\n"
+    IDS_HELP_GET_MOUNTED "\n/Get-MountedImageInfo\n\
+\n\
+  マウントされたイメージとその状態を一覧表示します。\n\
+\n\
+    例:\n\
+      DISM.exe /Get-MountedImageInfo\n\
+\n"
+    IDS_HELP_CLEANUP "\n/Cleanup-Mountpoints\n\
+\n\
+  破損したイメージ マウントが残したリソースを削除します。\n\
+\n\
+    例:\n\
+      DISM.exe /Cleanup-Mountpoints\n\
+\n"
+END

@@ -1,0 +1,16 @@
+/*
+ * PROJECT:     LiberNT clip
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\n使用法を表示するには ""CLIP /?"" と入力してください。\n"
+    IDS_HELP "\nコマンド ライン プログラムの出力をクリップボードにリダイレクトします。\n\n\
+CLIP [/?]\n\n\
+    /?  このヘルプ メッセージを表示します。\n"
+END

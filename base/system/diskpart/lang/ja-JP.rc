@@ -1,0 +1,385 @@
+/*
+ * PROJECT:     LiberNT diskpart
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+/* Basic application information */
+STRINGTABLE
+BEGIN
+    IDS_APP_HEADER "LiberNT DiskPart"
+    IDS_APP_USAGE "\nディスク パーティション分割インタープリター。\n\n\
+使用法: DISKPART [/S filename] [/T timeout] [/?]\n\n\
+/S filename\t指定されたスクリプトを実行します。\n\
+/T timeout\tDiskPart の使用の重複を防ぐためのタイムアウト (秒) です。\n\
+/?\t\tこのヘルプ メッセージを表示します。\n\n"
+    IDS_APP_LICENSE "GNU GPLv2 の下でライセンスされています\n"
+    IDS_APP_CURR_COMPUTER "コンピューター: %s\n\n"
+    IDS_APP_LEAVING "\nDiskPart を終了しています...\n"
+    IDS_APP_PROMPT "DISKPART> "
+END
+
+/* ACTIVE command strings */
+STRINGTABLE
+BEGIN
+    IDS_ACTIVE_FAIL "\nDiskPart はパーティションをアクティブに設定できませんでした。\nパーティションが有効であることを確認してください。\n"
+    IDS_ACTIVE_SUCCESS "\nDiskPart は現在のパーティションをアクティブとして設定しました。\n"
+    IDS_ACTIVE_ALREADY "\n現在のパーティションは既にアクティブとして設定されています。\n"
+    IDS_ACTIVE_NO_MBR "\n選択されたディスクは MBR ディスクではありません。\nACTIVE コマンドは MBR ディスクでのみ使用できます。\n"
+END
+
+/* ASSIGN command strings */
+STRINGTABLE
+BEGIN
+    IDS_ASSIGN_FAIL "\nDiskPart はドライブ文字またはマウント ポイントを割り当てられませんでした。\nドライブ文字またはマウント ポイントが有効であることを確認してください。\n"
+    IDS_ASSIGN_SUCCESS "\nDiskPart はドライブ文字またはマウント ポイントを正常に割り当てました。\n"
+    IDS_ASSIGN_ALREADY_ASSIGNED "\n指定された文字は既にこのドライブに割り当てられています。\n"
+    IDS_ASSIGN_INVALID_LETTER "\n指定された文字は有効なボリューム文字ではありません。\n"
+    IDS_ASSIGN_NO_MORE_LETTER "\nこのボリュームに割り当てる空きドライブ文字がありません。\nドライブ文字を解放してから、もう一度実行してください。\n"
+    IDS_ASSIGN_SYSTEM_VOLUME "\nDiskPart は、システム、ブート、またはページ ファイルのボリュームのドライブ文字を再割り当てできません。\n"
+END
+
+/* AUTOMOUNT command strings */
+STRINGTABLE
+BEGIN
+    IDS_AUTOMOUNT_ENABLED "\n新しいボリュームの自動マウントが有効になりました。\n"
+    IDS_AUTOMOUNT_DISABLED "\n新しいボリュームの自動マウントが無効になりました。\n"
+    IDS_AUTOMOUNT_SCRUBBED "\nDiskPart はシステムのマウント ポイント設定を正常に消去しました。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CLEAN_FAIL "\nDiskPart はディスクをクリーンな状態にできませんでした。\nこのディスク上のデータは回復できない可能性があります。\n"
+    IDS_CLEAN_SUCCESS "\nDiskPart はディスクを正常にクリーンな状態にしました。\n"
+    IDS_CLEAN_SYSTEM "\n選択されたディスクはコンピューターの動作に必要なため、クリーンな状態にできません。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CONVERT_GPT_ALREADY "\n選択されたディスクは既に GPT 形式であるため、変換できません。\n"
+    IDS_CONVERT_GPT_NOT_EMPTY "\n選択されたディスクは GPT 形式に変換できません。\n変換には空のディスクを選択してください。\n"
+    IDS_CONVERT_GPT_SUCCESS "\n選択されたディスクは GPT 形式に正常に変換されました。\n"
+    IDS_CONVERT_MBR_ALREADY "\n選択されたディスクは既に MBR 形式であるため、変換できません。\n"
+    IDS_CONVERT_MBR_NOT_EMPTY "\n選択されたディスクは MBR 形式に変換できません。\n変換には空のディスクを選択してください。\n"
+    IDS_CONVERT_MBR_SUCCESS "\n選択されたディスクは MBR 形式に正常に変換されました。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CREATE_PARTITION_FAIL "\nDiskPart は指定されたパーティションを作成できませんでした。\n"
+    IDS_CREATE_PARTITION_SUCCESS "\nDiskPart は指定したパーティションの作成に成功しました。\n"
+    IDS_CREATE_PARTITION_INVALID_STYLE "\nGPT ディスクには論理パーティションまたは拡張パーティションを作成できません。\n代わりに GPT ディスクにプライマリ パーティションを作成してください。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DELETE_PARTITION_FAIL "\nDiskPart は選択されたパーティションを削除できませんでした。\n選択されたパーティションが削除可能であることを確認してください。\n"
+    IDS_DELETE_PARTITION_SUCCESS "\nDiskPart は選択されたパーティションを正常に削除しました。\n"
+    IDS_DELETE_PARTITION_SYSTEM "\n選択されたパーティションはコンピューターの動作に必要な可能性があるため、削除できません。\n"
+END
+
+/* Disk Information Labels */
+STRINGTABLE
+BEGIN
+    IDS_DETAIL_DISK_DESCRIPTION "%s\n"
+    IDS_DETAIL_DISK_ID "ディスク ID: %s\n"
+    IDS_DETAIL_DISK_TYPE "種類   : %s\n"
+    IDS_DETAIL_DISK_STATUS "状態   : %s\n"
+    IDS_DETAIL_INFO_PATH   "パス   : %hu\n"
+    IDS_DETAIL_INFO_TARGET "ターゲット : %hu\n"
+    IDS_DETAIL_INFO_LUN_ID "LUN ID : %hu\n"
+    IDS_DETAIL_INFO_LOC_PATH "場所のパス"
+    IDS_DETAIL_INFO_CURR_RO_STATE "現在の読み取り専用状態: %s\n"
+    IDS_DETAIL_INFO_RO "読み取り専用: %s\n"
+    IDS_DETAIL_INFO_BOOT_DSK "ブート ディスク: %s\n"
+    IDS_DETAIL_INFO_PAGE_FILE_DSK "ページ ファイル ディスク: %s\n"
+    IDS_DETAIL_INFO_HIBER_FILE_DSK "休止状態ファイル ディスク: %s\n"
+    IDS_DETAIL_INFO_CRASH_DSK "クラッシュ ダンプ ディスク: %s\n"
+    IDS_DETAIL_INFO_CLST_DSK "クラスター ディスク: %s\n"
+    IDS_DETAIL_PARTITION_NUMBER "パーティション %lu\n"
+    IDS_DETAIL_PARTITION_TYPE   "種類          : %s\n"
+    IDS_DETAIL_PARTITION_HIDDEN "非表示        : %s\n"
+    IDS_DETAIL_PARTITION_ACTIVE "アクティブ    : %s\n"
+    IDS_DETAIL_PARTITION_OFFSET "オフセット (バイト): %I64u\n"
+    IDS_DETAIL_PARTITION_REQUIRED "必須          : %s\n"
+    IDS_DETAIL_PARTITION_ATTRIBUTE "属性          : %016I64x\n"
+    IDS_DETAIL_NO_DISKS "\nこのボリュームに接続されているディスクはありません。\n"
+    IDS_DETAIL_NO_VOLUME "\nこのパーティションに関連付けられているボリュームはありません。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_FILESYSTEMS_CURRENT "現在のファイル システム\n"
+    IDS_FILESYSTEMS_FORMATTING "フォーマットでサポートされるファイル システム\n"
+    IDS_FILESYSTEMS_TYPE "  種類          : %s\n"
+    IDS_FILESYSTEMS_CLUSTERSIZE "  クラスター サイズ : %s\n"
+    IDS_FILESYSTEMS_SERIAL_NUMBER "  シリアル番号  : %08lx\n"
+    IDS_FILESYSTEMS_DEFAULT " (既定)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_FORMAT_FAIL "\nDiskPart は選択されたボリュームをフォーマットできませんでした。\n"
+    IDS_FORMAT_SUCCESS "\nDiskPart は、ボリュームのフォーマットを完了しました。\n"
+    IDS_FORMAT_PROGRESS "\r  %3lu パーセント完了しました"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_GPT_FAIL "\nDiskPart は選択された GPT パーティションに属性を割り当てられませんでした。\n"
+    IDS_GPT_SUCCESS "\nDiskPart は選択された GPT パーティションに属性を正常に割り当てました。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_HELP_FORMAT_STRING "%-11.11s - %s"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_INACTIVE_FAIL "\nDiskPart はパーティションを非アクティブに設定できませんでした。\nパーティションが有効であることを確認してください。\n"
+    IDS_INACTIVE_SUCCESS "\nDiskPart は現在のパーティションを非アクティブとして設定しました。\n"
+    IDS_INACTIVE_ALREADY "\n現在のパーティションは既に非アクティブとして設定されています。\n"
+    IDS_INACTIVE_NO_MBR "\n選択されたディスクは MBR ディスクではありません。\nINACTIVE コマンドは MBR ディスクでのみ使用できます。\n"
+END
+
+/* Detail header titles */
+STRINGTABLE
+BEGIN
+    IDS_LIST_DISK_HEAD "  ディスク ###  状態        サイズ   空き      Dyn  Gpt\n"
+    IDS_LIST_DISK_LINE "  --------  ----------  -------  -------  ---  ---\n"
+    IDS_LIST_DISK_FORMAT "%c ディスク %-3lu  %-10s  %-7s  %-7s   %1s    %1s\n"
+    IDS_LIST_PARTITION_HEAD "  パーティション ###  種類              サイズ   オフセット\n"
+    IDS_LIST_PARTITION_LINE "  -------------  ----------------  -------  -------\n"
+    IDS_LIST_PARTITION_FORMAT "%c パーティション %-3lu  %-16s  %-7s  %-7s\n"
+    IDS_LIST_PARTITION_NO_DISK "\nパーティションを一覧表示するディスクがありません。\nディスクを選択して、もう一度実行してください。\n\n"
+    IDS_LIST_PARTITION_NONE "\nこのディスクに表示するパーティションはありません。\n"
+    IDS_LIST_VOLUME_HEAD "  ボリューム ###  Ltr  ラベル       FS     種類        サイズ   状態       情報\n"
+    IDS_LIST_VOLUME_LINE "  ----------  ---  -----------  -----  ----------  -------  ---------  --------\n"
+    IDS_LIST_VOLUME_FORMAT "%c ボリューム %-3lu   %c   %-11.11s  %-5.5s  %-10.10s  %-7.7s  %-9.9s  %-8.8s\n"
+END
+
+/* REMOVE command strings */
+STRINGTABLE
+BEGIN
+    IDS_REMOVE_FAIL "\nDiskPart はドライブ文字またはマウント ポイントを削除できませんでした。\nドライブ文字またはマウント ポイントが有効であることを確認してください。\n"
+    IDS_REMOVE_SUCCESS "\nDiskPart はドライブ文字またはマウント ポイントを正常に削除しました。\n"
+    IDS_REMOVE_NO_LETTER "\n選択されたボリュームには削除するドライブ文字またはマウント ポイントがありません。\n"
+    IDS_REMOVE_WRONG_LETTER "\n指定された文字はそのボリュームに割り当てられていません。\n"
+END
+
+/* RESCAN command strings */
+STRINGTABLE
+BEGIN
+    IDS_RESCAN_START "\nDiskPart が構成をスキャンしています。しばらくお待ちください...\n"
+    IDS_RESCAN_END "\nDiskPart は構成のスキャンを完了しました。\n\n"
+END
+
+/* Select command strings */
+STRINGTABLE
+BEGIN
+    IDS_SHRINK_QUERYMAX "\n再利用可能な最大バイト数: %4I64u %s\n"
+    IDS_SHRINK_SUCCESS "\nDiskPart により、ボリュームは次のサイズだけ正常に縮小されました: %4I64u %s\n"
+    IDS_SHRINK_FS_NOT_SUPPORTED "\n仮想ディスク サービス エラー:\nファイル システムがサポートしていないため、ボリュームを縮小できません。\n\n"
+    IDS_SHRINK_TOO_BIG "\n仮想ディスク サービス エラー:\n指定された縮小サイズが大きすぎるため、ボリュームが\n最小ボリューム サイズより小さくなります。\n\n"
+    IDS_SHRINK_TOO_SMALL "\n仮想ディスク サービス エラー:\n指定された縮小サイズは、許可されている最小縮小サイズより小さいです。\n\n"
+    IDS_SHRINK_NO_VOLUME "\nフォーカスのあるボリュームがありません。\nボリュームを選択して、もう一度実行してください。\n"
+    IDS_EXTEND_SUCCESS "\nDiskPart はボリュームを正常に拡張しました。\n"
+    IDS_EXTEND_FS_SUCCESS "\nDiskPart はボリューム上のファイル システムを正常に拡張しました。\n"
+    IDS_EXTEND_NO_SPACE "\n指定されたディスクには、ボリュームを拡張するための使用可能な空き領域が\n不足しています。\n"
+    IDS_EXTEND_NOT_ENOUGH "\n仮想ディスク サービス エラー:\nこの操作に使用できる領域が不足しています。\n\n"
+    IDS_EXTEND_FS_NOT_SUPPORTED "\n仮想ディスク サービス エラー:\nファイル システムがサポートしていないため、ボリュームを拡張できません。\n\n"
+    IDS_RESIZE_INVALID_PARAMETER "\nDiskPart でエラーが発生しました: パラメーターが間違っています。\n詳細については、システム イベント ログを参照してください。\n\n"
+    IDS_SELECT_NO_DISK "\n現在選択されているディスクはありません。\nディスクを選択して、もう一度実行してください。\n\n"
+    IDS_SELECT_DISK "\nディスク %lu が選択されました。\n\n"
+    IDS_SELECT_DISK_INVALID "\n無効なディスクです。\n\n"
+    IDS_SELECT_DISK_ENUM_NO_START "\nディスクの列挙はまだ開始されていません。\n\n現在選択されているディスクはありません。\n\n"
+    IDS_SELECT_DISK_ENUM_FINISHED "\n最後のディスクが列挙されました。\n\n現在選択されているディスクはありません。\n\n"
+    IDS_SELECT_NO_PARTITION "\n現在選択されているパーティションはありません。\nディスクを選択して、もう一度実行してください。\n\n"
+    IDS_SELECT_PARTITION "\nパーティション %lu が選択されました。\n\n"
+    IDS_SELECT_PARTITION_NO_DISK "\nパーティションを選択するディスクがありません。\nディスクを選択して、もう一度実行してください。\n\n"
+    IDS_SELECT_PARTITION_INVALID "\n無効なパーティションです。\n\n"
+    IDS_SELECT_NO_VOLUME "\n現在選択されているボリュームはありません。\nボリュームを選択して、もう一度実行してください。\n\n"
+    IDS_SELECT_VOLUME "\nボリューム %lu が選択されました。\n\n"
+    IDS_SELECT_VOLUME_INVALID "\n無効なボリュームです。\n\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SETID_FAIL "\nDiskPart はパーティションの種類を変更できませんでした。\n"
+    IDS_SETID_SUCCESS "\nパーティションの種類は正常に変更されました。\n"
+    IDS_SETID_INVALID_FORMAT "\nパーティションの種類の形式が無効です。\n"
+    IDS_SETID_INVALID_TYPE "\nパーティションの種類が無効です。\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_UNIQUID_DISK_INVALID_STYLE "\n選択されたディスクは GPT ディスクでも MBR ディスクでもありません。\nGPT ディスクまたは MBR ディスクを選択してください。\n"
+END
+
+/* Disk Status */
+STRINGTABLE
+BEGIN
+    IDS_STATUS_YES "はい"
+    IDS_STATUS_NO "いいえ"
+    IDS_STATUS_DISK_HEALTHY "正常"
+    IDS_STATUS_DISK_SICK "異常"
+    IDS_STATUS_UNAVAILABLE "使用不可"
+    IDS_STATUS_ONLINE "オンライン"
+    IDS_STATUS_OFFLINE "オフライン"
+    IDS_STATUS_NO_MEDIA "メディアなし"
+    IDS_INFO_BOOT "ブート"
+    IDS_INFO_SYSTEM "システム"
+END
+
+/* CMD Messages for commands */
+STRINGTABLE
+BEGIN
+    IDS_MSG_ARG_SYNTAX_ERROR "このコマンドに指定された引数は無効です。\nこのコマンドの詳細を表示するには、次のように入力してください:"
+END
+
+/* Help Command Descriptions */
+STRINGTABLE
+BEGIN
+    IDS_HELP_ACTIVE                    "選択されたパーティションをアクティブとしてマークします。\n"
+    IDS_HELP_ADD                       "シンプル ボリュームにミラーを追加します。\n"
+    IDS_HELP_ASSIGN                    "選択されたボリュームにドライブ文字またはマウント ポイントを割り当てます。\n"
+    IDS_HELP_ATTACH                    "仮想ディスク ファイルをアタッチします。\n"
+    IDS_HELP_ATTRIBUTES                "ボリュームまたはディスクの属性を操作します。\n"
+    IDS_HELP_AUTOMOUNT                 "ベーシック ボリュームの自動マウントを有効または無効にします。\n"
+    IDS_HELP_BREAK                     "ミラー セットを分割します。\n"
+    IDS_HELP_CLEAN                     "ディスクから構成情報またはすべての情報を\n              消去します。\n"
+    IDS_HELP_COMPACT                   "ファイルの物理サイズの縮小を試みます。\n"
+
+    IDS_HELP_CONVERT                   "異なるディスク形式間で変換します。\n"
+    IDS_HELP_CONVERT_GPT               "MBR ディスクを GPT 形式に変換します。\n"
+    IDS_HELP_CONVERT_MBR               "GPT ディスクを MBR 形式に変換します。\n"
+
+    IDS_HELP_CREATE                    "ボリューム、パーティション、または仮想ディスクを作成します。\n"
+    IDS_HELP_CREATE_PARTITION          "パーティションを作成します。\n"
+    IDS_HELP_CREATE_PARTITION_EFI      "EFI システム パーティションを作成します。\n"
+    IDS_HELP_CREATE_PARTITION_EXTENDED "拡張パーティションを作成します。\n"
+    IDS_HELP_CREATE_PARTITION_LOGICAL  "論理ドライブを作成します。\n"
+    IDS_HELP_CREATE_PARTITION_MSR      "MSR パーティションを作成します。\n"
+    IDS_HELP_CREATE_PARTITION_PRIMARY  "プライマリ パーティションを作成します。\n"
+    IDS_HELP_CREATE_VOLUME             "ボリュームを作成します。\n"
+    IDS_HELP_CREATE_VDISK              "仮想ディスク ファイルを作成します。\n"
+
+    IDS_HELP_DELETE                    "オブジェクトを削除します。\n"
+    IDS_HELP_DELETE_DISK               "ディスクを削除します。\n"
+    IDS_HELP_DELETE_PARTITION          "パーティションを削除します。\n"
+    IDS_HELP_DELETE_VOLUME             "ボリュームを削除します。\n"
+
+    IDS_HELP_DETACH                    "仮想ディスク ファイルをデタッチします。\n"
+
+    IDS_HELP_DETAIL                    "オブジェクトの詳細を表示します。\n"
+    IDS_HELP_DETAIL_DISK               "ディスクの詳細を表示します。\n"
+    IDS_HELP_DETAIL_PARTITION          "パーティションの詳細を表示します。\n"
+    IDS_HELP_DETAIL_VOLUME             "ボリュームの詳細を表示します。\n"
+
+    IDS_HELP_EXIT                      "DiskPart を終了します。\n"
+    IDS_HELP_EXPAND                    "仮想ディスクで使用可能な最大サイズを拡張します。\n"
+    IDS_HELP_EXTEND                    "ボリュームを拡張します。\n"
+    IDS_HELP_FILESYSTEMS               "ボリュームの現在のファイル システムとサポートされるファイル システムを表示します。\n"
+    IDS_HELP_FORMAT                    "ボリュームまたはパーティションをフォーマットします。\n"
+    IDS_HELP_GPT                       "選択された GPT パーティションに属性を割り当てます。\n"
+    IDS_HELP_HELP                      "コマンドの一覧を表示します。\n"
+    IDS_HELP_IMPORT                    "ディスク グループをインポートします。\n"
+    IDS_HELP_INACTIVE                  "選択されたパーティションを非アクティブとしてマークします。\n"
+
+    IDS_HELP_LIST                      "オブジェクトの一覧を表示します。\n"
+    IDS_HELP_LIST_DISK                 "ディスクを一覧表示します。\n"
+    IDS_HELP_LIST_PARTITION            "パーティションを一覧表示します。\n"
+    IDS_HELP_LIST_VOLUME               "ボリュームを一覧表示します。\n"
+    IDS_HELP_LIST_VDISK                "仮想ディスク ファイルを一覧表示します。\n"
+
+    IDS_HELP_MERGE                     "子ディスクを親ディスクとマージします。\n"
+    IDS_HELP_OFFLINE                   "現在オンラインとしてマークされているオブジェクトをオフラインにします。\n"
+    IDS_HELP_ONLINE                    "現在オフラインとしてマークされているオブジェクトをオンラインにします。\n"
+    IDS_HELP_RECOVER                   "無効なパックにあるすべてのディスクの状態を更新し、\n              古いプレックスまたはパリティ データを持つミラー ボリュームと\n              RAID-5 ボリュームを再同期します。\n"
+    IDS_HELP_REM                       "何もしません。スクリプトにコメントを付けるために使用します。\n"
+    IDS_HELP_REMOVE                    "ドライブ文字またはマウント ポイントの割り当てを削除します。\n"
+    IDS_HELP_REPAIR                    "障害のあるメンバーを含む RAID-5 ボリュームを修復します。\n"
+    IDS_HELP_RESCAN                    "コンピューターを再スキャンしてディスクとボリュームを検索します。\n"
+    IDS_HELP_RETAIN                    "保持されたパーティションをシンプル ボリュームの下に配置します。\n"
+    IDS_HELP_SAN                       "現在起動している OS の SAN ポリシーを表示または設定します。\n"
+
+    IDS_HELP_SELECT                    "オブジェクトにフォーカスを移動します。\n"
+    IDS_HELP_SELECT_DISK               "ディスクにフォーカスを移動します。\n"
+    IDS_HELP_SELECT_PARTITION          "パーティションにフォーカスを移動します。\n"
+    IDS_HELP_SELECT_VOLUME             "ボリュームにフォーカスを移動します。\n"
+    IDS_HELP_SELECT_VDISK              "仮想ディスクにフォーカスを移動します。\n"
+
+    IDS_HELP_SETID                     "パーティションの種類を変更します。\n"
+    IDS_HELP_SHRINK                    "選択されたボリュームのサイズを縮小します。\n"
+
+    IDS_HELP_UNIQUEID                  "ディスクの GUID パーティション テーブル (GPT) 識別子または\n              マスター ブート レコード (MBR) 署名を表示または設定します。\n"
+    IDS_HELP_UNIQUEID_DISK             "ディスクの GUID パーティション テーブル (GPT) 識別子または\n              マスター ブート レコード (MBR) 署名を表示または設定します。\n"
+END
+
+/* Common Error Messages */
+STRINGTABLE
+BEGIN
+    IDS_ERROR_MSG_NO_SCRIPT "スクリプトを開くときにエラーが発生しました: %s\n"
+    IDS_ERROR_MSG_BAD_ARG "引数の処理中にエラーが発生しました: %s\n"
+    IDS_ERROR_INVALID_ARGS "無効な引数です\n"
+    IDS_ERROR_NO_MEDIUM "デバイスにメディアがありません。\n"
+END
+
+/* Bus type */
+STRINGTABLE
+BEGIN
+    IDS_BUSTYPE_UNKNOWN "不明"
+    IDS_BUSTYPE_SCSI    "SCSI"
+    IDS_BUSTYPE_ATAPI   "ATAPI"
+    IDS_BUSTYPE_ATA     "ATA"
+    IDS_BUSTYPE_1394    "1394"
+    IDS_BUSTYPE_SSA     "SSA"
+    IDS_BUSTYPE_FIBRE   "FibreChannel"
+    IDS_BUSTYPE_USB     "USB"
+    IDS_BUSTYPE_RAID    "RAID"
+    IDS_BUSTYPE_ISCSI   "iSCSI"
+    IDS_BUSTYPE_SAS     "SAS"
+    IDS_BUSTYPE_SATA    "SATA"
+    IDS_BUSTYPE_SD      "SD"
+    IDS_BUSTYPE_MMC     "MMC"
+    IDS_BUSTYPE_VIRTUAL "仮想"
+    IDS_BUSTYPE_FBV     "FileBackedVirtual"
+    IDS_BUSTYPE_SPACES  "StorageSpaces"
+    IDS_BUSTYPE_NVME    "NVME"
+    IDS_BUSTYPE_SCM     "SCM"
+    IDS_BUSTYPE_UFS     "UFS"
+    IDS_BUSTYPE_NVMEOF  "NVMEOF"
+    IDS_BUSTYPE_OTHER   "その他"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PARTITION_TYPE_EXTENDED "拡張"
+    IDS_PARTITION_TYPE_LOGICAL "論理"
+    IDS_PARTITION_TYPE_PRIMARY "プライマリ"
+    IDS_PARTITION_TYPE_RESERVED "予約済み"
+    IDS_PARTITION_TYPE_SYSTEM "システム"
+    IDS_PARTITION_TYPE_UNKNOWN "不明"
+    IDS_PARTITION_TYPE_UNUSED "未使用"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_VOLUME_TYPE_DVD "DVD"
+    IDS_VOLUME_TYPE_PARTITION "パーティション"
+    IDS_VOLUME_TYPE_REMOVABLE "リムーバブル"
+    IDS_VOLUME_TYPE_UNKNOWN "不明"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_UNIT_TB    "TB"
+    IDS_UNIT_GB    "GB"
+    IDS_UNIT_MB    "MB"
+    IDS_UNIT_KB    "KB"
+    IDS_UNIT_B     "B"
+END

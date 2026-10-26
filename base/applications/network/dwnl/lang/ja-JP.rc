@@ -1,0 +1,32 @@
+/*
+ * PROJECT:     LiberNT dwnl utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "使用法: dwnl URL [保存先]\n"
+    IDS_RESOLVING "%s を解決しています... "
+    IDS_DONE "完了。\n"
+    IDS_LENGTH_FULL "長さ: %I64u [%s]\n"
+    IDS_LENGTH "長さ: %I64u\n"
+    IDS_FILE_SAVED "\nファイルを保存しました。\n"
+    IDS_CONNECTING_TO_FULL "%s [%s] に接続しています... "
+    IDS_CONNECTING_TO "%s に接続しています... "
+    IDS_REDIRECTING_TO "%s にリダイレクトしています... "
+    IDS_SEND_REQUEST "要求を送信しています... "
+    IDS_BYTES_DOWNLOADED "%I64u バイトをダウンロードしました"
+    IDS_BYTES_DOWNLOADED_FULL "%2d%% (%I64u バイトをダウンロードしました)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ERROR_DOWNLOAD "\nエラー: ダウンロードに失敗しました。\n"
+    IDS_ERROR_CODE "\nエラー: %u\n"
+    IDS_ERROR_FILENAME "\nエラー: ファイル名を判別できません。保存先のファイル名を指定してください。\n"
+    IDS_ERROR_PROTOCOL "\nエラー: サポートされていないプロトコルです。\n"
+END

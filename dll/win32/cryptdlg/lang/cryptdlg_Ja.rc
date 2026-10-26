@@ -1,0 +1,23 @@
+/*
+ * PROJECT:     LiberNT cryptdlg
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Japanese resource file, translations from Wine po/ja.po
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+{
+    IDS_CERT_POLICY "証明書ポリシー"
+    IDS_POLICY_ID "ポリシー識別子: "
+    IDS_POLICY_QUALIFIER_INFO "ポリシーの修飾子 情報"
+    IDS_POLICY_QUALIFIER_ID "ポリシーの修飾子 Id="
+    IDS_CPS "CPS" /* Certification Practice Statement */
+    IDS_USER_NOTICE "使用者への通知"
+    IDS_QUALIFIER "修飾子"
+    IDS_NOTICE_REF "通知の参照"
+    IDS_ORGANIZATION "組織="
+    IDS_NOTICE_NUM "通知番号="
+    IDS_NOTICE_TEXT "通知テキスト="
+}

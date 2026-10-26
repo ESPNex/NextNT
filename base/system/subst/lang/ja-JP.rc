@@ -1,0 +1,27 @@
+/*
+ * PROJECT:     LiberNT subst
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_INCORRECT_PARAMETER_COUNT "パラメーターの数が正しくありません - %s\n"
+    IDS_INVALID_PARAMETER "パラメーターの数が正しくありません - %s\n"
+    IDS_INVALID_PARAMETER2 "無効なパラメーターです - %s\n"
+    IDS_PATH_NOT_FOUND "パスが見つかりません - %s\n"
+    IDS_ACCESS_DENIED "アクセスが拒否されました - %s\n"
+    IDS_DRIVE_ALREADY_SUBSTED "ドライブは既に SUBST で割り当てられています\n"
+    IDS_FAILED_WITH_ERRORCODE "エラー コード 0x%x で失敗しました: %s\n"
+    IDS_USAGE "パスをドライブ文字に関連付けます。\n\n\
+SUBST [drive1: [drive2:]path]\n\
+SUBST drive1: /D\n\n\
+  drive1:        パスを割り当てる仮想ドライブを指定します。\n\
+  [drive2:]path  仮想ドライブに割り当てる物理ドライブとパスを\n\
+                 指定します。\n\
+  /D             置換された (仮想) ドライブを削除します。\n\n\
+現在の仮想ドライブの一覧を表示するには、パラメーターを指定せずに SUBST と入力してください。\n"
+END

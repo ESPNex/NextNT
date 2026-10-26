@@ -1,0 +1,119 @@
+/*
+ * PROJECT:     LiberNT netstat utility
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "\nプロトコルの統計と現在の TCP/IP ネットワーク接続を表示します。\n\n\
+NETSTAT [-a] [-b] [-e] [-n] [-o] [-p proto] [-r] [-s] [-t] [-v] [interval]\n\n\
+  -a            すべての接続とリッスン ポートを表示します。\n\
+  -b            FIXME (オプションは受け付けますが、機能は実装されていません)。\n\
+  -e            イーサネットの統計を表示します。-s オプションと組み合わせる\n\
+                ことができます。\n\
+  -n            アドレスとポート番号を数値形式で表示します。\n\
+  -o            各接続のプロセス ID を表示します。\n\
+  -p proto      proto で指定されたプロトコル (TCP または UDP) の接続を表示します。\n\
+                -s オプションと一緒に使用してプロトコルごとの統計を表示する\n\
+                場合、proto には TCP、UDP、または IP を指定できます。\n\
+  -r            現在のルーティング テーブルを表示します。\n\
+  -s            プロトコルごとの統計を表示します。既定では、IP、ICMP、TCP、\n\
+                UDP の統計が表示されます。\n\
+                -p オプションを使用して既定のサブセットを指定できます。\n\
+  -t            FIXME (オプションは受け付けますが、機能は実装されていません)。\n\
+  -v            FIXME (オプションは受け付けますが、機能は実装されていません)。\n\
+  interval      選択された統計を interval 秒ごとに再表示します。\n\
+                再表示を停止するには Ctrl+C を押してください。既定では、netstat は\n\
+                現在の情報を 1 回だけ表示します。\n"
+    IDS_DISPLAY_THEADER "\n  プロトコル ローカル アドレス      外部アドレス           状態"
+    IDS_DISPLAY_PROCESS "       プロセス\n"
+    IDS_ACTIVE_CONNECT "\nアクティブな接続\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_IP4_STAT_HEADER "\nIPv4 統計\n\n"
+    IDS_IP_PACK_REC            "  受信したパケット                   = %lu\n"
+    IDS_IP_HEAD_REC_ERROR      "  受信したヘッダー エラー            = %lu\n"
+    IDS_IP_ADDR_REC_ERROR      "  受信したアドレス エラー            = %lu\n"
+    IDS_IP_DATAG_FWD           "  転送されたデータグラム             = %lu\n"
+    IDS_IP_UNKNOWN_PRO_REC     "  受信した不明なプロトコル           = %lu\n"
+    IDS_IP_REC_PACK_DISCARD    "  破棄された受信パケット             = %lu\n"
+    IDS_IP_REC_PACK_DELIVER    "  配信された受信パケット             = %lu\n"
+    IDS_IP_OUT_REQUEST         "  出力要求                           = %lu\n"
+    IDS_IP_ROUTE_DISCARD       "  ルーティング破棄                   = %lu\n"
+    IDS_IP_DISCARD_OUT_PACK    "  破棄された出力パケット             = %lu\n"
+    IDS_IP_OUT_PACKET_NO_ROUTE "  出力パケットのルートなし           = %lu\n"
+    IDS_IP_REASSEMBLE_REQUIRED "  再アセンブリが必要                 = %lu\n"
+    IDS_IP_REASSEMBLE_SUCCESS  "  再アセンブリ成功                   = %lu\n"
+    IDS_IP_REASSEMBLE_FAILURE  "  再アセンブリ失敗                   = %lu\n"
+    IDS_IP_DATAG_FRAG_SUCCESS  "  断片化に成功したデータグラム       = %lu\n"
+    IDS_IP_DATAG_FRAG_FAILURE  "  断片化に失敗したデータグラム       = %lu\n"
+    IDS_IP_DATAG_FRAG_CREATE   "  作成されたフラグメント             = %lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ICMP4_STAT_HEADER "\nICMPv4 統計\n\n"
+    IDS_ICMP_THEADER             "                            受信        送信\n"
+    IDS_ICMP_MSG                 "  メッセージ                %-11lu %-10lu\n"
+    IDS_ICMP_ERROR               "  エラー                    %-11lu %-10lu\n"
+    IDS_ICMP_DEST_UNREACH        "  宛先に到達できない        %-11lu %-10lu\n"
+    IDS_ICMP_TIME_EXCEED         "  時間超過                  %-11lu %-10lu\n"
+    IDS_ICMP_PARAM_PROBLEM       "  パラメーターの問題        %-11lu %-10lu\n"
+    IDS_ICMP_SRC_QUENCHES        "  送信元クエンチ            %-11lu %-10lu\n"
+    IDS_ICMP_REDIRECT            "  リダイレクト              %-11lu %-10lu\n"
+    IDS_ICMP_ECHO                "  エコー                    %-11lu %-10lu\n"
+    IDS_ICMP_ECHO_REPLY          "  エコー応答                %-11lu %-10lu\n"
+    IDS_ICMP_TIMESTAMP           "  タイムスタンプ            %-11lu %-10lu\n"
+    IDS_ICMP_TIMESTAMP_REPLY     "  タイムスタンプ応答        %-11lu %-10lu\n"
+    IDS_ICMP_ADDRESSS_MASK       "  アドレス マスク           %-11lu %-10lu\n"
+    IDS_ICMP_ADDRESSS_MASK_REPLY "  アドレス マスク応答       %-11lu %-10lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TCP4_HEADER         "\nIPv4 の TCP 統計\n\n"
+    IDS_TCP_ACTIVE_OPEN     "  アクティブ オープン                 = %lu\n"
+    IDS_TCP_PASS_OPEN       "  パッシブ オープン                   = %lu\n"
+    IDS_TCP_FAIL_CONNECT    "  失敗した接続試行                    = %lu\n"
+    IDS_TCP_RESET_CONNECT   "  リセットされた接続                  = %lu\n"
+    IDS_TCP_CURRENT_CONNECT "  現在の接続                          = %lu\n"
+    IDS_TCP_SEG_RECEIVE     "  受信したセグメント                  = %lu\n"
+    IDS_TCP_SEG_SENT        "  送信したセグメント                  = %lu\n"
+    IDS_TCP_SEG_RETRANSMIT  "  再送信したセグメント                = %lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_UDP_IP4_HEADER    "\nIPv4 の UDP 統計\n\n"
+    IDS_UDP_DATAG_RECEIVE "  受信したデータグラム  = %lu\n"
+    IDS_UDP_NO_PORT       "  ポートなし            = %lu\n"
+    IDS_UDP_RECEIVE_ERROR "  受信エラー            = %lu\n"
+    IDS_UDP_DATAG_SEND    "  送信したデータグラム  = %lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ETHERNET_INTERFACE_STAT     "インターフェイスの統計\n\n"
+    IDS_ETHERNET_THEADER            "                           受信                送信\n\n"
+    IDS_ETHERNET_BYTES              "バイト               %14lu %15lu\n"
+    IDS_ETHERNET_UNICAST_PACKET     "ユニキャスト パケット %14lu %15lu\n"
+    IDS_ETHERNET_NON_UNICAST_PACKET "非ユニキャスト パケット %14lu %15lu\n"
+    IDS_ETHERNET_DISCARD            "破棄                 %14lu %15lu\n"
+    IDS_ETHERNET_ERROR              "エラー               %14lu %15lu\n"
+    IDS_ETHERNET_UNKNOWN            "不明なプロトコル     %14lu\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ERROR_WSA_START "エラー: WSAStartup() に失敗しました: %d\n"
+    IDS_ERROR_ROUTE "エラー: 'route.exe' が見つかりません\n"
+    IDS_ERROR_TCP_SNAPSHOT "エラー: TCP エンドポイントのスナップショットを取得できませんでした。\n"
+    IDS_ERROR_UDP_ENDPOINT "エラー: UDP エンドポイントのスナップショットを取得できませんでした。\n"
+    IDS_ERROR_UDP_ENDPOINT_TABLE "エラー: UDP エンドポイント テーブルのスナップショットを取得できませんでした。\n"
+END

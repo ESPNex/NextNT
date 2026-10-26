@@ -1,0 +1,19 @@
+/*
+ * PROJECT:     LiberNT services
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_SERVICE_START   "開始"
+    IDS_SERVICE_STOP    "停止"
+    IDS_SERVICE_PAUSE   "一時停止"
+    IDS_SERVICE_RESUME  "再開"
+    IDS_SERVICE_RUNNING "実行中"
+    IDS_SERVICE_STOPPED "停止"
+    IDS_SERVICE_PAUSED  "一時停止"
+END

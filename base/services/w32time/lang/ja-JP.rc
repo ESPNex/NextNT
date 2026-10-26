@@ -1,0 +1,14 @@
+/*
+ * PROJECT:     LiberNT W32Time Service
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_DISPLAYNAME "Windows Time"
+    IDS_DESCRIPTION "ネットワーク上のすべてのクライアントとサーバーで日付と時刻の同期を維持します。"
+END

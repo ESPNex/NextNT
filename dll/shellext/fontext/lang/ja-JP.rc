@@ -1,0 +1,47 @@
+/*
+ * PROJECT:     LiberNT fontext
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+IDD_INSTALL DIALOG 0, 0, 205, 60
+CAPTION "フォントをインストールしています..."
+STYLE DS_CENTER | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "フォントをインストールしています...", IDC_INSTALL_TEXT, 5, 10, 195, 10
+    CONTROL "", IDC_INSTALL_PROGRESS, "msctls_progress32", 0, 5, 25, 195, 10
+    PUSHBUTTON "キャンセル", IDCANCEL, 65, 40, 70, 15
+END
+
+STRINGTABLE
+BEGIN
+    IDS_REACTOS_FONTS_FOLDER "LiberNT フォント フォルダー"
+    IDS_INSTALL_OK "フォントは正常にインストールされました。"
+    IDS_INSTALL_FAILED "フォントをインストールできませんでした。"
+    IDS_CONFIRM_DELETE_FONT "フォントを削除しますか?"
+    IDS_PROPERTIES "プロパティ(&R)"
+    IDS_CANTDELETEFONT "フォントを削除できませんでした。"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_COL_NAME "名前"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_COL_FILENAME "ファイル名"
+    IDS_COL_SIZE "サイズ"
+    IDS_COL_MODIFIED "更新日時"
+    IDS_COL_ATTR "属性"
+END
+
+
+STRINGTABLE
+BEGIN
+    IDS_FONT_PREVIEW "プレビュー"
+END

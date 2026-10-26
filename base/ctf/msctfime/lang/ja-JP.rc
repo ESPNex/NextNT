@@ -1,0 +1,23 @@
+/*
+ * PROJECT:     LiberNT msctfime.ime
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_OK               "OK"
+    IDS_CANCEL           "キャンセル"
+    IDS_ABORT            "中止(&A)"
+    IDS_RETRY            "再試行(&R)"
+    IDS_IGNORE           "無視(&I)"
+    IDS_YES              "はい(&Y)"
+    IDS_NO               "いいえ(&N)"
+
+    IDS_ENTER            "入力"
+    IDS_FINALIZE_STRING  "文字列を確定"
+    IDS_CONVERSION       "変換"
+END

@@ -305,6 +305,9 @@ NORMAL_NORMALGROUPEXPAND_BMP BITMAP "bitmaps/dummy.bmp"
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/ja-JP.rc"
+#endif
 #ifdef LANGUAGE_PL_PL
     #include "lang/pl-PL.rc"
 #endif

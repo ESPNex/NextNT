@@ -1,0 +1,33 @@
+/*
+ * PROJECT:     LiberNT Mount Volume Command
+ * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "ボリューム マウント ポイントを作成、削除、または一覧表示します。\n\n\
+MOUNTVOL [drive:]path VolumeName\n\
+MOUNTVOL [drive:]path /D\n\
+MOUNTVOL [drive:]path /L\n\
+MOUNTVOL /R\n\
+MOUNTVOL /N\n\
+MOUNTVOL /E\n\
+MOUNTVOL drive: /S\n\n\
+    path        マウント ポイントを置く既存の空の NTFS ディレクトリ、\n\
+                またはドライブ文字です。\n\
+    VolumeName  マウントするボリュームです (\\\\?\\Volume{GUID}\\ の形式)。\n\
+    /D          パスからボリューム マウント ポイントを削除します。\n\
+    /L          パスにマウントされたボリュームの名前を表示します。\n\
+    /R          システムに存在しなくなったボリュームのマウント ポイント\n\
+                設定を削除します。\n\
+    /N          新しいボリュームの自動マウントを無効にします。\n\
+    /E          新しいボリュームの自動マウントを再び有効にします。\n\
+    /S          EFI システム パーティションをドライブにマウントします。\n\n"
+    IDS_VOLUME_LIST "VolumeName に指定できる値と現在のマウント ポイント:\n\n"
+    IDS_NO_MOUNT_POINTS "        *** マウント ポイントなし ***\n"
+    IDS_INVALID_PARAMETERS "パラメーターが間違っています。\n"
+END

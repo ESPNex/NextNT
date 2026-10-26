@@ -1,0 +1,56 @@
+/*
+ * PROJECT:     LiberNT WHERE command
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Japanese resource file
+ * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
+ */
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+
+STRINGTABLE
+BEGIN
+    IDS_USAGE "使用法: WHERE [options] pattern...\n\
+\n\
+説明:\n\
+    検索パターンに一致するファイルの場所を表示します。\n\
+    既定では、このツールは検索パターンと PATH 環境変数で\n\
+    指定されたパスを使用して検索します。\n\
+\n\
+オプション:\n\
+  /F       一致したすべてのファイルを二重引用符で囲んで表示します。\n\
+  /Q       非表示モードです。ファイルやメッセージを表示しません。\n\
+  /R dir   指定されたディレクトリから再帰的に検索します。\n\
+  /T       一致したすべてのファイルのサイズと最終更新日を表示します。\n\
+  pattern  検索するファイルのパターンを指定します。ワイルドカード * と ?\n\
+           を使用できます。""$env:pattern"" や ""path:pattern"" の形式も\n\
+           使用でき、""env"" は環境変数で、""env"" 環境変数で\n\
+           指定されたパスで検索が行われます。これらの形式は /R と\n\
+           一緒に使用しないでください。PATHEXT 変数の拡張子をパターンに\n\
+           付加した検索も行われます。\n\
+  /?       このメッセージを表示します。\n\
+\n\
+注意: 検索が成功した場合、このツールはエラー レベル 0 を返します。\n\
+      ファイルが見つからなかった場合は 1、エラーが発生した場合は 2 を返します。\n\
+\n\
+例:\n\
+    WHERE myfile*.exe\n\
+    WHERE /F /T mspaint\n\
+    WHERE $WINDIR:notepad myfile???\n\
+    WHERE C:\\Windows;C:\\Windows\\system32:exp*.exe\n\
+    WHERE /R ""C:\\Program Files"" *.dll\n"
+
+    IDS_BAD_ARG "エラー: 無効な引数です - '%ls'。\n"
+    IDS_NOT_FOUND "情報: 指定されたパターンのファイルが見つかりませんでした。\n"
+    IDS_FILE_INFO "%10I64u  %-12ls %-12ls %ls\n"
+    IDS_WANT_VALUE "エラー: '%ls' には値が必要です。\n"
+    IDS_TYPE_HELP "使用法を表示するには ""WHERE /?"" と入力してください。\n"
+    IDS_ENVPAT_WITH_R "エラー: ""$env:pattern"" は /R と一緒に使用できません。\n"
+    IDS_PATHPAT_WITH_R "エラー: ""path:pattern"" 形式は /R と一緒に使用できません。\n"
+    IDS_BAD_PATHPAT "エラー: ""path:pattern"" に無効なパターンが指定されています。\n"
+    IDS_OUTOFMEMORY "エラー: メモリが不足しています。\n"
+    IDS_BAD_ENVVAR "エラー: 環境変数 ""%ls"" が見つかりません。\n"
+    IDS_CANT_FOUND "エラー: 指定されたファイルが見つかりません。\n"
+    IDS_BAD_DIR "エラー: 無効なディレクトリが指定されました。\n"
+    IDS_BAD_NAME "エラー: ファイル名、ディレクトリ名、またはボリューム ラベルの構文が間違っています。\n"
+    IDS_TOO_MANY "エラー: '%ls' オプションは '%u' 回を超えて指定できません。\n"
+END
