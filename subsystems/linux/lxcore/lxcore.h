@@ -25,7 +25,8 @@
 
 #define LX_TAG              'xcxL'
 #define LX_PAGE_SIZE        0x1000ULL
-#define LX_ALLOC_GRANULARITY 0x10000ULL
+#define LX_ALLOC_GRANULARITY LX_PAGE_SIZE
+#define LX_FAULT_CLUSTER    0x10000ULL
 #define LX_PATH_MAX         4096
 #define LX_MAX_FDS          1024
 #define LX_MAX_ARG_STRLEN   (128 * 1024)

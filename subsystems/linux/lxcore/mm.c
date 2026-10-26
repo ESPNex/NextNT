@@ -1221,6 +1221,128 @@ LxMmViewAllow(
 }
 
 static
+NTSTATUS
+LxMmMapSharedPiece(
+    _In_ PLX_VMA Vma,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 Length,
+    _In_ ULONG64 Offset,
+    _In_ ULONG Maximum)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    SECTION_BASIC_INFORMATION Basic;
+    LARGE_INTEGER SectionOffset;
+    SIZE_T ViewSize = (SIZE_T)Length;
+    PVOID Base = (PVOID)(ULONG_PTR)Start;
+    HANDLE Section;
+    NTSTATUS Status;
+
+    if (Vma->Section != NULL)
+    {
+        Status = ObOpenObjectByPointer(Vma->Section, OBJ_KERNEL_HANDLE, NULL,
+                                       SECTION_MAP_READ | SECTION_MAP_WRITE | SECTION_QUERY, NULL, KernelMode, &Section);
+    }
+    else
+    {
+        InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
+        Status = ZwCreateSection(&Section, SECTION_ALL_ACCESS, &ObjectAttributes, NULL,
+                                 (Maximum == PAGE_READWRITE) ? PAGE_READWRITE : PAGE_READONLY, SEC_COMMIT,
+                                 Vma->File->Handle);
+    }
+    if (!NT_SUCCESS(Status))
+        return Status;
+    if (NT_SUCCESS(ZwQuerySection(Section, SectionBasicInformation, &Basic, sizeof(Basic), NULL)) &&
+        ((ULONG64)Basic.Size.QuadPart > Offset))
+    {
+        ViewSize = (SIZE_T)min(Length, LX_ALIGN_UP((ULONG64)Basic.Size.QuadPart - Offset, LX_PAGE_SIZE));
+    }
+    SectionOffset.QuadPart = (LONG64)Offset;
+    Status = ZwMapViewOfSection(Section, NtCurrentProcess(), &Base, 0, 0, &SectionOffset, &ViewSize, ViewShare, 0,
+                                Maximum);
+    ZwClose(Section);
+    return Status;
+}
+
+static
+LONG
+LxMmSplitSharedView(
+    _In_ PLX_PROCESS Process,
+    _In_ ULONG64 Base,
+    _In_ ULONG64 End,
+    _In_ ULONG64 ZoneStart,
+    _In_ ULONG64 ZoneEnd)
+{
+    ULONG64 Limit[2][2] = { { Base, min(ZoneStart, End) }, { max(ZoneEnd, Base), End } };
+    ULONG64 Low[2] = { 0, 0 }, High[2] = { 0, 0 }, Offset[2] = { 0, 0 }, Cursor;
+    PLX_VMA Owner[2] = { NULL, NULL };
+    MEMORY_BASIC_INFORMATION Information;
+    ULONG Maximum = PAGE_READWRITE;
+    PLIST_ENTRY Entry;
+    ULONG Index;
+
+    for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+    {
+        PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+
+        if ((Vma->Start >= End) || (Vma->End <= Base))
+            continue;
+        if (!(Vma->Flags & LX_MAP_SHARED) || !(Vma->Flags & LX_VMA_VIEW) || (Vma->MapEnd != 0) ||
+            ((Vma->Section == NULL) && ((Vma->File == NULL) || (Vma->File->Handle == NULL))))
+        {
+            return -LX_EBUSY;
+        }
+        for (Index = 0; Index < 2; Index++)
+        {
+            ULONG64 From = max(Vma->Start, Limit[Index][0]), To = min(Vma->End, Limit[Index][1]);
+
+            if (From >= To)
+                continue;
+            if (Owner[Index] == NULL)
+            {
+                Owner[Index] = Vma;
+                Low[Index] = From;
+                Offset[Index] = Vma->Offset + (From - Vma->Start);
+            }
+            else if ((Owner[Index]->Section != Vma->Section) || (Owner[Index]->File != Vma->File) ||
+                     (Offset[Index] + (From - Low[Index]) != Vma->Offset + (From - Vma->Start)))
+            {
+                return -LX_EBUSY;
+            }
+            High[Index] = To;
+        }
+    }
+
+    if (NT_SUCCESS(LxVmQuery(Base, &Information)) && (Information.Type == MEM_MAPPED))
+        Maximum = Information.AllocationProtect;
+    ZwUnmapViewOfSection(NtCurrentProcess(), (PVOID)(ULONG_PTR)Base);
+    for (Index = 0; Index < 2; Index++)
+    {
+        if (Owner[Index] == NULL)
+            continue;
+        if (!NT_SUCCESS(LxMmMapSharedPiece(Owner[Index], Low[Index], High[Index] - Low[Index], Offset[Index], Maximum)))
+        {
+            DPRINT1("Linux shared mapping lost its view at %I64x-%I64x\n", Low[Index], High[Index]);
+            continue;
+        }
+        Cursor = Low[Index];
+        for (Entry = Process->Vmas.Flink; Entry != &Process->Vmas; Entry = Entry->Flink)
+        {
+            PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+            ULONG64 From = max(Vma->Start, Low[Index]), To = min(Vma->End, High[Index]);
+
+            if (From >= To)
+                continue;
+            if (From > Cursor)
+                LxVmProtect(Cursor, From - Cursor, PAGE_NOACCESS);
+            if (LxProtToNt(Vma->Prot) != Maximum)
+                LxVmProtect(From, To - From, LxProtToNt(Vma->Prot));
+            Cursor = To;
+        }
+    }
+    return 0;
+}
+
+static
 LONG
 LxMmSplitView(
     _In_ PLX_PROCESS Process,
@@ -1246,7 +1368,7 @@ LxMmSplitView(
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
         if ((Vma->Start < End) && (Vma->End > Base) && (Vma->Flags & LX_MAP_SHARED))
-            return -LX_EBUSY;
+            return LxMmSplitSharedView(Process, Base, End, ZoneStart, ZoneEnd);
         if (LxVmaIsCow(Vma) && (Vma->ViewBase == Base))
         {
             Section = Vma->Section;
@@ -1449,6 +1571,43 @@ LxVmPlace(
 
 static
 LONG
+LxMmSavePrivate(
+    _In_ PLX_PROCESS Process,
+    _Inout_ PLIST_ENTRY Saved,
+    _In_ ULONG64 Start,
+    _In_ ULONG64 End)
+{
+    MEMORY_BASIC_INFORMATION Information;
+    ULONG64 Cursor = Start;
+
+    while (Cursor < End)
+    {
+        ULONG64 RegionEnd;
+        PLIST_ENTRY Entry;
+
+        if (!NT_SUCCESS(LxVmQuery(Cursor, &Information)))
+            return -LX_ENOMEM;
+        RegionEnd = min((ULONG64)(ULONG_PTR)Information.BaseAddress + Information.RegionSize, End);
+        for (Entry = LxVmaEntryAbove(Process, Cursor);
+             (Information.State == MEM_COMMIT) && (Entry != &Process->Vmas); Entry = Entry->Flink)
+        {
+            PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
+            LONG Error;
+
+            if (Vma->Start >= RegionEnd)
+                break;
+            Error = LxMmCopySave(Saved, max(Vma->Start, Cursor), min(Vma->End, RegionEnd), Vma->Prot,
+                                 Information.Protect);
+            if (Error != 0)
+                return Error;
+        }
+        Cursor = RegionEnd;
+    }
+    return 0;
+}
+
+static
+LONG
 LxMmClearForView(
     _In_ PLX_PROCESS Process,
     _In_ ULONG64 ZoneStart,
@@ -1474,10 +1633,21 @@ LxMmClearForView(
         End = LxVmAllocationEnd(Base);
         if (Information.Type == MEM_PRIVATE)
         {
-            if (LxVmHasCommit(Base, End))
+            LIST_ENTRY Saved;
+
+            InitializeListHead(&Saved);
+            if (LxVmHasCommit(Base, End) &&
+                ((LxMmSavePrivate(Process, &Saved, Base, min(ZoneStart, End)) != 0) ||
+                 (LxMmSavePrivate(Process, &Saved, max(ZoneEnd, Base), End) != 0)))
+            {
+                LxMmCopyRestore(&Saved, TRUE);
                 return 1;
+            }
             if (!NT_SUCCESS(LxVmFree(Base, 0, MEM_RELEASE)))
+            {
+                LxMmCopyRestore(&Saved, TRUE);
                 return 1;
+            }
             if (Base < ZoneStart)
             {
                 Low = Base;
@@ -1488,6 +1658,7 @@ LxMmClearForView(
                 Low = ZoneEnd;
                 LxVmAllocate(&Low, LX_ALIGN_UP(End, LX_ALLOC_GRANULARITY) - ZoneEnd, MEM_RESERVE, PAGE_NOACCESS);
             }
+            LxMmCopyRestore(&Saved, TRUE);
         }
         else if ((Information.Type != MEM_MAPPED) || (LxMmSplitView(Process, Base, ZoneStart, ZoneEnd, FALSE, NULL) != 0))
         {
@@ -1567,6 +1738,23 @@ LxMmPopulateRun(
     if (Vma->Prot & LX_PROT_EXEC)
         LxVmFlushCode(Start, End - Start);
     return 0;
+}
+
+static
+ULONG64
+LxMmFileEnd(
+    _In_ PLX_FILE File)
+{
+    FILE_STANDARD_INFORMATION Standard;
+    IO_STATUS_BLOCK Iosb;
+
+    if ((File->Handle == NULL) || (File->Type != LX_S_IFREG) ||
+        !NT_SUCCESS(ZwQueryInformationFile(File->Handle, &Iosb, &Standard, sizeof(Standard), FileStandardInformation)) ||
+        (Standard.EndOfFile.QuadPart < 0))
+    {
+        return MAXULONG64;
+    }
+    return LX_ALIGN_UP((ULONG64)Standard.EndOfFile.QuadPart, LX_PAGE_SIZE);
 }
 
 static
@@ -1799,10 +1987,19 @@ LxMmPopulate(
         FillEnd = min(RegionEnd, End);
         if (Cluster)
         {
-            FillStart = max(max(RegionStart, Vma->Start), LX_ALIGN_DOWN(Cursor, LX_ALLOC_GRANULARITY));
-            FillEnd = min(RegionEnd, LX_ALIGN_UP(Cursor + 1, LX_ALLOC_GRANULARITY));
+            FillStart = max(max(RegionStart, Vma->Start), LX_ALIGN_DOWN(Cursor, LX_FAULT_CLUSTER));
+            FillEnd = min(RegionEnd, LX_ALIGN_UP(Cursor + 1, LX_FAULT_CLUSTER));
             if (!IsListEmpty(&Process->Guards))
                 LxMmGuardClip(Process, Cursor, &FillStart, &FillEnd);
+        }
+        if ((Vma->File != NULL) && !(Vma->Flags & LX_MAP_SHARED))
+        {
+            ULONG64 FileEnd = LxMmFileEnd(Vma->File), Offset = Vma->Offset + (Cursor - Vma->Start);
+
+            if (Offset >= FileEnd)
+                return -LX_ENXIO;
+            if (FileEnd - Vma->Offset < FillEnd - Vma->Start)
+                FillEnd = Vma->Start + (FileEnd - Vma->Offset);
         }
         Error = LxMmPopulateRun(Vma, FillStart, FillEnd);
         if (Error != 0)
@@ -2672,6 +2869,8 @@ LxMmMap(
     {
         if (Fixed)
             Error = LxMmUnmapRange(Process, Address, Address + Length);
+        if ((Error == 0) && Fixed && !LxVmIsFree(Address, Address + Length))
+            Error = LxMmClearForView(Process, Address, Address + Length);
         if (Error == 0)
             Error = LxMmMapView(Address, Length, Prot, Fixed, File, Offset, &Base, &Section, &GrowBase);
         if (Error == 0)
@@ -2764,7 +2963,10 @@ LxMmMap(
     }
     if ((Error == 0) && (File != NULL))
     {
-        Error = LxMmFillPrivateFile(Process, Base, Base + Length);
+        ULONG64 FileEnd = LxMmFileEnd(File);
+
+        if (Offset < FileEnd)
+            Error = LxMmFillPrivateFile(Process, Base, Base + min(Length, FileEnd - Offset));
         if (Error != 0)
             LxMmUnmapRange(Process, Base, Base + Length);
     }

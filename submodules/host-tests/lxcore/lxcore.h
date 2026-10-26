@@ -201,7 +201,8 @@ void LxHostCopy(void *Destination, const void *Source, SIZE_T Length);
 
 #define LX_TAG              'xcxL'
 #define LX_PAGE_SIZE        0x1000ULL
-#define LX_ALLOC_GRANULARITY 0x10000ULL
+#define LX_ALLOC_GRANULARITY LX_PAGE_SIZE
+#define LX_FAULT_CLUSTER    0x10000ULL
 #define LX_IO_CHUNK         (64 * 1024)
 #define LX_BRK_RESERVE      (1024ULL * 1024 * 1024)
 #define LX_MMAP_MIN_ADDR    0x10000ULL

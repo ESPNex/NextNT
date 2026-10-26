@@ -118,6 +118,7 @@ ProcInit(LX_TEST_PROC *Proc)
 
     memset(Proc, 0, sizeof(*Proc));
     CHECK(NT_SUCCESS(MiAddressSpaceCreate(&World.System, &Proc->Space)));
+    Proc->Space.Granularity = PAGE_SIZE;
     Proc->Lx.Pid = NextPid++;
     Proc->Lx.Mm = &Proc->Lx;
     Proc->Lx.CapEffective = ~0ULL;
@@ -631,6 +632,69 @@ FixedOverViews(void)
 
 static
 void
+PageGranularViews(void)
+{
+    LX_TEST_PROC Proc;
+    LX_TEST_FILE File;
+    ULONG64 Base, View, Second;
+    UCHAR Value = 0;
+
+    FileOpen(&File, 0x10000, "pages.bin");
+    File.File.Flags = LX_O_RDWR;
+    ProcInit(&Proc);
+
+    Base = (ULONG64)Map(&Proc, 0, 2 * LX_PAGE_SIZE, LX_PROT_NONE, LX_MAP_SHARED | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK((LONG64)Base > 0);
+    CHECK(Map(&Proc, Base + LX_PAGE_SIZE, LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS | LX_MAP_FIXED, NULL, 0) ==
+          (LONG64)(Base + LX_PAGE_SIZE));
+    CHECK(Write8(&Proc, Base + LX_PAGE_SIZE, 5) == 0);
+    CHECK(Read8(&Proc, Base, &Value) == LX_SIGSEGV);
+    CHECK(Unmap(&Proc, Base, 2 * LX_PAGE_SIZE) == 0);
+
+    Base = (ULONG64)Map(&Proc, 0, 2 * LX_PAGE_SIZE, LX_PROT_NONE, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK((LONG64)Base > 0);
+    CHECK(Map(&Proc, Base + LX_PAGE_SIZE, LX_PAGE_SIZE, RW, LX_MAP_SHARED | LX_MAP_ANONYMOUS | LX_MAP_FIXED, NULL, 0) ==
+          (LONG64)(Base + LX_PAGE_SIZE));
+    CHECK(Write8(&Proc, Base + LX_PAGE_SIZE, 6) == 0);
+    CHECK(Read8(&Proc, Base, &Value) == LX_SIGSEGV);
+    CHECK(Unmap(&Proc, Base, 2 * LX_PAGE_SIZE) == 0);
+
+    Base = (ULONG64)Map(&Proc, 0, 3 * LX_PAGE_SIZE, RW, LX_MAP_PRIVATE | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK((LONG64)Base > 0);
+    CHECK(Write8(&Proc, Base, 0x11) == 0 && Write8(&Proc, Base + 2 * LX_PAGE_SIZE, 0x33) == 0);
+    CHECK(Map(&Proc, Base + LX_PAGE_SIZE, LX_PAGE_SIZE, RW, LX_MAP_SHARED | LX_MAP_ANONYMOUS | LX_MAP_FIXED, NULL, 0) ==
+          (LONG64)(Base + LX_PAGE_SIZE));
+    CHECK(Read8(&Proc, Base, &Value) == 0 && Value == 0x11);
+    CHECK(Read8(&Proc, Base + 2 * LX_PAGE_SIZE, &Value) == 0 && Value == 0x33);
+    CHECK(Read8(&Proc, Base + LX_PAGE_SIZE, &Value) == 0 && Value == 0);
+    CHECK(PrivatePages(&Proc) >= 2);
+    CHECK(Unmap(&Proc, Base, 3 * LX_PAGE_SIZE) == 0);
+
+    View = (ULONG64)Map(&Proc, 0, 3 * LX_PAGE_SIZE, RW, LX_MAP_SHARED, &File, LX_PAGE_SIZE);
+    CHECK((LONG64)View > 0);
+    CHECK(RangeMatchesFile(&Proc, View, 3 * LX_PAGE_SIZE, &File, LX_PAGE_SIZE));
+    Second = (ULONG64)Map(&Proc, 0, LX_PAGE_SIZE, RW, LX_MAP_SHARED, &File, 2 * LX_PAGE_SIZE);
+    CHECK((LONG64)Second > 0);
+    CHECK(Write8(&Proc, View + LX_PAGE_SIZE + 7, 0x5A) == 0);
+    CHECK(Read8(&Proc, Second + 7, &Value) == 0 && Value == 0x5A);
+
+    CHECK(Map(&Proc, View + LX_PAGE_SIZE, LX_PAGE_SIZE, RW, LX_MAP_SHARED | LX_MAP_FIXED, &File, 0) ==
+          (LONG64)(View + LX_PAGE_SIZE));
+    CHECK(RangeMatchesFile(&Proc, View, LX_PAGE_SIZE, &File, LX_PAGE_SIZE));
+    CHECK(RangeMatchesFile(&Proc, View + LX_PAGE_SIZE, LX_PAGE_SIZE, &File, 0));
+    CHECK(RangeMatchesFile(&Proc, View + 2 * LX_PAGE_SIZE, LX_PAGE_SIZE, &File, 3 * LX_PAGE_SIZE));
+    CHECK(Read8(&Proc, Second + 7, &Value) == 0 && Value == 0x5A);
+    CHECK(Write8(&Proc, View + 2 * LX_PAGE_SIZE + 9, 0x6B) == 0);
+    CHECK(Unmap(&Proc, Second, LX_PAGE_SIZE) == 0);
+    Second = (ULONG64)Map(&Proc, 0, LX_PAGE_SIZE, RO, LX_MAP_SHARED, &File, 3 * LX_PAGE_SIZE);
+    CHECK(Read8(&Proc, Second + 9, &Value) == 0 && Value == 0x6B);
+
+    ProcDestroy(&Proc);
+    FileClose(&File);
+}
+
+static
+void
 WritableCopyAndDiscard(void)
 {
     LX_TEST_PROC Proc, Other;
@@ -796,8 +860,8 @@ HeapFaultCost(void)
     Queries = LxHostQueries - Queries;
     Scanned = LxHostCommittedScan - Scanned;
     CHECK(Queries < Pages);
-    CHECK(Scanned < 64 * (Pages / (LX_ALLOC_GRANULARITY / LX_PAGE_SIZE)));
-    if ((Queries >= Pages) || (Scanned >= 64 * (Pages / (LX_ALLOC_GRANULARITY / LX_PAGE_SIZE))))
+    CHECK(Scanned < 64 * (Pages / (LX_FAULT_CLUSTER / LX_PAGE_SIZE)));
+    if ((Queries >= Pages) || (Scanned >= 64 * (Pages / (LX_FAULT_CLUSTER / LX_PAGE_SIZE))))
         fprintf(stderr, "  heap: %llu queries, %llu committed pages scanned for %llu pages\n",
                 (unsigned long long)Queries, (unsigned long long)Scanned, (unsigned long long)Pages);
     ProcDestroy(&Proc);
@@ -1504,6 +1568,7 @@ TestLxMm(void)
     ExecutableLoads();
     ForkSharesAndIsolates();
     FixedOverViews();
+    PageGranularViews();
     WritableCopyAndDiscard();
     ProtectUpgradeKeepsLayout();
     ForkDirtyFileView();

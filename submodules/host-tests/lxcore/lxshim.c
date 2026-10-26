@@ -504,7 +504,7 @@ ZwMapViewOfSection(HANDLE SectionHandle, HANDLE Process, PVOID *BaseAddress, ULO
     if (!MiProtectionFromWin32(Protect, &Protection))
         return STATUS_INVALID_PAGE_PROTECTION;
 
-    Delta = Offset & (MI_ALLOCATION_GRANULARITY - 1);
+    Delta = Offset & (LxHostSpace->Granularity - 1);
     if ((Offset >= Section->Size) || (Size > ~0ULL - Offset) ||
         (!(AllocationType & MEM_RESERVE) && (Size > Section->Size - Offset)))
         return STATUS_INVALID_VIEW_SIZE;
@@ -513,7 +513,7 @@ ZwMapViewOfSection(HANDLE SectionHandle, HANDLE Process, PVOID *BaseAddress, ULO
         Size = Section->Size - Offset;
     else
         Size += Delta;
-    Base &= ~(MI_ALLOCATION_GRANULARITY - 1);
+    Base &= ~(LxHostSpace->Granularity - 1);
 
     Status = MiMapViewEx(LxHostSpace, Section->Segment, &Base, Offset, &Size, Protection,
                          (AllocationType & MEM_TOP_DOWN) ? MI_MEM_TOP_DOWN : 0, LX_HOST_USER_LIMIT - 1,
