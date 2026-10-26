@@ -25,6 +25,7 @@ HRESULT portable_device_values_create(REFIID iid, void **out);
 HRESULT portable_device_key_collection_create(REFIID iid, void **out);
 HRESULT portable_device_propvariant_collection_create(REFIID iid, void **out);
 HRESULT portable_device_values_collection_create(REFIID iid, void **out);
+HRESULT wpd_serializer_create(REFIID iid, void **out);
 
 static inline BOOL property_key_equal(REFPROPERTYKEY left, REFPROPERTYKEY right)
 {

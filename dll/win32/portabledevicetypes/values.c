@@ -23,61 +23,10 @@ struct portable_device_values
     DWORD capacity;
 };
 
-struct property_key_holder
-{
-    IUnknown IUnknown_iface;
-    LONG refcount;
-    PROPERTYKEY key;
-};
-
-static const IUnknownVtbl property_key_holder_vtbl;
-
 static inline struct portable_device_values *impl_from_IPortableDeviceValues(IPortableDeviceValues *iface)
 {
     return CONTAINING_RECORD(iface, struct portable_device_values, IPortableDeviceValues_iface);
 }
-
-static inline struct property_key_holder *impl_from_key_holder(IUnknown *iface)
-{
-    return CONTAINING_RECORD(iface, struct property_key_holder, IUnknown_iface);
-}
-
-static HRESULT WINAPI key_holder_QueryInterface(IUnknown *iface, REFIID iid, void **out)
-{
-    if (!out)
-        return E_POINTER;
-    *out = NULL;
-
-    if (!IsEqualIID(iid, &IID_IUnknown))
-        return E_NOINTERFACE;
-
-    *out = iface;
-    IUnknown_AddRef(iface);
-    return S_OK;
-}
-
-static ULONG WINAPI key_holder_AddRef(IUnknown *iface)
-{
-    struct property_key_holder *holder = impl_from_key_holder(iface);
-    return InterlockedIncrement(&holder->refcount);
-}
-
-static ULONG WINAPI key_holder_Release(IUnknown *iface)
-{
-    struct property_key_holder *holder = impl_from_key_holder(iface);
-    ULONG refcount = InterlockedDecrement(&holder->refcount);
-
-    if (!refcount)
-        HeapFree(GetProcessHeap(), 0, holder);
-    return refcount;
-}
-
-static const IUnknownVtbl property_key_holder_vtbl =
-{
-    key_holder_QueryInterface,
-    key_holder_AddRef,
-    key_holder_Release,
-};
 
 static HRESULT values_reserve(struct portable_device_values *values, DWORD capacity)
 {
@@ -334,31 +283,32 @@ DEFINE_SCALAR_ACCESSORS(ErrorValue, HRESULT, VT_ERROR, scode)
 
 static HRESULT WINAPI values_SetKeyValue(IPortableDeviceValues *iface, REFPROPERTYKEY key, REFPROPERTYKEY value)
 {
-    struct property_key_holder *holder;
+    IPortableDeviceKeyCollection *keys;
     PROPVARIANT variant;
     HRESULT hr;
 
     if (!value)
         return E_POINTER;
-    holder = HeapAlloc(GetProcessHeap(), 0, sizeof(*holder));
-    if (!holder)
-        return E_OUTOFMEMORY;
-
-    holder->IUnknown_iface.lpVtbl = &property_key_holder_vtbl;
-    holder->refcount = 1;
-    holder->key = *value;
-    PropVariantInit(&variant);
-    variant.vt = VT_UNKNOWN;
-    variant.punkVal = &holder->IUnknown_iface;
-    hr = values_SetValue(iface, key, &variant);
-    IUnknown_Release(&holder->IUnknown_iface);
+    hr = portable_device_key_collection_create(&IID_IPortableDeviceKeyCollection, (void **)&keys);
+    if (FAILED(hr))
+        return hr;
+    hr = IPortableDeviceKeyCollection_Add(keys, value);
+    if (SUCCEEDED(hr))
+    {
+        PropVariantInit(&variant);
+        variant.vt = VT_UNKNOWN;
+        variant.punkVal = (IUnknown *)keys;
+        hr = values_SetValue(iface, key, &variant);
+    }
+    IPortableDeviceKeyCollection_Release(keys);
     return hr;
 }
 
 static HRESULT WINAPI values_GetKeyValue(IPortableDeviceValues *iface, REFPROPERTYKEY key, PROPERTYKEY *value)
 {
-    struct property_key_holder *holder;
+    IPortableDeviceKeyCollection *keys;
     PROPVARIANT variant;
+    DWORD count = 0;
     HRESULT hr;
 
     if (!value)
@@ -366,14 +316,16 @@ static HRESULT WINAPI values_GetKeyValue(IPortableDeviceValues *iface, REFPROPER
     hr = values_get_typed(iface, key, VT_UNKNOWN, &variant, NULL);
     if (FAILED(hr))
         return hr;
-
-    if (!variant.punkVal || variant.punkVal->lpVtbl != &property_key_holder_vtbl)
-        hr = DISP_E_TYPEMISMATCH;
-    else
+    if (!variant.punkVal ||
+        FAILED(IUnknown_QueryInterface(variant.punkVal, &IID_IPortableDeviceKeyCollection, (void **)&keys)))
     {
-        holder = impl_from_key_holder(variant.punkVal);
-        *value = holder->key;
+        PropVariantClear(&variant);
+        return DISP_E_TYPEMISMATCH;
     }
+    hr = IPortableDeviceKeyCollection_GetCount(keys, &count);
+    if (SUCCEEDED(hr))
+        hr = count ? IPortableDeviceKeyCollection_GetAt(keys, 0, value) : E_INVALIDARG;
+    IPortableDeviceKeyCollection_Release(keys);
     PropVariantClear(&variant);
     return hr;
 }

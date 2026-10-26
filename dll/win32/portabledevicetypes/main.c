@@ -77,6 +77,7 @@ static struct class_factory values_factory = {{&class_factory_vtbl}, portable_de
 static struct class_factory key_collection_factory = {{&class_factory_vtbl}, portable_device_key_collection_create};
 static struct class_factory propvariant_collection_factory = {{&class_factory_vtbl}, portable_device_propvariant_collection_create};
 static struct class_factory values_collection_factory = {{&class_factory_vtbl}, portable_device_values_collection_create};
+static struct class_factory serializer_factory = {{&class_factory_vtbl}, wpd_serializer_create};
 
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, void *reserved)
 {
@@ -101,6 +102,8 @@ HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **out)
         factory = &propvariant_collection_factory.IClassFactory_iface;
     else if (IsEqualCLSID(clsid, &CLSID_PortableDeviceValuesCollection))
         factory = &values_collection_factory.IClassFactory_iface;
+    else if (IsEqualCLSID(clsid, &CLSID_WpdSerializer))
+        factory = &serializer_factory.IClassFactory_iface;
     else
         return CLASS_E_CLASSNOTAVAILABLE;
 

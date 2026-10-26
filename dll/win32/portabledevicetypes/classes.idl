@@ -34,3 +34,10 @@ coclass PortableDevicePropVariantCollection { }
     uuid(3882134d-14cf-4220-9cb4-435f86d83f60)
 ]
 coclass PortableDeviceValuesCollection { }
+
+[
+    helpstring("WPD Serializer"),
+    threading(both),
+    uuid(0b91a74b-ad7c-4a9d-b563-29eef9167172)
+]
+coclass WpdSerializer { }

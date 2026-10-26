@@ -6,6 +6,7 @@ spec2def(portabledevicetypes.dll portabledevicetypes.spec ADD_IMPORTLIB)
 list(APPEND SOURCE
     collections.c
     main.c
+    serializer.c
     values.c
     private.h)
 
