@@ -258,14 +258,22 @@ LxVmaUnlink(
 }
 
 static
+PVOID
+LxVmaShmObject(
+    _In_ PLX_VMA Vma)
+{
+    return (Vma->Section != NULL) ? Vma->Section : (PVOID)Vma->File;
+}
+
+static
 VOID
 LxVmaFree(
     _In_ PLX_VMA Vma)
 {
+    if (Vma->Flags & LX_VMA_SHM)
+        LxIpcShmVmaClose(LxVmaShmObject(Vma));
     if (Vma->File != NULL)
         LxFileDereference(Vma->File);
-    if ((Vma->Flags & LX_VMA_SHM) && (Vma->Section != NULL))
-        LxIpcShmVmaClose(Vma->Section);
     if (Vma->Section != NULL)
         ObDereferenceObject(Vma->Section);
     LxFree(Vma);
@@ -304,8 +312,8 @@ LxVmaSplit(
         LxFileReference(Tail->File);
     if (Tail->Section != NULL)
         ObReferenceObject(Tail->Section);
-    if ((Tail->Flags & LX_VMA_SHM) && (Tail->Section != NULL))
-        LxIpcShmVmaOpen(Tail->Section);
+    if (Tail->Flags & LX_VMA_SHM)
+        LxIpcShmVmaOpen(LxVmaShmObject(Tail));
     Vma->End = Address;
     LxVmaLink(Process, Tail, Vma->Link.Flink);
     return 0;
@@ -540,8 +548,8 @@ LxVmaInsertView(
         LxFileReference(File);
     if (Section != NULL)
         ObReferenceObject(Section);
-    if ((Flags & LX_VMA_SHM) && (Section != NULL))
-        LxIpcShmVmaOpen(Section);
+    if (Flags & LX_VMA_SHM)
+        LxIpcShmVmaOpen((Section != NULL) ? Section : (PVOID)File);
 
     LxVmaLink(Process, Vma, LxVmaEntryAbove(Process, Start));
     LxVmaMerge(Process, Start, End);
@@ -2553,7 +2561,8 @@ LxMmDetachSection(
         {
             PLX_VMA Next = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
-            if ((Next->Start != End) || (Next->Section != Vma->Section) || !(Next->Flags & LX_VMA_SHM))
+            if ((Next->Start != End) || (Next->Section != Vma->Section) || (Next->File != Vma->File) ||
+                !(Next->Flags & LX_VMA_SHM))
                 break;
             End = Next->End;
         }
@@ -2769,6 +2778,10 @@ LxMmMapHuge(
                 ZwUnmapViewOfSection(NtCurrentProcess(), (PVOID)(ULONG_PTR)(Base + --Index * PageSize));
             Error = -LX_ENOMEM;
         }
+        else
+        {
+            LxHugeStoreFault(Store, First + Index);
+        }
         if (Section != NULL)
             ObDereferenceObject(Section);
     }
@@ -2801,6 +2814,28 @@ LxMmMapHuge(
     if (Error == 0)
         *Result = Base;
     return Error;
+}
+
+LONG64
+LxMmMapHugeSection(
+    _In_ PLX_PROCESS Process,
+    _In_ PLX_FILE File,
+    _In_ ULONG64 Address,
+    _In_ ULONG64 Length,
+    _In_ ULONG Prot,
+    _In_ BOOLEAN Remap)
+{
+    ULONG Flags = LX_MAP_SHARED | ((Address == 0) ? 0 : (Remap ? LX_MAP_FIXED : LX_MAP_FIXED_NOREPLACE));
+    ULONG64 Base = 0;
+    LONG Error;
+
+    Process = Process->Mm;
+    LxMmLock(Process);
+    Error = LxMmMapHuge(Process, Address, Length, Prot, Flags, LX_MAP_SHARED | LX_VMA_SHM, File, 0, &Base);
+    LxMmUnlock(Process);
+    if (Error == -LX_EEXIST)
+        return -LX_EINVAL;
+    return (Error != 0) ? Error : (LONG64)Base;
 }
 
 LONG64
@@ -3191,8 +3226,8 @@ LxMmFork(
         }
         if (Copy->Section != NULL)
             ObReferenceObject(Copy->Section);
-        if ((Copy->Flags & LX_VMA_SHM) && (Copy->Section != NULL))
-            LxIpcShmVmaOpen(Copy->Section);
+        if (Copy->Flags & LX_VMA_SHM)
+            LxIpcShmVmaOpen(LxVmaShmObject(Copy));
         LxVmaLink(Child, Copy, &Child->Vmas);
     }
     for (Entry = Parent->Guards.Flink; Entry != &Parent->Guards; Entry = Entry->Flink)
@@ -3451,6 +3486,7 @@ static
 LONG
 LxMadviseCheck(
     _In_ PLX_VMA Vma,
+    _In_ ULONG64 Address,
     _In_ ULONG Advice)
 {
     BOOLEAN Locked = (Vma->Flags & LX_VMA_LOCKED) != 0;
@@ -3460,6 +3496,15 @@ LxMadviseCheck(
     {
         switch (Advice)
         {
+            case LX_MADV_DONTNEED:
+            case LX_MADV_DONTNEED_LOCKED:
+                return (max(Vma->Start, Address) & (LxHugePageSize() - 1)) ? -LX_EINVAL : 0;
+            case LX_MADV_REMOVE:
+                if (Locked)
+                    return -LX_EINVAL;
+                return (!(Vma->Flags & LX_MAP_SHARED) || (Vma->Flags & LX_VMA_NOMAYWRITE)) ? -LX_EACCES : 0;
+            case LX_MADV_POPULATE_READ:
+            case LX_MADV_POPULATE_WRITE:
             case LX_MADV_NORMAL:
             case LX_MADV_RANDOM:
             case LX_MADV_SEQUENTIAL:
@@ -3510,7 +3555,7 @@ LxMadviseRemove(
     ULONG64 Cursor;
     NTSTATUS Status = STATUS_SUCCESS;
 
-    if ((Vma->File != NULL) && (Vma->File->Handle != NULL))
+    if (!(Vma->Flags & LX_VMA_HUGETLB) && (Vma->File != NULL) && (Vma->File->Handle != NULL))
     {
         Zero = LxAllocPaged(LX_IO_CHUNK);
         if (Zero == NULL)
@@ -3577,7 +3622,7 @@ LX_SYSCALL(LxSysMadvise)
         if (Vma->Start >= End)
             break;
         if (Vma->End > Address)
-            Result = LxMadviseCheck(Vma, Advice);
+            Result = LxMadviseCheck(Vma, Address, Advice);
     }
     if ((Result == 0) && !LxVmaCovers(Process, Address, End))
         Result = -LX_ENOMEM;
@@ -3600,6 +3645,15 @@ LX_SYSCALL(LxSysMadvise)
                     break;
                 if ((Vma->End <= Address) || (Vma->Flags & LX_MAP_SHARED))
                     continue;
+                if (Vma->Flags & LX_VMA_HUGETLB)
+                {
+                    ULONG64 From = max(Vma->Start, Address);
+                    ULONG64 To = LX_ALIGN_DOWN(min(Vma->End, End), LxHugePageSize());
+
+                    if (To > From)
+                        LxMadviseRemove(Vma, From, To);
+                    continue;
+                }
                 if (LxVmaIsCow(Vma))
                 {
                     ULONG64 From = max(Vma->Start, Address), To = min(Vma->End, End);

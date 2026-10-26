@@ -883,6 +883,11 @@ LxHugeStorePage(PLX_HUGE_STORE Store, ULONG64 Index)
     return NULL;
 }
 
+VOID
+LxHugeStoreFault(PLX_HUGE_STORE Store, ULONG64 Index)
+{
+}
+
 NTSTATUS
 LxHugeMapPage(PVOID Section, HANDLE ProcessHandle, PVOID *Base, ULONG Protect)
 {

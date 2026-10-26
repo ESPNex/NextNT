@@ -70,6 +70,7 @@ typedef struct _LX_SHM
 {
     LX_IPC_OBJECT Object;
     PVOID Section;
+    PLX_FILE Huge;
     ULONG64 Size;
     LONG64 Atime;
     LONG64 Dtime;
@@ -468,7 +469,7 @@ LxIpcShmBySection(
         {
             PLX_SHM Shm = CONTAINING_RECORD(Inner, LX_SHM, Object.Link);
 
-            if (Shm->Section == Section)
+            if (((Shm->Huge != NULL) ? (PVOID)Shm->Huge : Shm->Section) == Section)
                 return Shm;
         }
     }
@@ -492,7 +493,10 @@ LxIpcShmFree(
 {
     if (Shm == NULL)
         return;
-    ObDereferenceObject(Shm->Section);
+    if (Shm->Section != NULL)
+        ObDereferenceObject(Shm->Section);
+    if (Shm->Huge != NULL)
+        LxFileDereference(Shm->Huge);
     LxFree(Shm);
 }
 
@@ -559,6 +563,42 @@ LxIpcCreateSection(
     return Status;
 }
 
+static
+LONG
+LxIpcCreateHuge(
+    _In_ PLX_PROCESS Process,
+    _In_ LONG Key,
+    _In_ ULONG64 Size,
+    _In_ ULONG Flags,
+    _Out_ PLX_FILE *Huge)
+{
+    ULONG64 PageSize = LxHugePageSize(), Limit = Process->Limits[LX_RLIMIT_MEMLOCK].Cur;
+    ULONG HugeLog = (Flags >> LX_SHM_HUGE_SHIFT) & LX_SHM_HUGE_MASK;
+    CHAR Path[32];
+    PLX_FILE File;
+    LONG Error;
+
+    if ((PageSize == 0) || ((HugeLog != 0) && ((1ULL << HugeLog) != PageSize)))
+        return -LX_ENODEV;
+    if (!LxCapable(Process, LX_CAP_IPC_LOCK) && !LxInGroup(Process, 0) && (Limit != LX_RLIM_INFINITY) &&
+        (LX_ALIGN_UP(Size, LX_PAGE_SIZE) > Limit))
+    {
+        return -LX_EPERM;
+    }
+    RtlStringCbPrintfA(Path, sizeof(Path), "/SYSV%08lx", (ULONG)Key);
+    File = LxHugeFileCreate(Path);
+    if (File == NULL)
+        return -LX_ENOMEM;
+    Error = LxHugeStoreReserve(File->Memfd->Huge, 0, LX_ALIGN_UP(Size, PageSize) / PageSize, FALSE);
+    if (Error != 0)
+    {
+        LxFileDereference(File);
+        return Error;
+    }
+    *Huge = File;
+    return 0;
+}
+
 LX_SYSCALL(LxSysShmget)
 {
     PLX_PROCESS Process = Call->Process;
@@ -568,6 +608,7 @@ LX_SYSCALL(LxSysShmget)
     ULONG64 Pages = LX_ALIGN_UP(Size, LX_PAGE_SIZE) / LX_PAGE_SIZE;
     PLX_IPC_NAMESPACE Namespace;
     PVOID Section = NULL;
+    PLX_FILE Huge = NULL;
     PLX_SHM Shm;
     LONG64 Result;
 
@@ -611,12 +652,15 @@ LX_SYSCALL(LxSysShmget)
             Result = -LX_ENOSPC;
             break;
         }
-        if (Flags & LX_SHM_HUGETLB)
+        if ((Flags & LX_SHM_HUGETLB) && (Huge == NULL))
         {
-            Result = -LX_ENOMEM;
-            break;
+            ExReleaseFastMutex(&LxIpcLock);
+            Result = LxIpcCreateHuge(Process, Key, Size, Flags, &Huge);
+            if (Result != 0)
+                return Result;
+            continue;
         }
-        if (Section == NULL)
+        if (!(Flags & LX_SHM_HUGETLB) && (Section == NULL))
         {
             ExReleaseFastMutex(&LxIpcLock);
             if (!NT_SUCCESS(LxIpcCreateSection(Size, &Section)))
@@ -637,15 +681,19 @@ LX_SYSCALL(LxSysShmget)
             break;
         }
         Shm->Section = Section;
+        Shm->Huge = Huge;
         Shm->Size = Size;
         Shm->Cpid = Process->Pid;
         Namespace->ShmPages += Pages;
         Section = NULL;
+        Huge = NULL;
         break;
     }
     ExReleaseFastMutex(&LxIpcLock);
     if (Section != NULL)
         ObDereferenceObject(Section);
+    if (Huge != NULL)
+        LxFileDereference(Huge);
     return Result;
 }
 
@@ -658,6 +706,7 @@ LX_SYSCALL(LxSysShmat)
     ULONG Prot = LX_PROT_READ, Access = 0400;
     PLX_SHM Shm, Destroy = NULL;
     PVOID Section;
+    PLX_FILE Huge;
     ULONG64 Length;
     LONG64 Result;
 
@@ -699,12 +748,19 @@ LX_SYSCALL(LxSysShmat)
         return -LX_EACCES;
     }
     Section = Shm->Section;
-    ObReferenceObject(Section);
+    Huge = Shm->Huge;
+    if (Huge != NULL)
+        LxFileReference(Huge);
+    else
+        ObReferenceObject(Section);
     Length = LX_ALIGN_UP(Shm->Size, LX_PAGE_SIZE);
     Shm->Nattch++;
     ExReleaseFastMutex(&LxIpcLock);
 
-    Result = LxMmMapSection(Process, Section, Address, Length, Prot, (Flags & LX_SHM_REMAP) != 0);
+    if (Huge != NULL)
+        Result = LxMmMapHugeSection(Process, Huge, Address, Length, Prot, (Flags & LX_SHM_REMAP) != 0);
+    else
+        Result = LxMmMapSection(Process, Section, Address, Length, Prot, (Flags & LX_SHM_REMAP) != 0);
 
     ExAcquireFastMutex(&LxIpcLock);
     Shm->Nattch--;
@@ -712,7 +768,10 @@ LX_SYSCALL(LxSysShmat)
         Destroy = LxIpcShmUnlink(Shm);
     ExReleaseFastMutex(&LxIpcLock);
     LxIpcShmFree(Destroy);
-    ObDereferenceObject(Section);
+    if (Huge != NULL)
+        LxFileDereference(Huge);
+    else
+        ObDereferenceObject(Section);
     return Result;
 }
 

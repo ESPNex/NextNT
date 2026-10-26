@@ -16,6 +16,7 @@ static ULONG LxHugeFreeCount;
 static ULONG LxHugeFreeCapacity;
 static ULONG64 LxHugeTotal;
 static ULONG64 LxHugeSurplus;
+static ULONG64 LxHugeReserved;
 
 VOID
 LxHugeInitialize(VOID)
@@ -79,16 +80,19 @@ LxHugePushFree(
 ULONG64
 LxHugeQueryPool(
     _Out_opt_ PULONG64 Free,
-    _Out_opt_ PULONG64 Surplus)
+    _Out_opt_ PULONG64 Surplus,
+    _Out_opt_ PULONG64 Reserved)
 {
     ULONG64 Total;
 
     ExAcquireFastMutex(&LxHugeLock);
     Total = LxHugeTotal;
     if (Free != NULL)
-        *Free = LxHugeFreeCount;
+        *Free = LxHugeFreeCount + LxHugeReserved;
     if (Surplus != NULL)
         *Surplus = LxHugeSurplus;
+    if (Reserved != NULL)
+        *Reserved = LxHugeReserved;
     ExReleaseFastMutex(&LxHugeLock);
     return Total;
 }
@@ -172,25 +176,37 @@ LxHugeStoreReserve(
 {
     ULONG64 Index, Missing = 0;
     PVOID *Pages = NULL;
+    PUCHAR Faulted = NULL;
 
     if ((First + Count < First) || (First + Count > MAXULONG))
         return -LX_ENOMEM;
     if (First + Count > Store->Count)
     {
         Pages = LxAlloc((SIZE_T)(First + Count) * sizeof(*Pages));
-        if (Pages == NULL)
+        Faulted = LxAlloc((SIZE_T)(First + Count));
+        if ((Pages == NULL) || (Faulted == NULL))
+        {
+            LxFree(Pages);
+            LxFree(Faulted);
             return -LX_ENOMEM;
+        }
     }
 
     ExAcquireFastMutex(&LxHugeLock);
     if ((Pages != NULL) && (First + Count > Store->Count))
     {
         if (Store->Pages != NULL)
+        {
             RtlCopyMemory(Pages, Store->Pages, Store->Count * sizeof(*Pages));
+            RtlCopyMemory(Faulted, Store->Faulted, Store->Count);
+        }
         LxFree(Store->Pages);
+        LxFree(Store->Faulted);
         Store->Pages = Pages;
+        Store->Faulted = Faulted;
         Store->Count = (ULONG)(First + Count);
         Pages = NULL;
+        Faulted = NULL;
     }
     for (Index = First; Index < First + Count; Index++)
     {
@@ -201,15 +217,21 @@ LxHugeStoreReserve(
     {
         ExReleaseFastMutex(&LxHugeLock);
         LxFree(Pages);
+        LxFree(Faulted);
         return -LX_ENOMEM;
     }
     for (Index = First; (Index < First + Count) && (LxHugeFreeCount != 0); Index++)
     {
         if (Store->Pages[Index] == NULL)
+        {
             Store->Pages[Index] = LxHugeFree[--LxHugeFreeCount];
+            Store->Faulted[Index] = FALSE;
+            LxHugeReserved++;
+        }
     }
     ExReleaseFastMutex(&LxHugeLock);
     LxFree(Pages);
+    LxFree(Faulted);
 
     for (Index = First; Index < First + Count; Index++)
     {
@@ -224,6 +246,7 @@ LxHugeStoreReserve(
         if (Store->Pages[Index] == NULL)
         {
             Store->Pages[Index] = Section;
+            Store->Faulted[Index] = TRUE;
             LxHugeSurplus++;
             Section = NULL;
         }
@@ -251,6 +274,8 @@ LxHugeStoreTruncate(
             {
                 Section = Store->Pages[Index];
                 Store->Pages[Index] = NULL;
+                if (!Store->Faulted[Index])
+                    LxHugeReserved--;
                 break;
             }
         }
@@ -261,7 +286,9 @@ LxHugeStoreTruncate(
             if ((Store->Count == 0) && (Store->Pages != NULL))
             {
                 LxFree(Store->Pages);
+                LxFree(Store->Faulted);
                 Store->Pages = NULL;
+                Store->Faulted = NULL;
             }
         }
         ExReleaseFastMutex(&LxHugeLock);
@@ -286,6 +313,20 @@ LxHugeStorePage(
     }
     ExReleaseFastMutex(&LxHugeLock);
     return Section;
+}
+
+VOID
+LxHugeStoreFault(
+    _In_ PLX_HUGE_STORE Store,
+    _In_ ULONG64 Index)
+{
+    ExAcquireFastMutex(&LxHugeLock);
+    if ((Index < Store->Count) && (Store->Pages[Index] != NULL) && !Store->Faulted[Index])
+    {
+        Store->Faulted[Index] = TRUE;
+        LxHugeReserved--;
+    }
+    ExReleaseFastMutex(&LxHugeLock);
 }
 
 NTSTATUS

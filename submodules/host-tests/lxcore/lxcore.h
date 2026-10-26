@@ -256,6 +256,7 @@ typedef struct _LX_HUGE_STORE
 {
     ULONG Count;
     PVOID *Pages;
+    PUCHAR Faulted;
 } LX_HUGE_STORE, *PLX_HUGE_STORE;
 
 typedef struct _LX_MEMFD
@@ -463,6 +464,7 @@ VOID LxMmForkChild(_In_ PLX_PROCESS Parent, _In_ PLX_PROCESS Child, _In_ HANDLE 
 ULONG64 LxHugePageSize(VOID);
 LONG LxHugeStoreReserve(_Inout_ PLX_HUGE_STORE Store, _In_ ULONG64 First, _In_ ULONG64 Count, _In_ BOOLEAN Surplus);
 PVOID LxHugeStorePage(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Index);
+VOID LxHugeStoreFault(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Index);
 NTSTATUS LxHugeMapPage(_In_ PVOID Section, _In_ HANDLE ProcessHandle, _Inout_ PVOID *Base, _In_ ULONG Protect);
 NTSTATUS LxHugeCopyPage(_In_ PVOID From, _In_ PVOID To);
 PLX_FILE LxHugeFileCreate(_In_ PCSTR Path);

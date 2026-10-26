@@ -154,6 +154,7 @@ typedef struct _LX_HUGE_STORE
 {
     ULONG Count;
     PVOID *Pages;
+    PUCHAR Faulted;
 } LX_HUGE_STORE, *PLX_HUGE_STORE;
 
 typedef struct _LX_MEMFD
@@ -782,11 +783,12 @@ extern KEVENT LxInstanceCreateLock;
 VOID LxProcessInitialize(VOID);
 VOID LxHugeInitialize(VOID);
 ULONG64 LxHugePageSize(VOID);
-ULONG64 LxHugeQueryPool(_Out_opt_ PULONG64 Free, _Out_opt_ PULONG64 Surplus);
+ULONG64 LxHugeQueryPool(_Out_opt_ PULONG64 Free, _Out_opt_ PULONG64 Surplus, _Out_opt_ PULONG64 Reserved);
 VOID LxHugeSetPool(_In_ ULONG64 Count);
 LONG LxHugeStoreReserve(_Inout_ PLX_HUGE_STORE Store, _In_ ULONG64 First, _In_ ULONG64 Count, _In_ BOOLEAN Surplus);
 VOID LxHugeStoreTruncate(_Inout_ PLX_HUGE_STORE Store, _In_ ULONG64 Count);
 PVOID LxHugeStorePage(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Index);
+VOID LxHugeStoreFault(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Index);
 NTSTATUS LxHugeMapPage(_In_ PVOID Section, _In_ HANDLE ProcessHandle, _Inout_ PVOID *Base, _In_ ULONG Protect);
 NTSTATUS LxHugeCopyPage(_In_ PVOID From, _In_ PVOID To);
 LONG64 LxHugeStoreRead(_In_ PLX_HUGE_STORE Store, _In_ ULONG64 Offset, _In_ ULONG64 Buffer, _In_ ULONG64 Length);
@@ -1250,6 +1252,7 @@ VOID LxFutexInitialize(VOID);
 VOID LxFutexExitRobustList(_In_ PLX_THREAD Thread);
 BOOLEAN LxMmSharedKey(_In_ PLX_PROCESS Process, _In_ ULONG64 Address, _Out_ PVOID *Object, _Out_ PULONG64 Offset);
 LONG64 LxMmMapSection(_In_ PLX_PROCESS Process, _In_ PVOID Section, _In_ ULONG64 Address, _In_ ULONG64 Length, _In_ ULONG Prot, _In_ BOOLEAN Remap);
+LONG64 LxMmMapHugeSection(_In_ PLX_PROCESS Process, _In_ PLX_FILE File, _In_ ULONG64 Address, _In_ ULONG64 Length, _In_ ULONG Prot, _In_ BOOLEAN Remap);
 LONG LxMmDetachSection(_In_ PLX_PROCESS Process, _In_ ULONG64 Address);
 LONG LxMmPrepareRemote(_In_ PLX_PROCESS Process, _In_ PEPROCESS EProcess, _In_ ULONG64 Address, _In_ ULONG64 Length, _In_ BOOLEAN Write);
 VOID LxIpcShmVmaOpen(_In_ PVOID Section);

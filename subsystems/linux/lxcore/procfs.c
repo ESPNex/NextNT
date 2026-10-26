@@ -2774,16 +2774,18 @@ LxGenHugePages(
     _Inout_ PLX_TEXT Text)
 {
     PCSTR Name = strrchr(Synth->Prefix, '/');
-    ULONG64 Total, Free, Surplus;
+    ULONG64 Total, Free, Surplus, Reserved;
 
     UNREFERENCED_PARAMETER(Self);
     Name = (Name != NULL) ? Name + 1 : Synth->Prefix;
-    Total = LxHugeQueryPool(&Free, &Surplus);
+    Total = LxHugeQueryPool(&Free, &Surplus, &Reserved);
     if (strcmp(Name, "free_hugepages") == 0)
         LxTextPrintf(Text, "%llu\n", Free);
     else if (strcmp(Name, "surplus_hugepages") == 0)
         LxTextPrintf(Text, "%llu\n", Surplus);
-    else if ((strcmp(Name, "resv_hugepages") == 0) || (strcmp(Name, "nr_overcommit_hugepages") == 0))
+    else if (strcmp(Name, "resv_hugepages") == 0)
+        LxTextPrintf(Text, "%llu\n", Reserved);
+    else if (strcmp(Name, "nr_overcommit_hugepages") == 0)
         LxTextAppend(Text, "0\n", 2);
     else
         LxTextPrintf(Text, "%llu\n", Total);
@@ -3284,7 +3286,7 @@ LxGenMeminfo(
     _In_ PLX_SYNTH Synth,
     _Inout_ PLX_TEXT Text)
 {
-    ULONG64 HugeTotal, HugeFree, HugeSurplus;
+    ULONG64 HugeTotal, HugeFree, HugeSurplus, HugeReserved;
     LX_MEMORY_STATE State;
 
     UNREFERENCED_PARAMETER(Self);
@@ -3301,11 +3303,11 @@ LxGenMeminfo(
                  "Committed_AS:   %8llu kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:           0 kB\n",
                  State.Total / 1024, State.Free / 1024, State.Available / 1024, State.Cached / 1024,
                  State.SwapTotal / 1024, State.SwapFree / 1024, State.CommitLimit / 1024, State.Committed / 1024);
-    HugeTotal = LxHugeQueryPool(&HugeFree, &HugeSurplus);
+    HugeTotal = LxHugeQueryPool(&HugeFree, &HugeSurplus, &HugeReserved);
     LxTextPrintf(Text,
                  "HugePages_Total:   %5llu\nHugePages_Free:    %5llu\nHugePages_Rsvd:    %5llu\n"
                  "HugePages_Surp:    %5llu\nHugepagesize:   %8llu kB\nHugetlb:        %8llu kB\n",
-                 HugeTotal, HugeFree, 0ULL, HugeSurplus, LxHugePageSize() / 1024,
+                 HugeTotal, HugeFree, HugeReserved, HugeSurplus, LxHugePageSize() / 1024,
                  (HugeTotal + HugeSurplus) * (LxHugePageSize() / 1024));
 }
 

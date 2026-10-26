@@ -578,6 +578,8 @@ typedef struct _LX_SCHED_ATTR
 #define LX_IPC_STAT             2
 #define LX_IPC_INFO             3
 #define LX_SHM_HUGETLB          04000
+#define LX_SHM_HUGE_SHIFT       26
+#define LX_SHM_HUGE_MASK        0x3F
 #define LX_SHM_RDONLY           010000
 #define LX_SHM_RND              020000
 #define LX_SHM_REMAP            040000
