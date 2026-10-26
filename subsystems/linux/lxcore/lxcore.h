@@ -668,6 +668,7 @@ struct _LX_THREAD
     ULONG CurrentSyscall;
     LONG InKernel;
     volatile LONG SignalApc;
+    PEX_TIMER SignalRetry;
     ULONG64 CurrentArgs[6];
     ULONG64 RobustList;
     LONG64 Restart;
@@ -1294,7 +1295,7 @@ BOOLEAN LxArchEmulateInstruction(_In_ PEXCEPTION_RECORD ExceptionRecord, _Inout_
 VOID LxArchSetExecContext(_Inout_ PKTRAP_FRAME TrapFrame, _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame, _In_ ULONG64 Pc, _In_ ULONG64 Sp);
 VOID LxArchCaptureContext(_In_ PKTRAP_FRAME TrapFrame, _In_opt_ PKEXCEPTION_FRAME ExceptionFrame, _Out_ PCONTEXT Context);
 VOID LxArchSetForkContext(_Inout_ PCONTEXT Context, _In_ ULONG64 StackPointer);
-VOID LxArchDeliverAsync(_In_ PLX_THREAD Thread);
+BOOLEAN LxArchDeliverAsync(_In_ PLX_THREAD Thread);
 VOID LxArchRestoreContext(_Inout_ PKTRAP_FRAME TrapFrame, _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame,
                           _In_ PCONTEXT Context);
 VOID LxArchSetThreadPointer(_Inout_ PKTRAP_FRAME TrapFrame, _In_ ULONG64 Value);

@@ -332,7 +332,7 @@ LxArchEmulateInstruction(
     return FALSE;
 }
 
-VOID
+BOOLEAN
 LxArchDeliverAsync(
     _In_ PLX_THREAD Thread)
 {
@@ -341,16 +341,22 @@ LxArchDeliverAsync(
         CONTEXT Context;
         KTRAP_FRAME TrapFrame;
     } *Frames = LxAlloc(sizeof(*Frames));
+    BOOLEAN Delivered = FALSE;
 
     if (Frames == NULL)
-        return;
-    Frames->Context.ContextFlags = CONTEXT_FULL;
-    if (NT_SUCCESS(PsGetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode)))
+        return FALSE;
+    Frames->Context.ContextFlags = CONTEXT_FULL | CONTEXT_EXCEPTION_REQUEST;
+    if (NT_SUCCESS(PsGetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode)) &&
+        (Frames->Context.ContextFlags & CONTEXT_EXCEPTION_REPORTING) &&
+        !(Frames->Context.ContextFlags & (CONTEXT_SERVICE_ACTIVE | CONTEXT_EXCEPTION_ACTIVE)))
     {
+        Frames->Context.ContextFlags = CONTEXT_FULL;
         LxArchRestoreContext(&Frames->TrapFrame, NULL, &Frames->Context);
         LxSignalCheckPending(Thread, &Frames->TrapFrame, NULL);
         LxArchCaptureContext(&Frames->TrapFrame, NULL, &Frames->Context);
         PsSetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode);
+        Delivered = TRUE;
     }
     LxFree(Frames);
+    return Delivered;
 }

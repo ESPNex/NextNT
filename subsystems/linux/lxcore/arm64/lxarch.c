@@ -579,7 +579,7 @@ LxArchWriteSigaction(
     return LxCopyToUser(Address, Action, sizeof(*Action));
 }
 
-VOID
+BOOLEAN
 LxArchDeliverAsync(
     _In_ PLX_THREAD Thread)
 {
@@ -590,17 +590,24 @@ LxArchDeliverAsync(
         KEXCEPTION_FRAME ExceptionFrame;
         KARM64_VFP_STATE VfpState;
     } *Frames = LxAlloc(sizeof(*Frames));
+    BOOLEAN Delivered = FALSE;
 
     if (Frames == NULL)
-        return;
-    Frames->Context.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT;
-    if (NT_SUCCESS(PsGetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode)))
+        return FALSE;
+    Frames->Context.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT |
+                                   CONTEXT_EXCEPTION_REQUEST;
+    if (NT_SUCCESS(PsGetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode)) &&
+        (Frames->Context.ContextFlags & CONTEXT_EXCEPTION_REPORTING) &&
+        !(Frames->Context.ContextFlags & (CONTEXT_SERVICE_ACTIVE | CONTEXT_EXCEPTION_ACTIVE)))
     {
+        Frames->Context.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT;
         Frames->TrapFrame.VfpState = &Frames->VfpState;
         LxArchRestoreContext(&Frames->TrapFrame, &Frames->ExceptionFrame, &Frames->Context);
         LxSignalCheckPending(Thread, &Frames->TrapFrame, &Frames->ExceptionFrame);
         LxArchCaptureContext(&Frames->TrapFrame, &Frames->ExceptionFrame, &Frames->Context);
         PsSetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode);
+        Delivered = TRUE;
     }
     LxFree(Frames);
+    return Delivered;
 }

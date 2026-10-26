@@ -105,22 +105,71 @@ NTAPI
 LxSignalApcNormal(
     _In_opt_ PVOID NormalContext,
     _In_opt_ PVOID SystemArgument1,
+    _In_opt_ PVOID SystemArgument2);
+
+static
+VOID
+LxSignalQueueApc(
+    _In_ PLX_THREAD Base,
+    _In_ PKAPC Apc)
+{
+    KeInitializeApc(Apc, (PKTHREAD)Base->EThread, OriginalApcEnvironment, LxSignalApcKernel, LxSignalApcRundown,
+                    LxSignalApcNormal, KernelMode, Apc);
+    if (!KeInsertQueueApc(Apc, NULL, NULL, IO_NO_INCREMENT))
+    {
+        LxFree(Apc);
+        InterlockedExchange(&Base->SignalApc, 0);
+    }
+}
+
+static
+VOID
+NTAPI
+LxSignalRetryExpired(
+    _In_ PEX_TIMER Timer,
+    _In_opt_ PVOID Context)
+{
+    PLX_THREAD Base = Context;
+    PKAPC Apc = LxAlloc(sizeof(KAPC));
+
+    UNREFERENCED_PARAMETER(Timer);
+    if (Apc == NULL)
+        InterlockedExchange(&Base->SignalApc, 0);
+    else
+        LxSignalQueueApc(Base, Apc);
+}
+
+static
+VOID
+NTAPI
+LxSignalApcNormal(
+    _In_opt_ PVOID NormalContext,
+    _In_opt_ PVOID SystemArgument1,
     _In_opt_ PVOID SystemArgument2)
 {
-    PLX_THREAD Base = PsPicoGetThreadContext(PsGetCurrentThread());
-    PLX_THREAD Thread;
+    PLX_THREAD Base, Thread;
 
     UNREFERENCED_PARAMETER(SystemArgument1);
     UNREFERENCED_PARAMETER(SystemArgument2);
     LxFree(NormalContext);
+    if (PsIsThreadTerminating(PsGetCurrentThread()))
+        return;
+    Base = PsPicoGetThreadContext(PsGetCurrentThread());
     if (Base == NULL)
         return;
     InterlockedExchange(&Base->SignalApc, 0);
     Thread = LxCurrentThread();
     if ((Base->InKernel != 0) || (Thread == NULL) || Thread->VforkExited)
         return;
-    if ((((ULONG64)Thread->Pending | (ULONG64)Thread->Process->Pending) & ~Thread->SigMask) != 0)
-        LxArchDeliverAsync(Thread);
+    if (((((ULONG64)Thread->Pending | (ULONG64)Thread->Process->Pending) & ~Thread->SigMask) == 0) ||
+        LxArchDeliverAsync(Thread))
+    {
+        return;
+    }
+    if (Base->SignalRetry == NULL)
+        Base->SignalRetry = ExAllocateTimer(LxSignalRetryExpired, Base, EX_TIMER_HIGH_RESOLUTION);
+    if ((Base->SignalRetry != NULL) && (InterlockedExchange(&Base->SignalApc, 1) == 0))
+        ExSetTimer(Base->SignalRetry, -1000, 0, NULL);
 }
 
 static

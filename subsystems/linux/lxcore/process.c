@@ -577,6 +577,8 @@ LxThreadFree(
 {
     PLX_PROCESS Process = Thread->Process;
 
+    if (Thread->SignalRetry != NULL)
+        ExDeleteTimer(Thread->SignalRetry, TRUE, TRUE, NULL);
     LxNsThreadRelease(Thread);
     LxCgroupTaskRemove(Process);
     LxProcessDereference(Process);
