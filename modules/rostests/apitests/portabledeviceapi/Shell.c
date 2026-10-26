@@ -45,17 +45,57 @@ DumpItem(IShellFolder *Folder, PCUITEMID_CHILD Item, const char *Prefix)
     trace("%spidl size %u\n", Prefix, ILGetSize((PCUIDLIST_RELATIVE)Item));
     if (SUCCEEDED(IShellFolder_QueryInterface(Folder, &IID_IShellFolder2, (void **)&Folder2)))
     {
-        for (Column = 0; Column < 8; Column++)
+        for (Column = 0; Column < 64; Column++)
         {
             hr = IShellFolder2_GetDetailsOf(Folder2, Item, Column, &Details);
             if (FAILED(hr))
-                break;
+            {
+                trace("%scolumn %u hr 0x%08lX\n", Prefix, Column, hr);
+                if (hr == E_INVALIDARG)
+                    break;
+                continue;
+            }
             Text[0] = 0;
             StrRetToBufW(&Details.str, Item, Text, ARRAYSIZE(Text));
             trace("%scolumn %u \"%ls\"\n", Prefix, Column, Text);
         }
         IShellFolder2_Release(Folder2);
     }
+}
+
+static void
+DumpColumns(IShellFolder *Folder, const char *Prefix)
+{
+    IShellFolder2 *Folder2;
+    SHELLDETAILS Details;
+    SHCOLSTATEF State;
+    SHCOLUMNID Scid;
+    WCHAR Text[256];
+    char Fmtid[64];
+    UINT Column;
+    HRESULT hr, StateHr, ScidHr;
+
+    if (FAILED(IShellFolder_QueryInterface(Folder, &IID_IShellFolder2, (void **)&Folder2)))
+        return;
+    for (Column = 0; Column < 64; Column++)
+    {
+        hr = IShellFolder2_GetDetailsOf(Folder2, NULL, Column, &Details);
+        if (FAILED(hr))
+        {
+            trace("%sheader %u hr 0x%08lX\n", Prefix, Column, hr);
+            break;
+        }
+        Text[0] = 0;
+        StrRetToBufW(&Details.str, NULL, Text, ARRAYSIZE(Text));
+        State = 0;
+        StateHr = IShellFolder2_GetDefaultColumnState(Folder2, Column, &State);
+        memset(&Scid, 0, sizeof(Scid));
+        ScidHr = IShellFolder2_MapColumnToSCID(Folder2, Column, &Scid);
+        WpdFormatGuid(&Scid.fmtid, Fmtid, sizeof(Fmtid));
+        trace("%sheader %u \"%ls\" fmt %d state hr 0x%08lX 0x%08lX scid hr 0x%08lX %s %lu\n", Prefix, Column, Text,
+              Details.fmt, StateHr, State, ScidHr, Fmtid, Scid.pid);
+    }
+    IShellFolder2_Release(Folder2);
 }
 
 static void
@@ -76,6 +116,8 @@ DumpFolder(IShellFolder *Folder, int Depth, BOOL DevicesOnly)
     trace("%sEnumObjects hr 0x%08lX\n", Prefix, hr);
     if (hr != S_OK)
         return;
+    if (!DevicesOnly)
+        DumpColumns(Folder, Prefix);
     while (Count < 64 && IEnumIDList_Next(Enum, 1, &Item, &Fetched) == S_OK && Fetched)
     {
         Count++;
