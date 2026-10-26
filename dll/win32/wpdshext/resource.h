@@ -36,6 +36,7 @@
 #define IDS_COLUMN_DURATION         647
 #define IDS_COLUMN_DATE_AUTHORED    648
 #define IDS_COLUMN_DIMENSIONS       649
+#define IDS_COLUMN_DATE_TAKEN       652
 
 #define IDS_YES                     650
 #define IDS_NO                      651

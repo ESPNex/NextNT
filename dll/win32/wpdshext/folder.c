@@ -38,14 +38,21 @@ enum
     VALUE_DURATION,
     VALUE_AUTHORED,
     VALUE_DIMENSIONS,
+    VALUE_DATE_TAKEN,
+};
+
+enum
+{
+    PROFILE_GENERIC,
+    PROFILE_MUSIC,
+    PROFILE_CAMERA,
 };
 
 typedef struct wpd_column
 {
     UINT title;
     const PROPERTYKEY *key;
-    SHCOLSTATEF state;
-    SHCOLSTATEF music_state;
+    SHCOLSTATEF state[3];
     int fmt;
     BYTE value;
 } wpd_column;
@@ -60,40 +67,52 @@ static const PROPERTYKEY scid_supported =
 
 static const wpd_column root_columns[] =
 {
-    { IDS_COLUMN_NAME, &PKEY_ItemNameDisplay, STR_ON, STR_ON, LVCFMT_LEFT, VALUE_NAME },
-    { IDS_COLUMN_TYPE, &PKEY_ItemTypeText, STR_ON, STR_ON, LVCFMT_LEFT, VALUE_TYPE },
+    { IDS_COLUMN_NAME, &PKEY_ItemNameDisplay, { STR_ON, STR_ON, STR_ON }, LVCFMT_LEFT, VALUE_NAME },
+    { IDS_COLUMN_TYPE, &PKEY_ItemTypeText, { STR_ON, STR_ON, STR_ON }, LVCFMT_LEFT, VALUE_TYPE },
 };
 
 static const wpd_column storage_columns[] =
 {
-    { IDS_COLUMN_NAME, &PKEY_ItemNameDisplay, STR_ON, STR_ON, LVCFMT_LEFT, VALUE_NAME },
-    { IDS_COLUMN_TYPE, &PKEY_ItemTypeText, STR_ON, STR_ON, LVCFMT_LEFT, VALUE_TYPE },
-    { IDS_COLUMN_TOTAL, &PKEY_Size, INT_ON, INT_ON, LVCFMT_RIGHT, VALUE_SIZE },
-    { IDS_COLUMN_FREE, &PKEY_FreeSpace, INT_ON | SHCOLSTATE_SLOW, INT_ON | SHCOLSTATE_SLOW, LVCFMT_RIGHT, VALUE_FREE },
-    { IDS_COLUMN_PERCENT_FULL, &PKEY_PercentFull, INT_SLOW, INT_SLOW, LVCFMT_LEFT, VALUE_PERCENT },
-    { IDS_COLUMN_AVAILABLE, &PKEY_Computer_DecoratedFreeSpace, STR_SLOW | SHCOLSTATE_HIDDEN,
-      STR_SLOW | SHCOLSTATE_HIDDEN, LVCFMT_LEFT, VALUE_NONE },
+    { IDS_COLUMN_NAME, &PKEY_ItemNameDisplay, { STR_ON, STR_ON, STR_ON }, LVCFMT_LEFT, VALUE_NAME },
+    { IDS_COLUMN_TYPE, &PKEY_ItemTypeText, { STR_ON, STR_ON, STR_ON }, LVCFMT_LEFT, VALUE_TYPE },
+    { IDS_COLUMN_TOTAL, &PKEY_Size, { INT_ON, INT_ON, INT_ON }, LVCFMT_RIGHT, VALUE_SIZE },
+    { IDS_COLUMN_FREE, &PKEY_FreeSpace, { INT_ON | SHCOLSTATE_SLOW, INT_ON | SHCOLSTATE_SLOW, INT_ON | SHCOLSTATE_SLOW }, LVCFMT_RIGHT, VALUE_FREE },
+    { IDS_COLUMN_PERCENT_FULL, &PKEY_PercentFull, { INT_SLOW, INT_SLOW, INT_SLOW }, LVCFMT_LEFT, VALUE_PERCENT },
+    { IDS_COLUMN_AVAILABLE, &PKEY_Computer_DecoratedFreeSpace,
+      { STR_SLOW | SHCOLSTATE_HIDDEN, STR_SLOW | SHCOLSTATE_HIDDEN, STR_SLOW | SHCOLSTATE_HIDDEN }, LVCFMT_LEFT, VALUE_NONE },
 };
 
 static const wpd_column object_columns[] =
 {
-    { IDS_COLUMN_NAME, &PKEY_ItemNameDisplay, STR_ON, STR_ON, LVCFMT_LEFT, VALUE_NAME },
-    { IDS_COLUMN_TYPE, &PKEY_ItemTypeText, STR_ON, STR_ON, LVCFMT_LEFT, VALUE_TYPE },
-    { IDS_COLUMN_SIZE, &PKEY_Size, INT_ON, INT_ON, LVCFMT_RIGHT, VALUE_SIZE },
-    { IDS_COLUMN_MODIFIED, &PKEY_DateModified, STR_ON, SHCOLSTATE_TYPE_STR, LVCFMT_LEFT, VALUE_MODIFIED },
-    { IDS_COLUMN_CREATED, &PKEY_DateCreated, STR_ON, SHCOLSTATE_TYPE_STR, LVCFMT_LEFT, VALUE_CREATED },
-    { IDS_COLUMN_PROTECTED, &PKEY_DRM_IsProtected, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR, LVCFMT_LEFT, VALUE_PROTECTED },
-    { IDS_COLUMN_SUPPORTED, &scid_supported, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR, LVCFMT_LEFT, VALUE_SUPPORTED },
-    { IDS_COLUMN_TRACK, &PKEY_Music_TrackNumber, INT_SLOW, INT_SLOW | SHCOLSTATE_ONBYDEFAULT, LVCFMT_RIGHT, VALUE_TRACK },
-    { IDS_COLUMN_TITLE, &PKEY_Title, STR_SLOW, STR_SLOW, LVCFMT_LEFT, VALUE_TITLE },
-    { IDS_COLUMN_ARTIST, &PKEY_Music_Artist, STR_SLOW, STR_SLOW | SHCOLSTATE_ONBYDEFAULT, LVCFMT_LEFT, VALUE_ARTIST },
-    { IDS_COLUMN_ALBUM, &PKEY_Music_AlbumTitle, STR_SLOW, STR_SLOW | SHCOLSTATE_ONBYDEFAULT, LVCFMT_LEFT, VALUE_ALBUM },
-    { IDS_COLUMN_YEAR, &PKEY_Media_Year, INT_SLOW, INT_SLOW | SHCOLSTATE_ONBYDEFAULT, LVCFMT_RIGHT, VALUE_YEAR },
-    { IDS_COLUMN_GENRE, &PKEY_Music_Genre, STR_SLOW, STR_SLOW, LVCFMT_LEFT, VALUE_GENRE },
-    { IDS_COLUMN_DURATION, &WPD_MEDIA_DURATION, SHCOLSTATE_TYPE_STR, STR_ON, LVCFMT_LEFT, VALUE_DURATION },
-    { IDS_COLUMN_DATE_AUTHORED, &WPD_OBJECT_DATE_AUTHORED, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR, LVCFMT_LEFT, VALUE_AUTHORED },
-    { IDS_COLUMN_DIMENSIONS, &PKEY_Image_Dimensions, STR_SLOW, STR_SLOW, LVCFMT_LEFT, VALUE_DIMENSIONS },
+    { IDS_COLUMN_NAME, &PKEY_ItemNameDisplay, { STR_ON, STR_ON, STR_ON }, LVCFMT_LEFT, VALUE_NAME },
+    { IDS_COLUMN_TYPE, &PKEY_ItemTypeText, { STR_ON, STR_ON, STR_ON }, LVCFMT_LEFT, VALUE_TYPE },
+    { IDS_COLUMN_SIZE, &PKEY_Size, { INT_ON, INT_ON, INT_ON }, LVCFMT_RIGHT, VALUE_SIZE },
+    { IDS_COLUMN_MODIFIED, &PKEY_DateModified, { STR_ON, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR }, LVCFMT_LEFT, VALUE_MODIFIED },
+    { IDS_COLUMN_CREATED, &PKEY_DateCreated, { STR_ON, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR }, LVCFMT_LEFT, VALUE_CREATED },
+    { IDS_COLUMN_PROTECTED, &PKEY_DRM_IsProtected, { SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR }, LVCFMT_LEFT, VALUE_PROTECTED },
+    { IDS_COLUMN_SUPPORTED, &scid_supported, { SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR }, LVCFMT_LEFT, VALUE_SUPPORTED },
+    { IDS_COLUMN_TRACK, &PKEY_Music_TrackNumber, { INT_SLOW, INT_SLOW | SHCOLSTATE_ONBYDEFAULT, INT_SLOW }, LVCFMT_RIGHT, VALUE_TRACK },
+    { IDS_COLUMN_TITLE, &PKEY_Title, { STR_SLOW, STR_SLOW, STR_SLOW }, LVCFMT_LEFT, VALUE_TITLE },
+    { IDS_COLUMN_ARTIST, &PKEY_Music_Artist, { STR_SLOW, STR_SLOW | SHCOLSTATE_ONBYDEFAULT, STR_SLOW }, LVCFMT_LEFT, VALUE_ARTIST },
+    { IDS_COLUMN_ALBUM, &PKEY_Music_AlbumTitle, { STR_SLOW, STR_SLOW | SHCOLSTATE_ONBYDEFAULT, STR_SLOW }, LVCFMT_LEFT, VALUE_ALBUM },
+    { IDS_COLUMN_YEAR, &PKEY_Media_Year, { INT_SLOW, INT_SLOW | SHCOLSTATE_ONBYDEFAULT, INT_SLOW }, LVCFMT_RIGHT, VALUE_YEAR },
+    { IDS_COLUMN_GENRE, &PKEY_Music_Genre, { STR_SLOW, STR_SLOW, STR_SLOW }, LVCFMT_LEFT, VALUE_GENRE },
+    { IDS_COLUMN_DURATION, &WPD_MEDIA_DURATION, { SHCOLSTATE_TYPE_STR, STR_ON, SHCOLSTATE_TYPE_STR }, LVCFMT_LEFT, VALUE_DURATION },
+    { IDS_COLUMN_DATE_AUTHORED, &WPD_OBJECT_DATE_AUTHORED, { SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR, SHCOLSTATE_TYPE_STR }, LVCFMT_LEFT, VALUE_AUTHORED },
+    { IDS_COLUMN_DIMENSIONS, &PKEY_Image_Dimensions, { STR_SLOW, STR_SLOW, STR_SLOW | SHCOLSTATE_ONBYDEFAULT }, LVCFMT_LEFT, VALUE_DIMENSIONS },
 };
+
+static const wpd_column camera_date_column =
+    { IDS_COLUMN_DATE_TAKEN, &WPD_OBJECT_DATE_CREATED, { STR_ON, STR_ON, STR_ON }, LVCFMT_LEFT, VALUE_DATE_TAKEN };
+
+static int folder_profile(const wpd_folder *folder)
+{
+    if (folder->device_type == WPD_DEVICE_TYPE_MEDIA_PLAYER)
+        return PROFILE_MUSIC;
+    if (folder->device_type == WPD_DEVICE_TYPE_CAMERA)
+        return PROFILE_CAMERA;
+    return PROFILE_GENERIC;
+}
 
 static const wpd_column *folder_columns(const wpd_folder *folder, UINT *count)
 {
@@ -116,6 +135,11 @@ static const wpd_column *folder_column(const wpd_folder *folder, UINT index)
     UINT count;
     const wpd_column *columns = folder_columns(folder, &count);
 
+    if (columns == object_columns && index < count && columns[index].value == VALUE_AUTHORED &&
+        folder_profile(folder) == PROFILE_CAMERA)
+    {
+        return &camera_date_column;
+    }
     return index < count ? &columns[index] : NULL;
 }
 
@@ -492,6 +516,9 @@ static HRESULT WINAPI folder_CompareIDs(IShellFolder2 *iface, LPARAM param, PCUI
         case VALUE_DURATION:
             result = compare_values(item1->duration, item2->duration);
             break;
+        case VALUE_DATE_TAKEN:
+            result = CompareFileTime(&item1->created, &item2->created);
+            break;
         case VALUE_AUTHORED:
             result = CompareFileTime(&item1->authored, &item2->authored);
             break;
@@ -796,7 +823,7 @@ static HRESULT WINAPI folder_GetDefaultColumnState(IShellFolder2 *iface, UINT co
 
     if (!flags || !entry)
         return E_INVALIDARG;
-    *flags = folder->device_type == WPD_DEVICE_TYPE_MEDIA_PLAYER ? entry->music_state : entry->state;
+    *flags = entry->state[folder_profile(folder)];
     return S_OK;
 }
 
@@ -943,6 +970,11 @@ static HRESULT detail_text(const wpd_column *column, const wpd_item *item, WCHAR
             if (!(item->flags & WPD_ITEM_HAS_DIMENSIONS))
                 return missing;
             wsprintfW(text, L"%lu X %lu", item->width, item->height);
+            break;
+        case VALUE_DATE_TAKEN:
+            if (!(item->flags & WPD_ITEM_HAS_CREATED))
+                return missing;
+            format_time(&item->created, text, chars);
             break;
         case VALUE_YEAR:
             return missing;

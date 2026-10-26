@@ -423,10 +423,10 @@ static DWORD storage_attributes(const wpd_data *data)
     {
         const wpd_item *item = wpd_item_from_pidl(data->items[i]);
 
-        if (item && wpd_item_is_container(item))
-            return 0xFB;
+        if (!item || !wpd_item_is_container(item))
+            return 0xF8;
     }
-    return 0xF8;
+    return data->count ? 0xFB : 0xF8;
 }
 
 static inline wpd_data *impl_from_IDataObject(IDataObject *iface)
@@ -747,24 +747,41 @@ static HRESULT WINAPI data_SetData(IDataObject *iface, FORMATETC *format, STGMED
 static HRESULT WINAPI data_EnumFormatEtc(IDataObject *iface, DWORD direction, IEnumFORMATETC **out)
 {
     wpd_data *data = impl_from_IDataObject(iface);
-    FORMATETC formats[8] =
-    {
-        { data->cf_idlist, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-        { data->cf_contents, NULL, DVASPECT_CONTENT, -1, TYMED_ISTREAM },
-        { data->cf_descriptor, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-        { data->cf_storage_attributes, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-        { data->cf_drop_effect, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-        { data->cf_nse, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-        { data->cf_pnp_path, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-        { data->cf_storage_puid, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL },
-    };
+    FORMATETC *formats;
+    UINT count = 0, i;
+    HRESULT hr;
 
     if (!out)
         return E_INVALIDARG;
     *out = NULL;
     if (direction != DATADIR_GET)
         return E_NOTIMPL;
-    return SHCreateStdEnumFmtEtc(data->folder->storage_puid ? ARRAY_SIZE(formats) : ARRAY_SIZE(formats) - 1, formats, out);
+    formats = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (data->count + 7) * sizeof(*formats));
+    if (!formats)
+        return E_OUTOFMEMORY;
+    formats[count++].cfFormat = data->cf_idlist;
+    for (i = 0; i < max(data->count, 1); i++)
+    {
+        formats[count].cfFormat = data->cf_contents;
+        formats[count++].tymed = TYMED_ISTREAM;
+    }
+    formats[count++].cfFormat = data->cf_descriptor;
+    formats[count++].cfFormat = data->cf_storage_attributes;
+    formats[count++].cfFormat = data->cf_drop_effect;
+    formats[count++].cfFormat = data->cf_nse;
+    formats[count++].cfFormat = data->cf_pnp_path;
+    if (data->folder->storage_puid)
+        formats[count++].cfFormat = data->cf_storage_puid;
+    for (i = 0; i < count; i++)
+    {
+        formats[i].dwAspect = DVASPECT_CONTENT;
+        formats[i].lindex = -1;
+        if (!formats[i].tymed)
+            formats[i].tymed = TYMED_HGLOBAL;
+    }
+    hr = SHCreateStdEnumFmtEtc(count, formats, out);
+    HeapFree(GetProcessHeap(), 0, formats);
+    return hr;
 }
 
 static HRESULT WINAPI data_DAdvise(IDataObject *iface, FORMATETC *format, DWORD flags, IAdviseSink *sink, DWORD *connection)

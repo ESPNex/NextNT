@@ -63,6 +63,7 @@ enum
 #define WPD_ITEM_HAS_ARTIST 0x0200
 #define WPD_ITEM_HAS_ALBUM  0x0400
 #define WPD_ITEM_HAS_GENRE  0x0800
+#define WPD_ITEM_HAS_CREATED 0x1000
 
 #pragma pack(push, 1)
 typedef struct wpd_item

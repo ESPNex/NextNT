@@ -313,8 +313,11 @@ HRESULT wpd_object_item(wpd_folder *folder, wpd_device *device, const WCHAR *obj
     IPortableDeviceValues_GetUnsignedLargeIntegerValue(values, &WPD_STORAGE_CAPACITY, &info.capacity);
     IPortableDeviceValues_GetUnsignedLargeIntegerValue(values, &WPD_STORAGE_FREE_SPACE_IN_BYTES, &info.free);
     PropVariantInit(&value);
-    if (SUCCEEDED(IPortableDeviceValues_GetValue(values, &WPD_OBJECT_DATE_CREATED, &value)))
+    if (SUCCEEDED(IPortableDeviceValues_GetValue(values, &WPD_OBJECT_DATE_CREATED, &value)) && value.vt == VT_DATE)
+    {
         variant_time(&value, &info.created);
+        info.flags |= WPD_ITEM_HAS_CREATED;
+    }
     PropVariantClear(&value);
     if (SUCCEEDED(IPortableDeviceValues_GetValue(values, &WPD_OBJECT_DATE_MODIFIED, &value)))
         variant_time(&value, &info.modified);

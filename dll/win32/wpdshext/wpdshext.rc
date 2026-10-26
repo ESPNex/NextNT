@@ -57,6 +57,7 @@ BEGIN
     IDS_COLUMN_DURATION         "Duration"
     IDS_COLUMN_DATE_AUTHORED    "Date Authored"
     IDS_COLUMN_DIMENSIONS       "Dimensions"
+    IDS_COLUMN_DATE_TAKEN       "Date Picture Taken"
     IDS_YES                     "Yes"
     IDS_NO                      "No"
     IDS_CONFIRM_DELETE_ONE      "Are you sure you want to permanently delete this item?"
