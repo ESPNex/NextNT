@@ -113,5 +113,35 @@
   "name": "input-touchscreen",
   "file": "scalable/devices/input-touchscreen.svg",
   "sha256": "36a851070c419ea661a1daf347ecd674f8b96b254838accd84e3673b5bc25dee"
+ },
+ {
+  "name": "camera-photo",
+  "file": "scalable/devices/camera-photo.svg",
+  "sha256": "a97d4cafa4b58516388f2f88f0bd051e1d7825e5f59e324121c581b62e29db41"
+ },
+ {
+  "name": "camera-video",
+  "file": "scalable/devices/camera-video.svg",
+  "sha256": "14cc91313689a158ba86708a65029156916a770f69e6055451586de52446cd7b"
+ },
+ {
+  "name": "multimedia-player",
+  "file": "scalable/devices/multimedia-player.svg",
+  "sha256": "d3a0b7ce4364b9e2a31817ef0ea55d973fcc41aed8cc3bc9943f33bfd994329a"
+ },
+ {
+  "name": "pda",
+  "file": "scalable/devices/pda.svg",
+  "sha256": "0e40d610ab5c5cad8fbea73c90ecbb9fd71f24f71397ffcf874a49c1d2d3045c"
+ },
+ {
+  "name": "phone",
+  "file": "scalable/devices/phone.svg",
+  "sha256": "a771fda17b24c669f176139b1c4bb0a6b7d8d168e6a0f805ad36bdb9fb00aac8"
+ },
+ {
+  "name": "audio-input-microphone",
+  "file": "scalable/devices/audio-input-microphone.svg",
+  "sha256": "be1467c40664a7461b357109738ea4cecccc5ccecc462e2d13f223d54c5b4461"
  }
 ]

@@ -92,6 +92,19 @@ rasterized from the scalable SVG.
 | DVD/CD-ROM drives | `devices/drive-optical` | setupapi.dll, -51 |
 | Disk drives | `devices/drive-harddisk` | setupapi.dll, -53 |
 
+The Portable Devices shell icons come from the same Fluent icon theme commit:
+
+| Icon | Fluent icon | Resource |
+| --- | --- | --- |
+| Portable device | `devices/drive-removable-media` | wpdshext.dll, -701 |
+| Digital camera | `devices/camera-photo` | wpdshext.dll, -702 |
+| Mobile phone | `devices/phone` | wpdshext.dll, -703 |
+| Portable media player | `devices/multimedia-player` | wpdshext.dll, -704 |
+| Video player | `devices/camera-video` | wpdshext.dll, -705 |
+| Personal information manager | `devices/pda` | wpdshext.dll, -706 |
+| Audio recorder | `devices/audio-input-microphone` | wpdshext.dll, -707 |
+| Device storage | `devices/media-flash` | wpdshext.dll, -710 |
+
 The Display adapters icon comes from MoreWaita by somepaulo
 (https://github.com/somepaulo/MoreWaita), commit
 `298968f878ce5f529321aecf586bf98061969e9b`, GNU General Public License
