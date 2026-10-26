@@ -1610,6 +1610,25 @@ CmBattQueryInformation(IN PCMBATT_DEVICE_EXTENSION FdoExtension,
             QueryLength = InfoString.Length;
             break;
 
+        case BatterySerialNumber:
+
+            if (StaticInfo.ExtendedData)
+            {
+                RtlInitAnsiString(&TempString, StaticInfo.BixData.SerialNumber);
+            }
+            else
+            {
+                RtlInitAnsiString(&TempString, StaticInfo.BifData.SerialNumber);
+            }
+
+            InfoString.Buffer = InfoBuffer;
+            InfoString.MaximumLength = sizeof(InfoBuffer);
+            Status = RtlAnsiStringToUnicodeString(&InfoString, &TempString, 0);
+
+            QueryData = InfoString.Buffer;
+            QueryLength = InfoString.Length;
+            break;
+
         case BatteryTemperature:
         case BatteryManufactureDate:
 
