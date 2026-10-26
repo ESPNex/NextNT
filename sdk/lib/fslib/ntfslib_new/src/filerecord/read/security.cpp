@@ -1145,6 +1145,69 @@ ReadDirectSecurityDescriptor(
         : STATUS_FILE_CORRUPT_ERROR;
 }
 
+BOOLEAN
+Volume::ReadCachedSecurityDescriptor(
+    _In_ ULONG SecurityId,
+    _In_opt_ PUCHAR Buffer,
+    _Inout_ PULONG BufferLength,
+    _Out_ NTSTATUS* Status)
+{
+    BOOLEAN Found = FALSE;
+
+    NtfsAcquireMutex(&SecurityCacheMutex);
+    for (ULONG Index = 0; Index < NTFS_SECURITY_CACHE_ENTRIES; Index++)
+    {
+        if (SecurityCacheData[Index] && SecurityCacheId[Index] == SecurityId)
+        {
+            ULONG Capacity = *BufferLength;
+
+            *BufferLength = SecurityCacheLength[Index];
+            if (!Buffer || Capacity < SecurityCacheLength[Index])
+            {
+                *Status = STATUS_BUFFER_TOO_SMALL;
+            }
+            else
+            {
+                RtlCopyMemory(Buffer, SecurityCacheData[Index], SecurityCacheLength[Index]);
+                *Status = STATUS_SUCCESS;
+            }
+            Found = TRUE;
+            break;
+        }
+    }
+    NtfsReleaseMutex(&SecurityCacheMutex);
+    return Found;
+}
+
+void
+Volume::CacheSecurityDescriptor(
+    _In_ ULONG SecurityId,
+    _In_reads_bytes_(Length) const UCHAR* Descriptor,
+    _In_ ULONG Length)
+{
+    PUCHAR Copy = new(PagedPool, TAG_SECURITY) UCHAR[Length];
+    PUCHAR Old;
+    ULONG Slot;
+
+    if (!Copy)
+        return;
+    RtlCopyMemory(Copy, Descriptor, Length);
+    NtfsAcquireMutex(&SecurityCacheMutex);
+    for (Slot = 0; Slot < NTFS_SECURITY_CACHE_ENTRIES; Slot++)
+    {
+        if (SecurityCacheData[Slot] && SecurityCacheId[Slot] == SecurityId)
+            break;
+    }
+    if (Slot == NTFS_SECURITY_CACHE_ENTRIES)
+        Slot = SecurityCacheNext++ % NTFS_SECURITY_CACHE_ENTRIES;
+    Old = SecurityCacheData[Slot];
+    SecurityCacheId[Slot] = SecurityId;
+    SecurityCacheLength[Slot] = Length;
+    SecurityCacheData[Slot] = Copy;
+    NtfsReleaseMutex(&SecurityCacheMutex);
+    delete[] Old;
+}
+
 NTSTATUS
 Volume::ReadSecurityDescriptorById(
     _In_ ULONG SecurityId,
@@ -1159,9 +1222,12 @@ Volume::ReadSecurityDescriptorById(
     ULONG Required;
     NTSTATUS FirstStatus;
     NTSTATUS Status;
+    PUCHAR Target;
 
     if (!BufferLength || SecurityId == 0)
         return STATUS_INVALID_PARAMETER;
+    if (ReadCachedSecurityDescriptor(SecurityId, Buffer, BufferLength, &Status))
+        return Status;
 
     Status = MFT->GetFileRecord(_Secure, &SecureFile);
     if (!NT_SUCCESS(Status))
@@ -1221,7 +1287,8 @@ Volume::ReadSecurityDescriptorById(
         DuplicateOffset = Location.Offset;
     }
 
-    if (!Buffer || Capacity < Required)
+    Target = (Buffer && Capacity >= Required) ? Buffer : new(PagedPool, TAG_SECURITY) UCHAR[Required];
+    if (!Target)
     {
         Status = STATUS_BUFFER_TOO_SMALL;
         goto Done;
@@ -1232,7 +1299,7 @@ Volume::ReadSecurityDescriptorById(
         SdsAttribute,
         &Location,
         DuplicateOffset,
-        Buffer);
+        Target);
     if (!NT_SUCCESS(Status) &&
         DuplicateOffset == Location.Offset &&
         Location.Offset <=
@@ -1243,7 +1310,15 @@ Volume::ReadSecurityDescriptorById(
             SdsAttribute,
             &Location,
             Location.Offset + NTFS_SDS_DUPLICATE_OFFSET,
-            Buffer);
+            Target);
+    }
+    if (NT_SUCCESS(Status))
+        CacheSecurityDescriptor(SecurityId, Target, Required);
+    if (Target != Buffer)
+    {
+        delete[] Target;
+        if (NT_SUCCESS(Status))
+            Status = STATUS_BUFFER_TOO_SMALL;
     }
 
 Done:

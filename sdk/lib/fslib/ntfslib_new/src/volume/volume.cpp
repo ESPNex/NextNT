@@ -229,6 +229,11 @@ Volume::~Volume()
         RecordPoolHead = Next;
     }
     RecordPoolCount = 0;
+    for (ULONG Index = 0; Index < NTFS_SECURITY_CACHE_ENTRIES; Index++)
+    {
+        delete[] SecurityCacheData[Index];
+        SecurityCacheData[Index] = NULL;
+    }
     delete[] IndexWorkBuffer;
     IndexWorkBuffer = NULL;
 
@@ -264,6 +269,7 @@ Volume::Initialize(_In_ PUCHAR BootSectorData,
                    _In_opt_ void* Context)
 {
     NtfsInitializeMutex(&RecordPoolMutex);
+    NtfsInitializeMutex(&SecurityCacheMutex);
 
     BootSector* PartitionBootSector;
     PVolumeInformationEx VolumeInfo;

@@ -517,6 +517,9 @@ NtfsFlushVolumeContext(_In_opt_ void* Context);
 #define TAG_DATA_RUN 'DTRN'
 #define TAG_LOG_FILE_SERVICE 'LgFS'
 #define TAG_BTREE 'BTRE'
+#define TAG_SECURITY 'NTSD'
+
+#define NTFS_SECURITY_CACHE_ENTRIES 16
 
 // =========================
 // NTFS C++ Classes
@@ -580,6 +583,12 @@ public:
     PUCHAR RecordPoolHead = NULL;
     ULONG RecordPoolCount = 0;
     ULONG RecordPoolBufferSize = 0;
+
+    FAST_MUTEX SecurityCacheMutex;
+    ULONG SecurityCacheId[NTFS_SECURITY_CACHE_ENTRIES] = {};
+    ULONG SecurityCacheLength[NTFS_SECURITY_CACHE_ENTRIES] = {};
+    PUCHAR SecurityCacheData[NTFS_SECURITY_CACHE_ENTRIES] = {};
+    ULONG SecurityCacheNext = 0;
 
     ~Volume();
 
@@ -773,6 +782,19 @@ public:
         _In_ ULONG SecurityId,
         _In_opt_ PUCHAR Buffer,
         _Inout_ PULONG BufferLength);
+
+    BOOLEAN
+    ReadCachedSecurityDescriptor(
+        _In_ ULONG SecurityId,
+        _In_opt_ PUCHAR Buffer,
+        _Inout_ PULONG BufferLength,
+        _Out_ NTSTATUS* Status);
+
+    void
+    CacheSecurityDescriptor(
+        _In_ ULONG SecurityId,
+        _In_reads_bytes_(Length) const UCHAR* Descriptor,
+        _In_ ULONG Length);
 
     NTSTATUS
     AssignSecurityId(
