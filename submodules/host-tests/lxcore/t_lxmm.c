@@ -634,6 +634,7 @@ static
 void
 PageGranularViews(void)
 {
+    MEMORY_BASIC_INFORMATION Basic;
     LX_TEST_PROC Proc;
     LX_TEST_FILE File;
     ULONG64 Base, View, Second;
@@ -669,6 +670,13 @@ PageGranularViews(void)
     CHECK(Read8(&Proc, Base + LX_PAGE_SIZE, &Value) == 0 && Value == 0);
     CHECK(PrivatePages(&Proc) >= 2);
     CHECK(Unmap(&Proc, Base, 3 * LX_PAGE_SIZE) == 0);
+
+    Base = (ULONG64)Map(&Proc, 0, LX_PAGE_SIZE, LX_PROT_READ | LX_PROT_WRITE | LX_PROT_EXEC,
+                        LX_MAP_SHARED | LX_MAP_ANONYMOUS, NULL, 0);
+    CHECK((LONG64)Base > 0);
+    CHECK(NT_SUCCESS(ZwQueryVirtualMemory(NULL, (PVOID)(ULONG_PTR)Base, MemoryBasicInformation, &Basic, sizeof(Basic),
+                                          NULL)) && (Basic.Type == MEM_MAPPED) && (Basic.Protect == PAGE_EXECUTE_READWRITE));
+    CHECK(Unmap(&Proc, Base, LX_PAGE_SIZE) == 0);
 
     View = (ULONG64)Map(&Proc, 0, 3 * LX_PAGE_SIZE, RW, LX_MAP_SHARED, &File, LX_PAGE_SIZE);
     CHECK((LONG64)View > 0);

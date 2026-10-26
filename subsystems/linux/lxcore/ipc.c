@@ -550,7 +550,8 @@ LxIpcCreateSection(
 
     MaximumSize.QuadPart = (LONG64)LX_ALIGN_UP(Size, LX_PAGE_SIZE);
     InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
-    Status = ZwCreateSection(&Handle, SECTION_ALL_ACCESS, &ObjectAttributes, &MaximumSize, PAGE_READWRITE, SEC_COMMIT, NULL);
+    Status = ZwCreateSection(&Handle, SECTION_ALL_ACCESS, &ObjectAttributes, &MaximumSize, PAGE_EXECUTE_READWRITE,
+                             SEC_COMMIT, NULL);
     if (!NT_SUCCESS(Status))
         return Status;
     Status = ObReferenceObjectByHandle(Handle, SECTION_ALL_ACCESS, NULL, KernelMode, Section, NULL);

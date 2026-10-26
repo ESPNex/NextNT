@@ -1245,8 +1245,7 @@ LxMmMapSharedPiece(
     else
     {
         InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
-        Status = ZwCreateSection(&Section, SECTION_ALL_ACCESS, &ObjectAttributes, NULL,
-                                 (Maximum == PAGE_READWRITE) ? PAGE_READWRITE : PAGE_READONLY, SEC_COMMIT,
+        Status = ZwCreateSection(&Section, SECTION_ALL_ACCESS, &ObjectAttributes, NULL, Maximum, SEC_COMMIT,
                                  Vma->File->Handle);
     }
     if (!NT_SUCCESS(Status))
@@ -1882,14 +1881,14 @@ LxMmGrowView(
 
     InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
     Status = ZwCreateSection(&Section, SECTION_ALL_ACCESS, &ObjectAttributes, NULL,
-                             Writable ? PAGE_READWRITE : PAGE_READONLY, SEC_COMMIT, File->Handle);
+                             Writable ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ, SEC_COMMIT, File->Handle);
     if (NT_SUCCESS(Status))
     {
         View = (PVOID)(ULONG_PTR)Base;
         ViewSize = (SIZE_T)NewSize;
         SectionOffset.QuadPart = (LONG64)FileOffset;
         Status = ZwMapViewOfSection(Section, NtCurrentProcess(), &View, 0, 0, &SectionOffset, &ViewSize, ViewShare, 0,
-                                    Writable ? PAGE_READWRITE : PAGE_READONLY);
+                                    Writable ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
         ZwClose(Section);
     }
     if (LX_ALIGN_UP(Base + NewSize, LX_ALLOC_GRANULARITY) < LX_ALIGN_UP(MapEnd, LX_ALLOC_GRANULARITY))
@@ -2353,9 +2352,8 @@ LxMmMapView(
     LARGE_INTEGER MaximumSize, SectionOffset;
     ULONG64 Delta = Offset & (LX_ALLOC_GRANULARITY - 1);
     BOOLEAN Writable = (File == NULL) || ((File->Flags & LX_O_ACCMODE) == LX_O_RDWR);
-    ULONG Maximum = Writable ? PAGE_READWRITE : PAGE_READONLY;
-    ULONG Protect = !(Prot & (LX_PROT_READ | LX_PROT_WRITE)) ? PAGE_NOACCESS :
-                    (Prot & LX_PROT_WRITE) ? PAGE_READWRITE : PAGE_READONLY;
+    ULONG Maximum = Writable ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+    ULONG Protect = LxProtToNt(Prot);
     BOOLEAN Grow = FALSE;
     SIZE_T ViewSize = (SIZE_T)(Length + Delta);
     PVOID Base = NULL;
@@ -2364,8 +2362,6 @@ LxMmMapView(
 
     *SectionObject = NULL;
     *GrowBase = 0;
-    if (Prot & LX_PROT_EXEC)
-        return 1;
     if ((Prot & LX_PROT_WRITE) && !Writable)
         return -LX_EACCES;
 
@@ -2415,8 +2411,8 @@ LxMmMapView(
         if (ViewSize != 0)
         {
             InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
-            Status = ZwCreateSection(&Section, SECTION_ALL_ACCESS, &ObjectAttributes, NULL,
-                                     Writable ? PAGE_READWRITE : PAGE_READONLY, SEC_COMMIT, File->Handle);
+            Status = ZwCreateSection(&Section, SECTION_ALL_ACCESS, &ObjectAttributes, NULL, Maximum, SEC_COMMIT,
+                                     File->Handle);
             if (!NT_SUCCESS(Status))
                 return 6;
             SectionOffset.QuadPart = (LONG64)(Offset - Delta);
@@ -2450,7 +2446,7 @@ LxMmMapView(
                              SECTION_ALL_ACCESS,
                              &ObjectAttributes,
                              (File == NULL) ? &MaximumSize : NULL,
-                             Writable ? PAGE_READWRITE : PAGE_READONLY,
+                             Maximum,
                              SEC_COMMIT,
                              (File != NULL) ? File->Handle : NULL);
     if (!NT_SUCCESS(Status))
@@ -2505,8 +2501,8 @@ LxMmMapSection(
     Process = Process->Mm;
     if (Address & (LX_ALLOC_GRANULARITY - 1))
         return -LX_EINVAL;
-    Status = ObOpenObjectByPointer(Section, OBJ_KERNEL_HANDLE, NULL, SECTION_MAP_READ | SECTION_MAP_WRITE,
-                                   NULL, KernelMode, &Handle);
+    Status = ObOpenObjectByPointer(Section, OBJ_KERNEL_HANDLE, NULL,
+                                   SECTION_MAP_READ | SECTION_MAP_WRITE | SECTION_MAP_EXECUTE, NULL, KernelMode, &Handle);
     if (!NT_SUCCESS(Status))
         return -LX_ENOMEM;
 
@@ -2519,9 +2515,11 @@ LxMmMapSection(
     {
         SectionOffset.QuadPart = 0;
         Status = ZwMapViewOfSection(Handle, NtCurrentProcess(), &Base, 0, 0, &SectionOffset, &ViewSize, ViewShare, 0,
-                                    (Prot & LX_PROT_WRITE) ? PAGE_READWRITE : PAGE_READONLY);
+                                    (Prot & LX_PROT_WRITE) ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
         if (!NT_SUCCESS(Status))
             Error = -LX_ENOMEM;
+        else if (LxProtToNt(Prot) != ((Prot & LX_PROT_WRITE) ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ))
+            LxVmProtect((ULONG64)(ULONG_PTR)Base, ViewSize, LxProtToNt(Prot));
     }
     if (Error == 0)
     {
