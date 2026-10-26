@@ -3164,8 +3164,8 @@
 @ stub -arch=win64 RtlQueryThreadPlaceholderCompatibilityMode
 @ stub -arch=win64 RtlQueryValidationRunlevel
 @ stub -arch=win64 RtlRaiseCustomSystemEventTrigger
-@ stub -arch=win64 RtlRbInsertNodeEx
-@ stub -arch=win64 RtlRbRemoveNode
+@ stdcall RtlRbInsertNodeEx(ptr ptr long ptr)
+@ stdcall RtlRbRemoveNode(ptr ptr)
 @ stub -arch=win64 RtlRbReplaceNode
 @ stdcall RtlRecordFeatureUsage(long long long ptr)
 @ stdcall RtlRegisterFeatureConfigurationChangeNotification(ptr ptr ptr ptr)
