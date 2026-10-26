@@ -1783,15 +1783,22 @@ MiLockUnlockVirtualMemory(
 
     if (Lock)
     {
-        for (Va = Start; Va < End && NT_SUCCESS(Status); Va += PAGE_SIZE)
+        for (Va = Start; Va < End && NT_SUCCESS(Status);)
         {
             MI_MEMORY_INFORMATION Info;
+            ULONG64 RegionEnd;
 
             Status = MiQueryVirtualMemory(Space, Va, &Info);
             if (NT_SUCCESS(Status) && (Info.State != MI_MEM_COMMIT || !MI_PROT_IS_ACCESSIBLE(Info.Protect)))
                 Status = STATUS_ACCESS_VIOLATION;
+            if (!NT_SUCCESS(Status))
+                break;
 
-            if (NT_SUCCESS(Status))
+            RegionEnd = Info.BaseAddress + Info.RegionSize;
+            if (RegionEnd > End || RegionEnd <= Va)
+                RegionEnd = End;
+
+            for (; Va < RegionEnd && NT_SUCCESS(Status); Va += PAGE_SIZE)
             {
                 ULONG Attempts = 0;
 
