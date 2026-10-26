@@ -33,9 +33,11 @@ LxPicoSystemCall(
     _Inout_ PKTRAP_FRAME TrapFrame,
     _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame)
 {
+    PLX_THREAD Base = PsPicoGetThreadContext(PsGetCurrentThread());
     LX_CALL Call;
     LONG64 Result;
 
+    Base->InKernel++;
     RtlZeroMemory(&Call, sizeof(Call));
     Call.Thread = LxThreadOf(PsGetCurrentThread());
     Call.Process = Call.Thread->Process;
@@ -58,12 +60,12 @@ LxPicoSystemCall(
         LxSignalCheckPending(Call.Thread, TrapFrame, ExceptionFrame);
     if (LxVforkFinish(TrapFrame, ExceptionFrame))
         LxSignalCheckPending(LxThreadOf(PsGetCurrentThread()), TrapFrame, ExceptionFrame);
+    Base->InKernel--;
 }
 
 static
 BOOLEAN
-NTAPI
-LxPicoDispatchException(
+LxPicoDispatchFault(
     _Inout_ PEXCEPTION_RECORD ExceptionRecord,
     _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame,
     _Inout_ PKTRAP_FRAME TrapFrame)
@@ -114,6 +116,27 @@ LxPicoDispatchException(
         Signal |= 0x80;
     LxProcessExitGroup(Thread->Process, Signal);
     return LxVforkFinish(TrapFrame, ExceptionFrame);
+}
+
+static
+BOOLEAN
+NTAPI
+LxPicoDispatchException(
+    _Inout_ PEXCEPTION_RECORD ExceptionRecord,
+    _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame,
+    _Inout_ PKTRAP_FRAME TrapFrame)
+{
+    PLX_THREAD Base = PsPicoGetThreadContext(PsGetCurrentThread());
+    PLX_THREAD Thread;
+    BOOLEAN Handled;
+
+    Base->InKernel++;
+    Handled = LxPicoDispatchFault(ExceptionRecord, ExceptionFrame, TrapFrame);
+    Thread = LxThreadOf(PsGetCurrentThread());
+    if (Handled && !Thread->VforkExited)
+        LxSignalCheckPending(Thread, TrapFrame, ExceptionFrame);
+    Base->InKernel--;
+    return Handled;
 }
 
 static

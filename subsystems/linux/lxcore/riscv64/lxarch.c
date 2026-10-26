@@ -331,3 +331,26 @@ LxArchEmulateInstruction(
     UNREFERENCED_PARAMETER(TrapFrame);
     return FALSE;
 }
+
+VOID
+LxArchDeliverAsync(
+    _In_ PLX_THREAD Thread)
+{
+    struct
+    {
+        CONTEXT Context;
+        KTRAP_FRAME TrapFrame;
+    } *Frames = LxAlloc(sizeof(*Frames));
+
+    if (Frames == NULL)
+        return;
+    Frames->Context.ContextFlags = CONTEXT_FULL;
+    if (NT_SUCCESS(PsGetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode)))
+    {
+        LxArchRestoreContext(&Frames->TrapFrame, NULL, &Frames->Context);
+        LxSignalCheckPending(Thread, &Frames->TrapFrame, NULL);
+        LxArchCaptureContext(&Frames->TrapFrame, NULL, &Frames->Context);
+        PsSetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode);
+    }
+    LxFree(Frames);
+}

@@ -6,6 +6,7 @@
  */
 
 #include "lxcore.h"
+#include <ndk/kefuncs.h>
 
 #define NDEBUG
 #include <debug.h>
@@ -74,11 +75,62 @@ LxThreadDetach(
 
 static
 VOID
+NTAPI
+LxSignalApcKernel(
+    _In_ PKAPC Apc,
+    _Inout_ PKNORMAL_ROUTINE *NormalRoutine,
+    _Inout_ PVOID *NormalContext,
+    _Inout_ PVOID *SystemArgument1,
+    _Inout_ PVOID *SystemArgument2)
+{
+    UNREFERENCED_PARAMETER(Apc);
+    UNREFERENCED_PARAMETER(NormalRoutine);
+    UNREFERENCED_PARAMETER(NormalContext);
+    UNREFERENCED_PARAMETER(SystemArgument1);
+    UNREFERENCED_PARAMETER(SystemArgument2);
+}
+
+static
+VOID
+NTAPI
+LxSignalApcRundown(
+    _In_ PKAPC Apc)
+{
+    LxFree(Apc);
+}
+
+static
+VOID
+NTAPI
+LxSignalApcNormal(
+    _In_opt_ PVOID NormalContext,
+    _In_opt_ PVOID SystemArgument1,
+    _In_opt_ PVOID SystemArgument2)
+{
+    PLX_THREAD Base = PsPicoGetThreadContext(PsGetCurrentThread());
+    PLX_THREAD Thread;
+
+    UNREFERENCED_PARAMETER(SystemArgument1);
+    UNREFERENCED_PARAMETER(SystemArgument2);
+    LxFree(NormalContext);
+    if (Base == NULL)
+        return;
+    InterlockedExchange(&Base->SignalApc, 0);
+    Thread = LxCurrentThread();
+    if ((Base->InKernel != 0) || (Thread == NULL) || Thread->VforkExited)
+        return;
+    if ((((ULONG64)Thread->Pending | (ULONG64)Thread->Process->Pending) & ~Thread->SigMask) != 0)
+        LxArchDeliverAsync(Thread);
+}
+
+static
+VOID
 LxSignalWake(
     _In_ PLX_PROCESS Process,
     _In_ ULONG Tid)
 {
     PETHREAD Threads[LX_MAX_WAKE];
+    PKAPC Apcs[LX_MAX_WAKE];
     PETHREAD Current = PsGetCurrentThread();
     PLIST_ENTRY Entry;
     ULONG Count = 0, Index;
@@ -87,9 +139,17 @@ LxSignalWake(
     for (Entry = Process->Threads.Flink; (Entry != &Process->Threads) && (Count < LX_MAX_WAKE); Entry = Entry->Flink)
     {
         PLX_THREAD Thread = CONTAINING_RECORD(Entry, LX_THREAD, Link);
+        PLX_THREAD Base;
 
         if ((Thread->EThread == Current) || ((Tid != 0) && (Thread->Tid != Tid)))
             continue;
+        Base = PsPicoGetThreadContext(Thread->EThread);
+        Apcs[Count] = NULL;
+        if ((Base != NULL) && (InterlockedExchange(&Base->SignalApc, 1) == 0) &&
+            ((Apcs[Count] = LxAlloc(sizeof(KAPC))) == NULL))
+        {
+            InterlockedExchange(&Base->SignalApc, 0);
+        }
         ObReferenceObject(Thread->EThread);
         Threads[Count++] = Thread->EThread;
     }
@@ -104,6 +164,13 @@ LxSignalWake(
         {
             ZwAlertThread(Handle);
             ZwClose(Handle);
+        }
+        if (Apcs[Index] != NULL)
+        {
+            KeInitializeApc(Apcs[Index], (PKTHREAD)Threads[Index], OriginalApcEnvironment, LxSignalApcKernel,
+                            LxSignalApcRundown, LxSignalApcNormal, KernelMode, Apcs[Index]);
+            if (!KeInsertQueueApc(Apcs[Index], NULL, NULL, IO_NO_INCREMENT))
+                LxFree(Apcs[Index]);
         }
         ObDereferenceObject(Threads[Index]);
     }

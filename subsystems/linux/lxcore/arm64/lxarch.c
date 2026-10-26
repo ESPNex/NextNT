@@ -578,3 +578,29 @@ LxArchWriteSigaction(
 {
     return LxCopyToUser(Address, Action, sizeof(*Action));
 }
+
+VOID
+LxArchDeliverAsync(
+    _In_ PLX_THREAD Thread)
+{
+    struct
+    {
+        CONTEXT Context;
+        KTRAP_FRAME TrapFrame;
+        KEXCEPTION_FRAME ExceptionFrame;
+        KARM64_VFP_STATE VfpState;
+    } *Frames = LxAlloc(sizeof(*Frames));
+
+    if (Frames == NULL)
+        return;
+    Frames->Context.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT;
+    if (NT_SUCCESS(PsGetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode)))
+    {
+        Frames->TrapFrame.VfpState = &Frames->VfpState;
+        LxArchRestoreContext(&Frames->TrapFrame, &Frames->ExceptionFrame, &Frames->Context);
+        LxSignalCheckPending(Thread, &Frames->TrapFrame, &Frames->ExceptionFrame);
+        LxArchCaptureContext(&Frames->TrapFrame, &Frames->ExceptionFrame, &Frames->Context);
+        PsSetContextThread(PsGetCurrentThread(), &Frames->Context, KernelMode);
+    }
+    LxFree(Frames);
+}

@@ -667,6 +667,8 @@ struct _LX_THREAD
     BOOLEAN Suspended;
     CHAR Comm[16];
     ULONG CurrentSyscall;
+    LONG InKernel;
+    volatile LONG SignalApc;
     ULONG64 CurrentArgs[6];
     ULONG64 RobustList;
     LONG64 Restart;
@@ -765,6 +767,10 @@ extern volatile LONG LxMaxMapCount;
 NTSYSAPI VOID NTAPI RtlRbInsertNodeEx(_Inout_ PRTL_RB_TREE Tree, _In_opt_ PRTL_BALANCED_NODE Parent,
                                       _In_ BOOLEAN Right, _Inout_ PRTL_BALANCED_NODE Node);
 NTSYSAPI VOID NTAPI RtlRbRemoveNode(_Inout_ PRTL_RB_TREE Tree, _In_ PRTL_BALANCED_NODE Node);
+NTKERNELAPI NTSTATUS NTAPI PsGetContextThread(_In_ PETHREAD Thread, _Inout_ PCONTEXT ThreadContext,
+                                              _In_ KPROCESSOR_MODE PreviousMode);
+NTKERNELAPI NTSTATUS NTAPI PsSetContextThread(_In_ PETHREAD Thread, _In_ PCONTEXT ThreadContext,
+                                              _In_ KPROCESSOR_MODE PreviousMode);
 NTKERNELAPI NTSTATUS ExGetSystemFirmwareTable(_In_ ULONG FirmwareTableProviderSignature, _In_ ULONG FirmwareTableID,
                                               _Out_writes_bytes_to_opt_(BufferLength, *ReturnLength) PVOID FirmwareTableBuffer,
                                               _In_ ULONG BufferLength, _Out_opt_ PULONG ReturnLength);
@@ -1280,6 +1286,7 @@ BOOLEAN LxArchEmulateInstruction(_In_ PEXCEPTION_RECORD ExceptionRecord, _Inout_
 VOID LxArchSetExecContext(_Inout_ PKTRAP_FRAME TrapFrame, _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame, _In_ ULONG64 Pc, _In_ ULONG64 Sp);
 VOID LxArchCaptureContext(_In_ PKTRAP_FRAME TrapFrame, _In_opt_ PKEXCEPTION_FRAME ExceptionFrame, _Out_ PCONTEXT Context);
 VOID LxArchSetForkContext(_Inout_ PCONTEXT Context, _In_ ULONG64 StackPointer);
+VOID LxArchDeliverAsync(_In_ PLX_THREAD Thread);
 VOID LxArchRestoreContext(_Inout_ PKTRAP_FRAME TrapFrame, _Inout_opt_ PKEXCEPTION_FRAME ExceptionFrame,
                           _In_ PCONTEXT Context);
 VOID LxArchSetThreadPointer(_Inout_ PKTRAP_FRAME TrapFrame, _In_ ULONG64 Value);
