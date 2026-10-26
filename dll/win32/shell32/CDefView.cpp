@@ -848,6 +848,11 @@ static bool IsComputerDriveItem(PCUITEMID_CHILD pidl)
     return _ILIsDrive(pidl) && _ILIsPidlSimple(pidl);
 }
 
+static bool IsComputerDeviceItem(PCUITEMID_CHILD pidl)
+{
+    return IsComputerDriveItem(pidl) || (pidl && pidl->mkid.cb > sizeof(WORD) && pidl->mkid.abID[0] == PT_DELEGATE);
+}
+
 static bool IsComputerFolderItem(PCUITEMID_CHILD pidl)
 {
     return _ILIsDrive(pidl) && !_ILIsPidlSimple(pidl);
@@ -1059,7 +1064,7 @@ void CDefView::ArrangeComputerView()
         PCUITEMID_CHILD pidl = _PidlByItem(i);
         if (IsComputerFolderItem(pidl))
             ++folderCount;
-        else if (IsComputerDriveItem(pidl))
+        else if (IsComputerDeviceItem(pidl))
             ++driveCount;
         else
             ++locationCount;
@@ -1104,7 +1109,7 @@ void CDefView::ArrangeComputerView()
         INT slot = 0;
         for (INT i = 0; i < itemCount; ++i)
         {
-            if (!IsComputerDriveItem(_PidlByItem(i)))
+            if (!IsComputerDeviceItem(_PidlByItem(i)))
                 continue;
             POINT point = { margin + ((slot % columns) * tileWidth) + itemPositionOffset, y + ((slot / columns) * tileHeight) + 2 };
             point.x -= scrollX;
@@ -1123,7 +1128,7 @@ void CDefView::ArrangeComputerView()
         for (INT i = 0; i < itemCount; ++i)
         {
             PCUITEMID_CHILD pidl = _PidlByItem(i);
-            if (IsComputerFolderItem(pidl) || IsComputerDriveItem(pidl))
+            if (IsComputerFolderItem(pidl) || IsComputerDeviceItem(pidl))
                 continue;
             POINT point = { margin + ((slot % columns) * tileWidth) + itemPositionOffset, y + ((slot / columns) * tileHeight) + 2 };
             point.x -= scrollX;
@@ -3521,7 +3526,7 @@ LRESULT CDefView::OnNotify(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandl
                         PCUITEMID_CHILD pidl = _PidlByItem(i);
                         if (IsComputerFolderItem(pidl))
                             ++folderCount;
-                        else if (IsComputerDriveItem(pidl))
+                        else if (IsComputerDeviceItem(pidl))
                             ++driveCount;
                         else
                             ++locationCount;
