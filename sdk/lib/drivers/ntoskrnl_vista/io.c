@@ -965,6 +965,85 @@ IoQueueWorkItemEx(
     IoQueueWorkItem(IoWorkItem, IopWorkItemExCallback, QueueType, newContext);
 }
 
+typedef struct _IOP_DEVPROP_INSTANCE_VALUE
+{
+    const DEVPROPKEY *PropertyKey;
+    PCWSTR ValueName;
+    ULONG RegistryType;
+    DEVPROPTYPE Type;
+} IOP_DEVPROP_INSTANCE_VALUE, *PIOP_DEVPROP_INSTANCE_VALUE;
+
+static
+const IOP_DEVPROP_INSTANCE_VALUE *
+IopFindInstanceValueProperty(
+    _In_ CONST DEVPROPKEY *PropertyKey)
+{
+    static const IOP_DEVPROP_INSTANCE_VALUE InstanceValues[] =
+    {
+        { &DEVPKEY_Device_DeviceDesc,    L"DeviceDesc",          REG_SZ,       DEVPROP_TYPE_STRING },
+        { &DEVPKEY_Device_HardwareIds,   L"HardwareID",          REG_MULTI_SZ, DEVPROP_TYPE_STRING_LIST },
+        { &DEVPKEY_Device_CompatibleIds, L"CompatibleIDs",       REG_MULTI_SZ, DEVPROP_TYPE_STRING_LIST },
+        { &DEVPKEY_Device_Manufacturer,  L"Mfg",                 REG_SZ,       DEVPROP_TYPE_STRING },
+        { &DEVPKEY_Device_FriendlyName,  L"FriendlyName",        REG_SZ,       DEVPROP_TYPE_STRING },
+        { &DEVPKEY_Device_LocationInfo,  L"LocationInformation", REG_SZ,       DEVPROP_TYPE_STRING },
+        { &DEVPKEY_Device_UpperFilters,  L"UpperFilters",        REG_MULTI_SZ, DEVPROP_TYPE_STRING_LIST },
+        { &DEVPKEY_Device_LowerFilters,  L"LowerFilters",        REG_MULTI_SZ, DEVPROP_TYPE_STRING_LIST },
+        { &DEVPKEY_Device_ConfigFlags,   L"ConfigFlags",         REG_DWORD,    DEVPROP_TYPE_UINT32 },
+    };
+    ULONG i;
+
+    for (i = 0; i < RTL_NUMBER_OF(InstanceValues); ++i)
+    {
+        if (IopIsEqualDevPropKey(PropertyKey, InstanceValues[i].PropertyKey))
+            return &InstanceValues[i];
+    }
+
+    return NULL;
+}
+
+static
+NTSTATUS
+IopSetInstanceValueProperty(
+    _In_ PDEVICE_OBJECT Pdo,
+    _In_ CONST DEVPROPKEY *PropertyKey,
+    _In_ LCID Lcid,
+    _In_ const IOP_DEVPROP_INSTANCE_VALUE *Value,
+    _In_ DEVPROPTYPE Type,
+    _In_ ULONG Size,
+    _In_opt_ PVOID Data)
+{
+    HANDLE InstanceKey, PropertyDataKey;
+    UNICODE_STRING ValueName;
+    NTSTATUS Status;
+
+    if (Data && Type != Value->Type)
+        return STATUS_INVALID_PARAMETER;
+
+    Status = IopOpenDeviceInstanceKey(Pdo, KEY_READ | KEY_WRITE, &InstanceKey);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    RtlInitUnicodeString(&ValueName, Value->ValueName);
+    if (Data)
+        Status = ZwSetValueKey(InstanceKey, &ValueName, 0, Value->RegistryType, Data, Size);
+    else
+    {
+        Status = ZwDeleteValueKey(InstanceKey, &ValueName);
+        if (Status == STATUS_OBJECT_NAME_NOT_FOUND)
+            Status = STATUS_SUCCESS;
+    }
+    ZwClose(InstanceKey);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    if (NT_SUCCESS(IopOpenDevicePropertyDataKey(Pdo, PropertyKey, Lcid, FALSE, &PropertyDataKey)))
+    {
+        ZwDeleteKey(PropertyDataKey);
+        ZwClose(PropertyDataKey);
+    }
+    return STATUS_SUCCESS;
+}
+
 _IRQL_requires_max_(PASSIVE_LEVEL)
 _Must_inspect_result_
 NTKRNLVISTAAPI
@@ -979,6 +1058,7 @@ IoSetDevicePropertyData(
     _In_ ULONG Size,
     _In_opt_ PVOID Data)
 {
+    const IOP_DEVPROP_INSTANCE_VALUE *InstanceValue;
     HANDLE PropertyDataKey;
     NTSTATUS Status;
 
@@ -988,6 +1068,10 @@ IoSetDevicePropertyData(
 
     if (!Pdo || !PropertyKey)
         return STATUS_INVALID_PARAMETER;
+
+    InstanceValue = IopFindInstanceValueProperty(PropertyKey);
+    if (InstanceValue)
+        return IopSetInstanceValueProperty(Pdo, PropertyKey, Lcid, InstanceValue, Type, Size, Data);
 
     if (!Data)
     {
