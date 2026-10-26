@@ -51,8 +51,20 @@ class CDrivesFolder :
         CComHeapPtr<WCHAR> m_pszRemoteComputer;
         BOOL m_bHideNonRemovableDrives;
         BOOL m_bForceAllDrivesRemovable;
+        struct DelegateFolder
+        {
+            CLSID clsid;
+            CComPtr<IShellFolder> folder;
+        } m_Delegates[8];
+        UINT m_DelegateCount;
+        BOOL m_DelegatesLoaded;
+
+        void LoadDelegates();
+        IShellFolder *FindDelegate(PCUIDLIST_RELATIVE pidl);
 
     public:
+        HRESULT EnumDelegates(HWND hwndOwner, DWORD dwFlags, IEnumIDList **ppEnum, UINT Index);
+        UINT GetDelegateCount();
         CDrivesFolder();
         ~CDrivesFolder();
         HRESULT WINAPI FinalConstruct();

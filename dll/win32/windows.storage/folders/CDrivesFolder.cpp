@@ -71,6 +71,82 @@ static const REGFOLDERINFO g_RegFolderInfo =
     L"MyComputer",
 };
 
+static BOOL IsDelegateItem(PCUIDLIST_RELATIVE pidl)
+{
+    PCDELEGATEITEMID item = (PCDELEGATEITEMID)pidl;
+
+    return pidl && pidl->mkid.cb >= FIELD_OFFSET(DELEGATEITEMID, rgb) + sizeof(CLSID) &&
+           item->wOuter == PT_DELEGATE &&
+           FIELD_OFFSET(DELEGATEITEMID, rgb) + item->cbInner + sizeof(CLSID) == item->cbSize;
+}
+
+class CDelegateMalloc : public IMalloc
+{
+    LONG m_cRef;
+    CLSID m_clsid;
+
+public:
+    CDelegateMalloc(REFCLSID clsid) : m_cRef(1), m_clsid(clsid) {}
+    virtual ~CDelegateMalloc() {}
+
+    STDMETHOD(QueryInterface)(REFIID riid, void **ppv) override
+    {
+        if (riid == IID_IUnknown || riid == IID_IMalloc)
+        {
+            *ppv = static_cast<IMalloc *>(this);
+            AddRef();
+            return S_OK;
+        }
+        *ppv = NULL;
+        return E_NOINTERFACE;
+    }
+    STDMETHOD_(ULONG, AddRef)() override
+    {
+        return InterlockedIncrement(&m_cRef);
+    }
+    STDMETHOD_(ULONG, Release)() override
+    {
+        ULONG cRef = InterlockedDecrement(&m_cRef);
+        if (!cRef)
+            delete this;
+        return cRef;
+    }
+    STDMETHOD_(void *, Alloc)(SIZE_T cb) override
+    {
+        SIZE_T size = FIELD_OFFSET(DELEGATEITEMID, rgb) + cb + sizeof(CLSID);
+        if (size > 0xFFFF)
+            return NULL;
+        DELEGATEITEMID *item = (DELEGATEITEMID *)SHAlloc(size + sizeof(USHORT));
+        if (!item)
+            return NULL;
+        ZeroMemory(item, size + sizeof(USHORT));
+        item->cbSize = (WORD)size;
+        item->wOuter = PT_DELEGATE;
+        item->cbInner = (WORD)cb;
+        CopyMemory((BYTE *)item + size - sizeof(CLSID), &m_clsid, sizeof(CLSID));
+        return item;
+    }
+    STDMETHOD_(void *, Realloc)(void *pv, SIZE_T cb) override
+    {
+        return NULL;
+    }
+    STDMETHOD_(void, Free)(void *pv) override
+    {
+        SHFree(pv);
+    }
+    STDMETHOD_(SIZE_T, GetSize)(void *pv) override
+    {
+        return pv ? ((PCDELEGATEITEMID)pv)->cbSize : 0;
+    }
+    STDMETHOD_(int, DidAlloc)(void *pv) override
+    {
+        return pv ? IsDelegateItem((PCUIDLIST_RELATIVE)pv) : -1;
+    }
+    STDMETHOD_(void, HeapMinimize)() override
+    {
+    }
+};
+
 static const CLSID* IsRegItem(PCUITEMID_CHILD pidl)
 {
     if (pidl && pidl->mkid.cb == 2 + 2 + sizeof(CLSID))
@@ -712,6 +788,13 @@ class CDrivesFolderEnum :
                 for (UINT i = 0; i < _countof(folderIds); ++i)
                     AddKnownFolder(hwndOwner, folder, *folderIds[i]);
 
+            for (UINT i = 0; i < folder->GetDelegateCount(); ++i)
+            {
+                CComPtr<IEnumIDList> pDelegateEnum;
+                if (folder->EnumDelegates(hwndOwner, dwFlags, &pDelegateEnum, i) == S_OK)
+                    AppendItemsFromEnumerator(pDelegateEnum);
+            }
+
                 WCHAR wszDriveName[] = {'A', ':', '\\', '\0'};
                 DWORD dwDrivemap = GetLogicalDrives() & ~SHRestricted(REST_NODRIVES);
                 for (; wszDriveName[0] <= 'Z'; wszDriveName[0]++)
@@ -762,6 +845,89 @@ CDrivesFolder::CDrivesFolder()
     m_cBackReferences = 0;
     m_bHideNonRemovableDrives = FALSE;
     m_bForceAllDrivesRemovable = FALSE;
+    m_DelegateCount = 0;
+    m_DelegatesLoaded = FALSE;
+}
+
+void CDrivesFolder::LoadDelegates()
+{
+    HKEY hKey;
+    WCHAR szName[64];
+
+    if (m_DelegatesLoaded)
+        return;
+    m_DelegatesLoaded = TRUE;
+    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                      L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\DelegateFolders",
+                      0, KEY_ENUMERATE_SUB_KEYS, &hKey) != ERROR_SUCCESS)
+    {
+        return;
+    }
+    for (DWORD i = 0; m_DelegateCount < _countof(m_Delegates); ++i)
+    {
+        DWORD cchName = _countof(szName);
+        if (RegEnumKeyExW(hKey, i, szName, &cchName, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+            break;
+
+        CLSID clsid;
+        if (FAILED(CLSIDFromString(szName, &clsid)))
+            continue;
+
+        CComPtr<IShellFolder> pFolder;
+        if (FAILED(SHCoCreateInstance(NULL, &clsid, NULL, IID_PPV_ARG(IShellFolder, &pFolder))))
+            continue;
+
+        CComPtr<IDelegateFolder> pDelegate;
+        if (FAILED(pFolder->QueryInterface(IID_PPV_ARG(IDelegateFolder, &pDelegate))))
+            continue;
+        CDelegateMalloc *pMalloc = new CDelegateMalloc(clsid);
+        if (!pMalloc)
+            continue;
+        HRESULT hr = pDelegate->SetItemAlloc(pMalloc);
+        pMalloc->Release();
+        if (FAILED(hr))
+            continue;
+
+        CComPtr<IPersistFolder> pPersist;
+        if (SUCCEEDED(pFolder->QueryInterface(IID_PPV_ARG(IPersistFolder, &pPersist))))
+            pPersist->Initialize(pidlRoot);
+
+        m_Delegates[m_DelegateCount].clsid = clsid;
+        m_Delegates[m_DelegateCount].folder = pFolder;
+        m_DelegateCount++;
+    }
+    RegCloseKey(hKey);
+}
+
+IShellFolder *CDrivesFolder::FindDelegate(PCUIDLIST_RELATIVE pidl)
+{
+    CLSID clsid;
+
+    if (!IsDelegateItem(pidl))
+        return NULL;
+    LoadDelegates();
+    CopyMemory(&clsid, (const BYTE *)pidl + pidl->mkid.cb - sizeof(CLSID), sizeof(CLSID));
+    for (UINT i = 0; i < m_DelegateCount; ++i)
+    {
+        if (IsEqualCLSID(m_Delegates[i].clsid, clsid))
+            return m_Delegates[i].folder;
+    }
+    return NULL;
+}
+
+UINT CDrivesFolder::GetDelegateCount()
+{
+    LoadDelegates();
+    return m_DelegateCount;
+}
+
+HRESULT CDrivesFolder::EnumDelegates(HWND hwndOwner, DWORD dwFlags, IEnumIDList **ppEnum, UINT Index)
+{
+    *ppEnum = NULL;
+    LoadDelegates();
+    if (Index >= m_DelegateCount)
+        return E_INVALIDARG;
+    return m_Delegates[Index].folder->EnumObjects(hwndOwner, dwFlags, ppEnum);
 }
 
 CDrivesFolder::~CDrivesFolder()
@@ -809,6 +975,19 @@ HRESULT WINAPI CDrivesFolder::ParseDisplayName(HWND hwndOwner, LPBC pbc, LPOLEST
     {
         return m_regFolder->ParseDisplayName(hwndOwner, pbc, lpszDisplayName, pchEaten, ppidl,
                                              pdwAttributes);
+    }
+
+    if (lpszDisplayName[0] == L'\\' && lpszDisplayName[1] == L'\\')
+    {
+        LoadDelegates();
+        for (UINT i = 0; i < m_DelegateCount; ++i)
+        {
+            hr = m_Delegates[i].folder->ParseDisplayName(hwndOwner, pbc, lpszDisplayName, pchEaten, ppidl,
+                                                         pdwAttributes);
+            if (SUCCEEDED(hr))
+                return hr;
+        }
+        return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
     }
 
     if (((L'A' <= lpszDisplayName[0] && lpszDisplayName[0] <= L'Z') ||
@@ -881,6 +1060,9 @@ HRESULT WINAPI CDrivesFolder::BindToObject(PCUIDLIST_RELATIVE pidl, LPBC pbcRese
     if (!pidl)
         return E_INVALIDARG;
 
+    if (IShellFolder *pDelegate = FindDelegate(pidl))
+        return pDelegate->BindToObject(pidl, pbcReserved, riid, ppvOut);
+
     if (_ILIsSpecialFolder(pidl))
         return m_regFolder->BindToObject(pidl, pbcReserved, riid, ppvOut);
 
@@ -937,14 +1119,24 @@ HRESULT WINAPI CDrivesFolder::CompareIDs(LPARAM lParam, PCUIDLIST_RELATIVE pidl1
         return E_INVALIDARG;
     }
 
-    const INT type1 = IsFileSystemFolderItem(pidl1) ? 0 : IsSimpleDriveItem(pidl1) ? 1 : IsRegItem(pidl1) ? 2 : -1;
-    const INT type2 = IsFileSystemFolderItem(pidl2) ? 0 : IsSimpleDriveItem(pidl2) ? 1 : IsRegItem(pidl2) ? 2 : -1;
+    const INT type1 = IsFileSystemFolderItem(pidl1) ? 0 : IsSimpleDriveItem(pidl1) ? 1 : IsRegItem(pidl1) ? 2 :
+                      IsDelegateItem(pidl1) ? 3 : -1;
+    const INT type2 = IsFileSystemFolderItem(pidl2) ? 0 : IsSimpleDriveItem(pidl2) ? 1 : IsRegItem(pidl2) ? 2 :
+                      IsDelegateItem(pidl2) ? 3 : -1;
     if (type1 < 0 && FAILED_UNEXPECTEDLY(E_INVALIDARG))
         return E_INVALIDARG;
     if (type2 < 0 && FAILED_UNEXPECTEDLY(E_INVALIDARG))
         return E_INVALIDARG;
     if (type1 != type2)
         return MAKE_COMPARE_HRESULT(type1 - type2);
+    if (type1 == 3)
+    {
+        IShellFolder *pDelegate1 = FindDelegate(pidl1), *pDelegate2 = FindDelegate(pidl2);
+        if (!pDelegate1 || pDelegate1 != pDelegate2)
+            return MAKE_COMPARE_HRESULT(memcmp((const BYTE *)pidl1 + pidl1->mkid.cb - sizeof(CLSID),
+                                               (const BYTE *)pidl2 + pidl2->mkid.cb - sizeof(CLSID), sizeof(CLSID)));
+        return pDelegate1->CompareIDs(lParam, pidl1, pidl2);
+    }
     if (type1 == 0)
     {
         int result = _stricmp(_ILGetDataPointer(pidl1)->u.drive.szDriveName, _ILGetDataPointer(pidl2)->u.drive.szDriveName);
@@ -1115,7 +1307,12 @@ HRESULT WINAPI CDrivesFolder::GetAttributesOf(UINT cidl, PCUITEMID_CHILD_ARRAY a
     {
         for (UINT i = 0; i < cidl; ++i)
         {
-            if (IsFileSystemFolderItem(apidl[i]))
+            if (IShellFolder *pDelegate = FindDelegate(apidl[i]))
+            {
+                if (FAILED(pDelegate->GetAttributesOf(1, &apidl[i], rgfInOut)))
+                    *rgfInOut = 0;
+            }
+            else if (IsFileSystemFolderItem(apidl[i]))
             {
                 CComHeapPtr<ITEMIDLIST> absolute(ILCombine(pidlRoot, apidl[i]));
                 CComPtr<IShellFolder> parent;
@@ -1183,6 +1380,12 @@ HRESULT WINAPI CDrivesFolder::GetUIObjectOf(HWND hwndOwner,
 
     *ppvOut = NULL;
 
+    if (cidl >= 1 && apidl)
+    {
+        if (IShellFolder *pDelegate = FindDelegate(apidl[0]))
+            return pDelegate->GetUIObjectOf(hwndOwner, cidl, apidl, riid, prgfInOut, ppvOut);
+    }
+
     if (IsEqualIID (riid, IID_IContextMenu) && (cidl >= 1))
     {
         if (cidl == 1 && IsFileSystemFolderItem(apidl[0]))
@@ -1241,7 +1444,11 @@ HRESULT WINAPI CDrivesFolder::GetDisplayNameOf(PCUITEMID_CHILD pidl, DWORD dwFla
     if (!strRet)
         return E_INVALIDARG;
 
-    if (!_ILIsPidlSimple (pidl))
+    if (IShellFolder *pDelegate = FindDelegate(pidl))
+    {
+        return pDelegate->GetDisplayNameOf(pidl, dwFlags, strRet);
+    }
+    else if (!_ILIsPidlSimple (pidl))
     {
         return SHELL32_GetDisplayNameOfChild(this, pidl, dwFlags, strRet);
     }
@@ -1334,6 +1541,8 @@ HRESULT WINAPI CDrivesFolder::GetDisplayNameOf(PCUITEMID_CHILD pidl, DWORD dwFla
 HRESULT WINAPI CDrivesFolder::SetNameOf(HWND hwndOwner, PCUITEMID_CHILD pidl,
                                         LPCOLESTR lpName, DWORD dwFlags, PITEMID_CHILD *pPidlOut)
 {
+    if (IShellFolder *pDelegate = FindDelegate(pidl))
+        return pDelegate->SetNameOf(hwndOwner, pidl, lpName, dwFlags, pPidlOut);
     if (IsSimpleDriveItem(pidl))
     {
         WCHAR szDrive[8];
@@ -1378,6 +1587,16 @@ HRESULT WINAPI CDrivesFolder::GetDefaultColumnState(UINT iColumn, SHCOLSTATEF * 
 HRESULT WINAPI CDrivesFolder::GetDetailsEx(PCUITEMID_CHILD pidl, const SHCOLUMNID *pscid, VARIANT *pv)
 {
     const CLSID *pCLSID = IsRegItem(pidl);
+    if (IShellFolder *pDelegate = FindDelegate(pidl))
+    {
+        CComPtr<IShellFolder2> pDelegate2;
+        HRESULT hr = pDelegate->QueryInterface(IID_PPV_ARG(IShellFolder2, &pDelegate2));
+        if (SUCCEEDED(hr))
+            hr = pDelegate2->GetDetailsEx(pidl, pscid, pv);
+        if (FAILED(hr) && pscid->fmtid == FMTID_ShellDetails && pscid->pid == PID_DESCRIPTIONID)
+            return SHELL_CreateSHDESCRIPTIONID(pv, SHDID_COMPUTER_OTHER, &CLSID_NULL);
+        return hr;
+    }
     if (IsFileSystemFolderItem(pidl))
         return SH32_GetDetailsOfPKeyAsVariant(this, pidl, pscid, pv, FALSE);
     if (pscid->fmtid == FMTID_ShellDetails)
@@ -1420,6 +1639,14 @@ HRESULT WINAPI CDrivesFolder::GetDetailsOf(PCUITEMID_CHILD pidl, UINT iColumn, S
         psd->fmt = MyComputerSFHeader[iColumn].fmt;
         psd->cxChar = MyComputerSFHeader[iColumn].cxChar;
         return SHSetStrRet(&psd->str, MyComputerSFHeader[iColumn].colnameid);
+    }
+    else if (IShellFolder *pDelegate = FindDelegate(pidl))
+    {
+        CComPtr<IShellFolder2> pDelegate2;
+        hr = pDelegate->QueryInterface(IID_PPV_ARG(IShellFolder2, &pDelegate2));
+        if (SUCCEEDED(hr))
+            hr = pDelegate2->GetDetailsOf(pidl, iColumn, psd);
+        return hr;
     }
     else if (IsFileSystemFolderItem(pidl))
     {
