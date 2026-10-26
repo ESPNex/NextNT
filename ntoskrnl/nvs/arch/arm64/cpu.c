@@ -31,12 +31,30 @@ MiArchSyncInstructionCache(
 {
     ULONG DLine, ILine;
     ULONG_PTR Address, End = (ULONG_PTR)BaseAddress + Length;
+    ULONG64 Ctr = ARM64_READ_SYSREG(CTR_EL0);
 
     KiArm64GetCacheLineSizes(&DLine, &ILine);
-    for (Address = (ULONG_PTR)BaseAddress & ~(ULONG_PTR)(DLine - 1); Address < End; Address += DLine)
-        ARM64_DC(CVAU, Address);
+    if (!(Ctr & (1ULL << 28)))
+    {
+        for (Address = (ULONG_PTR)BaseAddress & ~(ULONG_PTR)(DLine - 1); Address < End; Address += DLine)
+            ARM64_DC(CVAU, Address);
+    }
     ARM64_DSB(ISH);
-    KeSweepICache(NULL, 0);
+    if (!(Ctr & (1ULL << 29)))
+    {
+        if (((Ctr >> 14) & 3) == 3)
+        {
+            for (Address = (ULONG_PTR)BaseAddress & ~(ULONG_PTR)(ILine - 1); Address < End; Address += ILine)
+                ARM64_IC(IVAU, Address);
+            ARM64_DSB(ISH);
+        }
+        else
+        {
+            KeSweepICache(NULL, 0);
+            return;
+        }
+    }
+    ARM64_ISB();
 }
 
 NTSTATUS
