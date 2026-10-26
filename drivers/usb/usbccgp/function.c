@@ -322,6 +322,151 @@ USBCCGP_InitInterfaceListOfFunctionDescriptor(
     return STATUS_UNSUCCESSFUL;
 }
 
+#define USBCCGP_MS_EXT_COMPAT_ID_INDEX 0x0004
+#define USBCCGP_MS_EXT_COMPAT_HEADER_LENGTH 16
+#define USBCCGP_MS_EXT_COMPAT_FUNCTION_LENGTH 24
+#define USBCCGP_MS_EXT_COMPAT_MAX_LENGTH (USBCCGP_MS_EXT_COMPAT_HEADER_LENGTH + 32 * USBCCGP_MS_EXT_COMPAT_FUNCTION_LENGTH)
+
+static
+NTSTATUS
+USBCCGP_GetMsCompatDescriptor(
+    IN PFDO_DEVICE_EXTENSION FDODeviceExtension,
+    IN PUCHAR Buffer,
+    IN ULONG Length,
+    OUT PULONG Transferred)
+{
+    struct _URB_OS_FEATURE_DESCRIPTOR_REQUEST *Urb;
+    NTSTATUS Status;
+
+    *Transferred = 0;
+    Urb = AllocateItem(NonPagedPool, sizeof(*Urb));
+    if (!Urb)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    Urb->Hdr.Length = sizeof(*Urb);
+    Urb->Hdr.Function = URB_FUNCTION_GET_MS_FEATURE_DESCRIPTOR;
+    Urb->TransferBufferLength = Length;
+    Urb->TransferBuffer = Buffer;
+    Urb->InterfaceNumber = 0;
+    Urb->MS_PageIndex = 0;
+    Urb->MS_FeatureDescriptorIndex = USBCCGP_MS_EXT_COMPAT_ID_INDEX;
+
+    Status = USBCCGP_SyncUrbRequest(FDODeviceExtension->NextDeviceObject, (PURB)Urb);
+    if (NT_SUCCESS(Status))
+        *Transferred = Urb->TransferBufferLength;
+
+    FreeItem(Urb);
+    return Status;
+}
+
+static
+VOID
+USBCCGP_QueryMsCompatIds(
+    IN PFDO_DEVICE_EXTENSION FDODeviceExtension)
+{
+    PUCHAR Buffer;
+    ULONG Transferred, Length;
+    NTSTATUS Status;
+
+    if (FDODeviceExtension->MsCompatDescriptor)
+    {
+        FreeItem(FDODeviceExtension->MsCompatDescriptor);
+        FDODeviceExtension->MsCompatDescriptor = NULL;
+        FDODeviceExtension->MsCompatDescriptorLength = 0;
+    }
+
+    Buffer = AllocateItem(NonPagedPool, USBCCGP_MS_EXT_COMPAT_MAX_LENGTH);
+    if (!Buffer)
+        return;
+
+    Status = USBCCGP_GetMsCompatDescriptor(FDODeviceExtension, Buffer, USBCCGP_MS_EXT_COMPAT_HEADER_LENGTH, &Transferred);
+    if (!NT_SUCCESS(Status) ||
+        Transferred != USBCCGP_MS_EXT_COMPAT_HEADER_LENGTH ||
+        *(PUSHORT)&Buffer[6] != USBCCGP_MS_EXT_COMPAT_ID_INDEX ||
+        Buffer[8] == 0)
+    {
+        FreeItem(Buffer);
+        return;
+    }
+
+    Length = min(*(PULONG)&Buffer[0], (ULONG)USBCCGP_MS_EXT_COMPAT_MAX_LENGTH);
+    if (Length < USBCCGP_MS_EXT_COMPAT_HEADER_LENGTH + USBCCGP_MS_EXT_COMPAT_FUNCTION_LENGTH)
+    {
+        FreeItem(Buffer);
+        return;
+    }
+
+    Status = USBCCGP_GetMsCompatDescriptor(FDODeviceExtension, Buffer, Length, &Transferred);
+    if (!NT_SUCCESS(Status) || Transferred < USBCCGP_MS_EXT_COMPAT_HEADER_LENGTH + USBCCGP_MS_EXT_COMPAT_FUNCTION_LENGTH)
+    {
+        FreeItem(Buffer);
+        return;
+    }
+
+    FDODeviceExtension->MsCompatDescriptor = Buffer;
+    FDODeviceExtension->MsCompatDescriptorLength = Transferred;
+}
+
+static
+BOOLEAN
+USBCCGP_CopyMsCompatString(
+    OUT PCHAR Destination,
+    IN const UCHAR *Source)
+{
+    ULONG Index;
+
+    RtlZeroMemory(Destination, 9);
+    for (Index = 0; Index < 8 && Source[Index]; Index++)
+    {
+        if (Source[Index] < 0x20 || Source[Index] > 0x7E || Source[Index] == ',')
+        {
+            RtlZeroMemory(Destination, 9);
+            return FALSE;
+        }
+        Destination[Index] = (CHAR)Source[Index];
+    }
+    return Destination[0] != 0;
+}
+
+static
+ULONG
+USBCCGP_FormatMsCompatIds(
+    IN PFDO_DEVICE_EXTENSION FDODeviceExtension,
+    IN UCHAR FirstInterface,
+    OUT PWCHAR Buffer)
+{
+    PUCHAR Descriptor = FDODeviceExtension->MsCompatDescriptor;
+    ULONG Offset, Count, Index = 0;
+    CHAR Compatible[9], SubCompatible[9];
+
+    if (!Descriptor)
+        return 0;
+
+    Count = Descriptor[8];
+    for (Offset = USBCCGP_MS_EXT_COMPAT_HEADER_LENGTH;
+         Count && Offset + USBCCGP_MS_EXT_COMPAT_FUNCTION_LENGTH <= FDODeviceExtension->MsCompatDescriptorLength;
+         Offset += USBCCGP_MS_EXT_COMPAT_FUNCTION_LENGTH, Count--)
+    {
+        if (Descriptor[Offset] != FirstInterface)
+            continue;
+
+        if (!USBCCGP_CopyMsCompatString(Compatible, &Descriptor[Offset + 2]))
+            return 0;
+
+        if (USBCCGP_CopyMsCompatString(SubCompatible, &Descriptor[Offset + 10]))
+        {
+            Index += _swprintf(&Buffer[Index],
+                               L"USB\\MS_COMP_%S&MS_SUBCOMP_%S",
+                               Compatible,
+                               SubCompatible) + 1;
+        }
+        Index += _swprintf(&Buffer[Index], L"USB\\MS_COMP_%S", Compatible) + 1;
+        return Index;
+    }
+
+    return 0;
+}
+
 NTSTATUS
 USBCCGP_InitFunctionDescriptor(
     IN PFDO_DEVICE_EXTENSION FDODeviceExtension,
@@ -331,7 +476,7 @@ USBCCGP_InitFunctionDescriptor(
     PUSB_INTERFACE_ASSOCIATION_DESCRIPTOR Descriptor;
     NTSTATUS Status;
     LPWSTR DescriptionBuffer;
-    WCHAR Buffer[100];
+    WCHAR Buffer[320];
     ULONG Index;
 
     // init function number
@@ -428,17 +573,33 @@ USBCCGP_InitFunctionDescriptor(
     //
     // now init the compatible id
     //
-    Index = _swprintf(Buffer,
-                      L"USB\\Class_%02X&SubClass_%02X&Prot_%02X",
+    Index = USBCCGP_FormatMsCompatIds(FDODeviceExtension, Descriptor->bFirstInterface, Buffer);
+    Index += _swprintf(&Buffer[Index],
+                       L"USB\\COMPAT_VID_%04x&Class_%02x&SubClass_%02x&Prot_%02x",
+                       FDODeviceExtension->DeviceDescriptor->idVendor,
+                       Descriptor->bFunctionClass,
+                       Descriptor->bFunctionSubClass,
+                       Descriptor->bFunctionProtocol) + 1;
+    Index += _swprintf(&Buffer[Index],
+                       L"USB\\COMPAT_VID_%04x&Class_%02x&SubClass_%02x",
+                       FDODeviceExtension->DeviceDescriptor->idVendor,
+                       Descriptor->bFunctionClass,
+                       Descriptor->bFunctionSubClass) + 1;
+    Index += _swprintf(&Buffer[Index],
+                       L"USB\\COMPAT_VID_%04x&Class_%02x",
+                       FDODeviceExtension->DeviceDescriptor->idVendor,
+                       Descriptor->bFunctionClass) + 1;
+    Index += _swprintf(&Buffer[Index],
+                      L"USB\\Class_%02x&SubClass_%02x&Prot_%02x",
                       Descriptor->bFunctionClass,
                       Descriptor->bFunctionSubClass,
                       Descriptor->bFunctionProtocol) + 1;
     Index += _swprintf(&Buffer[Index],
-                       L"USB\\Class_%02X&SubClass_%02X",
+                       L"USB\\Class_%02x&SubClass_%02x",
                        Descriptor->bFunctionClass,
                        Descriptor->bFunctionSubClass) + 1;
     Index += _swprintf(&Buffer[Index],
-                       L"USB\\Class_%02X",
+                       L"USB\\Class_%02x",
                        Descriptor->bFunctionClass) + 1;
 
     // allocate result buffer
@@ -537,7 +698,7 @@ USBCCG_InitIdsWithInterfaceDescriptor(
     OUT PUSBC_FUNCTION_DESCRIPTOR FunctionDescriptor)
 {
     ULONG Index;
-    WCHAR Buffer[200];
+    WCHAR Buffer[320];
     LPWSTR DescriptionBuffer;
     NTSTATUS Status;
 
@@ -606,17 +767,33 @@ USBCCG_InitIdsWithInterfaceDescriptor(
     //
     // now init the compatible id
     //
-    Index = _swprintf(Buffer,
-                      L"USB\\Class_%02X&SubClass_%02X&Prot_%02X",
+    Index = USBCCGP_FormatMsCompatIds(FDODeviceExtension, Descriptor->bInterfaceNumber, Buffer);
+    Index += _swprintf(&Buffer[Index],
+                       L"USB\\COMPAT_VID_%04x&Class_%02x&SubClass_%02x&Prot_%02x",
+                       FDODeviceExtension->DeviceDescriptor->idVendor,
+                       Descriptor->bInterfaceClass,
+                       Descriptor->bInterfaceSubClass,
+                       Descriptor->bInterfaceProtocol) + 1;
+    Index += _swprintf(&Buffer[Index],
+                       L"USB\\COMPAT_VID_%04x&Class_%02x&SubClass_%02x",
+                       FDODeviceExtension->DeviceDescriptor->idVendor,
+                       Descriptor->bInterfaceClass,
+                       Descriptor->bInterfaceSubClass) + 1;
+    Index += _swprintf(&Buffer[Index],
+                       L"USB\\COMPAT_VID_%04x&Class_%02x",
+                       FDODeviceExtension->DeviceDescriptor->idVendor,
+                       Descriptor->bInterfaceClass) + 1;
+    Index += _swprintf(&Buffer[Index],
+                      L"USB\\Class_%02x&SubClass_%02x&Prot_%02x",
                       Descriptor->bInterfaceClass,
                       Descriptor->bInterfaceSubClass,
                       Descriptor->bInterfaceProtocol) + 1;
     Index += _swprintf(&Buffer[Index],
-                       L"USB\\Class_%02X&SubClass_%02X",
+                       L"USB\\Class_%02x&SubClass_%02x",
                        Descriptor->bInterfaceClass,
                        Descriptor->bInterfaceSubClass) + 1;
     Index += _swprintf(&Buffer[Index],
-                       L"USB\\Class_%02X",
+                       L"USB\\Class_%02x",
                        Descriptor->bInterfaceClass) + 1;
 
     // allocate result buffer
@@ -918,6 +1095,8 @@ USBCCGP_EnumerateFunctions(
     //
     FDODeviceExtension = (PFDO_DEVICE_EXTENSION)DeviceObject->DeviceExtension;
     ASSERT(FDODeviceExtension->Common.IsFDO);
+
+    USBCCGP_QueryMsCompatIds(FDODeviceExtension);
 
     //
     // first try with filter driver

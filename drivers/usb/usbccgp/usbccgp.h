@@ -41,6 +41,8 @@ typedef struct
     UCHAR ResetPortActive;                                   // reset port active
     UCHAR CyclePortActive;                                   // cycle port active
     KSPIN_LOCK Lock;                                         // reset / cycle port list lock
+    PUCHAR MsCompatDescriptor;
+    ULONG MsCompatDescriptorLength;
 }FDO_DEVICE_EXTENSION, *PFDO_DEVICE_EXTENSION;
 
 #define USBCCPG_TAG 'cbsu'
