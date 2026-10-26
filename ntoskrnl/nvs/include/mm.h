@@ -33,6 +33,7 @@ typedef struct _MI_TLB_BATCH_ENTRY
     ULONG64 Va;
     struct _MI_SEGMENT *Segment;
     PMI_PTE Proto;
+    struct _MI_CLONE_PAGE *Clone;
     ULONG Frame;
     BOOLEAN Private;
 } MI_TLB_BATCH_ENTRY, *PMI_TLB_BATCH_ENTRY;
@@ -53,6 +54,7 @@ typedef struct _MI_ADDRESS_SPACE
     MI_VAD_ROOT VadRoot;
     MI_VAD_ROOT AweRoot;
     MI_VAD_ROOT CloneRoot;
+    struct _MI_CLONE_RANGE *volatile CloneHint;
     struct _MI_VAD *FreeVads;
     ULONG FreeVadCount;
     ULONG64 LowestVa;
@@ -221,15 +223,23 @@ typedef struct _MI_CLONE_PAGE
 
 typedef struct _MI_CLONE_REF
 {
-    MI_VAD_NODE Node;
     PMI_CLONE_PAGE Page;
     ULONG Protection;
 } MI_CLONE_REF, *PMI_CLONE_REF;
 
+typedef struct _MI_CLONE_RANGE
+{
+    MI_VAD_NODE Node;
+    ULONG64 Live;
+    MI_CLONE_REF Refs[1];
+} MI_CLONE_RANGE, *PMI_CLONE_RANGE;
+
 NTSTATUS MiCloneAddressSpace(_Inout_ PMI_ADDRESS_SPACE Source, _Inout_ PMI_ADDRESS_SPACE Target);
 PMI_CLONE_REF MiCloneLookup(_In_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Va);
+BOOLEAN MiCloneIntersects(_In_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Start, _In_ ULONG64 End);
 NTSTATUS MiCloneFault(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Va, _In_ ULONG Access,
                       _In_ BOOLEAN ConsumeGuard);
+VOID MiCloneReleaseBatched(_Inout_ PMI_CLONE_PAGE Page, _In_ ULONG Frame);
 BOOLEAN MiCloneDeletePage(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Va, _Inout_ PMI_PTE Slot,
                           _In_ ULONG TableFrame, _In_ MI_PTE NewValue);
 BOOLEAN MiCloneProtectPage(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 Va, _Inout_ PMI_PTE Slot,
@@ -364,6 +374,10 @@ NTSTATUS MiSetPrivatePageProtection(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG6
 BOOLEAN MiViewPageCommitted(_In_ PMI_VAD Vad, _In_ ULONG64 VirtualAddress);
 ULONG MiViewPageProtection(_In_ PMI_ADDRESS_SPACE Space, _In_ PMI_VAD Vad, _In_ ULONG64 VirtualAddress,
                            _In_ MI_PTE Pte);
+ULONG MiViewPteProtection(_In_ PMI_ADDRESS_SPACE Space, _In_ PMI_VAD Vad, _In_ ULONG64 VirtualAddress,
+                          _In_ MI_PTE Pte);
+BOOLEAN MiViewPteIsDefault(_In_ PMI_ADDRESS_SPACE Space, _In_ PMI_VAD Vad, _In_ ULONG64 VirtualAddress,
+                           _In_ MI_PTE Pte);
 
 NTSTATUS MiFault(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 VirtualAddress, _In_ MI_FAULT_ACCESS Access,
                  _In_ BOOLEAN UserMode);
@@ -389,6 +403,8 @@ VOID MiArmExecutableWriteRangeLocked(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG
 VOID MiRepurposeStandbyPage(_Inout_ PMI_PFN_DATABASE Db, _In_ ULONG Frame);
 VOID MiDeletePte(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 VirtualAddress, _Inout_ PMI_PTE Slot,
                  _In_ ULONG TableFrame, _In_ MI_PTE NewValue);
+VOID MiDeleteUnclonedPte(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 VirtualAddress, _Inout_ PMI_PTE Slot,
+                         _In_ ULONG TableFrame, _In_ MI_PTE NewValue);
 PMI_VAD MiVadLocate(_In_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 VirtualAddress);
 PMI_VAD MiVadAllocateAndLock(_Inout_ PMI_ADDRESS_SPACE Space);
 PMI_VAD MiVadPopFree(_Inout_ PMI_ADDRESS_SPACE Space);
@@ -537,6 +553,8 @@ BOOLEAN MiTlbBatchBegin(_Inout_ PMI_ADDRESS_SPACE Space, _Out_ PMI_TLB_BATCH Bat
 VOID MiTlbBatchEnd(_Inout_ PMI_ADDRESS_SPACE Space, _In_ BOOLEAN Owner);
 VOID MiTlbBatchAdd(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 VirtualAddress, _In_ ULONG Frame,
                    _In_opt_ PMI_SEGMENT Segment, _In_opt_ PMI_PTE Proto, _In_ BOOLEAN Private);
+VOID MiTlbBatchAddClone(_Inout_ PMI_ADDRESS_SPACE Space, _In_ ULONG64 VirtualAddress, _In_ ULONG Frame,
+                        _Inout_ struct _MI_CLONE_PAGE *Page);
 BOOLEAN MiSegmentDereferenceAndClose(_Inout_ PMI_SEGMENT Segment);
 ULONG MiSegmentPurgeUnused(_Inout_ PMI_SYSTEM System, _In_ ULONG MaximumCount);
 ULONG MiSegmentTrimUnused(_Inout_ PMI_SYSTEM System);

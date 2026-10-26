@@ -11,19 +11,133 @@
 
 typedef struct _MI_CLONE_WORK
 {
-    struct _MI_CLONE_WORK *Next;
+    ULONG64 Va;
+    PMI_CLONE_REF Existing;
     PMI_CLONE_REF Source;
+    PMI_CLONE_RANGE SourceRange;
     PMI_CLONE_REF Target;
+    PMI_CLONE_RANGE TargetRange;
     PMI_CLONE_PAGE Page;
     ULONG CopyFrame;
+    BOOLEAN Flush;
 } MI_CLONE_WORK, *PMI_CLONE_WORK;
+
+#define MI_CLONE_FLUSH_ALL 32
+
+typedef struct _MI_CLONE_TABLES
+{
+    ULONG64 Va;
+    ULONG64 End;
+    PMI_PTE Source;
+    PMI_PTE Target;
+    ULONG SourceTable;
+    ULONG TargetTable;
+} MI_CLONE_TABLES, *PMI_CLONE_TABLES;
+
+typedef struct _MI_CLONE_PLAN
+{
+    PMI_CLONE_WORK Work;
+    ULONG64 Count;
+    ULONG64 Capacity;
+    PMI_CLONE_RANGE *Ranges;
+    ULONG64 RangeCount;
+    ULONG64 RangeCapacity;
+    ULONG64 FirstSourceRange;
+    ULONG64 Flushes;
+    MI_CLONE_TABLES Tables;
+} MI_CLONE_PLAN, *PMI_CLONE_PLAN;
+
+static PMI_CLONE_RANGE
+MiCloneRangeOf(PMI_ADDRESS_SPACE Space, ULONG64 Va, PMI_CLONE_REF *Ref)
+{
+    ULONG64 Vpn = Va >> PAGE_SHIFT;
+    PMI_CLONE_RANGE Range = MI_ATOMIC_READ_POINTER(&Space->CloneHint);
+    PMI_VAD_NODE Node;
+
+    if (Range == NULL || Vpn < Range->Node.StartingVpn || Vpn > Range->Node.EndingVpn)
+    {
+        Node = MiVadFind(&Space->CloneRoot, Vpn);
+        if (Node == NULL)
+            return NULL;
+        Range = CONTAINING_RECORD(Node, MI_CLONE_RANGE, Node);
+        MI_ATOMIC_WRITE_POINTER(&Space->CloneHint, Range);
+    }
+    *Ref = &Range->Refs[Vpn - Range->Node.StartingVpn];
+    return Range;
+}
+
+static VOID
+MiCloneRemoveRange(PMI_ADDRESS_SPACE Space, PMI_CLONE_RANGE Range)
+{
+    if (MI_ATOMIC_READ_POINTER(&Space->CloneHint) == Range)
+        MI_ATOMIC_WRITE_POINTER(&Space->CloneHint, NULL);
+    MiVadRemove(&Space->CloneRoot, &Range->Node);
+}
 
 PMI_CLONE_REF
 MiCloneLookup(PMI_ADDRESS_SPACE Space, ULONG64 Va)
 {
-    PMI_VAD_NODE Node = MiVadFind(&Space->CloneRoot, Va >> PAGE_SHIFT);
+    PMI_CLONE_REF Ref;
 
-    return Node != NULL ? CONTAINING_RECORD(Node, MI_CLONE_REF, Node) : NULL;
+    if (Space->CloneRoot.NodeCount == 0 || MiCloneRangeOf(Space, Va, &Ref) == NULL)
+        return NULL;
+    return Ref->Page != NULL ? Ref : NULL;
+}
+
+BOOLEAN
+MiCloneIntersects(PMI_ADDRESS_SPACE Space, ULONG64 Start, ULONG64 End)
+{
+    PMI_VAD_NODE Node = Space->CloneRoot.Root;
+    ULONG64 First = Start >> PAGE_SHIFT;
+    ULONG64 Last = (End - 1) >> PAGE_SHIFT;
+
+    while (Node != NULL)
+    {
+        if (Node->EndingVpn < First)
+            Node = Node->Right;
+        else if (Node->StartingVpn > Last)
+            Node = Node->Left;
+        else
+            return TRUE;
+    }
+    return FALSE;
+}
+
+static BOOLEAN
+MiClonePteMayBeClone(PMI_ADDRESS_SPACE Space, MI_PTE Pte)
+{
+    if (MiArchPteIsValid(Pte))
+        return (MI_PFN_FLAGS(&Space->System->Pfn.Pfn[MiArchPteFrame(Pte)]) & MI_PFN_FLAG_PROTOTYPE) != 0;
+    return MiSoftKind(Pte) == MiSoftPrototype;
+}
+
+static PMI_CLONE_REF
+MiCloneLookupPte(PMI_ADDRESS_SPACE Space, ULONG64 Va, MI_PTE Pte)
+{
+    if (!MiClonePteMayBeClone(Space, Pte))
+        return NULL;
+    return MiCloneLookup(Space, Va);
+}
+
+static VOID
+MiCloneForgetRef(PMI_ADDRESS_SPACE Space, PMI_CLONE_RANGE Range, PMI_CLONE_REF Ref)
+{
+    MI_ASSERT(Range != NULL && Ref->Page != NULL && Range->Live != 0);
+    Ref->Page = NULL;
+    if (--Range->Live == 0)
+    {
+        MiCloneRemoveRange(Space, Range);
+        MI_FREE(Range);
+    }
+}
+
+static VOID
+MiCloneForget(PMI_ADDRESS_SPACE Space, ULONG64 Va)
+{
+    PMI_CLONE_REF Ref;
+    PMI_CLONE_RANGE Range = MiCloneRangeOf(Space, Va, &Ref);
+
+    MiCloneForgetRef(Space, Range, Ref);
 }
 
 static ULONG
@@ -91,24 +205,49 @@ MiCloneReleaseMapping(PMI_ADDRESS_SPACE Space, PMI_CLONE_REF Ref, ULONG64 Va,
     }
 }
 
+VOID
+MiCloneReleaseBatched(PMI_CLONE_PAGE Page, ULONG Frame)
+{
+    MiCloneDropShare(Page, Frame);
+    MiCloneDereference(Page);
+}
+
 BOOLEAN
 MiCloneDeletePage(PMI_ADDRESS_SPACE Space, ULONG64 Va, PMI_PTE Slot, ULONG TableFrame, MI_PTE NewValue)
 {
-    PMI_CLONE_REF Ref = MiCloneLookup(Space, Va);
+    MI_PTE Pte = MiArchPteRead(Slot);
+    PMI_CLONE_RANGE Range;
+    PMI_CLONE_REF Ref;
+    PMI_CLONE_PAGE Page;
 
-    if (Ref == NULL)
+    if ((Space->CloneRoot.NodeCount == 0) || !MiClonePteMayBeClone(Space, Pte))
         return FALSE;
+    Range = MiCloneRangeOf(Space, Va, &Ref);
+    if ((Range == NULL) || (Ref->Page == NULL))
+        return FALSE;
+    Page = Ref->Page;
+    if (MiArchPteIsValid(Pte) && (Space->TlbBatch != NULL))
+    {
+        ULONG Frame = (ULONG)MiArchPteFrame(Pte);
+
+        MiPtWrite(Space, Va, Slot, TableFrame, NewValue);
+        if (MiArchPteIsDirty(Pte))
+            MiPfnSetModified(&Space->System->Pfn, Frame);
+        MI_ATOMIC_ADD64(&Space->ResidentPages, -1);
+        MiCloneForgetRef(Space, Range, Ref);
+        MiTlbBatchAddClone(Space, Va, Frame, Page);
+        return TRUE;
+    }
     MiCloneReleaseMapping(Space, Ref, Va, Slot, TableFrame, NewValue);
-    MiVadRemove(&Space->CloneRoot, &Ref->Node);
-    MiCloneDereference(Ref->Page);
-    MI_FREE(Ref);
+    MiCloneForgetRef(Space, Range, Ref);
+    MiCloneDereference(Page);
     return TRUE;
 }
 
 BOOLEAN
 MiCloneProtectPage(PMI_ADDRESS_SPACE Space, ULONG64 Va, PMI_PTE Slot, ULONG TableFrame, ULONG Protection)
 {
-    PMI_CLONE_REF Ref = MiCloneLookup(Space, Va);
+    PMI_CLONE_REF Ref = MiCloneLookupPte(Space, Va, MiArchPteRead(Slot));
 
     if (Ref == NULL)
         return FALSE;
@@ -120,7 +259,7 @@ MiCloneProtectPage(PMI_ADDRESS_SPACE Space, ULONG64 Va, PMI_PTE Slot, ULONG Tabl
 BOOLEAN
 MiCloneTrimPage(PMI_ADDRESS_SPACE Space, ULONG64 Va, PMI_PTE Slot, ULONG TableFrame)
 {
-    PMI_CLONE_REF Ref = MiCloneLookup(Space, Va);
+    PMI_CLONE_REF Ref = MiCloneLookupPte(Space, Va, MiArchPteRead(Slot));
 
     if (Ref == NULL)
         return FALSE;
@@ -202,6 +341,42 @@ Done:
     return Status;
 }
 
+static BOOLEAN
+MiCloneTakeOver(PMI_ADDRESS_SPACE Space, PMI_CLONE_REF Ref, ULONG64 Va, PMI_PTE Slot, ULONG TableFrame,
+                ULONG Frame, ULONG Protection)
+{
+    PMI_CLONE_PAGE Page = Ref->Page;
+    PMI_SYSTEM System = Space->System;
+    PMI_PFN Entry = &System->Pfn.Pfn[Frame];
+    KIRQL OldIrql;
+
+    if (MI_ATOMIC_READ32(&Page->References) != 1)
+        return FALSE;
+
+    OldIrql = MiPfnLock(&System->Pfn, Frame);
+    if (Entry->State != MiPageActive || Entry->ShareCount != 1 || Entry->ReferenceCount != 1 ||
+        (MI_PFN_FLAGS(Entry) & (MI_PFN_FLAG_IN_FLIGHT | MI_PFN_FLAG_DELETED | MI_PFN_FLAG_PINNED)) ||
+        !(MI_PFN_FLAGS(Entry) & MI_PFN_FLAG_PROTOTYPE) || Entry->PteAddress != (ULONG64)(ULONG_PTR)&Page->Proto)
+    {
+        MiPfnUnlock(&System->Pfn, Frame, OldIrql);
+        return FALSE;
+    }
+    Entry->PteAddress = MiPtSlotAddress(Slot, TableFrame, Va);
+    Entry->PteFrame = TableFrame;
+    Entry->OriginalPte = MiSoftWithProtection(Entry->OriginalPte, Protection);
+    MI_ATOMIC_AND8(&Entry->Flags, (UCHAR)~MI_PFN_FLAG_PROTOTYPE);
+    MiPfnUnlock(&System->Pfn, Frame, OldIrql);
+
+    MiPtWrite(Space, Va, Slot, TableFrame, MiSoftMake(MiSoftPrototype, Protection, 0));
+    MiArchTlbInvalidate(Va, 1, TRUE);
+    MI_ATOMIC_ADD64(&Space->ResidentPages, -1);
+    MiMakePageValid(Space, Va, Slot, TableFrame, Frame, Protection, TRUE);
+    MI_ATOMIC_ADD64(&Space->PrivatePages, 1);
+    MiCloneForget(Space, Va);
+    MI_FREE(Page);
+    return TRUE;
+}
+
 NTSTATUS
 MiCloneFault(PMI_ADDRESS_SPACE Space, ULONG64 Va, ULONG Access, BOOLEAN ConsumeGuard)
 {
@@ -262,6 +437,14 @@ MiCloneFault(PMI_ADDRESS_SPACE Space, ULONG64 Va, ULONG Access, BOOLEAN ConsumeG
             MI_ATOMIC_ADD64(&Space->PrototypeFaults, 1);
         }
         Frame = (ULONG)MiArchPteFrame(Pte);
+        if ((Access == MiFaultWrite) &&
+            MiCloneTakeOver(Space, Ref, Va, Slot, TableFrame, Frame,
+                            (Protection & ~MI_PROT_ACCESS_MASK) |
+                            (MI_PROT_IS_EXECUTE(Protection) ? MI_PROT_EXECUTE_READWRITE : MI_PROT_READWRITE)))
+        {
+            Status = STATUS_SUCCESS;
+            break;
+        }
         if (Access == MiFaultWrite)
         {
             ULONG NewFrame = MiPfnAllocatePage(&System->Pfn, MI_ALLOCATE_HIGH);
@@ -295,9 +478,8 @@ MiCloneFault(PMI_ADDRESS_SPACE Space, ULONG64 Va, ULONG Access, BOOLEAN ConsumeG
             MiMakePageValid(Space, Va, Slot, TableFrame, NewFrame, Protection, TRUE);
             MI_ATOMIC_ADD64(&Space->PrivatePages, 1);
             MI_ATOMIC_ADD64(&Space->CopyOnWriteFaults, 1);
-            MiVadRemove(&Space->CloneRoot, &Ref->Node);
+            MiCloneForget(Space, Va);
             MiCloneDereference(Page);
-            MI_FREE(Ref);
         }
         else
         {
@@ -320,32 +502,39 @@ MiClonePrivatePte(PMI_SYSTEM System, MI_PTE Pte)
 }
 
 static NTSTATUS
-MiClonePreparePage(PMI_ADDRESS_SPACE Source, ULONG64 Va, MI_PTE Pte, PMI_CLONE_WORK *List)
+MiClonePreparePage(PMI_ADDRESS_SPACE Source, ULONG64 Va, MI_PTE Pte, PMI_CLONE_REF Existing, PMI_CLONE_PLAN Plan)
 {
-    PMI_CLONE_WORK Work = MI_ALLOCATE(sizeof(*Work));
-    PMI_CLONE_REF Existing = MiCloneLookup(Source, Va);
+    PMI_CLONE_WORK Work;
 
-    if (Work == NULL)
-        return STATUS_INSUFFICIENT_RESOURCES;
-    RtlZeroMemory(Work, sizeof(*Work));
-    Work->Next = *List;
-    Work->CopyFrame = MI_FRAME_INVALID;
-    *List = Work;
-    Work->Target = MI_ALLOCATE(sizeof(*Work->Target));
-    if (Work->Target == NULL)
-        return STATUS_INSUFFICIENT_RESOURCES;
-    RtlZeroMemory(Work->Target, sizeof(*Work->Target));
-    Work->Target->Node.StartingVpn = Work->Target->Node.EndingVpn = Va >> PAGE_SHIFT;
-    if (Existing != NULL)
+    if (Plan->Count == Plan->Capacity)
     {
-        Work->Target->Page = Existing->Page;
-        Work->Target->Protection = Existing->Protection;
-        return STATUS_SUCCESS;
-    }
+        ULONG64 Capacity = Plan->Capacity != 0 ? Plan->Capacity * 2 : 256;
+        PMI_CLONE_WORK Grown = MI_ALLOCATE((SIZE_T)(Capacity * sizeof(*Grown)));
 
-    Work->Source = MI_ALLOCATE(sizeof(*Work->Source));
+        if (Grown == NULL)
+            return STATUS_INSUFFICIENT_RESOURCES;
+        if (Plan->Count != 0)
+            RtlCopyMemory(Grown, Plan->Work, (SIZE_T)(Plan->Count * sizeof(*Grown)));
+        if (Plan->Work != NULL)
+            MI_FREE(Plan->Work);
+        Plan->Work = Grown;
+        Plan->Capacity = Capacity;
+    }
+    Work = &Plan->Work[Plan->Count++];
+    Work->Va = Va;
+    Work->Existing = Existing;
+    Work->Source = NULL;
+    Work->SourceRange = NULL;
+    Work->Target = NULL;
+    Work->TargetRange = NULL;
+    Work->Page = NULL;
+    Work->CopyFrame = MI_FRAME_INVALID;
+    Work->Flush = FALSE;
+    if (Existing != NULL)
+        return STATUS_SUCCESS;
+
     Work->Page = MI_ALLOCATE(sizeof(*Work->Page));
-    if (Work->Source == NULL || Work->Page == NULL)
+    if (Work->Page == NULL)
         return STATUS_INSUFFICIENT_RESOURCES;
     RtlZeroMemory(Work->Page, sizeof(*Work->Page));
     Work->Page->System = Source->System;
@@ -372,13 +561,104 @@ MiClonePreparePage(PMI_ADDRESS_SPACE Source, ULONG64 Va, MI_PTE Pte, PMI_CLONE_W
     return STATUS_SUCCESS;
 }
 
-static VOID
-MiClonePublishPage(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target, PMI_CLONE_WORK Work)
+static NTSTATUS
+MiCloneAddRange(PMI_CLONE_PLAN Plan, PMI_CLONE_WORK First, ULONG64 Pages, BOOLEAN Source)
 {
-    ULONG64 Va = Work->Target->Node.StartingVpn << PAGE_SHIFT;
+    PMI_CLONE_RANGE Range;
+    SIZE_T Size = FIELD_OFFSET(MI_CLONE_RANGE, Refs) + (SIZE_T)(Pages * sizeof(MI_CLONE_REF));
+    ULONG64 i;
+
+    if (Plan->RangeCount == Plan->RangeCapacity)
+    {
+        ULONG64 Capacity = Plan->RangeCapacity != 0 ? Plan->RangeCapacity * 2 : 16;
+        PMI_CLONE_RANGE *Grown = MI_ALLOCATE((SIZE_T)(Capacity * sizeof(*Grown)));
+
+        if (Grown == NULL)
+            return STATUS_INSUFFICIENT_RESOURCES;
+        if (Plan->RangeCount != 0)
+            RtlCopyMemory(Grown, Plan->Ranges, (SIZE_T)(Plan->RangeCount * sizeof(*Grown)));
+        if (Plan->Ranges != NULL)
+            MI_FREE(Plan->Ranges);
+        Plan->Ranges = Grown;
+        Plan->RangeCapacity = Capacity;
+    }
+    Range = MI_ALLOCATE(Size);
+    if (Range == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+    RtlZeroMemory(Range, Size);
+    Range->Node.StartingVpn = First->Va >> PAGE_SHIFT;
+    Range->Node.EndingVpn = Range->Node.StartingVpn + Pages - 1;
+    Plan->Ranges[Plan->RangeCount++] = Range;
+    for (i = 0; i < Pages; i++)
+    {
+        if (Source)
+        {
+            First[i].Source = &Range->Refs[i];
+            First[i].SourceRange = Range;
+        }
+        else
+        {
+            First[i].Target = &Range->Refs[i];
+            First[i].TargetRange = Range;
+        }
+    }
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS
+MiClonePlanRanges(PMI_ADDRESS_SPACE Source, PMI_CLONE_PLAN Plan)
+{
+    ULONG64 i, Run;
+    NTSTATUS Status;
+
+    for (i = 0; i < Plan->Count; i = Run)
+    {
+        for (Run = i + 1; Run < Plan->Count && Plan->Work[Run].Va == Plan->Work[Run - 1].Va + PAGE_SIZE; Run++)
+            ;
+        Status = MiCloneAddRange(Plan, &Plan->Work[i], Run - i, FALSE);
+        if (!NT_SUCCESS(Status))
+            return Status;
+    }
+    Plan->FirstSourceRange = Plan->RangeCount;
+
+    for (i = 0; i < Plan->Count; i = Run)
+    {
+        PMI_CLONE_WORK Work = &Plan->Work[i];
+        PMI_CLONE_RANGE Covering;
+        PMI_CLONE_REF Slot;
+
+        Run = i + 1;
+        if (Work->Existing != NULL)
+            continue;
+        Covering = MiCloneRangeOf(Source, Work->Va, &Slot);
+        if (Covering != NULL)
+        {
+            MI_ASSERT(Slot->Page == NULL);
+            Work->Source = Slot;
+            Work->SourceRange = Covering;
+            continue;
+        }
+        while (Run < Plan->Count && Plan->Work[Run].Existing == NULL &&
+               Plan->Work[Run].Va == Plan->Work[Run - 1].Va + PAGE_SIZE &&
+               MiCloneRangeOf(Source, Plan->Work[Run].Va, &Slot) == NULL)
+        {
+            Run++;
+        }
+        Status = MiCloneAddRange(Plan, Work, Run - i, TRUE);
+        if (!NT_SUCCESS(Status))
+            return Status;
+    }
+    return STATUS_SUCCESS;
+}
+
+static VOID
+MiClonePublishPage(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target, PMI_CLONE_PLAN Plan,
+                   PMI_CLONE_WORK Work, PMI_VAD *VadCache)
+{
+    ULONG64 Va = Work->Va;
+    PMI_CLONE_TABLES Tables = &Plan->Tables;
     ULONG SourceTable, TargetTable;
-    PMI_PTE SourceSlot = MiPtLookup(Source, Va, &SourceTable);
-    PMI_PTE TargetSlot = MiPtLookup(Target, Va, &TargetTable);
+    PMI_PTE SourceSlot, TargetSlot;
     PMI_CLONE_PAGE Page = Work->Page;
     MI_PTE Pte;
     ULONG Frame = MI_FRAME_INVALID;
@@ -386,8 +666,21 @@ MiClonePublishPage(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target, PMI_CLONE
     PMI_VAD Vad;
     BOOLEAN Valid;
 
+    if (Tables->Source == NULL || Va < Tables->Va || Va >= Tables->End)
+    {
+        Tables->Va = Va;
+        Tables->End = MiPtNextTableBoundary(Source, Va);
+        Tables->Source = MiPtLookup(Source, Va, &Tables->SourceTable);
+        Tables->Target = MiPtLookup(Target, Va, &Tables->TargetTable);
+    }
+    SourceSlot = Tables->Source + ((Va - Tables->Va) >> PAGE_SHIFT);
+    TargetSlot = Tables->Target + ((Va - Tables->Va) >> PAGE_SHIFT);
+    SourceTable = Tables->SourceTable;
+    TargetTable = Tables->TargetTable;
+
     if (Page == NULL)
     {
+        *Work->Target = *Work->Existing;
         MI_ATOMIC_ADD32(&Work->Target->Page->References, 1);
         goto TargetReady;
     }
@@ -414,12 +707,14 @@ MiClonePublishPage(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target, PMI_CLONE
         return;
     }
 
-    Vad = MiVadLocate(Source, Va);
+    Vad = *VadCache;
+    if (Vad == NULL || (Va >> PAGE_SHIFT) < Vad->Node.StartingVpn || (Va >> PAGE_SHIFT) > Vad->Node.EndingVpn)
+        Vad = *VadCache = MiVadLocate(Source, Va);
     AllocationProtection = Vad->Segment != NULL ? Vad->Segment->Protection : Vad->Protection;
     PrototypeProtection = MI_PROT_READWRITE;
     if (MI_PROT_IS_ACCESSIBLE(AllocationProtection))
         PrototypeProtection |= AllocationProtection & MI_PROT_NOCACHE;
-    Protection = Valid ? MiViewPageProtection(Source, Vad, Va, Pte) : MiSoftProtection(Pte);
+    Protection = Valid ? MiViewPteProtection(Source, Vad, Va, Pte) : MiSoftProtection(Pte);
     Work->Target->Protection = Protection;
     Work->Target->Page = Page;
     Page->References = 1;
@@ -444,15 +739,14 @@ MiClonePublishPage(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target, PMI_CLONE
     else
     {
         *Work->Source = *Work->Target;
-        if (!MiVadInsert(&Source->CloneRoot, &Work->Source->Node))
-            MI_ASSERT(FALSE);
-        Work->Source = NULL;
+        Work->SourceRange->Live++;
         Page->References++;
         if (Valid)
         {
             MiPtWrite(Source, Va, SourceSlot, SourceTable,
                        MiArchPteMakeLeaf(Frame, MiCloneLeafProtection(Protection), MI_LEAF_USER));
-            MiArchTlbInvalidate(Va, 1, TRUE);
+            Work->Flush = TRUE;
+            Plan->Flushes++;
             if (MiArchPteIsDirty(Pte))
                 MiPfnSetModified(&Source->System->Pfn, Frame);
         }
@@ -484,11 +778,41 @@ MiClonePublishPage(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target, PMI_CLONE
     }
     Work->Page = NULL;
 TargetReady:
-    MiPtWrite(Target, Va, TargetSlot, TargetTable,
-              MiSoftMake(MiSoftPrototype, Work->Target->Protection, 0));
-    if (!MiVadInsert(&Target->CloneRoot, &Work->Target->Node))
-        MI_ASSERT(FALSE);
-    Work->Target = NULL;
+    Protection = Work->Target->Protection;
+    if ((Page != NULL) && MI_PROT_IS_ACCESSIBLE(Protection) && ((Protection & MI_PROT_NOACCESS) != MI_PROT_GUARD) &&
+        (MiSoftKind(MiArchPteRead(&Work->Target->Page->Proto)) == MiSoftResident) &&
+        MiCloneAcquirePage(Work->Target->Page, &Frame))
+    {
+        MiMakePageValid(Target, Va, TargetSlot, TargetTable, Frame, MiCloneLeafProtection(Protection), FALSE);
+    }
+    else
+    {
+        MiPtWrite(Target, Va, TargetSlot, TargetTable, MiSoftMake(MiSoftPrototype, Protection, 0));
+    }
+    Work->TargetRange->Live++;
+}
+
+static VOID
+MiCloneFreePlan(PMI_SYSTEM System, PMI_CLONE_PLAN Plan)
+{
+    ULONG64 i;
+
+    for (i = 0; i < Plan->Count; i++)
+    {
+        if (Plan->Work[i].CopyFrame != MI_FRAME_INVALID)
+            MiPfnShareDecrement(&System->Pfn, Plan->Work[i].CopyFrame, TRUE);
+        if (Plan->Work[i].Page != NULL)
+            MI_FREE(Plan->Work[i].Page);
+    }
+    for (i = 0; i < Plan->RangeCount; i++)
+    {
+        if (Plan->Ranges[i] != NULL)
+            MI_FREE(Plan->Ranges[i]);
+    }
+    if (Plan->Work != NULL)
+        MI_FREE(Plan->Work);
+    if (Plan->Ranges != NULL)
+        MI_FREE(Plan->Ranges);
 }
 
 static VOID
@@ -539,9 +863,12 @@ MiCloneAddressSpace(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target)
     PMI_ADDRESS_SPACE First = (ULONG_PTR)Source < (ULONG_PTR)Target ? Source : Target;
     PMI_ADDRESS_SPACE Second = First == Source ? Target : Source;
     PMI_VAD_NODE Node;
-    PMI_CLONE_WORK Work, List = NULL;
+    MI_CLONE_PLAN Plan;
+    PMI_VAD VadCache = NULL;
     NTSTATUS Status = STATUS_SUCCESS;
+    ULONG64 i;
 
+    RtlZeroMemory(&Plan, sizeof(Plan));
     if (Source == Target || Source->System != Target->System || Source->IsSystem || Target->IsSystem)
         return STATUS_INVALID_PARAMETER;
     MI_RW_ACQUIRE_EXCLUSIVE(&First->Lock);
@@ -607,33 +934,54 @@ MiCloneAddressSpace(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target)
         }
         while (Va < End)
         {
+            ULONG64 TableEnd = MiPtNextTableBoundary(Source, Va);
             PMI_PTE Slot = MiPtLookup(Source, Va, NULL);
-            MI_PTE Pte;
+            BOOLEAN TargetReady = FALSE;
+            BOOLEAN Clones;
             ULONG TargetTable;
 
+            if (TableEnd > End)
+                TableEnd = End;
             if (Slot == NULL)
             {
-                Va = MiPtNextTableBoundary(Source, Va);
+                Va = TableEnd;
                 continue;
             }
-            Pte = MiArchPteRead(Slot);
-            if (Pte != 0)
+            Clones = MiCloneIntersects(Source, Va, TableEnd);
+            for (; Va < TableEnd; Va += PAGE_SIZE, Slot++)
             {
-                if (MiPtEnsure(Target, Va, &TargetTable) == NULL)
+                MI_PTE Pte = MiArchPteRead(Slot);
+                PMI_CLONE_REF Existing;
+                BOOLEAN Copy;
+
+                if (Pte == 0)
+                    continue;
+                Existing = Clones ? MiCloneLookupPte(Source, Va, Pte) : NULL;
+                Copy = (Existing != NULL) || MiClonePrivatePte(Source->System, Pte);
+                if (!Copy && MiViewPteIsDefault(Source, Original, Va, Pte))
+                    continue;
+                if (!TargetReady)
                 {
-                    Status = STATUS_NO_MEMORY;
-                    goto Rollback;
+                    if (MiPtEnsure(Target, Va, &TargetTable) == NULL)
+                    {
+                        Status = STATUS_NO_MEMORY;
+                        goto Rollback;
+                    }
+                    TargetReady = TRUE;
                 }
-                if (MiCloneLookup(Source, Va) != NULL || MiClonePrivatePte(Source->System, Pte))
+                if (Copy)
                 {
-                    Status = MiClonePreparePage(Source, Va, Pte, &List);
+                    Status = MiClonePreparePage(Source, Va, Pte, Existing, &Plan);
                     if (!NT_SUCCESS(Status))
                         goto Rollback;
                 }
             }
-            Va += PAGE_SIZE;
         }
     }
+
+    Status = MiClonePlanRanges(Source, &Plan);
+    if (!NT_SUCCESS(Status))
+        goto Rollback;
 
     for (Node = MiVadFirst(&Target->VadRoot); Node != NULL; Node = MiVadNext(Node))
     {
@@ -645,46 +993,72 @@ MiCloneAddressSpace(PMI_ADDRESS_SPACE Source, PMI_ADDRESS_SPACE Target)
             continue;
         while (Va < End)
         {
+            ULONG64 TableEnd = MiPtNextTableBoundary(Source, Va);
             ULONG Table;
             PMI_PTE Slot = MiPtLookup(Source, Va, NULL);
             PMI_PTE Destination = MiPtLookup(Target, Va, &Table);
-            MI_PTE Pte;
+            BOOLEAN Clones;
 
+            if (TableEnd > End)
+                TableEnd = End;
             if (Slot == NULL || Destination == NULL)
             {
-                Va = MiPtNextTableBoundary(Source, Va);
+                Va = TableEnd;
                 continue;
             }
-            Pte = MiArchPteRead(Slot);
-            if (Pte != 0 && MiCloneLookup(Source, Va) == NULL && !MiClonePrivatePte(Source->System, Pte))
+            Clones = MiCloneIntersects(Source, Va, TableEnd);
+            for (; Va < TableEnd; Va += PAGE_SIZE, Slot++, Destination++)
             {
-                if (MiArchPteIsValid(Pte))
-                    Pte = MiSoftMake(MiSoftPrototype, MiViewPageProtection(Source, Original, Va, Pte), 0);
-                MiPtWrite(Target, Va, Destination, Table, Pte);
+                MI_PTE Pte = MiArchPteRead(Slot);
+
+                if ((Pte == 0) || ((Original->Type == MiVadPrivate) &&
+                                   (MiArchPteIsValid(Pte) || MiClonePrivatePte(Source->System, Pte) ||
+                                    (MiSoftKind(Pte) == MiSoftPrototype))))
+                {
+                    continue;
+                }
+                if (!(Clones && MiCloneLookupPte(Source, Va, Pte) != NULL) &&
+                    !MiClonePrivatePte(Source->System, Pte) && !MiViewPteIsDefault(Source, Original, Va, Pte))
+                {
+                    if (MiArchPteIsValid(Pte))
+                        Pte = MiSoftMake(MiSoftPrototype, MiViewPteProtection(Source, Original, Va, Pte), 0);
+                    MiPtWrite(Target, Va, Destination, Table, Pte);
+                }
             }
-            Va += PAGE_SIZE;
         }
     }
-    for (Work = List; Work != NULL; Work = Work->Next)
-        MiClonePublishPage(Source, Target, Work);
+    for (i = 0; i < Plan.RangeCount; i++)
+    {
+        if (!MiVadInsert(&((i < Plan.FirstSourceRange) ? Target : Source)->CloneRoot, &Plan.Ranges[i]->Node))
+            MI_ASSERT(FALSE);
+    }
+    for (i = 0; i < Plan.Count; i++)
+        MiClonePublishPage(Source, Target, &Plan, &Plan.Work[i], &VadCache);
+    if (Plan.Flushes > MI_CLONE_FLUSH_ALL)
+    {
+        MiArchTlbInvalidateAll(TRUE);
+    }
+    else
+    {
+        for (i = 0; i < Plan.Count; i++)
+        {
+            if (Plan.Work[i].Flush)
+                MiArchTlbInvalidate(Plan.Work[i].Va, 1, TRUE);
+        }
+    }
+    for (i = 0; i < Plan.RangeCount; i++)
+    {
+        if (Plan.Ranges[i]->Live == 0)
+            MiCloneRemoveRange((i < Plan.FirstSourceRange) ? Target : Source, Plan.Ranges[i]);
+        else
+            Plan.Ranges[i] = NULL;
+    }
     goto Done;
 
 Rollback:
     MiCloneRollback(Target);
 Done:
-    while ((Work = List) != NULL)
-    {
-        List = Work->Next;
-        if (Work->CopyFrame != MI_FRAME_INVALID)
-            MiPfnShareDecrement(&Source->System->Pfn, Work->CopyFrame, TRUE);
-        if (Work->Page != NULL)
-            MI_FREE(Work->Page);
-        if (Work->Source != NULL)
-            MI_FREE(Work->Source);
-        if (Work->Target != NULL)
-            MI_FREE(Work->Target);
-        MI_FREE(Work);
-    }
+    MiCloneFreePlan(Source->System, &Plan);
     MI_RW_RELEASE_EXCLUSIVE(&Second->Lock);
     MI_RW_RELEASE_EXCLUSIVE(&First->Lock);
     return Status;

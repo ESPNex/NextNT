@@ -317,7 +317,7 @@ CloneSmp(void)
     MI_ADDRESS_SPACE Space[4];
     pthread_t Threads[4];
     CLONE_THREAD Args[4];
-    ULONG64 Base = USER_BASE, Size = 128 * PAGE_SIZE;
+    ULONG64 Base = USER_BASE, Size = 128 * PAGE_SIZE, Copies = 0;
     ULONG i;
 
     WorldCreate(&World, 2048, 4, 4096);
@@ -344,7 +344,12 @@ CloneSmp(void)
         CHECK(pthread_join(Threads[i], NULL) == 0);
     for (i = 0; i < 4; i++)
     {
-        CHECK(Space[i].CloneRoot.NodeCount == 0 && Space[i].CopyOnWriteFaults == 128);
+        CHECK(Space[i].CloneRoot.NodeCount == 0 && Space[i].CopyOnWriteFaults <= 128);
+        Copies += (ULONG64)Space[i].CopyOnWriteFaults;
+    }
+    CHECK(Copies >= 3 * 128 && Copies <= 4 * 128);
+    for (i = 0; i < 4; i++)
+    {
         WorldAttach(&World, i, NULL);
         ProcessDestroy(&World, &Space[i]);
     }
@@ -352,9 +357,57 @@ CloneSmp(void)
     WorldDestroy(&World);
 }
 
+static void
+CloneLastOwnerKeepsPage(void)
+{
+    static TEST_WORLD World;
+    MI_ADDRESS_SPACE Parent, Child;
+    ULONG64 Base = USER_BASE, Size = 16 * PAGE_SIZE, Pa;
+    LONG64 Before;
+    ULONG i;
+    NTSTATUS Status;
+
+    WorldCreate(&World, 512, 2, 1024);
+    World.Machine.StrictTlb = TRUE;
+    ProcessCreate(&World, &Parent);
+    ProcessCreate(&World, &Child);
+    WorldAttach(&World, 0, &Parent);
+    WorldAttach(&World, 1, &Child);
+    CHECK(NT_SUCCESS(MiAllocateVirtualMemory(&Parent, &Base, &Size, MI_MEM_RESERVE | MI_MEM_COMMIT, MI_PROT_READWRITE)));
+    for (i = 0; i < 16; i++)
+        CHECK(NT_SUCCESS(UserWrite64(&World, 0, Base + i * PAGE_SIZE, 0x100 + i)));
+    CHECK(NT_SUCCESS(MiCloneAddressSpace(&Parent, &Child)));
+    CHECK(NT_SUCCESS(UserWrite64(&World, 1, Base, 0x200)));
+    CHECK(MI_ATOMIC_READ64(&Child.CopyOnWriteFaults) == 1);
+    CHECK(MiPtTranslate(&Parent, Base, &Pa, NULL));
+    Before = Parent.CopyOnWriteFaults;
+    CHECK(NT_SUCCESS(UserWrite64(&World, 0, Base, 0x300)));
+    CHECK(Parent.CopyOnWriteFaults == Before);
+    CHECK(UserRead64(&World, 1, Base, &Status) == 0x200);
+    CHECK(UserRead64(&World, 0, Base, &Status) == 0x300);
+    CHECK(WorldCheck(&World) == 0);
+
+    WorldAttach(&World, 1, NULL);
+    ProcessDestroy(&World, &Child);
+    WorldAttach(&World, 0, &Parent);
+    for (i = 1; i < 16; i++)
+        CHECK(NT_SUCCESS(UserWrite64(&World, 0, Base + i * PAGE_SIZE, 0x400 + i)));
+    CHECK(Parent.CopyOnWriteFaults == Before);
+    CHECK(Parent.CloneRoot.NodeCount == 0);
+    CHECK(MI_ATOMIC_READ64(&Parent.PrivatePages) == 16);
+    for (i = 1; i < 16; i++)
+        CHECK(UserRead64(&World, 0, Base + i * PAGE_SIZE, &Status) == 0x400 + i);
+    CHECK(WorldCheck(&World) == 0);
+    WorldAttach(&World, 0, NULL);
+    ProcessDestroy(&World, &Parent);
+    WorldExpectClean(&World, 512);
+    WorldDestroy(&World);
+}
+
 void
 TestClone(void)
 {
+    CloneLastOwnerKeepsPage();
     CloneBasic();
     CloneGenerations();
     ClonePagingAndMdl(0);

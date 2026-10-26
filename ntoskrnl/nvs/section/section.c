@@ -1316,11 +1316,22 @@ MiViewPageProtection(
     _In_ ULONG64 VirtualAddress,
     _In_ MI_PTE Pte)
 {
-    ULONG Protection;
     PMI_CLONE_REF Clone = MiCloneLookup(Space, VirtualAddress);
 
     if (Clone != NULL)
         return Clone->Protection;
+
+    return MiViewPteProtection(Space, Vad, VirtualAddress, Pte);
+}
+
+ULONG
+MiViewPteProtection(
+    _In_ PMI_ADDRESS_SPACE Space,
+    _In_ PMI_VAD Vad,
+    _In_ ULONG64 VirtualAddress,
+    _In_ MI_PTE Pte)
+{
+    ULONG Protection;
 
     if (MiArchPteIsValid(Pte))
         return MiPteProtection(Space, Pte);
@@ -1332,15 +1343,29 @@ MiViewPageProtection(
     return Protection;
 }
 
+BOOLEAN
+MiViewPteIsDefault(
+    _In_ PMI_ADDRESS_SPACE Space,
+    _In_ PMI_VAD Vad,
+    _In_ ULONG64 VirtualAddress,
+    _In_ MI_PTE Pte)
+{
+    if (Vad->Segment == NULL || (!MiArchPteIsValid(Pte) && MiSoftKind(Pte) != MiSoftPrototype))
+        return FALSE;
+
+    return MiViewPteProtection(Space, Vad, VirtualAddress, Pte) == MiViewDefaultProtection(Vad, VirtualAddress);
+}
+
 static
 VOID
-MiReleaseViewPage(
+MiReleaseViewPageEx(
     _Inout_ PMI_ADDRESS_SPACE Space,
     _In_ PMI_VAD Vad,
     _In_ ULONG64 VirtualAddress,
     _Inout_ PMI_PTE Slot,
     _In_ ULONG TableFrame,
-    _In_ MI_PTE NewValue)
+    _In_ MI_PTE NewValue,
+    _In_ BOOLEAN Clones)
 {
     PMI_SYSTEM System = Space->System;
     PMI_SEGMENT Segment = Vad->Segment;
@@ -1348,13 +1373,17 @@ MiReleaseViewPage(
     ULONG64 Page;
     ULONG Frame;
 
-    if (MiCloneDeletePage(Space, VirtualAddress, Slot, TableFrame, NewValue))
+    if (Clones && MiCloneDeletePage(Space, VirtualAddress, Slot, TableFrame, NewValue))
         return;
 
     if (!MiArchPteIsValid(Pte) || !(MI_PFN_FLAGS(&System->Pfn.Pfn[MiArchPteFrame(Pte)]) & MI_PFN_FLAG_PROTOTYPE))
     {
-        if (Pte != NewValue)
-            MiDeletePte(Space, VirtualAddress, Slot, TableFrame, NewValue);
+        if (Pte == NewValue)
+            return;
+        if (!MiArchPteIsValid(Pte) && MiSoftKind(Pte) == MiSoftPrototype)
+            MiPtWrite(Space, VirtualAddress, Slot, TableFrame, NewValue);
+        else
+            MiDeleteUnclonedPte(Space, VirtualAddress, Slot, TableFrame, NewValue);
 
         return;
     }
@@ -1378,6 +1407,19 @@ MiReleaseViewPage(
     }
 
     MI_ATOMIC_ADD64(&Space->ResidentPages, -1);
+}
+
+static
+VOID
+MiReleaseViewPage(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ PMI_VAD Vad,
+    _In_ ULONG64 VirtualAddress,
+    _Inout_ PMI_PTE Slot,
+    _In_ ULONG TableFrame,
+    _In_ MI_PTE NewValue)
+{
+    MiReleaseViewPageEx(Space, Vad, VirtualAddress, Slot, TableFrame, NewValue, TRUE);
 }
 
 static
@@ -1406,7 +1448,11 @@ MiTlbBatchFlush(
     {
         PMI_TLB_BATCH_ENTRY Entry = &Batch->Entry[i];
 
-        if (Entry->Segment != NULL)
+        if (Entry->Clone != NULL)
+        {
+            MiCloneReleaseBatched(Entry->Clone, Entry->Frame);
+        }
+        else if (Entry->Segment != NULL)
         {
             MiSegmentReleasePage(Entry->Segment, Entry->Proto, Entry->Frame);
         }
@@ -1449,13 +1495,15 @@ MiTlbBatchEnd(
     Space->TlbBatch = NULL;
 }
 
+static
 VOID
-MiTlbBatchAdd(
+MiTlbBatchInsert(
     _Inout_ PMI_ADDRESS_SPACE Space,
     _In_ ULONG64 VirtualAddress,
     _In_ ULONG Frame,
     _In_opt_ PMI_SEGMENT Segment,
     _In_opt_ PMI_PTE Proto,
+    _In_opt_ PMI_CLONE_PAGE Clone,
     _In_ BOOLEAN Private)
 {
     PMI_TLB_BATCH Batch = Space->TlbBatch;
@@ -1473,10 +1521,92 @@ MiTlbBatchAdd(
     Entry->Frame = Frame;
     Entry->Segment = Segment;
     Entry->Proto = Proto;
+    Entry->Clone = Clone;
     Entry->Private = Private;
 
     if (Batch->Count == MI_TLB_BATCH_SIZE)
         MiTlbBatchFlush(Space);
+}
+
+VOID
+MiTlbBatchAdd(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 VirtualAddress,
+    _In_ ULONG Frame,
+    _In_opt_ PMI_SEGMENT Segment,
+    _In_opt_ PMI_PTE Proto,
+    _In_ BOOLEAN Private)
+{
+    MiTlbBatchInsert(Space, VirtualAddress, Frame, Segment, Proto, NULL, Private);
+}
+
+VOID
+MiTlbBatchAddClone(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 VirtualAddress,
+    _In_ ULONG Frame,
+    _Inout_ PMI_CLONE_PAGE Page)
+{
+    MiTlbBatchInsert(Space, VirtualAddress, Frame, NULL, NULL, Page, FALSE);
+}
+
+#define MI_FAULT_AROUND_PAGES 16
+
+static
+VOID
+MiPrototypeFaultAround(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ PMI_VAD Vad,
+    _In_ ULONG64 VirtualAddress,
+    _Inout_ PMI_PTE Slot,
+    _In_ ULONG TableFrame)
+{
+    PMI_SEGMENT Segment = Vad->Segment;
+    ULONG64 Start = VirtualAddress & ~(((ULONG64)MI_FAULT_AROUND_PAGES << PAGE_SHIFT) - 1);
+    ULONG64 End = Start + ((ULONG64)MI_FAULT_AROUND_PAGES << PAGE_SHIFT);
+    ULONG64 TableStart = MiPtNextTableBoundary(Space, VirtualAddress) - (1ULL << Space->System->Arch->Level[1].Shift);
+    ULONG64 Va;
+
+    if (Start < MI_VAD_START(Vad))
+        Start = MI_VAD_START(Vad);
+    if (Start < TableStart)
+        Start = TableStart;
+    if (End > MI_VAD_END(Vad))
+        End = MI_VAD_END(Vad);
+
+    for (Va = Start; Va < End; Va += PAGE_SIZE)
+    {
+        PMI_PTE Neighbor = Slot + ((LONG64)(Va - VirtualAddress) >> PAGE_SHIFT);
+        ULONG64 Page = Vad->SegmentPageOffset + ((Va - MI_VAD_START(Vad)) >> PAGE_SHIFT);
+        ULONG Protection;
+        PMI_PTE Proto;
+        MI_PTE ProtoPte;
+        ULONG Frame;
+
+        if (Va == VirtualAddress || MiArchPteRead(Neighbor) != 0 || Page >= MiSegmentPages(Segment) ||
+            !MiViewPageCommitted(Vad, Va))
+        {
+            continue;
+        }
+
+        Protection = MiViewDefaultProtection(Vad, Va);
+        if (!MI_PROT_IS_ACCESSIBLE(Protection) || (Protection & MI_PROT_NOACCESS) == MI_PROT_GUARD ||
+            (MI_PROT_IS_EXECUTE(Protection) && Space->System->Arch->RequiresExplicitIcacheSync))
+        {
+            continue;
+        }
+
+        Proto = MiSegmentProto(Segment, Page);
+        ProtoPte = MiArchPteRead(Proto);
+        Frame = (ULONG)MiSoftValue(ProtoPte);
+        if (MiSoftKind(ProtoPte) != MiSoftResident ||
+            !MiPfnShareIncrementIfMapped(&Space->System->Pfn, Frame, Proto, ProtoPte))
+        {
+            continue;
+        }
+
+        MiMakePageValid(Space, Va, Neighbor, TableFrame, Frame, Protection, FALSE);
+    }
 }
 
 NTSTATUS
@@ -1540,6 +1670,8 @@ MiResolvePrototypeFault(
     Status = MiMakePageValid(Space, VirtualAddress, Slot, TableFrame, Frame, Protection,
                              (BOOLEAN)(Access == MiFaultWrite && MI_PROT_IS_WRITABLE(Protection)));
     MI_ATOMIC_ADD64(&Space->PrototypeFaults, 1);
+    if (NT_SUCCESS(Status) && (Access != MiFaultWrite) && !Space->IsSystem)
+        MiPrototypeFaultAround(Space, Vad, VirtualAddress, Slot, TableFrame);
     return Status;
 }
 
@@ -1787,6 +1919,7 @@ MiDetachMappedView(
         ULONG64 TableEnd = MiPtNextTableBoundary(Space, Va);
         ULONG TableFrame;
         PMI_PTE Slot = MiPtLookup(Space, Va, &TableFrame);
+        BOOLEAN Clones;
 
         if (TableEnd > End)
             TableEnd = End;
@@ -1796,10 +1929,11 @@ MiDetachMappedView(
             continue;
         }
 
+        Clones = MiCloneIntersects(Space, Va, TableEnd);
         for (; Va < TableEnd; Va += PAGE_SIZE, Slot++)
         {
             if (MiArchPteRead(Slot) != 0)
-                MiReleaseViewPage(Space, Vad, Va, Slot, TableFrame, 0);
+                MiReleaseViewPageEx(Space, Vad, Va, Slot, TableFrame, 0, Clones);
         }
         if (!Deferred)
         {

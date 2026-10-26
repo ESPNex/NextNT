@@ -90,12 +90,21 @@ MiDeletePte(
     _In_ ULONG TableFrame,
     _In_ MI_PTE NewValue)
 {
+    if (!MiCloneDeletePage(Space, VirtualAddress, Slot, TableFrame, NewValue))
+        MiDeleteUnclonedPte(Space, VirtualAddress, Slot, TableFrame, NewValue);
+}
+
+VOID
+MiDeleteUnclonedPte(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 VirtualAddress,
+    _Inout_ PMI_PTE Slot,
+    _In_ ULONG TableFrame,
+    _In_ MI_PTE NewValue)
+{
     PMI_SYSTEM System = Space->System;
     ULONG64 SlotAddress = MiPtSlotAddress(Slot, TableFrame, VirtualAddress);
     MI_PTE Pte = MiArchPteRead(Slot);
-
-    if (MiCloneDeletePage(Space, VirtualAddress, Slot, TableFrame, NewValue))
-        return;
 
     if (Pte == 0 && NewValue == 0)
         return;

@@ -31,12 +31,26 @@ MiProtectionIsValid(
 }
 
 static
+ULONG
+MiStatusViewProtection(
+    _In_ PMI_ADDRESS_SPACE Space,
+    _In_ PMI_VAD Vad,
+    _In_ ULONG64 VirtualAddress,
+    _In_ BOOLEAN Clones,
+    _In_ MI_PTE Pte)
+{
+    return Clones ? MiViewPageProtection(Space, Vad, VirtualAddress, Pte)
+                  : MiViewPteProtection(Space, Vad, VirtualAddress, Pte);
+}
+
+static
 VOID
 MiPageStatusLocked(
     _In_ PMI_ADDRESS_SPACE Space,
     _In_ PMI_VAD Vad,
     _In_ ULONG64 VirtualAddress,
     _In_ MI_PTE Pte,
+    _In_ BOOLEAN Clones,
     _Out_ PBOOLEAN Committed,
     _Out_ PULONG Protection)
 {
@@ -53,7 +67,7 @@ MiPageStatusLocked(
         MI_PTE Entry = Large != NULL ? MiArchPteRead(Large) : 0;
 
         *Committed = TRUE;
-        *Protection = MiArchPteIsValid(Entry) ? MiViewPageProtection(Space, Vad, VirtualAddress, Entry)
+        *Protection = MiArchPteIsValid(Entry) ? MiStatusViewProtection(Space, Vad, VirtualAddress, Clones, Entry)
                                             : MiSoftProtection(Entry);
         return;
     }
@@ -61,7 +75,7 @@ MiPageStatusLocked(
     if (MiArchPteIsValid(Pte) && MI_VAD_IS_DIRECT(Vad))
     {
         *Committed = TRUE;
-        *Protection = MiViewPageProtection(Space, Vad, VirtualAddress, Pte);
+        *Protection = MiStatusViewProtection(Space, Vad, VirtualAddress, Clones, Pte);
         return;
     }
 
@@ -72,7 +86,7 @@ MiPageStatusLocked(
         KIRQL OldIrql = MiPfnLock(&Space->System->Pfn, Frame);
 
         *Committed = TRUE;
-        *Protection = (MI_PFN_FLAGS(Entry) & MI_PFN_FLAG_PROTOTYPE) ? MiViewPageProtection(Space, Vad, VirtualAddress, Pte)
+        *Protection = (MI_PFN_FLAGS(Entry) & MI_PFN_FLAG_PROTOTYPE) ? MiStatusViewProtection(Space, Vad, VirtualAddress, Clones, Pte)
                                                              : MiSoftProtection(Entry->OriginalPte);
         MiPfnUnlock(&Space->System->Pfn, Frame, OldIrql);
         return;
@@ -83,7 +97,7 @@ MiPageStatusLocked(
         *Committed = (BOOLEAN)(!MI_VAD_IS_DIRECT(Vad) && (Vad->Type != MiVadPrivate || Vad->MemCommit) &&
                                (Vad->Type == MiVadPrivate || MiViewPageCommitted(Vad, VirtualAddress)));
         *Protection = !*Committed ? 0 : (Vad->Type != MiVadPrivate)
-                                            ? MiViewPageProtection(Space, Vad, VirtualAddress, Pte)
+                                            ? MiStatusViewProtection(Space, Vad, VirtualAddress, Clones, Pte)
                                             : Vad->Protection;
         return;
     }
@@ -102,6 +116,34 @@ MiPageStatusLocked(
 
 static
 VOID
+MiPageStatusAt(
+    _In_ PMI_ADDRESS_SPACE Space,
+    _In_ PMI_VAD Vad,
+    _In_ ULONG64 VirtualAddress,
+    _In_opt_ PMI_PTE Slot,
+    _In_ ULONG TableFrame,
+    _In_ BOOLEAN Shared,
+    _In_ BOOLEAN Clones,
+    _Out_ PBOOLEAN Committed,
+    _Out_ PULONG Protection)
+{
+    MI_PTE Pte = (Slot != NULL) ? MiArchPteRead(Slot) : 0;
+
+    if (Shared && MiArchPteIsValid(Pte) && !MI_VAD_IS_DIRECT(Vad))
+    {
+        KIRQL OldIrql = MiPfnLock(&Space->System->Pfn, TableFrame);
+
+        MiPageStatusLocked(Space, Vad, VirtualAddress, MiArchPteRead(Slot), Clones, Committed, Protection);
+        MiPfnUnlock(&Space->System->Pfn, TableFrame, OldIrql);
+    }
+    else
+    {
+        MiPageStatusLocked(Space, Vad, VirtualAddress, Pte, Clones, Committed, Protection);
+    }
+}
+
+static
+VOID
 MiPageStatus(
     _In_ PMI_ADDRESS_SPACE Space,
     _In_ PMI_VAD Vad,
@@ -110,21 +152,10 @@ MiPageStatus(
     _Out_ PBOOLEAN Committed,
     _Out_ PULONG Protection)
 {
-    ULONG TableFrame;
+    ULONG TableFrame = 0;
     PMI_PTE Slot = MiPtLookup(Space, VirtualAddress, &TableFrame);
-    MI_PTE Pte = (Slot != NULL) ? MiArchPteRead(Slot) : 0;
 
-    if (Shared && MiArchPteIsValid(Pte) && !MI_VAD_IS_DIRECT(Vad))
-    {
-        KIRQL OldIrql = MiPfnLock(&Space->System->Pfn, TableFrame);
-
-        MiPageStatusLocked(Space, Vad, VirtualAddress, MiArchPteRead(Slot), Committed, Protection);
-        MiPfnUnlock(&Space->System->Pfn, TableFrame, OldIrql);
-    }
-    else
-    {
-        MiPageStatusLocked(Space, Vad, VirtualAddress, Pte, Committed, Protection);
-    }
+    MiPageStatusAt(Space, Vad, VirtualAddress, Slot, TableFrame, Shared, TRUE, Committed, Protection);
 }
 
 static
@@ -1320,6 +1351,7 @@ MiQueryVirtualMemory(
 {
     ULONG64 Start = MI_PAGE_ALIGN_DOWN(Address);
     BOOLEAN Committed;
+    BOOLEAN Uniform;
     ULONG Protection;
     PMI_VAD Vad;
     ULONG64 Va;
@@ -1334,15 +1366,19 @@ MiQueryVirtualMemory(
     Vad = MiVadLocate(Space, Start);
     if (Vad == NULL)
     {
-        PMI_VAD_NODE Node;
+        PMI_VAD_NODE Node = Space->VadRoot.Root;
         ULONG64 NextStart = Space->HighestVa + 1;
 
-        for (Node = MiVadFirst(&Space->VadRoot); Node != NULL; Node = MiVadNext(Node))
+        while (Node != NULL)
         {
             if ((Node->StartingVpn << PAGE_SHIFT) > Start)
             {
                 NextStart = Node->StartingVpn << PAGE_SHIFT;
-                break;
+                Node = Node->Left;
+            }
+            else
+            {
+                Node = Node->Right;
             }
         }
 
@@ -1363,28 +1399,39 @@ MiQueryVirtualMemory(
                          Vad->Type == MiVadAwe || Vad->Type == MiVadRotate || Vad->LockedPages) ? MI_MEM_PRIVATE
                                                     : ((Vad->Type == MiVadImage) ? MI_MEM_IMAGE : MI_MEM_MAPPED);
 
+    Uniform = (BOOLEAN)(Vad->Type != MiVadImage && (Vad->Segment == NULL || !Vad->Segment->Reserved));
     Va = Start + PAGE_SIZE;
     while (Va < MI_VAD_END(Vad))
     {
-        BOOLEAN NextCommitted;
-        ULONG NextProtection;
+        ULONG64 TableEnd = MiPtNextTableBoundary(Space, Va);
+        ULONG TableFrame = 0;
+        PMI_PTE Slot = MiPtLookup(Space, Va, &TableFrame);
+        BOOLEAN Clones;
 
-        MiPageStatus(Space, Vad, Va, TRUE, &NextCommitted, &NextProtection);
-        if (NextCommitted != Committed || NextProtection != Protection)
-            break;
-
-        if (Vad->Type != MiVadImage && (Vad->Segment == NULL || !Vad->Segment->Reserved) &&
-            MiPtLookup(Space, Va, NULL) == NULL)
+        if (TableEnd > MI_VAD_END(Vad))
+            TableEnd = MI_VAD_END(Vad);
+        Clones = MiCloneIntersects(Space, Va, TableEnd);
+        for (; Va < TableEnd; Va += PAGE_SIZE)
         {
-            ULONG64 Next = MiPtNextTableBoundary(Space, Va);
+            BOOLEAN NextCommitted;
+            ULONG NextProtection;
 
-            Va = (Next < MI_VAD_END(Vad)) ? Next : MI_VAD_END(Vad);
-            continue;
+            MiPageStatusAt(Space, Vad, Va, Slot, TableFrame, TRUE, Clones, &NextCommitted, &NextProtection);
+            if (NextCommitted != Committed || NextProtection != Protection)
+                goto Done;
+            if (Slot != NULL)
+            {
+                Slot++;
+            }
+            else if (Uniform)
+            {
+                Va = TableEnd;
+                break;
+            }
         }
-
-        Va += PAGE_SIZE;
     }
 
+Done:
     Information->RegionSize = Va - Start;
     MI_RW_RELEASE_SHARED(&Space->Lock);
     return STATUS_SUCCESS;
