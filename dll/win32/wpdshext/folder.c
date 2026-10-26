@@ -725,7 +725,7 @@ static HRESULT WINAPI folder_SetNameOf(IShellFolder2 *iface, HWND hwnd, PCUITEMI
     const wpd_item *item = wpd_item_from_pidl(pidl);
     IPortableDeviceValues *values = NULL, *results = NULL;
     PIDLIST_ABSOLUTE old_pidl, new_pidl;
-    const WCHAR *extension, *current;
+    const WCHAR *extension;
     WCHAR full[MAX_PATH];
     wpd_device *device;
     PITEMID_CHILD item_new = NULL;
@@ -747,8 +747,7 @@ static HRESULT WINAPI folder_SetNameOf(IShellFolder2 *iface, HWND hwnd, PCUITEMI
     lstrcpynW(full, name, ARRAY_SIZE(full));
     if (item->kind == WPD_KIND_FILE)
     {
-        current = wpd_item_string(item, WPD_STR_FILE);
-        extension = PathFindExtensionW(current);
+        extension = PathFindExtensionW(wpd_item_string(item, WPD_STR_FILE));
         if (*extension && lstrcmpiW(PathFindExtensionW(name), extension) && hide_extension() && known_extension(extension))
             StrCatBuffW(full, extension, ARRAY_SIZE(full));
     }
@@ -760,18 +759,23 @@ static HRESULT WINAPI folder_SetNameOf(IShellFolder2 *iface, HWND hwnd, PCUITEMI
     else
     {
         IPortableDeviceValues_SetStringValue(values, &WPD_OBJECT_ORIGINAL_FILE_NAME, full);
+        IPortableDeviceValues_SetStringValue(values, &WPD_OBJECT_NAME, name);
         hr = IPortableDeviceProperties_SetValues(device->properties, wpd_item_string(item, WPD_STR_ID), values, &results);
     }
     IPortableDeviceValues_Release(values);
     if (results)
     {
-        HRESULT item_hr = S_OK;
+        HRESULT item_hr = S_OK, name_hr = S_OK;
 
         IPortableDeviceValues_GetErrorValue(results, item->kind == WPD_KIND_DEVICE ? &WPD_DEVICE_FRIENDLY_NAME :
                                             &WPD_OBJECT_ORIGINAL_FILE_NAME, &item_hr);
+        if (item->kind != WPD_KIND_DEVICE)
+            IPortableDeviceValues_GetErrorValue(results, &WPD_OBJECT_NAME, &name_hr);
         IPortableDeviceValues_Release(results);
         if (FAILED(item_hr))
             hr = item_hr;
+        else if (FAILED(name_hr))
+            hr = name_hr;
     }
     if (FAILED(hr))
         return hr;
