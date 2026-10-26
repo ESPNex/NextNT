@@ -353,6 +353,23 @@ START_TEST(ShellOps)
         trace("rename: SetNameOf back with an enumerated item hr 0x%08lX\n", hr);
         ILFree(Item);
     }
+    Item = FindChild(Storage, L"renamed", FALSE);
+    if (Item)
+    {
+        hr = IShellFolder_SetNameOf(Storage, NULL, Item, L"another", SHGDN_INFOLDER | SHGDN_FOREDITING, NULL);
+        trace("rename: SetNameOf to a new name hr 0x%08lX\n", hr);
+        ILFree(Item);
+    }
+    Item = FindChild(Storage, L"hello", FALSE);
+    if (Item)
+    {
+        hr = IShellFolder_SetNameOf(Storage, NULL, Item, L"greeting", SHGDN_INFOLDER | SHGDN_FOREDITING, NULL);
+        trace("rename: SetNameOf of an untouched item hr 0x%08lX\n", hr);
+        ILFree(Item);
+    }
+    PumpWait(2000);
+    DumpChild(Storage, L"another", "rename");
+    DumpChild(Storage, L"greeting", "rename");
     PumpWait(2000);
     DumpChild(Storage, L"renamed", "rename");
     DumpChild(Storage, L"notes", "rename");
