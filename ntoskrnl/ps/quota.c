@@ -1074,7 +1074,8 @@ PspSetQuotaLimits(
 
     _SEH2_TRY
     {
-        ProbeForRead(QuotaLimits, QuotaLimitsLength, sizeof(ULONG));
+        if (PreviousMode != KernelMode)
+            ProbeForRead(QuotaLimits, QuotaLimitsLength, sizeof(ULONG));
 
         /* Check if we have the basic or extended structure */
         if (QuotaLimitsLength == sizeof(QUOTA_LIMITS))
