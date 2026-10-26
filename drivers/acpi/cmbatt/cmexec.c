@@ -139,7 +139,7 @@ CmBattSendDownStreamIrp(IN PDEVICE_OBJECT DeviceObject,
     }
 
     /* Check if caller wanted output */
-    if (OutputBuffer)
+    if (NT_SUCCESS(Status) && OutputBuffer)
     {
         /* Make sure it's valid ACPI output buffer */
         if ((OutputBuffer->Signature != ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) ||
