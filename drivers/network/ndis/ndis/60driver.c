@@ -1173,7 +1173,10 @@ Ndis6AddDevice(
 
     DriverBlock = Ndis6FindDriverBlock(DriverObject);
     if (DriverBlock == NULL)
+    {
+        DbgPrint("NDIS6: AddDevice found no driver block\n");
         return STATUS_DEVICE_NOT_READY;
+    }
 
     /* Hybrid driver: chain KMDF's AddDevice first so its FDO attaches to
      * the PDO; ours then lands on top and IRPs flow NDIS → KMDF → bus. */
@@ -1187,11 +1190,15 @@ Ndis6AddDevice(
 
     NdisStatus = Ndis6CreateLogicalAdapter(DriverBlock, PhysicalDeviceObject, &Adapter);
     if (!NT_SUCCESS(NdisStatus))
+    {
+        DbgPrint("NDIS6: AddDevice could not create the adapter 0x%08lx\n", (ULONG)NdisStatus);
         return NdisStatus;
+    }
 
     NdisStatus = Ndis6CallMiniportAddDevice(Adapter);
     if (NdisStatus != NDIS_STATUS_SUCCESS)
     {
+        DbgPrint("NDIS6: MiniportAddDevice failed 0x%08lx\n", (ULONG)NdisStatus);
         Ndis6DestroyLogicalAdapter(Adapter);
         return (NTSTATUS)NdisStatus;
     }
@@ -1244,7 +1251,10 @@ Ndis6DispatchPnp(
                 ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
                 NdisStatus = Ext->DriverBlock->PnpCharacteristics.MiniportStartDeviceHandler(Ext->MiniportAddDeviceContext, Irp);
                 if (NdisStatus != NDIS_STATUS_SUCCESS)
+                {
+                    DbgPrint("NDIS6: MiniportStartDevice failed 0x%08lx\n", (ULONG)NdisStatus);
                     return Ndis6CompleteIrp(Irp, (NTSTATUS)NdisStatus);
+                }
             }
 
             /* ---------------------------------------------------------
@@ -1255,7 +1265,10 @@ Ndis6DispatchPnp(
              * --------------------------------------------------------- */
             Status = Ndis6ForwardPnpIrpAndWait(LowerDevice, Irp);
             if (!NT_SUCCESS(Status))
+            {
+                DbgPrint("NDIS6: lower START failed 0x%08lx\n", (ULONG)Status);
                 return Ndis6CompleteIrp(Irp, Status);
+            }
 
             /* Save resources AFTER PCI has run. The resource lists live
              * in the incoming stack location. Don't deep-copy; PnP
@@ -1293,9 +1306,14 @@ Ndis6DispatchPnp(
              * run on REMOVE. If it fails, the driver has cleaned up
              * internally — we must NOT call HaltEx (MS DDK contract). */
             if (Ndis6HasMandatoryKeywords(Adapter->NdisMiniportBlock.PhysicalDeviceObject))
+            {
                 NdisStatus = Ndis6CallMiniportInitializeEx(Adapter);
+            }
             else
+            {
+                DbgPrint("NDIS6: adapter registry lacks *IfType, *MediaType or *PhysicalMediaType\n");
                 NdisStatus = NDIS_STATUS_FAILURE;
+            }
             if (NdisStatus == NDIS_STATUS_SUCCESS)
             {
                 if (Ext)
