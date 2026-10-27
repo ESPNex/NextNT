@@ -392,6 +392,9 @@ extern HRESULT node_get_xml(struct domnode *, BSTR*);
 extern HRESULT node_clone(struct domnode*,VARIANT_BOOL,IXMLDOMNode**);
 extern HRESULT node_get_prefix(struct domnode*,BSTR*);
 extern HRESULT node_get_base_name(struct domnode*,BSTR*);
+#ifdef __REACTOS__
+extern HRESULT node_get_declaration_xml(const struct domnode *node, BSTR *p);
+#endif
 extern HRESULT node_get_namespaceURI(struct domnode*, BSTR *);
 extern HRESULT node_remove_child(struct domnode*,IXMLDOMNode*,IXMLDOMNode**);
 extern HRESULT node_has_childnodes(const struct domnode*,VARIANT_BOOL*);

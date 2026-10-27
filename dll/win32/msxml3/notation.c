@@ -352,9 +352,17 @@ static HRESULT WINAPI domnotation_put_dataType(IXMLDOMNotation *iface, BSTR p)
 
 static HRESULT WINAPI domnotation_get_xml(IXMLDOMNotation *iface, BSTR *p)
 {
+#ifdef __REACTOS__
+    struct domnotation *notation = impl_from_IXMLDOMNotation(iface);
+
+    TRACE("%p, %p.\n", iface, p);
+
+    return node_get_declaration_xml(notation->node, p);
+#else
     FIXME("%p, %p.\n", iface, p);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI domnotation_transformNode(IXMLDOMNotation *iface, IXMLDOMNode *node, BSTR *p)

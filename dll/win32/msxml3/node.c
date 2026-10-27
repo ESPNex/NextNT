@@ -1032,6 +1032,75 @@ HRESULT domnode_get_attribute(const struct domnode *node, const WCHAR *name, str
     return S_FALSE;
 }
 
+#ifdef __REACTOS__
+static const WCHAR *domnode_get_declaration_value(const struct domnode *node, const WCHAR *name)
+{
+    struct domnode *attr, *text;
+
+    if (domnode_get_attribute(node, name, &attr) != S_OK)
+        return NULL;
+    text = domnode_get_first_child(attr);
+    return text && text->data ? text->data : L"";
+}
+
+static void string_append_quoted(struct string_buffer *buffer, const WCHAR *str)
+{
+    const WCHAR *quote = wcschr(str, '"') ? L"'" : L"\"";
+
+    string_append(buffer, quote, 1);
+    string_append(buffer, str, wcslen(str));
+    string_append(buffer, quote, 1);
+}
+
+HRESULT node_get_declaration_xml(const struct domnode *node, BSTR *p)
+{
+    const WCHAR *pubid = domnode_get_declaration_value(node, L"PUBLIC");
+    const WCHAR *sysid = domnode_get_declaration_value(node, L"SYSTEM");
+    const WCHAR *ndata = domnode_get_declaration_value(node, L"NDATA");
+    struct string_buffer buffer;
+
+    if (!p)
+        return E_INVALIDARG;
+
+    string_buffer_init(&buffer);
+    if (node->type == NODE_NOTATION)
+        string_append(&buffer, L"<!NOTATION ", 11);
+    else
+        string_append(&buffer, L"<!ENTITY ", 9);
+    string_append(&buffer, node->qname, SysStringLen(node->qname));
+
+    if (pubid)
+    {
+        string_append(&buffer, L" PUBLIC ", 8);
+        string_append_quoted(&buffer, pubid);
+        if (sysid)
+        {
+            string_append(&buffer, L" ", 1);
+            string_append_quoted(&buffer, sysid);
+        }
+    }
+    else if (sysid)
+    {
+        string_append(&buffer, L" SYSTEM ", 8);
+        string_append_quoted(&buffer, sysid);
+    }
+    else if (node->type == NODE_ENTITY)
+    {
+        string_append(&buffer, L" ", 1);
+        string_append_quoted(&buffer, node->data ? node->data : L"");
+    }
+
+    if (ndata)
+    {
+        string_append(&buffer, L" NDATA ", 7);
+        string_append(&buffer, ndata, wcslen(ndata));
+    }
+
+    string_append(&buffer, L">", 1);
+    return string_to_bstr(&buffer, p);
+}
+#endif
+
 static bool is_same_uri(const struct domnode *node, const WCHAR *uri)
 {
     if (node->uri)

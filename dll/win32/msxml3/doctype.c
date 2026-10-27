@@ -259,9 +259,15 @@ static HRESULT WINAPI domdoctype_replaceChild(IXMLDOMDocumentType *iface, IXMLDO
 static HRESULT WINAPI domdoctype_removeChild(IXMLDOMDocumentType *iface, IXMLDOMNode *node,
         IXMLDOMNode **oldNode)
 {
+#ifdef __REACTOS__
+    TRACE("%p, %p, %p.\n", iface, node, oldNode);
+
+    return E_FAIL;
+#else
     FIXME("%p, %p, %p: stub\n", iface, node, oldNode);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI domdoctype_appendChild(IXMLDOMDocumentType *iface, IXMLDOMNode *newNode,
@@ -413,9 +419,17 @@ static HRESULT WINAPI domdoctype_get_prefix(IXMLDOMDocumentType *iface, BSTR *pr
 
 static HRESULT WINAPI domdoctype_get_baseName(IXMLDOMDocumentType *iface, BSTR *name)
 {
+#ifdef __REACTOS__
+    domdoctype *doctype = impl_from_IXMLDOMDocumentType(iface);
+
+    TRACE("%p, %p.\n", iface, name);
+
+    return node_get_base_name(doctype->node, name);
+#else
     FIXME("%p, %p: stub\n", iface, name);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI domdoctype_transformNodeToObject(IXMLDOMDocumentType *iface, IXMLDOMNode *node, VARIANT var1)

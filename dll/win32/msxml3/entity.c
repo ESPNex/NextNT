@@ -354,9 +354,17 @@ static HRESULT WINAPI domentity_put_dataType(IXMLDOMEntity *iface, BSTR p)
 
 static HRESULT WINAPI domentity_get_xml(IXMLDOMEntity *iface, BSTR *p)
 {
+#ifdef __REACTOS__
+    struct domentity *entity = impl_from_IXMLDOMEntity(iface);
+
+    TRACE("%p, %p.\n", iface, p);
+
+    return node_get_declaration_xml(entity->node, p);
+#else
     FIXME("%p, %p.\n", iface, p);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI domentity_transformNode(IXMLDOMEntity *iface, IXMLDOMNode *node, BSTR *p)
