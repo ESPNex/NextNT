@@ -3304,7 +3304,10 @@ co_WinPosShowWindow(PWND Wnd, INT Cmd)
    {
       if ( Wnd == pti->MessageQueue->spwndActive && pti->MessageQueue == IntGetFocusMessageQueue()  )
       {
-          if (UserIsDesktopWindow(Wnd->spwndParent))
+          PWND Owner = (Cmd == SW_HIDE && (Wnd->style & WS_POPUP) && Wnd->spwndOwner) ?
+                       UserGetAncestor(Wnd->spwndOwner, GA_ROOT) : NULL;
+
+          if (UserIsDesktopWindow(Wnd->spwndParent) && !can_activate_window(Owner))
           {
               if (!ActivateOtherWindowMin(Wnd))
               {
