@@ -31,7 +31,58 @@ IopCheckResourceDescriptor(IN PCM_PARTIAL_RESOURCE_DESCRIPTOR ResDesc, IN PCM_RE
 
 #define IOP_HAL_RESERVED_VECTOR_BASE 0x800
 
-static ULONG IopNextMessageInterruptToken = CM_RESOURCE_INTERRUPT_MESSAGE_TOKEN;
+#define IOP_MESSAGE_TOKEN_COUNT 2048
+static RTL_BITMAP IopMessageTokenBitmap;
+static ULONG IopMessageTokenBuffer[IOP_MESSAGE_TOKEN_COUNT / 32];
+static ULONG IopNextOverflowMessageToken = CM_RESOURCE_INTERRUPT_MESSAGE_TOKEN - IOP_MESSAGE_TOKEN_COUNT;
+static KSPIN_LOCK IopMessageTokenLock;
+
+static
+ULONG
+IopAllocateMessageToken(VOID)
+{
+    KIRQL OldIrql;
+    ULONG Index, Token;
+
+    KeAcquireSpinLock(&IopMessageTokenLock, &OldIrql);
+    if (!IopMessageTokenBitmap.Buffer)
+        RtlInitializeBitMap(&IopMessageTokenBitmap, IopMessageTokenBuffer, IOP_MESSAGE_TOKEN_COUNT);
+    Index = RtlFindClearBitsAndSet(&IopMessageTokenBitmap, 1, 0);
+    if (Index != MAXULONG)
+        Token = CM_RESOURCE_INTERRUPT_MESSAGE_TOKEN - Index;
+    else
+        Token = IopNextOverflowMessageToken--;
+    KeReleaseSpinLock(&IopMessageTokenLock, OldIrql);
+    return Token;
+}
+
+VOID
+IopReleaseMessageTokens(
+    _In_opt_ PCM_RESOURCE_LIST ResourceList)
+{
+    PCM_PARTIAL_RESOURCE_LIST Partial;
+    ULONG i, Index;
+    KIRQL OldIrql;
+
+    if (!ResourceList || !ResourceList->Count)
+        return;
+
+    Partial = &ResourceList->List[0].PartialResourceList;
+    KeAcquireSpinLock(&IopMessageTokenLock, &OldIrql);
+    for (i = 0; i < Partial->Count; i++)
+    {
+        if (Partial->PartialDescriptors[i].Type != CmResourceTypeInterrupt ||
+            !(Partial->PartialDescriptors[i].Flags & CM_RESOURCE_INTERRUPT_MESSAGE))
+        {
+            continue;
+        }
+
+        Index = CM_RESOURCE_INTERRUPT_MESSAGE_TOKEN - Partial->PartialDescriptors[i].u.MessageInterrupt.Raw.Vector;
+        if (IopMessageTokenBitmap.Buffer && Index < IOP_MESSAGE_TOKEN_COUNT)
+            RtlClearBits(&IopMessageTokenBitmap, Index, 1);
+    }
+    KeReleaseSpinLock(&IopMessageTokenLock, OldIrql);
+}
 
 FORCEINLINE
 PIO_RESOURCE_LIST
@@ -1892,7 +1943,7 @@ IopTranslateDeviceResources(
                {
                    DescriptorRaw->u.MessageInterrupt.Raw.Reserved = 0;
                    DescriptorRaw->u.MessageInterrupt.Raw.MessageCount = 1;
-                   DescriptorRaw->u.MessageInterrupt.Raw.Vector = IopNextMessageInterruptToken--;
+                   DescriptorRaw->u.MessageInterrupt.Raw.Vector = IopAllocateMessageToken();
                    DescriptorRaw->u.MessageInterrupt.Raw.Affinity = DescriptorTranslated->u.Interrupt.Affinity;
                    break;
                }

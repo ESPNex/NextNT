@@ -2389,6 +2389,7 @@ IopSendRemoveDevice(IN PDEVICE_OBJECT DeviceObject)
     {
         ASSERT(DeviceNode->ResourceListTranslated);
         IopReleaseNewMessageVectors(DeviceNode->ResourceListTranslated, 0);
+        IopReleaseMessageTokens(DeviceNode->ResourceList);
         DeviceNode->ResourceList->Count = 0;
         DeviceNode->ResourceListTranslated->Count = 0;
         IopUpdateResourceMapForPnPDevice(DeviceNode);

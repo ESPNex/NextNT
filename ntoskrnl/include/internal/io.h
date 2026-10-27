@@ -839,6 +839,10 @@ IopReleaseNewMessageVectors(
     _In_opt_ PCM_RESOURCE_LIST ResourceList,
     _In_ ULONG OldCount);
 
+VOID
+IopReleaseMessageTokens(
+    _In_opt_ PCM_RESOURCE_LIST ResourceList);
+
 BOOLEAN
 IopResDbCheckDescriptor(_In_ PCM_PARTIAL_RESOURCE_DESCRIPTOR Candidate, _In_opt_ PDEVICE_NODE CandidateOwner, _Out_opt_ PCM_PARTIAL_RESOURCE_DESCRIPTOR Conflicting);
 
