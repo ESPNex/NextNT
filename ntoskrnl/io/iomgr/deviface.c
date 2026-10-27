@@ -1390,6 +1390,10 @@ IoGetDeviceInterfaces(IN CONST GUID *InterfaceClassGuid,
                         goto NextReferenceString;
                     }
                 }
+                else if (Status == STATUS_OBJECT_NAME_NOT_FOUND)
+                {
+                    goto NextReferenceString;
+                }
                 else
                 {
                     DPRINT1("ZwQueryValueKey #1 failed (%x)\n", Status);
