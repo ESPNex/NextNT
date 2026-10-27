@@ -1,6 +1,8 @@
 #include <asm.h>
 #include <ksarm64.h>
 
+#define KI_SWAP_EXCEPTION_FRAME_LENGTH ((KEXCEPTION_FRAME_LENGTH + 15) & ~15)
+
     .text
     .align 4
 
@@ -191,38 +193,29 @@ KiSwapContext:
     .seh_nop
 
     /* Reserve space for the switch frame and save non-volatile registers */
+    sub     sp, sp, #KI_SWAP_EXCEPTION_FRAME_LENGTH
+    .seh_stackalloc KI_SWAP_EXCEPTION_FRAME_LENGTH
+    stp     x19, x20, [sp, #ExX19]
+    .seh_save_regp x19, ExX19
+    stp     x21, x22, [sp, #ExX21]
+    .seh_save_regp x21, ExX21
+    stp     x23, x24, [sp, #ExX23]
+    .seh_save_regp x23, ExX23
+    stp     x25, x26, [sp, #ExX25]
+    .seh_save_regp x25, ExX25
+    stp     x27, x28, [sp, #ExX27]
+    .seh_save_regp x27, ExX27
+    str     x29, [sp, #ExFp]
+    .seh_save_reg x29, ExFp
+    str     x30, [sp, #ExReturn]
+    .seh_save_reg x30, ExReturn
     sub     sp, sp, #KSWITCH_FRAME_LENGTH
     .seh_stackalloc KSWITCH_FRAME_LENGTH
-    stp     x19, x20, [sp, #SwX19]
-    .seh_save_regp x19, SwX19
-    stp     x21, x22, [sp, #SwX21]
-    .seh_save_regp x21, SwX21
-    stp     x23, x24, [sp, #SwX23]
-    .seh_save_regp x23, SwX23
-    stp     x25, x26, [sp, #SwX25]
-    .seh_save_regp x25, SwX25
-    stp     x27, x28, [sp, #SwX27]
-    .seh_save_regp x27, SwX27
-    str     x29, [sp, #SwFp]
-    .seh_save_reg x29, SwFp
-    str     x30, [sp, #SwReturn]
-    .seh_save_reg x30, SwReturn
     .seh_endprologue
 
-    /*
-     * ARM64 CRITICAL: We need to save TWO return addresses:
-     * 1. SwReturn: The final return address (to our caller) - used by ret x9 at the end
-     * 2. SwLr: The return address for KiSwapContextInternal to use after stack switch
-     *
-     * On AMD64, 'call' pushes the return address on the stack, so after stack switch,
-     * 'ret' naturally pops from the new stack. On ARM64, 'bl' uses LR register, so
-     * after stack switch we need to manually load the return address from the new stack.
-     *
-     * SwLr must contain the address of .Lrestore_context so that after stack switch,
-     * KiSwapContextInternal can return there to restore registers.
-     */
-    adr     x9, .Lrestore_context  /* Get address of restore label */
-    str     x9, [sp, #SwLr]        /* Save for KiSwapContextInternal */
+    adr     x9, .Lrestore_context
+    str     x9, [sp, #SwReturn]
+    str     x29, [sp, #SwFp]
     mrs     x9, tpidr_el0
     str     x9, [sp, #SwTpidr]
 
@@ -257,14 +250,15 @@ KiSwapContext:
 
 .Lrestore_context:
     /* Restore the saved non-volatile register bank */
-    ldp     x19, x20, [sp, #SwX19]
-    ldp     x21, x22, [sp, #SwX21]
-    ldp     x23, x24, [sp, #SwX23]
-    ldp     x25, x26, [sp, #SwX25]
-    ldp     x27, x28, [sp, #SwX27]
-    ldr     x29, [sp, #SwFp]
     ldr     x9, [sp, #SwTpidr]
     msr     tpidr_el0, x9
+    add     sp, sp, #KSWITCH_FRAME_LENGTH
+    ldp     x19, x20, [sp, #ExX19]
+    ldp     x21, x22, [sp, #ExX21]
+    ldp     x23, x24, [sp, #ExX23]
+    ldp     x25, x26, [sp, #ExX25]
+    ldp     x27, x28, [sp, #ExX27]
+    ldr     x29, [sp, #ExFp]
 
     /*
      * ARM64 ABI: x18 remains the EL1 platform register across context
@@ -274,8 +268,8 @@ KiSwapContext:
 
     msr     daifclr, #0x2
 
-    ldr     x30, [sp, #SwReturn]   /* Load caller's return address */
-    add     sp, sp, #KSWITCH_FRAME_LENGTH
+    ldr     x30, [sp, #ExReturn]   /* Load caller's return address */
+    add     sp, sp, #KI_SWAP_EXCEPTION_FRAME_LENGTH
     ret                              /* Return to our caller */
     .seh_endproc
 
@@ -291,14 +285,6 @@ KiSwapContext:
  * IMPORTANT: The caller (KiSwapContext) has already created a KSWITCH_FRAME
  * on the stack with all callee-saved registers and the return address.
  * This function operates directly on that frame - it does NOT create its own.
- *
- * The KSWITCH_FRAME layout for ARM64:
- *   [sp + 0x00..0x4F]: X19-X28 (10 registers * 8 bytes = 80 bytes)
- *   [sp + 0x50]: Fp (X29)
- *   [sp + 0x58]: Lr (X30)
- *   [sp + 0x60]: ReturnAddress (where to go after context switch)
- *   [sp + 0x68]: ApcBypass
- *   Total: 0x70 bytes
  *
  * After stack switch, this function returns to KiSwapContext which will
  * restore x19-x28 from the NEW thread's KSWITCH_FRAME and then return
@@ -340,7 +326,7 @@ KiSwapContextInternal:
      * resume path as existing threads, with SwLr pointing to KiThreadStartup
      * which expects SP to point to KSWITCH_FRAME.
      */
-    ldr     x10, [sp, #SwLr]     /* Load return address to KiSwapContext */
+    ldr     x10, [sp, #SwReturn] /* Load return address to KiSwapContext */
 
     /* Resumed/new thread: Call KiSwapContextResume and return */
     str     x10, [sp, #-16]!     /* Save return address */

@@ -144,6 +144,7 @@ gdb_thread_to_reg(
 {
     enum reg_name name = (enum reg_name)Register;
     PKSWITCH_FRAME SwitchFrame;
+    PKEXCEPTION_FRAME ExceptionFrame;
     PKARM64_VFP_STATE VfpState;
     static const ULONG64 NullValue = 0;
     static ULONG64 ScalarValue;
@@ -176,24 +177,26 @@ gdb_thread_to_reg(
     if (name >= V0 && name <= V31)
         return VfpState ? &VfpState->V[name - V0] : NULL;
 
+    ExceptionFrame = (PKEXCEPTION_FRAME)(SwitchFrame + 1);
+
     switch (name)
     {
-        case X19: return &SwitchFrame->X19;
-        case X20: return &SwitchFrame->X20;
-        case X21: return &SwitchFrame->X21;
-        case X22: return &SwitchFrame->X22;
-        case X23: return &SwitchFrame->X23;
-        case X24: return &SwitchFrame->X24;
-        case X25: return &SwitchFrame->X25;
-        case X26: return &SwitchFrame->X26;
-        case X27: return &SwitchFrame->X27;
-        case X28: return &SwitchFrame->X28;
+        case X19: return &ExceptionFrame->X19;
+        case X20: return &ExceptionFrame->X20;
+        case X21: return &ExceptionFrame->X21;
+        case X22: return &ExceptionFrame->X22;
+        case X23: return &ExceptionFrame->X23;
+        case X24: return &ExceptionFrame->X24;
+        case X25: return &ExceptionFrame->X25;
+        case X26: return &ExceptionFrame->X26;
+        case X27: return &ExceptionFrame->X27;
+        case X28: return &ExceptionFrame->X28;
         case X29: return &SwitchFrame->Fp;
         case X30:
         case PC:
-            return &SwitchFrame->ReturnAddress;
+            return &SwitchFrame->Return;
         case SP:
-            ScalarValue = (ULONG64)(ULONG_PTR)(SwitchFrame + 1);
+            ScalarValue = (ULONG64)(ULONG_PTR)SwitchFrame;
             return &ScalarValue;
         case CPSR:
             /* A switched-out kernel thread resumes in EL1h. */

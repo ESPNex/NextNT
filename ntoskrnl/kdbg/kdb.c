@@ -197,26 +197,28 @@ KdbpKdbTrapFrameFromKernelStack(
 #elif defined(_M_ARM64)
     {
         KSWITCH_FRAME SwitchFrame;
+        KEXCEPTION_FRAME ExceptionFrame;
 
-        if (!NT_SUCCESS(KdbpSafeReadMemory(&SwitchFrame, KernelStack, sizeof(SwitchFrame))))
+        if (!NT_SUCCESS(KdbpSafeReadMemory(&SwitchFrame, KernelStack, sizeof(SwitchFrame))) ||
+            !NT_SUCCESS(KdbpSafeReadMemory(&ExceptionFrame, (PKSWITCH_FRAME)KernelStack + 1, sizeof(ExceptionFrame))))
         {
             return FALSE;
         }
 
-        KdbTrapFrame->X19 = SwitchFrame.X19;
-        KdbTrapFrame->X20 = SwitchFrame.X20;
-        KdbTrapFrame->X21 = SwitchFrame.X21;
-        KdbTrapFrame->X22 = SwitchFrame.X22;
-        KdbTrapFrame->X23 = SwitchFrame.X23;
-        KdbTrapFrame->X24 = SwitchFrame.X24;
-        KdbTrapFrame->X25 = SwitchFrame.X25;
-        KdbTrapFrame->X26 = SwitchFrame.X26;
-        KdbTrapFrame->X27 = SwitchFrame.X27;
-        KdbTrapFrame->X28 = SwitchFrame.X28;
+        KdbTrapFrame->X19 = ExceptionFrame.X19;
+        KdbTrapFrame->X20 = ExceptionFrame.X20;
+        KdbTrapFrame->X21 = ExceptionFrame.X21;
+        KdbTrapFrame->X22 = ExceptionFrame.X22;
+        KdbTrapFrame->X23 = ExceptionFrame.X23;
+        KdbTrapFrame->X24 = ExceptionFrame.X24;
+        KdbTrapFrame->X25 = ExceptionFrame.X25;
+        KdbTrapFrame->X26 = ExceptionFrame.X26;
+        KdbTrapFrame->X27 = ExceptionFrame.X27;
+        KdbTrapFrame->X28 = ExceptionFrame.X28;
         KdbTrapFrame->Fp = SwitchFrame.Fp;
-        KdbTrapFrame->Lr = SwitchFrame.ReturnAddress;
-        KdbTrapFrame->Pc = SwitchFrame.ReturnAddress;
-        KdbTrapFrame->Sp = (ULONG_PTR)((PKSWITCH_FRAME)KernelStack + 1);
+        KdbTrapFrame->Lr = SwitchFrame.Return;
+        KdbTrapFrame->Pc = SwitchFrame.Return;
+        KdbTrapFrame->Sp = (ULONG_PTR)KernelStack;
         KdbTrapFrame->Cpsr = 0x5;
     }
 #elif defined(_M_RISCV64)

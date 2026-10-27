@@ -50,7 +50,7 @@ C_ASSERT(FIELD_OFFSET(KUINIT_FRAME, TrapFrame) -
          sizeof(KEXCEPTION_FRAME));
 C_ASSERT(sizeof(KUINIT_FRAME) - FIELD_OFFSET(KUINIT_FRAME, TrapFrame) ==
          KARM64_USER_TRAP_FRAME_OFFSET);
-C_ASSERT(sizeof(KUINIT_FRAME) == 0x560);
+C_ASSERT(sizeof(KUINIT_FRAME) == 0x500);
 
 typedef struct _KKINIT_FRAME
 {
@@ -174,8 +174,7 @@ KiInitializeContextThread(_Inout_ PKTHREAD Thread,
         Thread->TrapFrame = NULL;
     }
 
-    SwitchFrame->ReturnAddress = (ULONG64)KiThreadStartup;
-    SwitchFrame->Lr = (ULONG64)KiThreadStartup;
+    SwitchFrame->Return = (ULONG64)KiThreadStartup;
     SwitchFrame->ApcBypass = APC_LEVEL;
 }
 

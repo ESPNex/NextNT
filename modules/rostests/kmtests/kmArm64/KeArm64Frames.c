@@ -130,21 +130,11 @@ static VOID Arm64FrameLayout(VOID)
     /*
      * KSWITCH_FRAME -- 12 ULONG64 + ReturnAddress + ApcBypass + Reserved[7].
      */
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X19), 0x0ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X20), 0x8ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X21), 0x10ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X22), 0x18ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X23), 0x20ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X24), 0x28ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X25), 0x30ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X26), 0x38ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X27), 0x40ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, X28), 0x48ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, Fp), 0x50ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, Lr), 0x58ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, ReturnAddress), 0x60ULL);
-    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, ApcBypass), 0x68ULL);
-    ok_eq_ulonglong((ULONGLONG)sizeof(KSWITCH_FRAME), 0x70ULL);
+    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, ApcBypass), 0x0ULL);
+    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, Tpidr), 0x8ULL);
+    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, Fp), 0x10ULL);
+    ok_eq_ulonglong((ULONGLONG)FIELD_OFFSET(KSWITCH_FRAME, Return), 0x18ULL);
+    ok_eq_ulonglong((ULONGLONG)sizeof(KSWITCH_FRAME), 0x20ULL);
 
     /*
      * MACHINE_FRAME -- just (Sp, Pc).
