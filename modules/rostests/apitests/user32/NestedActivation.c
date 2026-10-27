@@ -9,6 +9,10 @@
 
 #define NESTED_CAP 6
 
+#define NESTED_EVENT_ACTION_DONE    (WM_USER + 1)
+#define NESTED_EVENT_TRIGGER_DONE   (WM_USER + 2)
+#define NESTED_EVENT_FLUSHED        (WM_USER + 3)
+
 #define NESTED_AFTER_DEFAULT  0x1
 #define NESTED_NO_NC_DEFAULT  0x2
 
@@ -78,6 +82,21 @@ static LONG g_BDeactivated, g_OwnerDeactivated;
 static BOOL g_Capped;
 static HWND g_ActiveAtInactive, g_ForegroundAtInactive, g_OtherAtInactive, g_OtherAtLastInactive;
 
+typedef struct _NESTED_EVENT
+{
+    HWND hwnd;
+    UINT Message;
+    WPARAM wParam;
+    LPARAM lParam;
+    LONG Nest;
+    HWND Active;
+    HWND Focus;
+    HWND Foreground;
+} NESTED_EVENT;
+
+static NESTED_EVENT g_Events[64];
+static ULONG g_EventCount;
+
 static PCSTR
 WindowName(HWND hwnd)
 {
@@ -90,6 +109,41 @@ WindowName(HWND hwnd)
     if (hwnd == g_Owner)
         return "owner";
     return "other";
+}
+
+static PCSTR
+MessageName(UINT Message)
+{
+    switch (Message)
+    {
+        case WM_NCACTIVATE: return "WM_NCACTIVATE";
+        case WM_ACTIVATE: return "WM_ACTIVATE";
+        case WM_ACTIVATEAPP: return "WM_ACTIVATEAPP";
+        case WM_SETFOCUS: return "WM_SETFOCUS";
+        case WM_KILLFOCUS: return "WM_KILLFOCUS";
+        case WM_DESTROY: return "WM_DESTROY";
+        case NESTED_EVENT_ACTION_DONE: return "action returned";
+        case NESTED_EVENT_TRIGGER_DONE: return "trigger returned";
+        case NESTED_EVENT_FLUSHED: return "messages flushed";
+        default: return NULL;
+    }
+}
+
+static VOID
+RecordEvent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
+{
+    if (MessageName(Message) == NULL || g_EventCount >= ARRAYSIZE(g_Events))
+        return;
+
+    g_Events[g_EventCount].hwnd = hwnd;
+    g_Events[g_EventCount].Message = Message;
+    g_Events[g_EventCount].wParam = wParam;
+    g_Events[g_EventCount].lParam = lParam;
+    g_Events[g_EventCount].Nest = g_Nest;
+    g_Events[g_EventCount].Active = GetActiveWindow();
+    g_Events[g_EventCount].Focus = GetFocus();
+    g_Events[g_EventCount].Foreground = GetForegroundWindow();
+    g_EventCount++;
 }
 
 static VOID
@@ -114,6 +168,7 @@ DoAction(HWND hwnd)
             DestroyWindow(hwnd);
             break;
     }
+    RecordEvent(hwnd, NESTED_EVENT_ACTION_DONE, 0, 0);
 }
 
 static LRESULT
@@ -132,6 +187,8 @@ NestedActivationProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
     if (g_Case == NULL)
         return DefWindowProcW(hwnd, Message, wParam, lParam);
+
+    RecordEvent(hwnd, Message, wParam, lParam);
 
     if (hwnd == g_A)
     {
@@ -207,6 +264,7 @@ RunCase(const NESTED_CASE *Case)
     HWND Active, Target;
     LONG TargetActivated, TargetDeactivated;
     LONG_PTR TriggerResult;
+    ULONG i;
 
     g_B = CreateWindowExW(0, L"NestedActivation", L"B", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                           40, 40, 300, 200, NULL, NULL, NULL, NULL);
@@ -227,6 +285,7 @@ RunCase(const NESTED_CASE *Case)
 
     SetForegroundWindow(g_A);
     SetActiveWindow(g_A);
+    SetWindowPos(g_B, g_A, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     FlushMessages();
     Foreground = (GetForegroundWindow() == g_A);
     ok(GetActiveWindow() == g_A, "%s: setup active window is %s, expected A\n",
@@ -236,6 +295,7 @@ RunCase(const NESTED_CASE *Case)
 
     g_Nest = g_MaxNest = g_Inactive = g_NcInactive = g_BActivated = g_OwnerActivated = 0;
     g_BDeactivated = g_OwnerDeactivated = 0;
+    g_EventCount = 0;
     g_Capped = FALSE;
     g_ActiveAtInactive = g_ForegroundAtInactive = g_OtherAtInactive = g_OtherAtLastInactive = NULL;
     g_Case = Case;
@@ -246,13 +306,27 @@ RunCase(const NESTED_CASE *Case)
         TriggerResult = ShowWindow(g_A, SW_HIDE);
     else
         TriggerResult = DestroyWindow(g_A);
+    RecordEvent(NULL, NESTED_EVENT_TRIGGER_DONE, 0, 0);
     FlushMessages();
+    RecordEvent(NULL, NESTED_EVENT_FLUSHED, 0, 0);
 
     g_Case = NULL;
     Active = GetActiveWindow();
     Target = (Case->Trigger != TriggerSetActiveWindow && Case->Owned) ? g_Owner : g_B;
     TargetActivated = (Target == g_B) ? g_BActivated : g_OwnerActivated;
     TargetDeactivated = (Target == g_B) ? g_BDeactivated : g_OwnerDeactivated;
+
+    for (i = 0; winetest_debug > 1 && i < g_EventCount; i++)
+    {
+        trace("%s: event %lu: %s %s wParam %Ix lParam %s nesting %ld active %s focus %s foreground %s\n",
+              Case->Name, i, WindowName(g_Events[i].hwnd), MessageName(g_Events[i].Message),
+              g_Events[i].wParam,
+              g_Events[i].Message == WM_ACTIVATEAPP ? "-" : WindowName((HWND)g_Events[i].lParam),
+              g_Events[i].Nest, WindowName(g_Events[i].Active), WindowName(g_Events[i].Focus),
+              WindowName(g_Events[i].Foreground));
+    }
+    trace("%s: final foreground %s, final focus %s\n",
+          Case->Name, WindowName(GetForegroundWindow()), WindowName(GetFocus()));
 
     trace("%s: foreground %d, WA_INACTIVE %ld, WM_NCACTIVATE(FALSE) %ld, nesting %ld%s, "
           "active during WA_INACTIVE %s, foreground %s, lParam %s, last lParam %s, B activated %ld, "
@@ -280,6 +354,10 @@ RunCase(const NESTED_CASE *Case)
        Case->Name, WindowName(Target), TargetActivated, Case->TargetActivated);
     ok(Active == (Case->TargetActive ? Target : NULL), "%s: final active window is %s, expected %s\n",
        Case->Name, WindowName(Active), Case->TargetActive ? WindowName(Target) : "none");
+    ok(GetForegroundWindow() == Active, "%s: final foreground window is %s, expected %s\n",
+       Case->Name, WindowName(GetForegroundWindow()), WindowName(Active));
+    ok(GetFocus() == Active, "%s: final focus window is %s, expected %s\n",
+       Case->Name, WindowName(GetFocus()), WindowName(Active));
     ok(TargetDeactivated == 0, "%s: %s got WA_INACTIVE %ld times, expected 0\n",
        Case->Name, WindowName(Target), TargetDeactivated);
     if (Case->Trigger == TriggerSetActiveWindow)
@@ -320,6 +398,9 @@ START_TEST(NestedActivation)
         skip("RegisterClassW failed, error %lu\n", GetLastError());
         return;
     }
+
+    if (winetest_debug > 1)
+        winetest_mute_threshold = ARRAYSIZE(g_Cases) * ARRAYSIZE(g_Events);
 
     for (i = 0; i < ARRAYSIZE(g_Cases); i++)
         RunCase(&g_Cases[i]);
