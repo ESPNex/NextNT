@@ -3355,6 +3355,33 @@ static struct domnode * xpath_next_attribute(struct xpath_parser_context *ctxt, 
     return xpath_get_next_attribute(cur);
 }
 
+#ifdef __REACTOS__
+static struct domnode * xslpattern_next_attribute(struct xpath_parser_context *ctxt, struct domnode *cur)
+{
+    if (!ctxt || !ctxt->context) return NULL;
+
+    if (!ctxt->context->node)
+        return NULL;
+    if (ctxt->context->node->type != NODE_ELEMENT)
+        return NULL;
+
+    if (!cur)
+        return domnode_get_first_attribute(ctxt->context->node);
+
+    return domnode_get_next_attribute_sibling(cur);
+}
+
+static bool xslpattern_is_same_prefix(const struct domnode *node, const WCHAR *prefix)
+{
+    const WCHAR *node_prefix = node->prefix;
+
+    if (node->type == NODE_ATTRIBUTE && domnode_is_namespace_declaration(node))
+        node_prefix = L"xmlns";
+
+    return node_prefix && !wcscmp(node_prefix, prefix);
+}
+
+#endif
 static struct domnode * xpath_next_child_element(struct xpath_parser_context *ctxt, struct domnode *cur)
 {
     struct domnode *next;
@@ -3789,7 +3816,11 @@ static int xpath_node_collect_and_test(struct xpath_parser_context *ctxt,
         case AXIS_ATTRIBUTE:
             first = NULL;
             last = NULL;
+#ifdef __REACTOS__
+            next = !ctxt->context->xpath && test == NODE_TEST_ALL ? xslpattern_next_attribute : xpath_next_attribute;
+#else
             next = xpath_next_attribute;
+#endif
             mergeAndClear = xpath_nodeset_merge_and_clear_nodup;
             break;
         case AXIS_CHILD:
@@ -4042,6 +4073,16 @@ static int xpath_node_collect_and_test(struct xpath_parser_context *ctxt,
                     {
                         if (cur->type == NODE_ATTRIBUTE)
                         {
+#ifdef __REACTOS__
+                            if (!ctxt->context->xpath && prefix && !uri)
+                            {
+                                if (xslpattern_is_same_prefix(cur, prefix))
+                                {
+                                    XP_TEST_HIT
+                                }
+                            }
+                            else
+#endif
                             if (!uri || (node_uri && !wcscmp(node_uri, uri)))
                             {
                                 XP_TEST_HIT
@@ -4059,6 +4100,16 @@ static int xpath_node_collect_and_test(struct xpath_parser_context *ctxt,
                     {
                         if (cur->type == NODE_ELEMENT)
                         {
+#ifdef __REACTOS__
+                            if (!ctxt->context->xpath && prefix && !uri)
+                            {
+                                if (xslpattern_is_same_prefix(cur, prefix))
+                                {
+                                    XP_TEST_HIT
+                                }
+                            }
+                            else
+#endif
                             if (!uri || (node_uri && !wcscmp(node_uri, uri)))
                             {
                                 XP_TEST_HIT
