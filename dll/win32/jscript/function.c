@@ -511,7 +511,11 @@ static HRESULT Function_apply(script_ctx_t *ctx, jsval_t vthis, WORD flags, unsi
             hres = function->vtbl->call(ctx, function, this_val, flags, cnt, args, r);
         }else {
             jsval_t res;
+#ifdef __REACTOS__
+            hres = disp_call_value(ctx, get_object(vthis), this_val, DISPATCH_METHOD | DISPATCH_JSCRIPT_NOPROPERTYGET, cnt, args, &res);
+#else
             hres = disp_call_value(ctx, get_object(vthis), this_val, DISPATCH_METHOD, cnt, args, &res);
+#endif
             if(SUCCEEDED(hres)) {
                 if(r)
                     *r = res;

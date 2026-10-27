@@ -85,7 +85,12 @@ HRESULT get_dispatch_typeinfo(ITypeInfo**);
  * of execution.
  */
 #define DISPATCH_JSCRIPT_CALLEREXECSSOURCE  0x8000
+#ifdef __REACTOS__
+#define DISPATCH_JSCRIPT_NOPROPERTYGET      0x2000
+#define DISPATCH_JSCRIPT_INTERNAL_MASK      (DISPATCH_JSCRIPT_CALLEREXECSSOURCE|DISPATCH_JSCRIPT_NOPROPERTYGET)
+#else
 #define DISPATCH_JSCRIPT_INTERNAL_MASK      DISPATCH_JSCRIPT_CALLEREXECSSOURCE
+#endif
 
 /* NOTE: Keep in sync with names in Object.toString implementation */
 typedef enum {

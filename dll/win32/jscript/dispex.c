@@ -2803,7 +2803,11 @@ HRESULT disp_call_value_with_caller(script_ctx_t *ctx, IDispatch *disp, jsval_t 
 
     jsdisp = iface_to_jsdisp(disp);
     if(jsdisp && jsdisp->ctx == ctx) {
+#ifdef __REACTOS__
+        hres = jsdisp_call_value(jsdisp, vthis, flags & ~DISPATCH_JSCRIPT_NOPROPERTYGET, argc, argv, r);
+#else
         hres = jsdisp_call_value(jsdisp, vthis, flags, argc, argv, r);
+#endif
         jsdisp_release(jsdisp);
         return hres;
     }
@@ -2816,9 +2820,15 @@ HRESULT disp_call_value_with_caller(script_ctx_t *ctx, IDispatch *disp, jsval_t 
     else
         jsthis = NULL;
 
+#ifdef __REACTOS__
+    if(r && argc && (flags & ~DISPATCH_JSCRIPT_CALLEREXECSSOURCE) == DISPATCH_METHOD)
+        flags |= DISPATCH_PROPERTYGET;
+    flags &= ~DISPATCH_JSCRIPT_INTERNAL_MASK;
+#else
     flags &= ~DISPATCH_JSCRIPT_INTERNAL_MASK;
     if(r && argc && flags == DISPATCH_METHOD)
         flags |= DISPATCH_PROPERTYGET;
+#endif
 
     if(jsthis) {
         dp.cArgs = argc + 1;
