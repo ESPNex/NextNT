@@ -1913,6 +1913,8 @@ acpi_bus_init (void)
 		goto error1;
 	}
 
+	acpi_ec_dsdt_probe();
+
 	status = AcpiUpdateAllGpes();
 	if (ACPI_FAILURE(status)) {
 		DPRINT1("Unable to enable runtime GPEs: %s\n", AcpiFormatException(status));

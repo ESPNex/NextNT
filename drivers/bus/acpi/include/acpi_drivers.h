@@ -133,6 +133,7 @@ void acpi_button_exit (void);
 #ifdef CONFIG_ACPI_EC
 
 int acpi_ec_ecdt_probe (void);
+int acpi_ec_dsdt_probe (void);
 int acpi_ec_init (void);
 void acpi_ec_exit (void);
 

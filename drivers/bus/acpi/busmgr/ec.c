@@ -32,6 +32,7 @@ ACPI_MODULE_NAME		("acpi_ec")
 
 struct acpi_ec {
 	ACPI_HANDLE		handle;
+	ACPI_HANDLE		region_scope;
 	UINT32			gpe;
 	ACPI_IO_ADDRESS		command_addr;
 	ACPI_IO_ADDRESS		data_addr;
@@ -544,31 +545,22 @@ acpi_ec_remove_handlers(struct acpi_ec *ec, ACPI_HANDLE region_scope)
 	}
 }
 
-static int
-acpi_ec_add(struct acpi_device *device)
+static ACPI_STATUS
+acpi_ec_configure_device(ACPI_HANDLE handle, struct acpi_ec **out)
 {
 	struct acpi_ec *ec;
 	ACPI_STATUS status;
 	ACPI_INTEGER gpe = 0;
 
-	if (!device)
-		return AE_BAD_PARAMETER;
-
-	if (boot_ec && boot_ec->handle == device->handle) {
-		acpi_ec_update_global_lock(boot_ec);
-		device->driver_data = boot_ec;
-		first_ec = boot_ec;
-		DPRINT1("EC already configured from ECDT, global lock %d\n",
-			boot_ec->global_lock);
-		return AE_OK;
-	}
+	*out = NULL;
 
 	ec = ExAllocatePoolWithTag(NonPagedPool, sizeof(*ec), 'CEpA');
 	if (!ec)
 		return AE_NO_MEMORY;
 
 	RtlZeroMemory(ec, sizeof(*ec));
-	ec->handle = device->handle;
+	ec->handle = handle;
+	ec->region_scope = handle;
 	acpi_ec_initialize(ec);
 
 	status = BuspWalkResources(ec->handle, METHOD_NAME__CRS,
@@ -596,12 +588,38 @@ acpi_ec_add(struct acpi_device *device)
 		(UINT32)ec->command_addr, (UINT32)ec->data_addr,
 		ec->gpe, ec->global_lock);
 
-	status = acpi_ec_install_handlers(ec, ec->handle);
+	status = acpi_ec_install_handlers(ec, ec->region_scope);
 	if (ACPI_FAILURE(status)) {
-		acpi_ec_remove_handlers(ec, ec->handle);
+		acpi_ec_remove_handlers(ec, ec->region_scope);
 		ExFreePoolWithTag(ec, 'CEpA');
 		return status;
 	}
+
+	*out = ec;
+	return AE_OK;
+}
+
+static int
+acpi_ec_add(struct acpi_device *device)
+{
+	struct acpi_ec *ec;
+	ACPI_STATUS status;
+
+	if (!device)
+		return AE_BAD_PARAMETER;
+
+	if (boot_ec && boot_ec->handle == device->handle) {
+		acpi_ec_update_global_lock(boot_ec);
+		device->driver_data = boot_ec;
+		first_ec = boot_ec;
+		DPRINT1("EC already configured at boot, global lock %d\n",
+			boot_ec->global_lock);
+		return AE_OK;
+	}
+
+	status = acpi_ec_configure_device(device->handle, &ec);
+	if (ACPI_FAILURE(status))
+		return status;
 
 	device->driver_data = ec;
 
@@ -630,7 +648,7 @@ acpi_ec_remove(struct acpi_device *device, int type)
 	if (ec == boot_ec)
 		return AE_OK;
 
-	acpi_ec_remove_handlers(ec, ec->handle);
+	acpi_ec_remove_handlers(ec, ec->region_scope);
 
 	if (first_ec == ec)
 		first_ec = NULL;
@@ -678,6 +696,7 @@ acpi_ec_ecdt_probe(void)
 
 	RtlZeroMemory(ec, sizeof(*ec));
 	ec->handle = handle;
+	ec->region_scope = ACPI_ROOT_OBJECT;
 	ec->command_addr = command_addr;
 	ec->data_addr = data_addr;
 	ec->gpe = gpe;
@@ -686,12 +705,46 @@ acpi_ec_ecdt_probe(void)
 	DPRINT1("EC from ECDT: command 0x%x data 0x%x GPE 0x%02x\n",
 		(UINT32)ec->command_addr, (UINT32)ec->data_addr, ec->gpe);
 
-	status = acpi_ec_install_handlers(ec, ACPI_ROOT_OBJECT);
+	status = acpi_ec_install_handlers(ec, ec->region_scope);
 	if (ACPI_FAILURE(status)) {
-		acpi_ec_remove_handlers(ec, ACPI_ROOT_OBJECT);
+		acpi_ec_remove_handlers(ec, ec->region_scope);
 		ExFreePoolWithTag(ec, 'CEpA');
 		return status;
 	}
+
+	boot_ec = ec;
+	first_ec = ec;
+
+	return AE_OK;
+}
+
+static ACPI_STATUS
+acpi_ec_find_device(ACPI_HANDLE handle, UINT32 level, void *context, void **ret)
+{
+	UNREFERENCED_PARAMETER(level);
+	UNREFERENCED_PARAMETER(ret);
+
+	*(ACPI_HANDLE *)context = handle;
+	return AE_CTRL_TERMINATE;
+}
+
+int
+acpi_ec_dsdt_probe(void)
+{
+	ACPI_HANDLE handle = NULL;
+	struct acpi_ec *ec;
+	ACPI_STATUS status;
+
+	if (boot_ec)
+		return AE_OK;
+
+	status = AcpiGetDevices("PNP0C09", acpi_ec_find_device, &handle, NULL);
+	if (ACPI_FAILURE(status) || !handle)
+		return AE_NOT_FOUND;
+
+	status = acpi_ec_configure_device(handle, &ec);
+	if (ACPI_FAILURE(status))
+		return status;
 
 	boot_ec = ec;
 	first_ec = ec;
@@ -717,7 +770,7 @@ acpi_ec_exit(void)
 	acpi_bus_unregister_driver(&acpi_ec_driver);
 
 	if (boot_ec) {
-		acpi_ec_remove_handlers(boot_ec, ACPI_ROOT_OBJECT);
+		acpi_ec_remove_handlers(boot_ec, boot_ec->region_scope);
 		ExFreePoolWithTag(boot_ec, 'CEpA');
 		boot_ec = NULL;
 	}
