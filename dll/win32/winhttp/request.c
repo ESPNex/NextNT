@@ -3703,6 +3703,14 @@ BOOL WINAPI WinHttpWriteData( HINTERNET hrequest, const void *buffer, DWORD to_w
         SetLastError( ERROR_WINHTTP_INCORRECT_HANDLE_TYPE );
         return FALSE;
     }
+#ifdef __REACTOS__
+    if (!request->netconn)
+    {
+        release_object( &request->hdr );
+        SetLastError( ERROR_WINHTTP_INCORRECT_HANDLE_STATE );
+        return FALSE;
+    }
+#endif
 
     if (!(request->connect->hdr.flags & WINHTTP_FLAG_ASYNC))
     {
