@@ -15584,7 +15584,9 @@ DxgkpMiniportPnpDispatch(
                              Stack->Parameters.StartDevice.AllocatedResourcesTranslated);
                 AdapterStartUs = DxgkpTraceElapsedUs(LowerStart100ns);
                 if (!NT_SUCCESS(Status) &&
-                    InterlockedCompareExchange(&Adapter->MiniportStartFailed, 0, 0) != 0)
+                    InterlockedCompareExchange(&Adapter->MiniportStartFailed, 0, 0) != 0 &&
+                    !(Status == STATUS_GRAPHICS_NOT_POST_DEVICE_DRIVER &&
+                      Adapter->MiniportContext->IsBasicDisplayFallback))
                 {
                     Status = STATUS_SUCCESS;
                 }
