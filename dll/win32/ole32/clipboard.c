@@ -1697,8 +1697,27 @@ static HRESULT WINAPI snapshot_GetCanonicalFormatEtc(IDataObject *iface, FORMATE
 static HRESULT WINAPI snapshot_SetData(IDataObject *iface, FORMATETC *fmt,
                                        STGMEDIUM *med, BOOL release)
 {
+#ifdef __REACTOS__
+    snapshot *This = impl_from_IDataObject(iface);
+
+    TRACE("(%p, %p, %p, %d)\n", iface, fmt, med, release);
+
+    if (!fmt || !med) return E_INVALIDARG;
+
+    if (!This->data)
+    {
+        if (!OpenClipboard(NULL)) return CLIPBRD_E_CANT_OPEN;
+        get_current_dataobject(&This->data);
+        CloseClipboard();
+    }
+
+    if (!This->data) return E_NOTIMPL;
+
+    return IDataObject_SetData(This->data, fmt, med, release);
+#else
     TRACE("(%p, %p, %p, %d): not implemented\n", iface, fmt, med, release);
     return E_NOTIMPL;
+#endif
 }
 
 /************************************************************************
