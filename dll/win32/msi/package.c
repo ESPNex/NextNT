@@ -821,7 +821,19 @@ static VOID set_installer_properties(MSIPACKAGE *package)
 
     GetNativeSystemInfo( &sys_info );
     len = swprintf( bufstr, ARRAY_SIZE(bufstr), L"%d", sys_info.wProcessorLevel );
+#ifdef __REACTOS__
+    {
+        USHORT process_machine, native_machine;
+
+        if (IsWow64Process2( GetCurrentProcess(), &process_machine, &native_machine ) &&
+            native_machine == IMAGE_FILE_MACHINE_ARM64)
+            msi_set_property( package->db, L"Intel", L"0", 1 );
+        else
+            msi_set_property( package->db, L"Intel", bufstr, len );
+    }
+#else
     msi_set_property( package->db, L"Intel", bufstr, len );
+#endif
     if (sys_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
     {
         wcscpy( pth, sysdir );
