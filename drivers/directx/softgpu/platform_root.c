@@ -975,7 +975,7 @@ SoftGpuPlatformQueryStart(
             {
                 DPRINT1("SOFTGPU: PCI display device has no POST framebuffer; "
                         "not starting\n");
-                return STATUS_UNSUCCESSFUL;
+                return STATUS_GRAPHICS_NOT_POST_DEVICE_DRIVER;
             }
         }
         else if (Device == NULL || !NT_SUCCESS(SoftGpuVbeColdStart(Device, NULL, Config)))
