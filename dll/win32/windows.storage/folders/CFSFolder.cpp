@@ -1783,6 +1783,23 @@ HRESULT WINAPI CFSFolder::GetDisplayNameOf(PCUITEMID_CHILD pidl,
         return E_INVALIDARG;
     }
 
+    if (!(GET_SHGDN_FOR(dwFlags) & SHGDN_FORPARSING) && _ILIsFolder(pidl) && m_sPathTarget &&
+        (_ILGetFileAttributes(pidl, NULL, 0) & (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_READONLY)))
+    {
+        WCHAR szIniFile[MAX_PATH], szValue[MAX_PATH + 32], szName[MAX_PATH];
+
+        if (SUCCEEDED(StringCchCopyW(szIniFile, _countof(szIniFile), m_sPathTarget)) &&
+            _ILSimpleGetTextW(pidl, szName, _countof(szName)) &&
+            PathAppendW(szIniFile, szName) && PathAppendW(szIniFile, L"desktop.ini") &&
+            GetPrivateProfileStringW(L".ShellClassInfo", L"LocalizedResourceName", L"",
+                                     szValue, _countof(szValue), szIniFile) &&
+            szValue[0] == L'@' &&
+            SUCCEEDED(SHLoadIndirectString(szValue, szName, _countof(szName), NULL)))
+        {
+            return SHSetStrRet(strRet, szName);
+        }
+    }
+
     int len = 0;
     LPWSTR pszPath = (LPWSTR)CoTaskMemAlloc((MAX_PATH + 1) * sizeof(WCHAR));
     if (!pszPath)
