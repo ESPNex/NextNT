@@ -311,7 +311,34 @@ HRESULT WINAPI CControlPanelFolder::ParseDisplayName(
     DWORD *pdwAttributes)
 {
     /* We only support parsing guid names */
-    return m_regFolder->ParseDisplayName(hwndOwner, pbc, lpszDisplayName, pchEaten, ppidl, pdwAttributes);
+    HRESULT hr = m_regFolder->ParseDisplayName(hwndOwner, pbc, lpszDisplayName, pchEaten, ppidl, pdwAttributes);
+    if (SUCCEEDED(hr) || !lpszDisplayName || !ppidl)
+        return hr;
+
+    CComPtr<IEnumIDList> pEnum;
+    if (FAILED(EnumObjects(hwndOwner, SHCONTF_NONFOLDERS, &pEnum)))
+        return hr;
+
+    PITEMID_CHILD pidlChild;
+    while (pEnum->Next(1, &pidlChild, NULL) == S_OK)
+    {
+        PIDLCPanelStruct *pCPanel = _ILGetCPanelPointer(pidlChild);
+        if (pCPanel && !lstrcmpiW(pCPanel->szName + pCPanel->offsDispName, lpszDisplayName))
+        {
+            if (pdwAttributes && *pdwAttributes)
+            {
+                DWORD dwAttributes = ~0u;
+                GetAttributesOf(1, &pidlChild, &dwAttributes);
+                *pdwAttributes = dwAttributes;
+            }
+            if (pchEaten)
+                *pchEaten = (DWORD)wcslen(lpszDisplayName);
+            *ppidl = pidlChild;
+            return S_OK;
+        }
+        ILFree(pidlChild);
+    }
+    return hr;
 }
 
 /**************************************************************************
