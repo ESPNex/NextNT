@@ -156,6 +156,26 @@ KiTryClaimIdleProcessor(
     return InterlockedBitTestAndResetAffinity(&KiIdleSummary, Processor);
 }
 
+static
+KAFFINITY
+KiRemoveDpcActiveProcessors(
+    _In_ KAFFINITY IdleSet)
+{
+    KAFFINITY Remaining = IdleSet, FreeSet = IdleSet;
+    ULONG Processor;
+    PKPRCB Prcb;
+
+    while (BitScanForwardAffinity(&Processor, Remaining))
+    {
+        Remaining &= ~AFFINITY_MASK(Processor);
+        Prcb = KiProcessorBlock[Processor];
+        if ((Prcb != NULL) && Prcb->DpcRoutineActive)
+            FreeSet &= ~AFFINITY_MASK(Processor);
+    }
+
+    return FreeSet ? FreeSet : IdleSet;
+}
+
 #define KI_BUSY_LOAD_LIMIT 8
 
 static
@@ -652,6 +672,7 @@ KiSelectNextProcessor(
         IdleSet = PreferredSet & KiIdleSummary;
         if (IdleSet == 0)
             break;
+        IdleSet = KiRemoveDpcActiveProcessors(IdleSet);
 
 #ifdef KI_CORE_PARKING
         if (Thread->IdealProcessor < (ULONG)KeNumberProcessors &&
