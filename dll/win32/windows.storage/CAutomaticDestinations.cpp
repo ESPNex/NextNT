@@ -86,7 +86,13 @@ OpenStore(LPCWSTR pszPath, BOOL bWrite, BOOL bCreate, IStream **ppStream)
 
     for (UINT Try = 0; ; Try++)
     {
-        hr = SHCreateStreamOnFileEx(pszPath, Mode, FILE_ATTRIBUTE_NORMAL, bCreate, NULL, ppStream);
+        hr = SHCreateStreamOnFileEx(pszPath, Mode, FILE_ATTRIBUTE_NORMAL, FALSE, NULL, ppStream);
+        if (bCreate && hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        {
+            hr = SHCreateStreamOnFileEx(pszPath, Mode, FILE_ATTRIBUTE_NORMAL, TRUE, NULL, ppStream);
+            if (hr == HRESULT_FROM_WIN32(ERROR_FILE_EXISTS) && Try < 100)
+                continue;
+        }
         if ((hr != STG_E_SHAREVIOLATION && hr != HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)) || Try >= 100)
             return hr;
         Sleep(10);
@@ -193,9 +199,18 @@ public:
 
     int Find(PCIDLIST_ABSOLUTE Pidl)
     {
+        CComPtr<IShellFolder> Desktop;
+        WCHAR Path[MAX_PATH], EntryPath[MAX_PATH];
+        BOOL bPath = SHGetPathFromIDListW(Pidl, Path);
+
+        SHGetDesktopFolder(&Desktop);
         for (int i = 0; i < m_Entries.GetSize(); i++)
         {
             if (ILIsEqual(m_Entries[i].Pidl, Pidl))
+                return i;
+            if (Desktop && Desktop->CompareIDs(SHCIDS_CANONICALONLY, m_Entries[i].Pidl, Pidl) == S_OK)
+                return i;
+            if (bPath && SHGetPathFromIDListW(m_Entries[i].Pidl, EntryPath) && !_wcsicmp(EntryPath, Path))
                 return i;
         }
         return -1;
