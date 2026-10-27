@@ -424,7 +424,11 @@ extern HRESULT node_replace_data(struct domnode *, LONG, LONG, BSTR);
 
 extern UINT get_codepage_for_encoding(const WCHAR *encoding);
 
+#ifdef __REACTOS__
+extern HRESULT SchemaCache_validate_tree(IXMLDOMSchemaCollection2*, xmlNodePtr, BSTR*);
+#else
 extern HRESULT SchemaCache_validate_tree(IXMLDOMSchemaCollection2*, xmlNodePtr);
+#endif
 extern XDR_DT SchemaCache_get_node_dt(IXMLDOMSchemaCollection2 *, const WCHAR *name, const WCHAR *uri);
 extern HRESULT cache_from_doc_ns(IXMLDOMSchemaCollection2*, struct domnode *);
 
@@ -456,6 +460,28 @@ static inline BSTR bstr_from_xmlChar(const xmlChar *str)
 
     return ret;
 }
+
+#ifdef __REACTOS__
+static inline BSTR bstr_from_xml_error(const xmlError *error)
+{
+    const char *message;
+    int len, wlen;
+    BSTR ret;
+
+    if (!error || error->level < XML_ERR_ERROR || !(message = error->message))
+        return NULL;
+
+    len = strlen(message);
+    while (len && (message[len - 1] == '\n' || message[len - 1] == '\r' || message[len - 1] == ' '))
+        len--;
+    if (!len || !(wlen = MultiByteToWideChar(CP_UTF8, 0, message, len, NULL, 0)))
+        return NULL;
+
+    if ((ret = SysAllocStringLen(NULL, wlen)))
+        MultiByteToWideChar(CP_UTF8, 0, message, len, ret, wlen);
+    return ret;
+}
+#endif
 
 static inline xmlChar *xmlchar_from_wcharn(const WCHAR *str, int nchars, BOOL use_xml_alloc)
 {

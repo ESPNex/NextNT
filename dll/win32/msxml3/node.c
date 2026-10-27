@@ -4998,15 +4998,27 @@ static LONG validate_error_code(const xmlError *error)
 }
 #endif
 
+#ifdef __REACTOS__
+struct validate_error_info
+{
+    LONG *code;
+    BSTR *reason;
+};
+#endif
+
 static void LIBXML2_LOG_CALLBACK validate_error(void* ctx, char const* msg, ...)
 {
     va_list ap;
 #ifdef __REACTOS__
+    struct validate_error_info *first = ctx;
     const xmlError *error;
-    LONG *first = ctx;
 
-    if (first && !*first && (error = xmlGetLastError()))
-        *first = validate_error_code(error);
+    if (first && !*first->code && (error = xmlGetLastError()))
+    {
+        *first->code = validate_error_code(error);
+        if (!*first->reason)
+            *first->reason = bstr_from_xml_error(error);
+    }
 #endif
     va_start(ap, msg);
     LIBXML2_CALLBACK_ERR(domdoc_validateNode, msg, ap);
@@ -5030,6 +5042,10 @@ HRESULT node_validate(struct domnode *doc, IXMLDOMNode *node_obj, IXMLDOMParseEr
     int validated = 0;
     xmlDocPtr xmldoc;
     xmlNodePtr xmlnode;
+#ifdef __REACTOS__
+    BSTR reason = NULL;
+    struct validate_error_info info = { &err_code, &reason };
+#endif
 
     if (!(node = get_node_obj(node_obj)))
         return E_FAIL;
@@ -5060,7 +5076,7 @@ HRESULT node_validate(struct domnode *doc, IXMLDOMNode *node_obj, IXMLDOMParseEr
         vctx->error = validate_error;
         vctx->warning = validate_warning;
 #ifdef __REACTOS__
-        vctx->userData = &err_code;
+        vctx->userData = &info;
 #endif
         ++validated;
 
@@ -5079,7 +5095,11 @@ HRESULT node_validate(struct domnode *doc, IXMLDOMNode *node_obj, IXMLDOMParseEr
         }
 #ifdef __REACTOS__
         else
+        {
             err_code = 0;
+            SysFreeString(reason);
+            reason = NULL;
+        }
 #endif
         xmlFreeValidCtxt(vctx);
     }
@@ -5089,7 +5109,11 @@ HRESULT node_validate(struct domnode *doc, IXMLDOMNode *node_obj, IXMLDOMParseEr
     if (hr == S_OK && schema)
     {
 
+#ifdef __REACTOS__
+        hr = SchemaCache_validate_tree(schema, xmlnode, &reason);
+#else
         hr = SchemaCache_validate_tree(schema, xmlnode);
+#endif
         if (SUCCEEDED(hr))
         {
             ++validated;
@@ -5119,8 +5143,20 @@ HRESULT node_validate(struct domnode *doc, IXMLDOMNode *node_obj, IXMLDOMParseEr
         hr = S_FALSE;
     }
 
+#ifdef __REACTOS__
+    if (hr == S_OK && reason)
+    {
+        SysFreeString(reason);
+        reason = NULL;
+    }
+    if (err)
+        *err = create_parseError(err_code, NULL, reason, NULL, 0, 0, 0);
+    else
+        SysFreeString(reason);
+#else
     if (err)
         *err = create_parseError(err_code, NULL, NULL, NULL, 0, 0, 0);
+#endif
 
     return hr;
 }

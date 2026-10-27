@@ -202,6 +202,12 @@ static void LIBXML2_LOG_CALLBACK validate_warning(void* ctx, char const* msg, ..
 
 static void validate_serror(void* ctx, const xmlError* err)
 {
+#ifdef __REACTOS__
+    BSTR *reason = ctx;
+
+    if (reason && !*reason)
+        *reason = bstr_from_xml_error(err);
+#endif
     LIBXML2_CALLBACK_SERROR(Schema_validate_tree, err);
 }
 
@@ -216,7 +222,11 @@ static const struct enumvariant_funcs schemacache_enumvariant = {
     NULL
 };
 
+#ifdef __REACTOS__
+static inline HRESULT Schema_validate_tree(xmlSchemaPtr schema, xmlNodePtr tree, BSTR *reason)
+#else
 static inline HRESULT Schema_validate_tree(xmlSchemaPtr schema, xmlNodePtr tree)
+#endif
 {
     xmlSchemaValidCtxtPtr svctx;
     int err;
@@ -226,7 +236,11 @@ static inline HRESULT Schema_validate_tree(xmlSchemaPtr schema, xmlNodePtr tree)
      *       we probably need to validate the schema here. */
     svctx = xmlSchemaNewValidCtxt(schema);
     xmlSchemaSetValidErrors(svctx, validate_error, validate_warning, NULL);
+#ifdef __REACTOS__
+    xmlSchemaSetValidStructuredErrors(svctx, validate_serror, reason);
+#else
     xmlSchemaSetValidStructuredErrors(svctx, validate_serror, NULL);
+#endif
 
     if (tree->type == XML_DOCUMENT_NODE)
         err = xmlSchemaValidateDoc(svctx, (xmlDocPtr)tree);
@@ -552,7 +566,11 @@ HRESULT dt_validate(XDR_DT dt, const WCHAR *contentW)
                 xmlSetNs(node, ns);
                 xmlDocSetRootElement(tmp_doc, node);
 
+#ifdef __REACTOS__
+                hr = Schema_validate_tree(datatypes_schema, (xmlNodePtr)tmp_doc, NULL);
+#else
                 hr = Schema_validate_tree(datatypes_schema, (xmlNodePtr)tmp_doc);
+#endif
                 xmlFreeDoc(tmp_doc);
 
                 free(content);
@@ -1474,7 +1492,11 @@ static inline xmlNodePtr lookup_schema_element(xmlSchemaPtr schema, const xmlCha
     return (decl != NULL)? decl->node : NULL;
 }
 
+#ifdef __REACTOS__
+HRESULT SchemaCache_validate_tree(IXMLDOMSchemaCollection2* iface, xmlNodePtr tree, BSTR *reason)
+#else
 HRESULT SchemaCache_validate_tree(IXMLDOMSchemaCollection2* iface, xmlNodePtr tree)
+#endif
 {
     schema_cache* This = impl_from_IXMLDOMSchemaCollection2(iface);
     xmlSchemaPtr schema;
@@ -1491,7 +1513,11 @@ HRESULT SchemaCache_validate_tree(IXMLDOMSchemaCollection2* iface, xmlNodePtr tr
     /* TODO: if the ns is not in the cache, and it's a URL,
      *       do we try to load from that? */
     if (schema)
+#ifdef __REACTOS__
+        return Schema_validate_tree(schema, tree, reason);
+#else
         return Schema_validate_tree(schema, tree);
+#endif
     else
         WARN("no schema found for xmlns=%s\n", get_node_nsURI(tree));
 
