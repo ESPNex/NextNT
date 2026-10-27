@@ -46,34 +46,22 @@ function(add_typelib)
     endforeach()
 endfunction()
 
-function(add_winmd_files TARGET DESTINATION)
+function(add_winmd_file OUTPUT IDL)
+    cmake_parse_arguments(_WINMD "" "" "NAMESPACES;DEPENDS" ${ARGN})
     get_includes(INCLUDES)
     get_defines(DEFINES)
-    set(OUTPUTS "")
-    set(WINMDS "")
-    foreach(ENTRY ${ARGN})
-        string(REPLACE "=" ";" PAIR ${ENTRY})
-        list(GET PAIR 0 FILE)
-        list(LENGTH PAIR PAIR_LENGTH)
-        if(PAIR_LENGTH GREATER 1)
-            list(GET PAIR 1 NAME)
-        else()
-            get_filename_component(NAME ${FILE} NAME_WLE)
-        endif()
-        get_filename_component(IDL_PATH ${FILE} ABSOLUTE BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-        get_included_idls(EXTRA_DEP ${IDL_PATH})
-        set(WINMD ${CMAKE_CURRENT_BINARY_DIR}/winmd/${NAME}.winmd)
-        add_custom_command(
-            OUTPUT ${WINMD}
-            COMMAND native-widl ${INCLUDES} ${DEFINES} ${IDL_FLAGS} --winmd -o ${WINMD} ${IDL_PATH}
-            DEPENDS ${IDL_PATH} ${EXTRA_DEP} native-widl
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-        list(APPEND OUTPUTS ${WINMD})
+    set(NAMESPACE_ARGS "")
+    foreach(NAMESPACE ${_WINMD_NAMESPACES})
+        list(APPEND NAMESPACE_ARGS --winmd-namespace=${NAMESPACE})
     endforeach()
-    add_custom_target(${TARGET} DEPENDS ${OUTPUTS})
-    foreach(WINMD ${OUTPUTS})
-        add_cd_file(TARGET ${TARGET} FILE ${WINMD} DESTINATION ${DESTINATION} FOR all)
-    endforeach()
+    get_filename_component(OUTPUT_DIR ${OUTPUT} DIRECTORY)
+    get_filename_component(OUTPUT_NAME ${OUTPUT} NAME)
+    file(MAKE_DIRECTORY ${OUTPUT_DIR})
+    add_custom_command(
+        OUTPUT ${OUTPUT}
+        COMMAND native-widl ${INCLUDES} ${DEFINES} ${IDL_FLAGS} --winmd ${NAMESPACE_ARGS} -o ${OUTPUT_NAME} ${IDL}
+        DEPENDS ${IDL} ${_WINMD_DEPENDS} native-widl
+        WORKING_DIRECTORY ${OUTPUT_DIR})
 endfunction()
 
 function(add_idl_headers TARGET)

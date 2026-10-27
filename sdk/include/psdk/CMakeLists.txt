@@ -318,7 +318,7 @@ set(WINMD_SOURCE ${SOURCE})
 list(FILTER WINMD_SOURCE INCLUDE REGEX "^windows\\..*\\.idl$")
 list(FILTER WINMD_SOURCE EXCLUDE REGEX "\\.interop\\.idl$|^windows\\.ui\\.xaml\\.hosting\\.desktopwindowxamlsource\\.idl$|^windows\\.applicationmodel\\.store\\.preview\\.installcontrol\\.idl$")
 list(TRANSFORM WINMD_SOURCE PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/)
-set_property(GLOBAL PROPERTY WINMD_SOURCES ${WINMD_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/windowscontracts.idl=windows)
+set_property(GLOBAL PROPERTY WINMD_SOURCES ${WINMD_SOURCE})
 add_typelib(stdole2.idl)
 add_custom_target(stdole2 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/stdole2.tlb)
 
