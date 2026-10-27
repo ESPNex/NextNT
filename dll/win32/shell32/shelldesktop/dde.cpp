@@ -275,7 +275,7 @@ static DWORD ProgmanExecute(PCWSTR Command, int Argc, PWSTR *Argv)
         From[Length + 1] = UNICODE_NULL;
         Operation.wFunc = FO_DELETE;
         Operation.pFrom = From;
-        Operation.fFlags = FOF_NOCONFIRMATION;
+        Operation.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
         Result = SHFileOperationW(&Operation);
         CoTaskMemFree(From);
         CoTaskMemFree(Path);
