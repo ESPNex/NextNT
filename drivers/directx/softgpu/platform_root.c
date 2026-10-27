@@ -6,6 +6,7 @@
 
 #include "softgpu.h"
 #include "softgpu_2d_core.h"
+#include <loader_framebuffer.h>
 
 #define SOFTGPU_ROOT_WORKING_SURFACE_COUNT 12UL
 
@@ -41,6 +42,7 @@ typedef NTSTATUS (NTAPI *PSOFTGPU_X86_BIOS_WRITE_MEMORY)(USHORT, USHORT, PVOID, 
 typedef BOOLEAN (NTAPI *PSOFTGPU_X86_BIOS_CALL)(ULONG, PSOFTGPU_X86_BIOS_REGISTERS);
 typedef FIRMWARE_TYPE (NTAPI *PSOFTGPU_GET_FIRMWARE_TYPE)(VOID);
 typedef NTSTATUS (NTAPI *PSOFTGPU_SET_VIRTUAL_FRAMEBUFFER)(PVOID);
+typedef BOOLEAN (NTAPI *PSOFTGPU_GET_GOP_TRANSFORM)(PLOADER_PARAMETER_FRAMEBUFFER_TRANSFORM);
 
 static PSOFTGPU_X86_BIOS_CALL SoftGpuX86BiosCall;
 static ULONGLONG SoftGpuBootScreenSize;
@@ -476,6 +478,7 @@ typedef struct _SOFTGPU_ROOT_SHADOW
     UCHAR GreenPosition;
     UCHAR BlueSize;
     UCHAR BluePosition;
+    ULONG Rotation;
 } SOFTGPU_ROOT_SHADOW, *PSOFTGPU_ROOT_SHADOW;
 
 static BOOLEAN
@@ -760,6 +763,108 @@ SoftGpuVbeColdStart(
     return STATUS_SUCCESS;
 }
 
+static LONG_PTR
+SoftGpuRootShadowIndex(
+    _In_ PSOFTGPU_ROOT_SHADOW Shadow,
+    _In_ LONG X,
+    _In_ LONG Y)
+{
+    switch (Shadow->Rotation)
+    {
+        case LoaderFramebufferRotation90:
+            return ((LONG_PTR)Shadow->Height - 1 - X) * Shadow->Width + Y;
+
+        case LoaderFramebufferRotation180:
+            return ((LONG_PTR)Shadow->Height - 1 - Y) * Shadow->Width + Shadow->Width - 1 - X;
+
+        case LoaderFramebufferRotation270:
+            return (LONG_PTR)X * Shadow->Width + Shadow->Width - 1 - Y;
+
+        default:
+            return (LONG_PTR)Y * Shadow->Width + X;
+    }
+}
+
+static NTSTATUS
+SoftGpuRootRotateScanout(
+    _Inout_ PSOFTGPU_DEVICE Device,
+    _Inout_ PSOFTGPU_PLATFORM_CONFIG Config)
+{
+    PSOFTGPU_GET_GOP_TRANSFORM GetTransform;
+    LOADER_PARAMETER_FRAMEBUFFER_TRANSFORM Transform;
+    PSOFTGPU_ROOT_SHADOW Shadow;
+    ULONG Width;
+    ULONG Height;
+
+    GetTransform = (PSOFTGPU_GET_GOP_TRANSFORM)SoftGpuGetHalRoutine(L"InbvGetGopFrameBufferTransform");
+    if (GetTransform == NULL ||
+        !GetTransform(&Transform) ||
+        Transform.Rotation == LoaderFramebufferRotationIdentity ||
+        Transform.Rotation > LoaderFramebufferRotation270)
+    {
+        return STATUS_SUCCESS;
+    }
+
+    if (Transform.Rotation == LoaderFramebufferRotation180)
+    {
+        Width = Config->Width;
+        Height = Config->Height;
+    }
+    else
+    {
+        Width = Config->Height;
+        Height = Config->Width;
+    }
+
+    if (Transform.LogicalWidth != Width ||
+        Transform.LogicalHeight != Height ||
+        (Config->Format != D3DDDIFMT_X8R8G8B8 && Config->Format != D3DDDIFMT_A8R8G8B8))
+    {
+        DPRINT1("SOFTGPU: ignoring %lux%lu framebuffer transform for %lux%lu scanout\n",
+                Transform.LogicalWidth, Transform.LogicalHeight, Config->Width, Config->Height);
+        return STATUS_SUCCESS;
+    }
+
+    Shadow = ExAllocatePoolWithTag(NonPagedPool, sizeof(*Shadow), SOFTGPU_POOL_TAG);
+    if (Shadow == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+    RtlZeroMemory(Shadow, sizeof(*Shadow));
+    Shadow->Width = Width;
+    Shadow->Height = Height;
+    Shadow->Pitch = Config->ScanoutPitch;
+    Shadow->BytesPerPixel = SOFTGPU_DISPLAY_BYTES_PER_PIXEL;
+    Shadow->RedSize = 8;
+    Shadow->RedPosition = 16;
+    Shadow->GreenSize = 8;
+    Shadow->GreenPosition = 8;
+    Shadow->BlueSize = 8;
+    Shadow->BluePosition = 0;
+    Shadow->Rotation = Transform.Rotation;
+    Shadow->ShadowSize = (SIZE_T)Width * SOFTGPU_DISPLAY_BYTES_PER_PIXEL * Height;
+    Shadow->Shadow = ExAllocatePoolWithTag(NonPagedPool, Shadow->ShadowSize, SOFTGPU_POOL_TAG);
+    Shadow->FrameBufferSize = (SIZE_T)Config->ScanoutSize;
+    Shadow->FrameBuffer = MmMapIoSpace(Config->ScanoutPhysicalAddress, Shadow->FrameBufferSize, MmWriteCombined);
+    if (Shadow->FrameBuffer == NULL)
+        Shadow->FrameBuffer = MmMapIoSpace(Config->ScanoutPhysicalAddress, Shadow->FrameBufferSize, MmNonCached);
+    if (Shadow->Shadow == NULL || Shadow->FrameBuffer == NULL)
+    {
+        SoftGpuFreeRootShadow(Shadow);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    RtlZeroMemory(Shadow->Shadow, Shadow->ShadowSize);
+
+    DPRINT1("SOFTGPU: %lux%lu desktop on a %lux%lu scanout rotated by %lu degrees\n",
+            Width, Height, Config->Width, Config->Height, Transform.Rotation * 90);
+
+    Device->PlatformContext = Shadow;
+    Config->Width = Width;
+    Config->Height = Height;
+    Config->ScanoutPitch = Width * SOFTGPU_DISPLAY_BYTES_PER_PIXEL;
+    Config->ScanoutSize = Shadow->ShadowSize;
+    Config->ScanoutShadow = Shadow->Shadow;
+    return STATUS_SUCCESS;
+}
+
 NTSTATUS
 SoftGpuPlatformValidatePdo(
     _In_ PDEVICE_OBJECT PhysicalDeviceObject)
@@ -818,6 +923,10 @@ SoftGpuPlatformQueryStart(
             Config->ScanoutPitch = LoaderPitch;
             Config->ScanoutSize = LoaderVisibleLength;
             SoftGpuBootScreenSize = LoaderVisibleLength;
+
+            Status = SoftGpuRootRotateScanout(Device, Config);
+            if (!NT_SUCCESS(Status))
+                return Status;
         }
     }
 #else
@@ -848,6 +957,10 @@ SoftGpuPlatformQueryStart(
             Config->ScanoutPitch = PostDisplayInfo.Pitch;
             Config->ScanoutSize = PostVisibleLength;
             SoftGpuBootScreenSize = PostVisibleLength;
+
+            Status = SoftGpuRootRotateScanout(Device, Config);
+            if (!NT_SUCCESS(Status))
+                return Status;
         }
         else if (Device != NULL &&
                  Device->PhysicalDeviceObject != NULL &&
@@ -994,6 +1107,11 @@ SoftGpuPlatformScanoutWritten(
     LONG Top;
     LONG Right;
     LONG Bottom;
+    LONG FrameLeft;
+    LONG FrameTop;
+    LONG FrameRight;
+    LONG FrameBottom;
+    LONG_PTR Step;
     LONG X;
     LONG Y;
     ULONG Byte;
@@ -1006,15 +1124,50 @@ SoftGpuPlatformScanoutWritten(
     Top = max(Rect->top, 0);
     Right = min(Rect->right, (LONG)Shadow->Width);
     Bottom = min(Rect->bottom, (LONG)Shadow->Height);
-    for (Y = Top; Y < Bottom; Y++)
+    switch (Shadow->Rotation)
     {
-        const ULONG *Source = Shadow->Shadow + (SIZE_T)Y * Shadow->Width;
-        PUCHAR Destination = Shadow->FrameBuffer + (SIZE_T)Y * Shadow->Pitch +
-                             (SIZE_T)Left * Shadow->BytesPerPixel;
+        case LoaderFramebufferRotation90:
+            FrameLeft = (LONG)Shadow->Height - Bottom;
+            FrameTop = Left;
+            FrameRight = (LONG)Shadow->Height - Top;
+            FrameBottom = Right;
+            Step = -(LONG_PTR)Shadow->Width;
+            break;
 
-        for (X = Left; X < Right; X++)
+        case LoaderFramebufferRotation180:
+            FrameLeft = (LONG)Shadow->Width - Right;
+            FrameTop = (LONG)Shadow->Height - Bottom;
+            FrameRight = (LONG)Shadow->Width - Left;
+            FrameBottom = (LONG)Shadow->Height - Top;
+            Step = -1;
+            break;
+
+        case LoaderFramebufferRotation270:
+            FrameLeft = Top;
+            FrameTop = (LONG)Shadow->Width - Right;
+            FrameRight = Bottom;
+            FrameBottom = (LONG)Shadow->Width - Left;
+            Step = (LONG_PTR)Shadow->Width;
+            break;
+
+        default:
+            FrameLeft = Left;
+            FrameTop = Top;
+            FrameRight = Right;
+            FrameBottom = Bottom;
+            Step = 1;
+            break;
+    }
+
+    for (Y = FrameTop; Y < FrameBottom; Y++)
+    {
+        LONG_PTR Index = SoftGpuRootShadowIndex(Shadow, FrameLeft, Y);
+        PUCHAR Destination = Shadow->FrameBuffer + (SIZE_T)Y * Shadow->Pitch +
+                             (SIZE_T)FrameLeft * Shadow->BytesPerPixel;
+
+        for (X = FrameLeft; X < FrameRight; X++)
         {
-            ULONG Pixel = Source[X];
+            ULONG Pixel = Shadow->Shadow[Index];
             ULONG Value = ((((Pixel >> 16) & 0xFF) >> (8 - Shadow->RedSize)) << Shadow->RedPosition) |
                           ((((Pixel >> 8) & 0xFF) >> (8 - Shadow->GreenSize)) << Shadow->GreenPosition) |
                           (((Pixel & 0xFF) >> (8 - Shadow->BlueSize)) << Shadow->BluePosition);
@@ -1022,6 +1175,7 @@ SoftGpuPlatformScanoutWritten(
             for (Byte = 0; Byte < Shadow->BytesPerPixel; Byte++)
                 Destination[Byte] = (UCHAR)(Value >> (Byte * 8));
             Destination += Shadow->BytesPerPixel;
+            Index += Step;
         }
     }
 }
