@@ -2160,22 +2160,46 @@ static ULONG WINAPI IInputObject_fnRelease(IInputObject *iface)
 static HRESULT WINAPI IInputObject_fnUIActivateIO(IInputObject *iface, BOOL fActivate, MSG *pMsg)
 {
     ExplorerBrowserImpl *This = impl_from_IInputObject(iface);
+#ifdef __REACTOS__
+    TRACE("%p (%d, %p)\n", This, fActivate, pMsg);
+    if (This->psv)
+        IShellView_UIActivate(This->psv, fActivate ? SVUIA_ACTIVATE_FOCUS : SVUIA_DEACTIVATE);
+    return S_OK;
+#else
     FIXME("stub, %p (%d, %p)\n", This, fActivate, pMsg);
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI IInputObject_fnHasFocusIO(IInputObject *iface)
 {
     ExplorerBrowserImpl *This = impl_from_IInputObject(iface);
+#ifdef __REACTOS__
+    HWND hwnd_view = NULL, hwnd_focus;
+
+    TRACE("%p\n", This);
+    if (!This->psv || FAILED(IShellView_GetWindow(This->psv, &hwnd_view)) || !hwnd_view)
+        return E_FAIL;
+    hwnd_focus = GetFocus();
+    return (hwnd_focus && (hwnd_focus == hwnd_view || IsChild(hwnd_view, hwnd_focus))) ? S_OK : S_FALSE;
+#else
     FIXME("stub, %p\n", This);
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI IInputObject_fnTranslateAcceleratorIO(IInputObject *iface, MSG *pMsg)
 {
     ExplorerBrowserImpl *This = impl_from_IInputObject(iface);
+#ifdef __REACTOS__
+    TRACE("%p (%p)\n", This, pMsg);
+    if (!This->psv)
+        return E_FAIL;
+    return IShellView_TranslateAccelerator(This->psv, pMsg) == S_OK ? S_OK : S_FALSE;
+#else
     FIXME("stub, %p (%p)\n", This, pMsg);
     return E_NOTIMPL;
+#endif
 }
 
 static IInputObjectVtbl vt_IInputObject = {
