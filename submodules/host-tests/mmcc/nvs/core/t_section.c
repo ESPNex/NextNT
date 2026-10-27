@@ -1703,6 +1703,55 @@ SectionExecCleanFrames(void)
     WorldDestroy(&World);
 }
 
+static void
+SectionSparseDataFile(void)
+{
+    TEST_WORLD World;
+    TEST_FILE File;
+    PMI_SEGMENT Segment;
+    PMI_CHUNK_INDEX Index;
+    ULONG64 Size = 1ULL << 40;
+    ULONG64 Base = 0;
+    ULONG64 ViewSize = 0x40000;
+    ULONG Chunks = 0;
+    UCHAR Byte;
+
+    WorldCreate(&World, 512, 1, 100000);
+    WorldAttach(&World, 0, &World.System.SystemSpace);
+    FileCreate(&File, 0x100000);
+
+    CHECK(NT_SUCCESS(MiSegmentCreate(&World.System, MiSegmentDataFile, Size, MI_PROT_READWRITE, &TestFileOps, &File,
+                                     NULL, 0, &Segment)));
+    CHECK((ULONG64)Segment->PageCount == Size >> PAGE_SHIFT && Segment->ChunkIndex == NULL);
+    CHECK(!MiSegmentIsResident(Segment, Size - PAGE_SIZE, PAGE_SIZE));
+    CHECK(NT_SUCCESS(MiSegmentFlush(Segment, 0, Size)) && File.Writes == 0);
+    CHECK(MiSegmentPurge(Segment, 0, 0));
+    CHECK(NT_SUCCESS(MiSegmentExtend(Segment, Size + PAGE_SIZE)));
+    CHECK(Segment->ChunkIndex == NULL);
+
+    CHECK(NT_SUCCESS(MiMapView(&World.System.SystemSpace, Segment, &Base, 0x80000, &ViewSize, MI_PROT_READWRITE, 0)));
+    CHECK(NT_SUCCESS(MachineAccessMemory(&World.Machine, 0, Base + 0x1005, &Byte, 1, MachineRead, FALSE)));
+    CHECK(Byte == File.Data[0x81005]);
+    Byte ^= 0xFF;
+    CHECK(NT_SUCCESS(MachineAccessMemory(&World.Machine, 0, Base + 0x1005, &Byte, 1, MachineWrite, FALSE)));
+    CHECK(NT_SUCCESS(MiUnmapView(&World.System.SystemSpace, Base)));
+
+    for (Index = Segment->ChunkIndex; Index != NULL; Index = Index->Next)
+        Chunks++;
+    CHECK(Chunks == 1);
+
+    CHECK(NT_SUCCESS(MiSegmentFlush(Segment, 0, Size)));
+    CHECK(File.Writes == 1 && File.Data[0x81005] == Byte);
+    CHECK(MiSegmentPurge(Segment, 0, 0));
+    CHECK(!MiSegmentIsResident(Segment, 0x81000, PAGE_SIZE));
+
+    MiSegmentDereferenceAndClose(Segment);
+    CHECK(IsListEmpty(&World.System.SegmentList) && WorldCheck(&World) == 0);
+    WorldAttach(&World, 0, NULL);
+    FileDestroy(&File);
+    WorldDestroy(&World);
+}
+
 void
 TestSection(void)
 {
@@ -1711,6 +1760,7 @@ TestSection(void)
     SectionConcurrentChurn();
     SectionUnmapBatch();
     SectionSharedDataFile();
+    SectionSparseDataFile();
     SectionPageFileBacked();
     SectionViewCommitCompatibility();
     SectionReservedPageFile();

@@ -117,6 +117,127 @@ MiSegmentLinkChunksLocked(
     }
 }
 
+FORCEINLINE
+BOOLEAN
+MiSegmentSparse(
+    _In_ PMI_SEGMENT Segment)
+{
+    return (BOOLEAN)(Segment->Kind == MiSegmentDataFile);
+}
+
+static
+PMI_PTE
+MiSegmentProtoPresent(
+    _In_ PMI_SEGMENT Segment,
+    _In_ ULONG64 Page)
+{
+    PMI_PTE *Directory = MI_ATOMIC_READ_POINTER(&Segment->Chunk);
+    ULONG64 Number = MiSegmentChunkNumber(Page);
+    PMI_PTE Chunk = MI_ATOMIC_READ_POINTER(&Directory[Number]);
+
+    return (Chunk != NULL) ? &Chunk[Page - MiSegmentChunkFirstPage(Number)] : NULL;
+}
+
+static
+MI_PTE
+MiSegmentProtoRead(
+    _In_ PMI_SEGMENT Segment,
+    _In_ ULONG64 Page)
+{
+    PMI_PTE Proto = MiSegmentProtoPresent(Segment, Page);
+
+    return (Proto != NULL) ? MiArchPteRead(Proto) : MiSegmentDefaultProto(Segment, Page);
+}
+
+FORCEINLINE
+ULONG64
+MiSegmentNextChunkPage(
+    _In_ ULONG64 Page)
+{
+    return MiSegmentChunkFirstPage(MiSegmentChunkNumber(Page) + 1);
+}
+
+static
+PMI_CHUNK_INDEX
+MiSegmentAllocateChunk(
+    _In_ PMI_SEGMENT Segment,
+    _In_ ULONG64 Number,
+    _In_ BOOLEAN Defaults)
+{
+    ULONG64 Entries = MiSegmentChunkPages(Number);
+    PMI_PTE Chunk = MI_ALLOCATE(Entries * sizeof(MI_PTE));
+    PMI_CHUNK_INDEX Index;
+    ULONG64 i;
+
+    if (Chunk == NULL)
+        return NULL;
+
+    Index = MI_ALLOCATE(sizeof(*Index));
+    if (Index == NULL)
+    {
+        MI_FREE(Chunk);
+        return NULL;
+    }
+
+    RtlZeroMemory(Chunk, Entries * sizeof(MI_PTE));
+    if (Defaults)
+    {
+        for (i = 0; i < Entries; i++)
+            MiArchPteWrite(&Chunk[i], MiSegmentDefaultProto(Segment, MiSegmentChunkFirstPage(Number) + i));
+    }
+
+    RtlZeroMemory(Index, sizeof(*Index));
+    Index->Segment = Segment;
+    Index->Base = (ULONG64)(ULONG_PTR)Chunk;
+    Index->Number = Number;
+    Index->PageCount = (ULONG)(((Index->Base + Entries * sizeof(MI_PTE) - 1) >> PAGE_SHIFT) -
+                               (Index->Base >> PAGE_SHIFT) + 1);
+    MI_ASSERT(Index->PageCount <= RTL_NUMBER_OF(Index->Page));
+    Index->Page[0].Index = Index;
+    Index->Page[1].Index = Index;
+    return Index;
+}
+
+static
+PMI_PTE
+MiSegmentProtoEnsure(
+    _Inout_ PMI_SEGMENT Segment,
+    _In_ ULONG64 Page)
+{
+    PMI_PTE Proto = MiSegmentProtoPresent(Segment, Page);
+    ULONG64 Number = MiSegmentChunkNumber(Page);
+    PMI_CHUNK_INDEX Index;
+    PMI_PTE *Directory;
+    KIRQL OldIrql;
+
+    if (Proto != NULL)
+        return Proto;
+
+    Index = MiSegmentAllocateChunk(Segment, Number, TRUE);
+    if (Index == NULL)
+        return NULL;
+
+    MI_SPIN_ACQUIRE(&Segment->System->SegmentListLock, &OldIrql);
+    Directory = Segment->Chunk;
+    if (Directory[Number] == NULL)
+    {
+        Index->Next = Segment->ChunkIndex;
+        Segment->ChunkIndex = Index;
+        MiSegmentLinkChunksLocked(Segment);
+        MI_ATOMIC_WRITE_POINTER(&Directory[Number], (PMI_PTE)(ULONG_PTR)Index->Base);
+        Index = NULL;
+    }
+    MI_SPIN_RELEASE(&Segment->System->SegmentListLock, OldIrql);
+
+    if (Index != NULL)
+    {
+        MI_FREE((PVOID)(ULONG_PTR)Index->Base);
+        MI_FREE(Index);
+    }
+
+    return MiSegmentProtoPresent(Segment, Page);
+}
+
 static
 VOID
 MiSegmentUnlinkChunksLocked(
@@ -168,35 +289,24 @@ MiSegmentGrow(
         Segment->ChunkCapacity = Capacity;
     }
 
+    if (MiSegmentSparse(Segment))
+    {
+        if (Segment->ChunkCount < Needed)
+            Segment->ChunkCount = Needed;
+        MI_ATOMIC_WRITE64(&Segment->PageCount, (LONG64)NewPageCount);
+        return STATUS_SUCCESS;
+    }
+
     while (Segment->ChunkCount < Needed)
     {
-        ULONG64 Entries = MiSegmentChunkPages(Segment->ChunkCount);
-        PMI_PTE Chunk = MI_ALLOCATE(Entries * sizeof(MI_PTE));
-        PMI_CHUNK_INDEX Index;
+        PMI_CHUNK_INDEX Index = MiSegmentAllocateChunk(Segment, Segment->ChunkCount, FALSE);
 
-        if (Chunk == NULL)
-            return STATUS_INSUFFICIENT_RESOURCES;
-
-        Index = MI_ALLOCATE(sizeof(*Index));
         if (Index == NULL)
-        {
-            MI_FREE(Chunk);
             return STATUS_INSUFFICIENT_RESOURCES;
-        }
 
-        RtlZeroMemory(Chunk, Entries * sizeof(MI_PTE));
-        RtlZeroMemory(Index, sizeof(*Index));
-        Index->Segment = Segment;
-        Index->Base = (ULONG64)(ULONG_PTR)Chunk;
-        Index->Number = Segment->ChunkCount;
-        Index->PageCount = (ULONG)(((Index->Base + Entries * sizeof(MI_PTE) - 1) >> PAGE_SHIFT) -
-                                   (Index->Base >> PAGE_SHIFT) + 1);
-        MI_ASSERT(Index->PageCount <= RTL_NUMBER_OF(Index->Page));
-        Index->Page[0].Index = Index;
-        Index->Page[1].Index = Index;
         Index->Next = Segment->ChunkIndex;
         Segment->ChunkIndex = Index;
-        Segment->Chunk[Segment->ChunkCount++] = Chunk;
+        Segment->Chunk[Segment->ChunkCount++] = (PMI_PTE)(ULONG_PTR)Index->Base;
     }
 
     for (Page = MiSegmentPages(Segment); Page < NewPageCount; Page++)
@@ -270,7 +380,13 @@ MiSegmentWaitForWriters(
 
     for (Page = 0; Page < MiSegmentPages(Segment); Page++)
     {
-        PMI_PTE Proto = MiSegmentProto(Segment, Page);
+        PMI_PTE Proto = MiSegmentProtoPresent(Segment, Page);
+
+        if (Proto == NULL)
+        {
+            Page = MiSegmentNextChunkPage(Page) - 1;
+            continue;
+        }
 
         for (;;)
         {
@@ -335,7 +451,13 @@ MiSegmentDelete(
 
     for (Page = 0; Page < MiSegmentPages(Segment); Page++)
     {
-        PMI_PTE Proto = MiSegmentProto(Segment, Page);
+        PMI_PTE Proto = MiSegmentProtoPresent(Segment, Page);
+
+        if (Proto == NULL)
+        {
+            Page = MiSegmentNextChunkPage(Page) - 1;
+            continue;
+        }
 
         if (Segment->LargeFrames != NULL && MiSoftKind(MiArchPteRead(Proto)) == MiSoftResident)
         {
@@ -354,7 +476,10 @@ MiSegmentDelete(
     MI_ATOMIC_ADD64(&Segment->System->CommittedPages, -Segment->CommitCharge);
 
     for (i = 0; i < Segment->ChunkCount; i++)
-        MI_FREE(Segment->Chunk[i]);
+    {
+        if (Segment->Chunk[i] != NULL)
+            MI_FREE(Segment->Chunk[i]);
+    }
 
     while (Segment->ChunkIndex != NULL)
     {
@@ -1176,12 +1301,12 @@ MiSegmentCopyResident(
     while (Done < Length)
     {
         ULONG Bytes = (Length - Done < PAGE_SIZE) ? Length - Done : PAGE_SIZE;
-        PMI_PTE Proto = MiSegmentProto(Segment, Done >> PAGE_SHIFT);
-        MI_SOFT_KIND Kind = MiSoftKind(MiArchPteRead(Proto));
+        PMI_PTE Proto = MiSegmentProtoPresent(Segment, Done >> PAGE_SHIFT);
+        MI_SOFT_KIND Kind = MiSoftKind(MiSegmentProtoRead(Segment, Done >> PAGE_SHIFT));
         ULONG Frame;
         ULONG Same;
 
-        if ((Kind == MiSoftResident || Kind == MiSoftTransition) &&
+        if (Proto != NULL && (Kind == MiSoftResident || Kind == MiSoftTransition) &&
             NT_SUCCESS(MiSegmentAcquirePage(Segment, Done >> PAGE_SHIFT, Proto, FALSE, &Frame)))
         {
             PUCHAR Mapping = MiPfnMapFrame(&Segment->System->Pfn, Frame);
@@ -1596,7 +1721,9 @@ MiPrototypeFaultAround(
             continue;
         }
 
-        Proto = MiSegmentProto(Segment, Page);
+        Proto = MiSegmentProtoPresent(Segment, Page);
+        if (Proto == NULL)
+            continue;
         ProtoPte = MiArchPteRead(Proto);
         Frame = (ULONG)MiSoftValue(ProtoPte);
         if (MiSoftKind(ProtoPte) != MiSoftResident ||
@@ -1651,7 +1778,9 @@ MiResolvePrototypeFault(
         return STATUS_ACCESS_VIOLATION;
     }
 
-    Proto = MiSegmentProto(Segment, Page);
+    Proto = MiSegmentProtoPresent(Segment, Page);
+    if (Proto == NULL)
+        return STATUS_PENDING_PAGE_IN;
     ProtoPte = MiArchPteRead(Proto);
     Frame = (ULONG)MiSoftValue(ProtoPte);
 
@@ -2466,13 +2595,22 @@ MiSegmentFlush(
 
         while (Page < Last && Count < Limit)
         {
-            PMI_PTE Proto = MiSegmentProto(Segment, Page);
-            MI_PTE Pte = MiArchPteRead(Proto);
-            MI_SOFT_KIND Kind = MiSoftKind(Pte);
+            PMI_PTE Proto = MiSegmentProtoPresent(Segment, Page);
+            MI_PTE Pte;
+            MI_SOFT_KIND Kind;
             ULONG64 FileOffset;
             ULONG PageBytes;
             ULONG Frame;
 
+            if (Proto == NULL)
+            {
+                if (Count == 0)
+                    Page = MiSegmentNextChunkPage(Page) - 1;
+                break;
+            }
+
+            Pte = MiArchPteRead(Proto);
+            Kind = MiSoftKind(Pte);
             if (Kind != MiSoftResident && Kind != MiSoftTransition)
                 break;
 
@@ -2486,7 +2624,7 @@ MiSegmentFlush(
                     break;
                 for (Next = Page + 1; Next < End; Next++)
                 {
-                    MI_PTE NextPte = MiArchPteRead(MiSegmentProto(Segment, Next));
+                    MI_PTE NextPte = MiSegmentProtoRead(Segment, Next);
                     MI_SOFT_KIND NextKind = MiSoftKind(NextPte);
 
                     if (NextKind != MiSoftResident && NextKind != MiSoftTransition)
@@ -2574,9 +2712,16 @@ MiSegmentPurge(
 
     for (Page = First; Page < Last; Page++)
     {
-        PMI_PTE Proto = MiSegmentProto(Segment, Page);
+        PMI_PTE Proto = MiSegmentProtoPresent(Segment, Page);
+        MI_SOFT_KIND Kind;
 
-        MI_SOFT_KIND Kind = MiSoftKind(MiArchPteRead(Proto));
+        if (Proto == NULL)
+        {
+            Page = MiSegmentNextChunkPage(Page) - 1;
+            continue;
+        }
+
+        Kind = MiSoftKind(MiArchPteRead(Proto));
 
         if (Kind == MiSoftResident)
         {
@@ -2617,7 +2762,7 @@ MiSegmentIsResident(
 
     for (Page = Offset >> PAGE_SHIFT; Page < Last && Resident; Page++)
     {
-        MI_SOFT_KIND Kind = MiSoftKind(MiArchPteRead(MiSegmentProto(Segment, Page)));
+        MI_SOFT_KIND Kind = MiSoftKind(MiSegmentProtoRead(Segment, Page));
 
         Resident = (BOOLEAN)(Kind == MiSoftResident || Kind == MiSoftTransition);
     }
@@ -2745,7 +2890,12 @@ MiSegmentPrefetch(
             MI_MUTEX_RELEASE(&Segment->Lock);
             return STATUS_INVALID_PARAMETER;
         }
-        Proto = MiSegmentProto(Segment, Page);
+        Proto = MiSegmentProtoEnsure(Segment, Page);
+        if (Proto == NULL)
+        {
+            MI_MUTEX_RELEASE(&Segment->Lock);
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
         Original = MiArchPteRead(Proto);
         for (Link = Segment->PendingReads.Flink; Link != &Segment->PendingReads; Link = Link->Flink)
         {
@@ -2830,7 +2980,7 @@ MiSegmentReadCluster(
 
     if (Segment->FileOps.ReadPages == NULL)
         return 0;
-    Originals[0] = MiArchPteRead(MiSegmentProto(Segment, Page));
+    Originals[0] = MiSegmentProtoRead(Segment, Page);
     if (MiSoftKind(Originals[0]) != MiSoftSubsection)
         return 0;
     Offset = MiSoftValue(Originals[0]) << MI_SECTOR_SHIFT;
@@ -2840,10 +2990,14 @@ MiSegmentReadCluster(
 
     while (Count < MI_MAX_FILE_IO_PAGES && Page + Count < Last)
     {
-        MI_PTE Pte = MiArchPteRead(MiSegmentProto(Segment, Page + Count));
+        PMI_PTE Slot = MiSegmentProtoEnsure(Segment, Page + Count);
+        MI_PTE Pte;
         ULONG64 FileOffset = Offset + Count * PAGE_SIZE;
         ULONG Frame;
 
+        if (Slot == NULL)
+            break;
+        Pte = MiArchPteRead(Slot);
         if (MiSoftKind(Pte) != MiSoftSubsection ||
             (MiSoftValue(Pte) << MI_SECTOR_SHIFT) != FileOffset ||
             MiSegmentPageBytes(Segment, Page + Count, FileOffset) != PAGE_SIZE ||
@@ -2895,6 +3049,10 @@ MiSegmentFaultIn(
     {
         Status = STATUS_ACCESS_VIOLATION;
     }
+    else if (MiSegmentProtoEnsure(Segment, Page) == NULL)
+    {
+        Status = STATUS_NO_MEMORY;
+    }
     else
     {
         PMI_PTE Proto = MiSegmentProto(Segment, Page);
@@ -2934,12 +3092,20 @@ MiSegmentMakeResidentBeyond(
 
     for (Page = Offset >> PAGE_SHIFT; Page < Last && NT_SUCCESS(Status); Page++)
     {
-        PMI_PTE Proto = MiSegmentProto(Segment, Page);
-        MI_PTE Pte = MiArchPteRead(Proto);
-        MI_SOFT_KIND Kind = MiSoftKind(Pte);
+        PMI_PTE Proto = MiSegmentProtoEnsure(Segment, Page);
+        MI_PTE Pte;
+        MI_SOFT_KIND Kind;
         ULONG Frame;
         ULONG Cluster;
 
+        if (Proto == NULL)
+        {
+            Status = STATUS_NO_MEMORY;
+            break;
+        }
+
+        Pte = MiArchPteRead(Proto);
+        Kind = MiSoftKind(Pte);
         if (Kind == MiSoftResident || Kind == MiSoftTransition || Pte == 0)
             continue;
 
@@ -2984,7 +3150,17 @@ MiSegmentMarkDirty(
         ULONG i;
 
         for (i = 0; i < Count; i++)
-            Slots[i] = MiSegmentProto(Segment, Page + i);
+        {
+            Slots[i] = MiSegmentProtoEnsure(Segment, Page + i);
+            if (Slots[i] == NULL)
+            {
+                Status = STATUS_NO_MEMORY;
+                Count = i;
+                break;
+            }
+        }
+        if (Count == 0)
+            break;
         Done = MiPfnMarkMappedPagesModified(&System->Pfn, Slots, Count);
         for (i = 0; i < Count; i++)
         {
