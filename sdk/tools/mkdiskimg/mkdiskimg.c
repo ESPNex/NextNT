@@ -5,6 +5,11 @@
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.img@outlook.com>
  */
 
+#ifndef _WIN32
+#define _GNU_SOURCE
+#include <errno.h>
+#include <unistd.h>
+#endif
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,22 +162,52 @@ static void print_usage(const char* name)
     printf("  -vhdx               Shorthand for -format vhdx (Hyper-V Generation 2 takes no VHD)\n");
 }
 
+static int buffer_is_zero(const unsigned char* data, size_t size);
+
+static long next_data_offset(FILE* file, long offset, long end)
+{
+#ifdef SEEK_DATA
+    int fd = fileno(file);
+    off_t current = lseek(fd, 0, SEEK_CUR);
+    off_t found;
+    int error;
+
+    if (current < 0)
+        return offset;
+    found = lseek(fd, (off_t)offset, SEEK_DATA);
+    error = errno;
+    if (lseek(fd, current, SEEK_SET) != current)
+        return offset;
+    if (found < 0)
+        return error == ENXIO ? end : offset;
+    return found < (off_t)end ? (long)found : end;
+#else
+    (void)file;
+    (void)end;
+    return offset;
+#endif
+}
+
 static int copy_file_data(FILE* dst, FILE* src, long size)
 {
     unsigned char buf[32768];
-    long remaining = size;
+    long base = ftell(dst);
+    long position = 0;
 
-    while (remaining > 0)
+    if (base < 0)
+        return -1;
+    while ((position = next_data_offset(src, position, size)) < size)
     {
-        size_t chunk = remaining < (long)sizeof(buf) ? (size_t)remaining : sizeof(buf);
-        size_t rd = fread(buf, 1, chunk, src);
-        if (rd == 0)
+        size_t chunk = size - position < (long)sizeof(buf) ? (size_t)(size - position) : sizeof(buf);
+
+        if (fseek(src, position, SEEK_SET) != 0 || fread(buf, 1, chunk, src) != chunk)
             return -1;
-        if (fwrite(buf, 1, rd, dst) != rd)
+        if (!buffer_is_zero(buf, chunk) &&
+            (fseek(dst, base + position, SEEK_SET) != 0 || fwrite(buf, 1, chunk, dst) != chunk))
             return -1;
-        remaining -= (long)rd;
+        position += (long)chunk;
     }
-    return remaining == 0 ? 0 : -1;
+    return 0;
 }
 
 static int write_zero_bytes(FILE* file, unsigned long long size)
@@ -968,11 +1003,16 @@ static int write_dynamic_vhd(FILE* dst, FILE* src, unsigned long long virtual_si
         unsigned int data_sectors = (block_bytes + SECTOR_SIZE - 1) / SECTOR_SIZE;
         long block_file_offset;
         unsigned int sector_index;
+        long block_start = (long)(block_index * VHD_BLOCK_SIZE);
+
+        if (next_data_offset(src, block_start, block_start + (long)block_bytes) >= block_start + (long)block_bytes)
+            continue;
 
         memset(block_buffer, 0, VHD_BLOCK_SIZE);
         memset(bitmap_buffer, 0, bitmap_size);
 
-        if (fread(block_buffer, 1, block_bytes, src) != block_bytes)
+        if (fseek(src, block_start, SEEK_SET) != 0 ||
+            fread(block_buffer, 1, block_bytes, src) != block_bytes)
             goto cleanup;
 
         if (buffer_is_zero(block_buffer, block_bytes))
@@ -1180,9 +1220,14 @@ static int write_dynamic_vhdx(FILE* dst, FILE* src, unsigned long long virtual_s
     {
         unsigned long long remaining = virtual_size - block_index * (unsigned long long)VHDX_BLOCK_SIZE;
         size_t block_bytes = remaining > VHDX_BLOCK_SIZE ? VHDX_BLOCK_SIZE : (size_t)remaining;
+        long block_start = (long)(block_index * VHDX_BLOCK_SIZE);
+
+        if (next_data_offset(src, block_start, block_start + (long)block_bytes) >= block_start + (long)block_bytes)
+            continue;
 
         memset(block, 0, VHDX_BLOCK_SIZE);
-        if (fread(block, 1, block_bytes, src) != block_bytes)
+        if (fseek(src, block_start, SEEK_SET) != 0 ||
+            fread(block, 1, block_bytes, src) != block_bytes)
             goto cleanup;
         if (buffer_is_zero(block, block_bytes))
             continue;
