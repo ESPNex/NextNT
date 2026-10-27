@@ -235,10 +235,19 @@ START_TEST(FindExecutable)
     fclose(fopen(s_sys_txt_file, "wb"));
     ok_int(PathFileExistsA(s_sys_txt_file), TRUE);
 
+    char work_dir[MAX_PATH];
+    GetTempPathA(_countof(work_dir), work_dir);
+    PathAppendA(work_dir, "FindExecutableTest");
+    CreateDirectoryA(work_dir, NULL);
+    ok_int(SetCurrentDirectoryA(work_dir), TRUE);
+
     for (UINT iTest = 0; iTest < _countof(s_entries); ++iTest)
     {
         DoTestEntry(&s_entries[iTest]);
     }
+
+    SetCurrentDirectoryA(cur_dir);
+    RemoveDirectoryA(work_dir);
 
     /* Cleanup:
      * s_win_test_exe and s_sys_test_exe inherit the readonly flag,
