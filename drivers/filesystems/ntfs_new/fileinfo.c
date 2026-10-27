@@ -3015,6 +3015,72 @@ NtfsStoreTruncatedDirectoryEntry(_In_ PFileContextBlock FileCB,
     return Status;
 }
 
+static
+NTSTATUS
+NtfsQueryReparsePoints(_In_ PVolumeContextBlock VolCB,
+                       _Inout_ PFileContextBlock FileCB,
+                       _In_ PIO_STACK_LOCATION IrpSp,
+                       _Out_writes_bytes_(*Length) PVOID Buffer,
+                       _Inout_ PULONG Length)
+{
+    PFILE_REPARSE_POINT_INFORMATION Entry = (PFILE_REPARSE_POINT_INFORMATION)Buffer;
+    PUNICODE_STRING Start = IrpSp->Parameters.QueryDirectory.FileName;
+    BOOLEAN Restart = BooleanFlagOn(IrpSp->Flags, SL_RESTART_SCAN) || !FileCB->ReparseScanStarted;
+    BOOLEAN Inclusive = Restart;
+    ULONG Tag = 0;
+    ULONGLONG Reference = 0;
+    ULONG Returned = 0;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    if (!VolCB->DiskVolume)
+        return STATUS_VOLUME_DISMOUNTED;
+    if (*Length < sizeof(*Entry))
+        return STATUS_INFO_LENGTH_MISMATCH;
+
+    if (Restart)
+    {
+        if (Start && Start->Buffer && Start->Length >= sizeof(ULONG))
+        {
+            RtlCopyMemory(&Tag, Start->Buffer, sizeof(ULONG));
+            if (Start->Length >= sizeof(ULONG) + sizeof(ULONGLONG))
+                RtlCopyMemory(&Reference, (PUCHAR)Start->Buffer + sizeof(ULONG), sizeof(ULONGLONG));
+        }
+    }
+    else
+    {
+        Tag = FileCB->ReparseScanTag;
+        Reference = FileCB->ReparseScanReference;
+    }
+
+    KeEnterCriticalRegion();
+    NtfsAcquireMetadata(VolCB);
+    while (*Length >= sizeof(*Entry))
+    {
+        Status = NtfsVolumeNextReparsePoint(VolCB->DiskVolume, Tag, Reference, Inclusive, &Tag, &Reference);
+        if (!NT_SUCCESS(Status))
+            break;
+        Inclusive = FALSE;
+        Entry->FileReference = (LONGLONG)Reference;
+        Entry->Tag = Tag;
+        Entry++;
+        *Length -= sizeof(*Entry);
+        Returned++;
+        FileCB->ReparseScanStarted = TRUE;
+        FileCB->ReparseScanTag = Tag;
+        FileCB->ReparseScanReference = Reference;
+        if (IrpSp->Flags & SL_RETURN_SINGLE_ENTRY)
+            break;
+    }
+    NtfsReleaseMetadata(VolCB);
+    KeLeaveCriticalRegion();
+
+    if (Returned)
+        return STATUS_SUCCESS;
+    if (Status == STATUS_NO_MORE_FILES && Restart)
+        return STATUS_NO_SUCH_FILE;
+    return Status;
+}
+
 _Function_class_(IRP_MJ_DIRECTORY_CONTROL)
 _Function_class_(DRIVER_DISPATCH)
 NTSTATUS
@@ -3053,6 +3119,16 @@ NtfsFsdDirectoryControl(_In_ PDEVICE_OBJECT VolumeDeviceObject,
 
     if (IrpSp->MinorFunction == IRP_MN_QUERY_DIRECTORY)
     {
+        if (FileCB &&
+            IrpSp->Parameters.QueryDirectory.FileInformationClass == FileReparsePointInformation &&
+            FileCB->RequestedType == TypeIndexAllocation &&
+            FileCB->RequestedStream &&
+            !_wcsicmp(FileCB->RequestedStream, L"$R"))
+        {
+            Status = NtfsQueryReparsePoints(VolCB, FileCB, IrpSp, SystemBuffer, &BufferLength);
+            goto Complete;
+        }
+
         if (!FileCB || !FileCB->FileDir)
         {
             Status = STATUS_INVALID_PARAMETER;

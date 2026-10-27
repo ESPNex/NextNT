@@ -376,6 +376,9 @@ typedef struct _FCB
     /* The search pattern belongs to the handle: it is supplied once and
      * every later query without a name reuses it. */
     UNICODE_STRING DirSearchPattern;
+    BOOLEAN ReparseScanStarted;
+    ULONG ReparseScanTag;
+    ULONGLONG ReparseScanReference;
 
     UNICODE_STRING NotifyName;
     ULONG NotifyFilter;
