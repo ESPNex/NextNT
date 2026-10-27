@@ -5464,7 +5464,11 @@ static int xpath_comp_op_eval(struct xpath_parser_context *ctxt, struct xpath_st
                     struct xpath_object *val;
 
                     val = comp->steps.values[op->ch2].value4;
+#ifdef __REACTOS__
+                    if (val && val->type == _XPATH_NUMBER && val->floatval == 1.0 - xpath_adjust_nodeset_index(ctxt, 0))
+#else
                     if (val && val->type == _XPATH_NUMBER && val->floatval == 1.0)
+#endif
                     {
                         struct domnode *first = NULL;
 
@@ -6964,6 +6968,17 @@ static void xslpattern_compile_primary_expr(struct xpath_parser_context *ctxt)
     {
         xpath_compile_number(ctxt);
     }
+#ifdef __REACTOS__
+    else if (*ctxt->cur == '-' && (is_ascii_digit(ctxt->cur[1]) || (ctxt->cur[1] == '.' && is_ascii_digit(ctxt->cur[2]))))
+    {
+        struct xpath_object *num;
+
+        xpath_parse_next(ctxt);
+        xpath_compile_number(ctxt);
+        if (ctxt->error == XPATH_EXPRESSION_OK && (num = ctxt->comp->steps.values[ctxt->comp->last].value4))
+            num->floatval = -num->floatval;
+    }
+#endif
     else if (*ctxt->cur == '\'' || *ctxt->cur == '"')
     {
         xpath_compile_literal(ctxt);
@@ -7216,6 +7231,10 @@ static WCHAR * xslpattern_compile_nodetest(struct xpath_parser_context *ctxt, en
  *              | '.'
  *              | '..'
  */
+#ifdef __REACTOS__
+static void xslpattern_compile_relative_location_path(struct xpath_parser_context *ctxt);
+
+#endif
 static void xslpattern_compile_step(struct xpath_parser_context *ctxt)
 {
     WCHAR *prefix = NULL, *name = NULL;
@@ -7229,6 +7248,27 @@ static void xslpattern_compile_step(struct xpath_parser_context *ctxt)
 
     xpath_parse_skipspaces(ctxt);
 
+#ifdef __REACTOS__
+    if (xpath_parse_cmp(ctxt, L"("))
+    {
+        xslpattern_compile_relative_location_path(ctxt);
+        if (ctxt->error != XPATH_EXPRESSION_OK)
+            return;
+        xpath_parse_skipspaces(ctxt);
+        if (!xpath_parse_cmp(ctxt, L")"))
+            return xpath_parser_context_set_error(ctxt, XPATH_EXPR_ERROR);
+        xpath_parse_skipspaces(ctxt);
+
+        if (*ctxt->cur == '[')
+        {
+            xpath_push_unary_step(ctxt, XPATH_OP_SORT, ctxt->comp->last, 0, 0);
+            while (*ctxt->cur == '[' && ctxt->error == XPATH_EXPRESSION_OK)
+                xslpattern_compile_predicate(ctxt, true);
+        }
+        return;
+    }
+
+#endif
     if (xpath_parse_cmp(ctxt, L".."))
     {
         xpath_parse_skipspaces(ctxt);
@@ -7411,6 +7451,12 @@ static void xslpattern_compile_path_expr(struct xpath_parser_context *ctxt)
     {
         location_path = false;
     }
+#ifdef __REACTOS__
+    else if (*ctxt->cur == '-' && (is_ascii_digit(ctxt->cur[1]) || (ctxt->cur[1] == '.' && is_ascii_digit(ctxt->cur[2]))))
+    {
+        location_path = false;
+    }
+#endif
     else if ((*ctxt->cur == '*')
             || (*ctxt->cur == '/')
             || (*ctxt->cur == '@')
