@@ -12,6 +12,17 @@
 #define POINTER_TOUCH_ID_COUNT MAX_TOUCH_COUNT
 #define POINTER_FRAME_HISTORY 128
 #define POINTER_TOUCH_EXTRA_INFO 0xFF515780
+#define POINTER_TOUCH_EXTRA_ID_MASK 0x7F
+#define POINTER_HOLD_TIME 500
+#define POINTER_HOLD_TOLERANCE 10
+
+enum
+{
+    PointerPromotionPending,
+    PointerPromotionLeftDrag,
+    PointerPromotionRightDrag,
+    PointerPromotionDone,
+};
 #define POINTER_COORDINATE_MAX 0xFFFF
 
 typedef enum _POINTER_EVENT
@@ -54,6 +65,9 @@ typedef struct _POINTER_ROUTE
     BOOLEAN Resolved;
     UINT PromotedMessage;
     UINT32 PromotedFrameId;
+    UCHAR PromotionState;
+    POINT DownPoint;
+    DWORD DownTime;
 } POINTER_ROUTE, *PPOINTER_ROUTE;
 
 PWND FASTCALL IntTopLevelWindowFromPoint(INT x, INT y);
@@ -485,6 +499,27 @@ co_PointerRouteMessage(
     pti->MessageQueue->ExtraInfo = ExtraInfo;
 }
 
+static
+VOID
+PointerSendMouse(
+    _In_ POINT Pt,
+    _In_ DWORD Flags,
+    _In_ UINT32 PointerId)
+{
+    LONG Width = max(UserGetSystemMetrics(SM_CXSCREEN), 1);
+    LONG Height = max(UserGetSystemMetrics(SM_CYSCREEN), 1);
+    MOUSEINPUT Input;
+
+    Pt.x = min(max(Pt.x, 0), Width - 1);
+    Pt.y = min(max(Pt.y, 0), Height - 1);
+    RtlZeroMemory(&Input, sizeof(Input));
+    Input.dx = (LONG)((((LONGLONG)Pt.x << 16) + Width - 1) / Width);
+    Input.dy = (LONG)((((LONGLONG)Pt.y << 16) + Height - 1) / Height);
+    Input.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | Flags;
+    Input.dwExtraInfo = POINTER_TOUCH_EXTRA_INFO | (PointerId & POINTER_TOUCH_EXTRA_ID_MASK);
+    UserSendTouchMouseInput(&Input);
+}
+
 VOID
 FASTCALL
 PointerDefWindowProc(
@@ -496,19 +531,19 @@ PointerDefWindowProc(
     POINTER_TOUCH_INFO *Info;
     PPOINTER_FRAME Frame;
     PPOINTER_ROUTE Route;
-    MOUSEINPUT Input;
-    LONG Width, Height;
+    UINT32 PointerId = GET_POINTERID_WPARAM(wParam);
+    BOOLEAN Held, Moved;
     POINT Pt;
 
     UNREFERENCED_PARAMETER(Wnd);
 
-    Route = PointerTouchRoute(GET_POINTERID_WPARAM(wParam));
+    Route = PointerTouchRoute(PointerId);
     if (!Route || !pti || !pti->MessageQueue)
         return;
     Frame = PointerFindFrame(pti->MessageQueue->ExtraInfo);
     if (!Frame)
         return;
-    Info = PointerFindInFrame(Frame, GET_POINTERID_WPARAM(wParam));
+    Info = PointerFindInFrame(Frame, PointerId);
     if (!Info || !(Info->pointerInfo.pointerFlags & POINTER_FLAG_PRIMARY))
         return;
     if (Route->PromotedFrameId == Frame->FrameId && Route->PromotedMessage == Msg)
@@ -516,22 +551,47 @@ PointerDefWindowProc(
     Route->PromotedFrameId = Frame->FrameId;
     Route->PromotedMessage = Msg;
 
-    Width = max(UserGetSystemMetrics(SM_CXSCREEN), 1);
-    Height = max(UserGetSystemMetrics(SM_CYSCREEN), 1);
     Pt = Info->pointerInfo.ptPixelLocation;
-    Pt.x = min(max(Pt.x, 0), Width - 1);
-    Pt.y = min(max(Pt.y, 0), Height - 1);
-
-    RtlZeroMemory(&Input, sizeof(Input));
-    Input.dx = (LONG)((((LONGLONG)Pt.x << 16) + Width - 1) / Width);
-    Input.dy = (LONG)((((LONGLONG)Pt.y << 16) + Height - 1) / Height);
-    Input.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
     if (Msg == WM_POINTERDOWN || Msg == WM_NCPOINTERDOWN)
-        Input.dwFlags |= MOUSEEVENTF_LEFTDOWN;
-    else if (Msg == WM_POINTERUP || Msg == WM_NCPOINTERUP)
-        Input.dwFlags |= MOUSEEVENTF_LEFTUP;
-    Input.dwExtraInfo = POINTER_TOUCH_EXTRA_INFO;
-    UserSendTouchMouseInput(&Input);
+    {
+        Route->PromotionState = PointerPromotionPending;
+        Route->DownPoint = Pt;
+        Route->DownTime = Info->pointerInfo.dwTime;
+        return;
+    }
+
+    Held = (Info->pointerInfo.dwTime - Route->DownTime) >= POINTER_HOLD_TIME;
+    Moved = abs(Pt.x - Route->DownPoint.x) > POINTER_HOLD_TOLERANCE ||
+            abs(Pt.y - Route->DownPoint.y) > POINTER_HOLD_TOLERANCE;
+
+    if (Msg == WM_POINTERUPDATE || Msg == WM_NCPOINTERUPDATE)
+    {
+        if (Route->PromotionState == PointerPromotionPending && Moved)
+        {
+            Route->PromotionState = Held ? PointerPromotionRightDrag : PointerPromotionLeftDrag;
+            PointerSendMouse(Route->DownPoint, Held ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_LEFTDOWN, PointerId);
+        }
+        if (Route->PromotionState == PointerPromotionLeftDrag || Route->PromotionState == PointerPromotionRightDrag)
+            PointerSendMouse(Pt, 0, PointerId);
+        return;
+    }
+
+    if (Msg != WM_POINTERUP && Msg != WM_NCPOINTERUP)
+        return;
+    switch (Route->PromotionState)
+    {
+        case PointerPromotionPending:
+            PointerSendMouse(Route->DownPoint, Held ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_LEFTDOWN, PointerId);
+            PointerSendMouse(Route->DownPoint, Held ? MOUSEEVENTF_RIGHTUP : MOUSEEVENTF_LEFTUP, PointerId);
+            break;
+        case PointerPromotionLeftDrag:
+            PointerSendMouse(Pt, MOUSEEVENTF_LEFTUP, PointerId);
+            break;
+        case PointerPromotionRightDrag:
+            PointerSendMouse(Pt, MOUSEEVENTF_RIGHTUP, PointerId);
+            break;
+    }
+    Route->PromotionState = PointerPromotionDone;
 }
 
 BOOL
