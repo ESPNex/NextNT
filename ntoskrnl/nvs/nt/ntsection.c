@@ -1533,6 +1533,12 @@ MiCreateSectionWithMode(
                                       &Control->Segment)
             : MiSegmentCreate(&MiSystem, MiSegmentPageFileBacked, Size, SegmentProtection,
                                &MiControlAnonymousOps, Control, NULL, 0, &Control->Segment);
+        if (Status == STATUS_NO_MEMORY && (AllocationAttributes & SEC_LARGE_PAGES) &&
+            MiRelieveFragmentation(&MiSystem, &MiProcessManager) != 0)
+        {
+            Status = MiSegmentCreateLarge(&MiSystem, Size, Protection, &MiControlAnonymousOps, Control,
+                                          &Control->Segment);
+        }
         if (!NT_SUCCESS(Status))
         {
             MiFreeControlArea(Control);

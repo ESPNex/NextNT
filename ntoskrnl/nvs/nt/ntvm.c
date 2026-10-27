@@ -293,6 +293,7 @@ MiAllocateVirtualMemoryNt(
     PVOID BaseAddress;
     SIZE_T RegionSize;
     BOOLEAN DenyDynamicCode;
+    BOOLEAN Relieved = FALSE;
     NTSTATUS Status;
 
     PAGED_CODE();
@@ -464,7 +465,7 @@ MiAllocateVirtualMemoryNt(
     if (AllocationType & MEM_WRITE_WATCH)
         Type |= MI_MEM_WRITE_WATCH;
 
-    do
+    for (;;)
     {
         Base = (ULONG64)(ULONG_PTR)BaseAddress;
         Size = RegionSize;
@@ -474,7 +475,20 @@ MiAllocateVirtualMemoryNt(
 
         Status = MiAllocateVirtualMemoryBounded(MiSpaceOfProcess(Target.Process), &Base, &Size, Type, Protection,
                                                 LowestAddress, Highest, Alignment, DenyDynamicCode);
-    } while ((Type & MI_MEM_COMMIT) && NT_SUCCESS(MiWaitForMemory(Status, &Attempts)) && Status == STATUS_NO_MEMORY);
+        if (Status != STATUS_NO_MEMORY || !(Type & MI_MEM_COMMIT))
+            break;
+
+        if (Type & MI_MEM_LARGE_PAGES)
+        {
+            if (Relieved || MiRelieveFragmentation(&MiSystem, &MiProcessManager) == 0)
+                break;
+            Relieved = TRUE;
+        }
+        else if (!NT_SUCCESS(MiWaitForMemory(Status, &Attempts)))
+        {
+            break;
+        }
+    }
 
     if (NT_SUCCESS(Status))
     {

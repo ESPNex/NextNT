@@ -635,6 +635,66 @@ ProcCopyGuard(void)
     }
 }
 
+static
+void
+ProcFragmentationRelief(void)
+{
+    static TEST_WORLD World;
+    static MI_PROCESS_MANAGER Manager;
+    static MI_PROCESS Process;
+    ULONG64 Base = 0, Large = 0, Size, Length, Pages, i;
+    ULONG64 Available;
+    NTSTATUS Status;
+
+    WorldCreate(&World, 4096, 2, 1000000);
+    WorldAttachPageFile(&World, 8192);
+    CHECK(NT_SUCCESS(MiSystemPtesInitialize(&World.System, 4096, 2)));
+    CHECK(NT_SUCCESS(MiProcessManagerInitialize(&World.System, &Manager)));
+    CHECK(NT_SUCCESS(MiProcessCreate(&World.System, &Manager, &Process)));
+    WorldAttach(&World, 0, &Process.Space);
+
+    Available = MiPfnAvailablePages(&World.System.Pfn);
+    Pages = Available - 320;
+    Size = Pages * PAGE_SIZE;
+    CHECK(NT_SUCCESS(MiAllocateVirtualMemory(&Process.Space, &Base, &Size, MI_MEM_RESERVE | MI_MEM_COMMIT,
+                                             MI_PROT_READWRITE)));
+    for (i = 0; i < Pages; i++)
+        CHECK(NT_SUCCESS(UserWrite64(&World, 0, Base + i * PAGE_SIZE, 0xF7A60000ULL + i)));
+
+    Length = World.System.Arch->LargePageSize;
+    Status = MiAllocateVirtualMemory(&Process.Space, &Large, &Length,
+                                     MI_MEM_RESERVE | MI_MEM_COMMIT | MI_MEM_LARGE_PAGES, MI_PROT_READWRITE);
+    CHECK(Status == STATUS_NO_MEMORY);
+
+    CHECK(MiRelieveFragmentation(&World.System, &Manager) != 0);
+    CHECK(MI_ATOMIC_READ64(&Process.Space.ResidentPages) == 0);
+    CHECK(MiPfnListCount(&World.System.Pfn, MiPageModified) == 0);
+
+    Large = 0;
+    Length = World.System.Arch->LargePageSize;
+    Status = MiAllocateVirtualMemory(&Process.Space, &Large, &Length,
+                                     MI_MEM_RESERVE | MI_MEM_COMMIT | MI_MEM_LARGE_PAGES, MI_PROT_READWRITE);
+    CHECK(NT_SUCCESS(Status));
+    if (NT_SUCCESS(Status))
+    {
+        CHECK(Large % World.System.Arch->LargePageSize == 0);
+        CHECK(NT_SUCCESS(UserWrite64(&World, 0, Large + PAGE_SIZE, 0x1A26E)));
+        CHECK(UserRead64(&World, 0, Large + PAGE_SIZE, &Status) == 0x1A26E);
+        Length = 0;
+        CHECK(NT_SUCCESS(MiFreeVirtualMemory(&Process.Space, &Large, &Length, MI_MEM_RELEASE)));
+    }
+
+    for (i = 0; i < Pages; i += 7)
+        CHECK(ReadWithBalance(&World, &Manager, 0, Base + i * PAGE_SIZE, &Status) == 0xF7A60000ULL + i);
+
+    WorldAttach(&World, 0, NULL);
+    MiProcessDelete(&Manager, &Process);
+    MiProcessManagerUninitialize(&World.System, &Manager);
+    MiSystemPtesUninitialize(&World.System);
+    WorldExpectClean(&World, 4096);
+    WorldDestroy(&World);
+}
+
 void
 TestProcess(void)
 {
@@ -645,4 +705,5 @@ TestProcess(void)
     ProcLifecycle();
     ProcBalanceAndCopy();
     ProcCommitOwner();
+    ProcFragmentationRelief();
 }

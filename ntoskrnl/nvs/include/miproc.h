@@ -75,6 +75,7 @@ VOID MiProcessQueryCounters(_Inout_ PMI_PROCESS Process, _Out_ PMI_PROCESS_COUNT
 ULONG MiProcessEmptyWorkingSet(_Inout_ PMI_PROCESS Process);
 
 ULONG MiBalanceMemory(_Inout_ PMI_SYSTEM System, _Inout_ PMI_PROCESS_MANAGER Manager);
+ULONG MiRelieveFragmentation(_Inout_ PMI_SYSTEM System, _Inout_ PMI_PROCESS_MANAGER Manager);
 
 NTSTATUS MiCopyVirtualMemory(_Inout_ PMI_ADDRESS_SPACE SourceSpace, _In_ ULONG64 SourceAddress,
                              _Inout_ PMI_ADDRESS_SPACE TargetSpace, _In_ ULONG64 TargetAddress, _In_ ULONG64 Size,

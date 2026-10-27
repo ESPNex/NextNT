@@ -357,6 +357,35 @@ MiBalanceMemory(
     return Trimmed;
 }
 
+ULONG
+MiRelieveFragmentation(
+    _Inout_ PMI_SYSTEM System,
+    _Inout_ PMI_PROCESS_MANAGER Manager)
+{
+    PLIST_ENTRY Link;
+    ULONG Relieved = 0;
+    ULONG Round;
+
+    MI_MUTEX_ACQUIRE(&Manager->Lock);
+    for (Link = Manager->ProcessList.Flink; Link != &Manager->ProcessList; Link = Link->Flink)
+        Relieved += MiProcessEmptyWorkingSet(CONTAINING_RECORD(Link, MI_PROCESS, SystemLink));
+    MI_MUTEX_RELEASE(&Manager->Lock);
+
+    Relieved += MiTrimAddressSpace(&System->SystemSpace, ~0u, TRUE);
+    MI_ATOMIC_ADD64(&Manager->PagesTrimmed, Relieved);
+
+    for (Round = 0; Round < 64; Round++)
+    {
+        ULONG Written = MiWriteModifiedPages(System, 1024);
+
+        if (Written == 0)
+            break;
+        Relieved += Written;
+    }
+
+    return Relieved;
+}
+
 NTSTATUS
 MiCopyVirtualMemory(
     _Inout_ PMI_ADDRESS_SPACE SourceSpace,
