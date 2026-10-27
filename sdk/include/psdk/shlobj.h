@@ -1608,23 +1608,23 @@ _Check_return_ HRESULT WINAPI SHGetMalloc(_Outptr_ LPMALLOC *lpmal);
 
 typedef struct
 {
-    UINT  fShowAllObjects : 1;
-    UINT  fShowExtensions : 1;
+    BOOL  fShowAllObjects : 1;
+    BOOL  fShowExtensions : 1;
     BOOL  fNoConfirmRecycle : 1;
 
     BOOL  fShowSysFiles : 1;
-    UINT  fShowCompColor : 1;
-    UINT  fDoubleClickInWebView : 1;
+    BOOL  fShowCompColor : 1;
+    BOOL  fDoubleClickInWebView : 1;
     BOOL  fDesktopHTML : 1;
     BOOL  fWin95Classic : 1;
     BOOL  fDontPrettyPath : 1;
-    UINT  fShowAttribCol : 1;
+    BOOL  fShowAttribCol : 1;
     BOOL  fMapNetDrvBtn : 1;
-    UINT  fShowInfoTip : 1;
+    BOOL  fShowInfoTip : 1;
     BOOL  fHideIcons : 1;
     BOOL  fWebView : 1;
     BOOL  fFilter : 1;
-    UINT  fShowSuperHidden : 1;
+    BOOL  fShowSuperHidden : 1;
     BOOL  fNoNetCrawling : 1;
 
     UINT  :15; /* Required for proper binary layout with gcc */
