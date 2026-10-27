@@ -1183,7 +1183,11 @@ static void serialize_methodimpl_table( void )
 
     for (i = 0; i < tables[TABLE_METHODIMPL].count; i++)
     {
+#ifdef __REACTOS__
+        serialize_table_idx( row->class, TABLE_TYPEDEF );
+#else
         serialize_table_idx( row->class, row->class );
+#endif
         serialize_table_idx( row->body, methoddef_or_ref_to_table(row->body) );
         serialize_table_idx( row->declaration, methoddef_or_ref_to_table(row->declaration) );
         row++;
@@ -1787,6 +1791,27 @@ static UINT make_property_sig( const var_t *method, BYTE *buf, BOOL is_static )
     return len;
 }
 
+#ifdef __REACTOS__
+static UINT make_setter_property_sig( const var_t *method, BYTE *buf, BOOL is_static )
+{
+    const var_list_t *arg_list = type_function_get_args( method->declspec.type );
+    const var_t *arg;
+    UINT len = 3;
+
+    buf[0] = is_static ? SIG_TYPE_PROPERTY : SIG_TYPE_HASTHIS | SIG_TYPE_PROPERTY;
+    buf[1] = 0;
+    buf[2] = ELEMENT_TYPE_VOID;
+
+    if (arg_list) LIST_FOR_EACH_ENTRY( arg, arg_list, var_t, entry )
+    {
+        len = make_type_sig( arg->declspec.type, buf + 2 ) + 2;
+        break;
+    }
+
+    return len;
+}
+
+#endif
 static UINT make_activation_sig( const var_t *method, BYTE *buf )
 {
     const var_t *arg;
@@ -1934,6 +1959,9 @@ static void add_version_attr_step1( const type_t *type )
     attr_t *attr;
 
     if (!(attr = get_attr( type->attrs, ATTR_VERSION )) && is_attr( type->attrs, ATTR_CONTRACT )) return;
+#ifdef __REACTOS__
+    if (!attr) return;
+#endif
 
     assemblyref = add_assemblyref_row( 0x200, 0, add_string("Windows.Foundation") );
     scope = resolution_scope( TABLE_ASSEMBLYREF, assemblyref );
@@ -1950,6 +1978,9 @@ static void add_version_attr_step2( const type_t *type )
     const attr_t *attr;
 
     if (!(attr = get_attr( type->attrs, ATTR_VERSION )) && is_attr( type->attrs, ATTR_CONTRACT )) return;
+#ifdef __REACTOS__
+    if (!attr) return;
+#endif
 
     parent = has_customattribute( TABLE_TYPEDEF, type->md.def );
     attr_type = customattribute_type( TABLE_MEMBERREF, attr->md_member );
@@ -2484,6 +2515,11 @@ static void add_propput_method( const type_t *class, const type_t *iface, const 
     free( name );
 
     /* add propget method first if not already added */
+#ifdef __REACTOS__
+    if (!propget)
+        property = class ? type->md.class_property : type->md.iface_property;
+    else
+#endif
     if (class)
     {
         if (!propget->declspec.type->md.class_property) add_propget_method( class, iface, propget );
@@ -2578,9 +2614,18 @@ static void add_property( type_t *class, type_t *iface, const var_t *method )
     type_t *type = method->declspec.type;
     BYTE sig[256];
 
+#ifdef __REACTOS__
+    if (is_attr( method->attrs, ATTR_PROPPUT ) && !find_propget_method( iface, method->name ))
+        sig_size = make_setter_property_sig( method, sig, is_static_iface(class, iface) );
+    else if (is_attr( method->attrs, ATTR_PROPGET ))
+        sig_size = make_property_sig( method, sig, is_static_iface(class, iface) );
+    else
+        return;
+#else
     if (!is_attr( method->attrs, ATTR_PROPGET )) return;
 
     sig_size = make_property_sig( method, sig, is_static_iface(class, iface) );
+#endif
     if (class)
     {
         type->md.class_property = add_property_row( 0, add_string(method->name), add_blob(sig, sig_size) );
@@ -2813,6 +2858,10 @@ static void add_method_contract_attrs( const type_t *class, const type_t *iface,
     BYTE value[MAX_NAME + sizeof(UINT) + 5];
     const attr_t *attr = get_attr( iface->attrs, ATTR_CONTRACT );
 
+#ifdef __REACTOS__
+    if (!attr || !get_attr( class->attrs, ATTR_CONTRACT )) return;
+
+#endif
     parent = has_customattribute( TABLE_METHODDEF, method->md.def );
     attr_type = customattribute_type( TABLE_MEMBERREF, attr->md_member );
     value_size = make_contract_value( get_attr(class->attrs, ATTR_CONTRACT), value );
