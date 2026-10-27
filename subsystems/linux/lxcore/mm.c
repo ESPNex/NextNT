@@ -3067,18 +3067,20 @@ LxMmProtect(
 
     LxMmLock(Process);
     Error = LxVmaCovers(Process, Address, End) ? 0 : -LX_ENOMEM;
-    for (Entry = Process->Vmas.Flink; (Error == 0) && (Prot & LX_PROT_WRITE) && (Entry != &Process->Vmas);
+    for (Entry = LxVmaEntryAbove(Process, Address); (Error == 0) && (Prot & LX_PROT_WRITE) && (Entry != &Process->Vmas);
          Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
 
-        if ((Vma->Start < End) && (Vma->End > Address) && (Vma->Flags & LX_VMA_NOMAYWRITE))
+        if (Vma->Start >= End)
+            break;
+        if (Vma->Flags & LX_VMA_NOMAYWRITE)
             Error = -LX_EACCES;
     }
     if (Error == 0)
         Error = LxVmaSetProt(Process, Address, End, Prot);
 
-    for (Entry = Process->Vmas.Flink; (Error == 0) && (Entry != &Process->Vmas); Entry = Entry->Flink)
+    for (Entry = LxVmaEntryAbove(Process, Address); (Error == 0) && (Entry != &Process->Vmas); Entry = Entry->Flink)
     {
         PLX_VMA Vma = CONTAINING_RECORD(Entry, LX_VMA, Link);
         ULONG NtProtect;
