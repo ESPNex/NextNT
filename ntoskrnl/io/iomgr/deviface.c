@@ -1441,8 +1441,10 @@ IoGetDeviceInterfaces(IN CONST GUID *InterfaceClassGuid,
                 Status = STATUS_UNSUCCESSFUL;
                 goto cleanup;
             }
-            KeyName.Length = KeyName.MaximumLength = (USHORT)bip->DataLength;
+            KeyName.Length = KeyName.MaximumLength = (USHORT)(bip->DataLength & ~(sizeof(WCHAR) - 1));
             KeyName.Buffer = (PWSTR)bip->Data;
+            while (KeyName.Length && KeyName.Buffer[KeyName.Length / sizeof(WCHAR) - 1] == UNICODE_NULL)
+                KeyName.Length -= sizeof(WCHAR);
 
             /* Fixup the prefix (from "\\?\") */
             RtlCopyMemory(KeyName.Buffer, L"\\??\\", 4 * sizeof(WCHAR));
@@ -1928,7 +1930,7 @@ IoRegisterDeviceInterface(IN PDEVICE_OBJECT PhysicalDeviceObject,
         0, /* TileIndex */
         REG_SZ,
         SymbolicLinkName->Buffer,
-        SymbolicLinkName->Length);
+        SymbolicLinkName->Length + sizeof(UNICODE_NULL));
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("ZwSetValueKey() failed with status 0x%08lx\n", Status);
