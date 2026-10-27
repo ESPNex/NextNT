@@ -1372,6 +1372,9 @@ struct synthesizer
 
     struct synthesizer_options *options;
     IVoiceInformation *current_voice;
+#ifdef __REACTOS__
+    LONG async_id;
+#endif
 };
 
 /*
@@ -1477,9 +1480,18 @@ static HRESULT synthesizer_synthesize_text_to_stream_async( IUnknown *invoker, I
 static HRESULT WINAPI synthesizer_SynthesizeTextToStreamAsync( ISpeechSynthesizer *iface, HSTRING text,
                                                                IAsyncOperation_SpeechSynthesisStream **operation )
 {
+#ifdef __REACTOS__
+    struct synthesizer *impl = impl_from_ISpeechSynthesizer(iface);
+
+    TRACE("iface %p, text %p, operation %p.\n", iface, text, operation);
+    return async_operation_inspectable_create(&IID_IAsyncOperation_SpeechSynthesisStream, NULL, NULL,
+                                              synthesizer_synthesize_text_to_stream_async, InterlockedIncrement(&impl->async_id),
+                                              S_OK, (IAsyncOperation_IInspectable **)operation);
+#else
     TRACE("iface %p, text %p, operation %p.\n", iface, text, operation);
     return async_operation_inspectable_create(&IID_IAsyncOperation_SpeechSynthesisStream, NULL, NULL,
                                               synthesizer_synthesize_text_to_stream_async, (IAsyncOperation_IInspectable **)operation);
+#endif
 }
 
 static HRESULT synthesizer_synthesize_ssml_to_stream_async( IUnknown *invoker, IUnknown *param, PROPVARIANT *result, BOOL called_async )
@@ -1500,9 +1512,18 @@ static HRESULT synthesizer_synthesize_ssml_to_stream_async( IUnknown *invoker, I
 static HRESULT WINAPI synthesizer_SynthesizeSsmlToStreamAsync( ISpeechSynthesizer *iface, HSTRING ssml,
                                                                IAsyncOperation_SpeechSynthesisStream **operation )
 {
+#ifdef __REACTOS__
+    struct synthesizer *impl = impl_from_ISpeechSynthesizer(iface);
+
+    TRACE("iface %p, ssml %p, operation %p.\n", iface, ssml, operation);
+    return async_operation_inspectable_create(&IID_IAsyncOperation_SpeechSynthesisStream, NULL, NULL,
+                                              synthesizer_synthesize_ssml_to_stream_async, InterlockedIncrement(&impl->async_id),
+                                              S_OK, (IAsyncOperation_IInspectable **)operation);
+#else
     TRACE("iface %p, ssml %p, operation %p.\n", iface, ssml, operation);
     return async_operation_inspectable_create(&IID_IAsyncOperation_SpeechSynthesisStream, NULL, NULL,
                                               synthesizer_synthesize_ssml_to_stream_async, (IAsyncOperation_IInspectable **)operation);
+#endif
 }
 
 static HRESULT WINAPI synthesizer_put_Voice( ISpeechSynthesizer *iface, IVoiceInformation *value )

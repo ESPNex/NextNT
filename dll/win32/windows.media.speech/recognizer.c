@@ -22,6 +22,9 @@
 #include "initguid.h"
 #include "audioclient.h"
 #include "mmdeviceapi.h"
+#ifdef __REACTOS__
+#include "roapi.h"
+#endif
 
 #include "wine/debug.h"
 
@@ -184,6 +187,9 @@ struct session
     HANDLE worker_thread, worker_control_event, audio_buf_event;
     BOOLEAN worker_running, worker_paused;
     CRITICAL_SECTION cs;
+#ifdef __REACTOS__
+    LONG async_id;
+#endif
 };
 
 /*
@@ -406,7 +412,11 @@ static HRESULT WINAPI session_StartAsync( ISpeechContinuousRecognitionSession *i
 
     TRACE("iface %p, action %p.\n", iface, action);
 
+#ifdef __REACTOS__
+    if (FAILED(hr = async_action_create(NULL, session_start_async, InterlockedIncrement(&impl->async_id), action)))
+#else
     if (FAILED(hr = async_action_create(NULL, session_start_async, action)))
+#endif
         return hr;
 
     EnterCriticalSection(&impl->cs);
@@ -457,7 +467,11 @@ static HRESULT WINAPI session_StopAsync( ISpeechContinuousRecognitionSession *if
 
     TRACE("iface %p, action %p.\n", iface, action);
 
+#ifdef __REACTOS__
+    if (FAILED(hr = async_action_create(NULL, session_stop_async, InterlockedIncrement(&impl->async_id), action)))
+#else
     if (FAILED(hr = async_action_create(NULL, session_stop_async, action)))
+#endif
         return hr;
 
     EnterCriticalSection(&impl->cs);
@@ -515,7 +529,11 @@ static HRESULT WINAPI session_PauseAsync( ISpeechContinuousRecognitionSession *i
 
     *action = NULL;
 
+#ifdef __REACTOS__
+    if (FAILED(hr = async_action_create(NULL, session_pause_async, InterlockedIncrement(&impl->async_id), action)))
+#else
     if (FAILED(hr = async_action_create(NULL, session_pause_async, action)))
+#endif
         return hr;
 
     EnterCriticalSection(&impl->cs);
@@ -623,6 +641,9 @@ struct recognizer
     LONG ref;
 
     ISpeechContinuousRecognitionSession *session;
+#ifdef __REACTOS__
+    LONG async_id;
+#endif
 };
 
 /*
@@ -758,8 +779,16 @@ static HRESULT WINAPI recognizer_CompileConstraintsAsync( ISpeechRecognizer *ifa
                                                           IAsyncOperation_SpeechRecognitionCompilationResult **operation )
 {
     IAsyncOperation_IInspectable **value = (IAsyncOperation_IInspectable **)operation;
+#ifdef __REACTOS__
+    struct recognizer *impl = impl_from_ISpeechRecognizer(iface);
+
+    FIXME("iface %p, operation %p semi-stub!\n", iface, operation);
+    return async_operation_inspectable_create(&IID_IAsyncOperation_SpeechRecognitionCompilationResult, NULL, NULL, recognizer_compile_constraints_async,
+                                              InterlockedIncrement(&impl->async_id), E_UNEXPECTED, value);
+#else
     FIXME("iface %p, operation %p semi-stub!\n", iface, operation);
     return async_operation_inspectable_create(&IID_IAsyncOperation_SpeechRecognitionCompilationResult, NULL, NULL, recognizer_compile_constraints_async, value);
+#endif
 }
 
 static HRESULT WINAPI recognizer_RecognizeAsync( ISpeechRecognizer *iface,
@@ -1201,8 +1230,38 @@ DEFINE_IINSPECTABLE(statics, ISpeechRecognizerStatics, struct recognizer_statics
 
 static HRESULT WINAPI statics_get_SystemSpeechLanguage( ISpeechRecognizerStatics *iface, ILanguage **language )
 {
+#ifdef __REACTOS__
+    WCHAR name[LOCALE_NAME_MAX_LENGTH];
+    ILanguageFactory *factory;
+    HSTRING str;
+    HRESULT hr;
+
+    TRACE("iface %p, language %p.\n", iface, language);
+
+    if (!language) return E_POINTER;
+
+    if (!LCIDToLocaleName(MAKELCID(GetUserDefaultUILanguage(), SORT_DEFAULT), name, ARRAY_SIZE(name), 0))
+        return HRESULT_FROM_WIN32(GetLastError());
+
+    if (FAILED(hr = WindowsCreateString(RuntimeClass_Windows_Globalization_Language,
+                                        wcslen(RuntimeClass_Windows_Globalization_Language), &str)))
+        return hr;
+    hr = RoGetActivationFactory(str, &IID_ILanguageFactory, (void **)&factory);
+    WindowsDeleteString(str);
+    if (FAILED(hr))
+        return hr;
+
+    if (SUCCEEDED(hr = WindowsCreateString(name, wcslen(name), &str)))
+    {
+        hr = ILanguageFactory_CreateLanguage(factory, str, language);
+        WindowsDeleteString(str);
+    }
+    ILanguageFactory_Release(factory);
+    return hr;
+#else
     FIXME("iface %p, language %p stub!\n", iface, language);
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI statics_get_SupportedTopicLanguages( ISpeechRecognizerStatics *iface, IVectorView_Language **languages )

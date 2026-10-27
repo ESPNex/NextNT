@@ -73,9 +73,15 @@ struct vector_iids
     const GUID *view;
 };
 
+#ifdef __REACTOS__
+HRESULT async_action_create( IUnknown *invoker, async_operation_callback callback, UINT32 id, IAsyncAction **out );
+HRESULT async_operation_inspectable_create( const GUID *iid, IUnknown *invoker, IUnknown *param, async_operation_callback callback,
+                                            UINT32 id, HRESULT taken_hr, IAsyncOperation_IInspectable **out );
+#else
 HRESULT async_action_create( IUnknown *invoker, async_operation_callback callback, IAsyncAction **out );
 HRESULT async_operation_inspectable_create( const GUID *iid, IUnknown *invoker, IUnknown *param, async_operation_callback callback,
                                             IAsyncOperation_IInspectable **out );
+#endif
 
 HRESULT typed_event_handlers_append( struct list *list, ITypedEventHandler_IInspectable_IInspectable *handler, EventRegistrationToken *token );
 HRESULT typed_event_handlers_remove( struct list *list, EventRegistrationToken *token );

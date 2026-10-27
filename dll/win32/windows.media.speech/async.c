@@ -47,6 +47,12 @@ struct async_info
     PROPVARIANT result;
     AsyncStatus status;
     HRESULT hr;
+#ifdef __REACTOS__
+    UINT32 id;
+    BOOL move_result;
+    BOOL result_taken;
+    HRESULT taken_hr;
+#endif
 };
 
 static inline struct async_info *impl_from_IAsyncInfoImpl( IAsyncInfoImpl *iface )
@@ -167,8 +173,27 @@ static HRESULT WINAPI async_impl_get_Result( IAsyncInfoImpl *iface, PROPVARIANT 
     EnterCriticalSection( &impl->cs );
     if (impl->status == Completed || impl->status == Error)
     {
+#ifdef __REACTOS__
+        if (!impl->move_result || impl->status != Completed)
+        {
+            PropVariantCopy( result, &impl->result );
+            hr = impl->hr;
+        }
+        else if (impl->result_taken)
+        {
+            hr = impl->taken_hr;
+        }
+        else
+        {
+            *result = impl->result;
+            PropVariantInit( &impl->result );
+            impl->result_taken = TRUE;
+            hr = impl->hr;
+        }
+#else
         PropVariantCopy( result, &impl->result );
         hr = impl->hr;
+#endif
     }
     LeaveCriticalSection( &impl->cs );
 
@@ -245,7 +270,11 @@ static HRESULT WINAPI async_info_get_Id( IAsyncInfo *iface, UINT32 *id )
 
     EnterCriticalSection( &impl->cs );
     if (impl->status == Closed) hr = E_ILLEGAL_METHOD_CALL;
+#ifdef __REACTOS__
+    *id = impl->id;
+#else
     *id = 1;
+#endif
     LeaveCriticalSection( &impl->cs );
 
     return hr;
@@ -342,8 +371,13 @@ static void CALLBACK async_info_callback( TP_CALLBACK_INSTANCE *instance, void *
     async_info_complete( impl, TRUE );
 }
 
+#ifdef __REACTOS__
+static HRESULT async_info_create( IUnknown *invoker, IUnknown *param, async_operation_callback callback, UINT32 id,
+                                  BOOL move_result, HRESULT taken_hr, IInspectable *outer, IAsyncInfoImpl **out )
+#else
 static HRESULT async_info_create( IUnknown *invoker, IUnknown *param, async_operation_callback callback,
                                   IInspectable *outer, IAsyncInfoImpl **out )
+#endif
 {
     struct async_info *impl;
     HRESULT hr;
@@ -353,6 +387,11 @@ static HRESULT async_info_create( IUnknown *invoker, IUnknown *param, async_oper
     impl->IAsyncInfo_iface.lpVtbl = &async_info_vtbl;
     impl->IInspectable_outer = outer;
     impl->ref = 1;
+#ifdef __REACTOS__
+    impl->id = id;
+    impl->move_result = move_result;
+    impl->taken_hr = taken_hr;
+#endif
 
     impl->callback = callback;
     impl->handler = HANDLER_NOT_SET;
@@ -506,7 +545,11 @@ HRESULT async_operation_boolean_create( IUnknown *invoker, IUnknown *param, asyn
     impl->IAsyncOperation_boolean_iface.lpVtbl = &async_bool_vtbl;
     impl->ref = 1;
 
+#ifdef __REACTOS__
+    if (FAILED(hr = async_info_create( invoker, param, callback, 1, FALSE, S_OK, (IInspectable *)&impl->IAsyncOperation_boolean_iface, &impl->IAsyncInfoImpl_inner )) ||
+#else
     if (FAILED(hr = async_info_create( invoker, param, callback, (IInspectable *)&impl->IAsyncOperation_boolean_iface, &impl->IAsyncInfoImpl_inner )) ||
+#endif
         FAILED(hr = IAsyncInfoImpl_Start( impl->IAsyncInfoImpl_inner )))
     {
         if (impl->IAsyncInfoImpl_inner) IAsyncInfoImpl_Release( impl->IAsyncInfoImpl_inner );
@@ -639,7 +682,11 @@ static const struct IAsyncActionVtbl async_action_vtbl =
     async_action_GetResults,
 };
 
+#ifdef __REACTOS__
+HRESULT async_action_create( IUnknown *invoker, async_operation_callback callback, UINT32 id, IAsyncAction **out )
+#else
 HRESULT async_action_create( IUnknown *invoker, async_operation_callback callback, IAsyncAction **out )
+#endif
 {
     struct async_action *impl;
     HRESULT hr;
@@ -649,7 +696,11 @@ HRESULT async_action_create( IUnknown *invoker, async_operation_callback callbac
     impl->IAsyncAction_iface.lpVtbl = &async_action_vtbl;
     impl->ref = 1;
 
+#ifdef __REACTOS__
+    if (FAILED(hr = async_info_create( invoker, NULL, callback, id, FALSE, S_OK, (IInspectable *)&impl->IAsyncAction_iface, &impl->IAsyncInfoImpl_inner )) ||
+#else
     if (FAILED(hr = async_info_create( invoker, NULL, callback, (IInspectable *)&impl->IAsyncAction_iface, &impl->IAsyncInfoImpl_inner )) ||
+#endif
         FAILED(hr = IAsyncInfoImpl_Start( impl->IAsyncInfoImpl_inner )))
     {
         if (impl->IAsyncInfoImpl_inner) IAsyncInfoImpl_Release( impl->IAsyncInfoImpl_inner );
@@ -786,8 +837,13 @@ static const struct IAsyncOperation_IInspectableVtbl async_inspectable_vtbl =
     async_inspectable_GetResults,
 };
 
+#ifdef __REACTOS__
+HRESULT async_operation_inspectable_create( const GUID *iid, IUnknown *invoker, IUnknown *param, async_operation_callback callback,
+                                            UINT32 id, HRESULT taken_hr, IAsyncOperation_IInspectable **out )
+#else
 HRESULT async_operation_inspectable_create( const GUID *iid, IUnknown *invoker, IUnknown *param, async_operation_callback callback,
                                             IAsyncOperation_IInspectable **out )
+#endif
 {
     struct async_inspectable *impl;
     HRESULT hr;
@@ -798,7 +854,11 @@ HRESULT async_operation_inspectable_create( const GUID *iid, IUnknown *invoker, 
     impl->ref = 1;
     impl->iid = iid;
 
+#ifdef __REACTOS__
+    if (FAILED(hr = async_info_create( invoker, param, callback, id, TRUE, taken_hr, (IInspectable *)&impl->IAsyncOperation_IInspectable_iface, &impl->IAsyncInfoImpl_inner )) ||
+#else
     if (FAILED(hr = async_info_create( invoker, param, callback, (IInspectable *)&impl->IAsyncOperation_IInspectable_iface, &impl->IAsyncInfoImpl_inner )) ||
+#endif
         FAILED(hr = IAsyncInfoImpl_Start( impl->IAsyncInfoImpl_inner )))
     {
         if (impl->IAsyncInfoImpl_inner) IAsyncInfoImpl_Release( impl->IAsyncInfoImpl_inner );
