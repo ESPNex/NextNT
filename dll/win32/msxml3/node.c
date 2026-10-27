@@ -4825,9 +4825,58 @@ HRESULT create_attribute_node(const WCHAR *name, const WCHAR *uri, struct domnod
     return create_node(attr, ret);
 }
 
+#ifdef __REACTOS__
+static LONG validate_error_code(const xmlError *error)
+{
+    xmlNodePtr node = error->node, child;
+    BOOL elements = FALSE;
+
+    switch (error->code)
+    {
+    case XML_DTD_UNKNOWN_ELEM:
+        return 0xc00ce00d;
+    case XML_DTD_UNKNOWN_ID:
+        return 0xc00ce00e;
+    case XML_DTD_ROOT_NAME:
+        return 0xc00ce013;
+    case XML_DTD_UNKNOWN_ATTRIBUTE:
+        return 0xc00ce015;
+    case XML_DTD_ATTRIBUTE_DEFAULT:
+        return 0xc00ce016;
+    case XML_DTD_ATTRIBUTE_VALUE:
+        return 0xc00ce017;
+    case XML_DTD_MISSING_ATTRIBUTE:
+        return 0xc00ce020;
+    case XML_DTD_CONTENT_MODEL:
+        if (node && node->type == XML_ELEMENT_NODE)
+        {
+            for (child = node->children; child; child = child->next)
+            {
+                if (child->type == XML_TEXT_NODE && !xmlIsBlankNode(child))
+                    return 0xc00ce018;
+                if (child->type == XML_ELEMENT_NODE)
+                    elements = TRUE;
+            }
+            if (!elements)
+                return 0xc00ce011;
+        }
+        return 0xc00ce014;
+    default:
+        return E_XML_INVALID;
+    }
+}
+#endif
+
 static void LIBXML2_LOG_CALLBACK validate_error(void* ctx, char const* msg, ...)
 {
     va_list ap;
+#ifdef __REACTOS__
+    const xmlError *error;
+    LONG *first = ctx;
+
+    if (first && !*first && (error = xmlGetLastError()))
+        *first = validate_error_code(error);
+#endif
     va_start(ap, msg);
     LIBXML2_CALLBACK_ERR(domdoc_validateNode, msg, ap);
     va_end(ap);
@@ -4879,6 +4928,9 @@ HRESULT node_validate(struct domnode *doc, IXMLDOMNode *node_obj, IXMLDOMParseEr
 
         vctx->error = validate_error;
         vctx->warning = validate_warning;
+#ifdef __REACTOS__
+        vctx->userData = &err_code;
+#endif
         ++validated;
 
         ret = node == doc ? xmlValidateDocument(vctx, xmldoc) : xmlValidateElement(vctx, xmldoc, xmlnode);
@@ -4886,9 +4938,18 @@ HRESULT node_validate(struct domnode *doc, IXMLDOMNode *node_obj, IXMLDOMParseEr
         {
             /* TODO: get a real error code here */
             TRACE("DTD validation failed\n");
+#ifdef __REACTOS__
+            if (!err_code)
+                err_code = E_XML_INVALID;
+#else
             err_code = E_XML_INVALID;
+#endif
             hr = S_FALSE;
         }
+#ifdef __REACTOS__
+        else
+            err_code = 0;
+#endif
         xmlFreeValidCtxt(vctx);
     }
 
