@@ -89,6 +89,11 @@ extern void output_typelib_regscript( const typelib_t *typelib );
 extern void write_local_stubs(const statement_list_t *stmts);
 extern void write_dlldata(const statement_list_t *stmts);
 extern void write_metadata(const statement_list_t *stmts);
+#ifdef __REACTOS__
+extern void add_winmd_namespace(const char *ns);
+extern void record_import_statements(const char *name, statement_list_t *stmts);
+extern int winmd_merges_imports(void);
+#endif
 
 extern void start_cplusplus_guard(FILE *fp);
 extern void end_cplusplus_guard(FILE *fp);

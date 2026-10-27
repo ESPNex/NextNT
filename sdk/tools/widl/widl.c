@@ -172,6 +172,9 @@ enum {
     WIN32_OPTION,
     WIN64_OPTION,
     WINMD_OPTION,
+#ifdef __REACTOS__
+    WINMD_NAMESPACE_OPTION,
+#endif
 };
 
 static const char short_options[] =
@@ -200,6 +203,9 @@ static const struct long_option long_options[] = {
     { "win32", 0, WIN32_OPTION },
     { "win64", 0, WIN64_OPTION },
     { "winmd", 0, WINMD_OPTION },
+#ifdef __REACTOS__
+    { "winmd-namespace", 1, WINMD_NAMESPACE_OPTION },
+#endif
     { NULL }
 };
 
@@ -527,6 +533,11 @@ static void option_callback( int optc, char *optarg )
       winrt_mode = 1;
       do_metadata = 1;
       break;
+#ifdef __REACTOS__
+    case WINMD_NAMESPACE_OPTION:
+      add_winmd_namespace(optarg);
+      break;
+#endif
     case PACKING_OPTION:
       packing = strtol(optarg, NULL, 0);
       if(packing != 2 && packing != 4 && packing != 8)

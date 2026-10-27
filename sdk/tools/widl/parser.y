@@ -410,7 +410,23 @@ decl_block: tDECLARE '{' decl_statements '}' { $$ = $3; }
 imp_decl_statements
 	: %empty				{ $$ = NULL; }
 	| imp_decl_statements tINTERFACE qualified_type '<' parameterized_type_args '>' ';'
-						{ $$ = append_statement($1, make_statement_reference( @$, type_parameterized_type_specialize_declare($3, $5) )); }
+						{
+#ifdef __REACTOS__
+						  type_t *existing = NULL;
+						  if (winmd_merges_imports())
+						  {
+						      char *name = format_parameterized_type_name($3, $5);
+						      existing = find_type(name, $3->namespace, 0);
+						      free(name);
+						      if (existing && existing->type_type == TYPE_PARAMETERIZED_TYPE) existing = NULL;
+						      if (!existing)
+						          parameterized_type_stmts = append_statement(parameterized_type_stmts, make_statement_parameterized_type( @$, $3, $5 ));
+						  }
+						  if (existing)
+						      $$ = append_statement($1, make_statement_reference( @$, existing ));
+						  else
+#endif
+						  $$ = append_statement($1, make_statement_reference( @$, type_parameterized_type_specialize_declare($3, $5) )); }
 	;
 
 imp_decl_block
@@ -526,7 +542,11 @@ cppquote: tCPPQUOTE '(' aSTRING ')'		{ $$ = $3; }
 
 import_start: tIMPORT aSTRING ';'		{ $$ = $2; push_import( $2, &yylloc ); }
 	;
-import: import_start imp_statements aEOF	{ yylloc = pop_import(); }
+import: import_start imp_statements aEOF	{
+#ifdef __REACTOS__
+						  record_import_statements($1, $2);
+#endif
+						  yylloc = pop_import(); }
 	;
 
 importlib: tIMPORTLIB '(' aSTRING ')'
@@ -2998,10 +3018,66 @@ static void check_async_uuid(type_t *iface)
     iface->details.iface->async_iface = async_iface->details.iface->async_iface = async_iface;
 }
 
+#ifdef __REACTOS__
+static unsigned int parameterized_stmt_depth(const statement_t *stmt)
+{
+    const typeref_list_t *params = stmt->u.type->details.parameterized.params;
+    const typeref_t *ref;
+    unsigned int depth = 0;
+
+    if (params) LIST_FOR_EACH_ENTRY(ref, params, const typeref_t, entry)
+    {
+        const type_t *type = ref->type;
+        unsigned int level = 0, max_level = 0;
+        const char *ptr;
+
+        while (type && type_get_type_detect_alias(type) == TYPE_POINTER) type = type_pointer_get_ref_type(type);
+        if (!type || !type->name) continue;
+        for (ptr = type->name; *ptr; ptr++)
+        {
+            if (*ptr == '<' && ++level > max_level) max_level = level;
+            else if (*ptr == '>' && level) level--;
+        }
+        if (max_level > depth) depth = max_level;
+    }
+    return depth;
+}
+
+static void define_parameterized_type_stmt(statement_list_t **stmts, statement_t *stmt)
+{
+    stmt->u.type = type_parameterized_type_specialize_define(stmt->u.type);
+    stmt->is_defined = 1;
+    list_remove(&stmt->entry);
+    *stmts = append_statement(*stmts, stmt);
+}
+
+#endif
 static statement_list_t *append_parameterized_type_stmts(statement_list_t *stmts)
 {
     statement_t *stmt, *next;
 
+#ifdef __REACTOS__
+    if (stmts && parameterized_type_stmts && winmd_merges_imports())
+    {
+        unsigned int depth, max_depth = 0;
+
+        LIST_FOR_EACH_ENTRY(stmt, parameterized_type_stmts, statement_t, entry)
+        {
+            unsigned int stmt_depth = parameterized_stmt_depth(stmt);
+            if (stmt_depth > max_depth) max_depth = stmt_depth;
+        }
+        for (depth = 0; depth <= max_depth; depth++)
+        {
+            LIST_FOR_EACH_ENTRY_SAFE(stmt, next, parameterized_type_stmts, statement_t, entry)
+            {
+                assert(stmt->type == STMT_TYPE);
+                if (parameterized_stmt_depth(stmt) == depth) define_parameterized_type_stmt(&stmts, stmt);
+            }
+        }
+        return stmts;
+    }
+
+#endif
     if (stmts && parameterized_type_stmts) LIST_FOR_EACH_ENTRY_SAFE(stmt, next, parameterized_type_stmts, statement_t, entry)
     {
         switch(stmt->type)

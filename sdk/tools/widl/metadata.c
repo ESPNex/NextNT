@@ -3678,6 +3678,137 @@ static void build_tables( const statement_list_t *stmt_list )
     }
 }
 
+#ifdef __REACTOS__
+struct imported_statements
+{
+    char *name;
+    statement_list_t *stmts;
+};
+
+static struct imported_statements *imported_statements;
+static UINT num_imported_statements;
+static char **winmd_namespaces;
+static UINT num_winmd_namespaces;
+
+void add_winmd_namespace( const char *ns )
+{
+    winmd_namespaces = xrealloc( winmd_namespaces, (num_winmd_namespaces + 1) * sizeof(*winmd_namespaces) );
+    winmd_namespaces[num_winmd_namespaces++] = xstrdup( ns );
+}
+
+int winmd_merges_imports( void )
+{
+    return num_winmd_namespaces != 0;
+}
+
+void record_import_statements( const char *name, statement_list_t *stmts )
+{
+    if (!stmts || list_empty( stmts )) return;
+
+    imported_statements = xrealloc( imported_statements,
+                                    (num_imported_statements + 1) * sizeof(*imported_statements) );
+    imported_statements[num_imported_statements].name = xstrdup( name );
+    imported_statements[num_imported_statements].stmts = stmts;
+    num_imported_statements++;
+}
+
+static BOOL namespace_has_prefix( const char *ns, const char *prefix )
+{
+    size_t len = strlen( prefix );
+
+    return !strncasecmp( ns, prefix, len ) && (!ns[len] || ns[len] == '.');
+}
+
+static BOOL is_merged_namespace( const char *ns )
+{
+    BOOL merged = FALSE;
+    UINT i;
+
+    for (i = 0; i < num_winmd_namespaces; i++)
+    {
+        if (winmd_namespaces[i][0] == '!')
+        {
+            if (namespace_has_prefix( ns, winmd_namespaces[i] + 1 )) return FALSE;
+        }
+        else if (namespace_has_prefix( ns, winmd_namespaces[i] ))
+            merged = TRUE;
+    }
+    return merged;
+}
+
+static BOOL is_merged_import( const char *import )
+{
+    char *ptr, *name = xstrdup( import );
+    BOOL merged;
+
+    if ((ptr = strrchr( name, '.' ))) *ptr = 0;
+    merged = is_merged_namespace( name );
+    free( name );
+    return merged;
+}
+
+static BOOL is_mergeable_type( const type_t *type )
+{
+    if (type->signature && !strncmp( type->signature, "pinterface", 10 )) return FALSE;
+
+    switch (type->type_type)
+    {
+    case TYPE_ENUM:
+    case TYPE_STRUCT:
+    case TYPE_INTERFACE:
+    case TYPE_APICONTRACT:
+    case TYPE_RUNTIMECLASS:
+    case TYPE_DELEGATE:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
+static void append_statement_copy( statement_list_t *list, const statement_t *stmt )
+{
+    statement_t *copy = xmalloc( sizeof(*copy) );
+
+    *copy = *stmt;
+    list_add_tail( list, &copy->entry );
+}
+
+static const statement_list_t *merge_imported_statements( const statement_list_t *stmts )
+{
+    statement_list_t *merged = xmalloc( sizeof(*merged) );
+    const statement_t *stmt;
+    UINT i;
+
+    list_init( merged );
+
+    if (stmts) LIST_FOR_EACH_ENTRY( stmt, stmts, const statement_t, entry )
+    {
+        if (stmt->type == STMT_IMPORT && is_merged_import( stmt->u.str )) continue;
+        append_statement_copy( merged, stmt );
+    }
+
+    for (i = 0; i < num_imported_statements; i++)
+    {
+        LIST_FOR_EACH_ENTRY( stmt, imported_statements[i].stmts, const statement_t, entry )
+        {
+            if (stmt->type == STMT_IMPORT)
+            {
+                if (!is_merged_import( stmt->u.str )) append_statement_copy( merged, stmt );
+            }
+            else if (stmt->type == STMT_TYPE && is_mergeable_type( stmt->u.type ))
+            {
+                char *ns = format_namespace( stmt->u.type->namespace, "", ".", NULL, NULL );
+
+                if (is_merged_namespace( ns )) append_statement_copy( merged, stmt );
+                free( ns );
+            }
+        }
+    }
+
+    return merged;
+}
+
+#endif
 static void build_table_stream( const statement_list_t *stmts )
 {
     static const GUID guid = { 0x9ddc04c6, 0x04ca, 0x04cc, { 0x52, 0x85, 0x4b, 0x50, 0xb2, 0x60, 0x1d, 0xa8 } };
@@ -3699,7 +3830,11 @@ static void build_table_stream( const statement_list_t *stmts )
     add_module_row( add_string(metadata_name), add_guid(&guid) );
     add_assemblyref_row( 0, add_blob(token, sizeof(token)), add_string("mscorlib") );
 
+#ifdef __REACTOS__
+    build_tables( num_winmd_namespaces ? merge_imported_statements( stmts ) : stmts );
+#else
     build_tables( stmts );
+#endif
 
     for (i = 0; i < TABLE_MAX; i++) if (tables[i].count) tables_header.valid |= (1ull << i);
 
