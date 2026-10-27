@@ -1281,6 +1281,15 @@ static HRESULT WINAPI domdoc_load(IXMLDOMDocument3 *iface, VARIANT source, VARIA
                 }
                 SafeArrayGetUBound(psa, 1, &len);
 
+#ifdef __REACTOS__
+                if (memchr(str, 0, len + 1))
+                {
+                    SafeArrayUnaccessData(psa);
+                    doc->error = E_FAIL;
+                    return S_FALSE;
+                }
+
+#endif
                 if (SUCCEEDED(hr = stream_wrapper_create(str, len + 1, &stream)))
                 {
                     hr = doc->error = domdoc_load_from_stream(doc, stream);
@@ -1357,6 +1366,10 @@ static HRESULT WINAPI domdoc_load(IXMLDOMDocument3 *iface, VARIANT source, VARIA
         FIXME("unsupported IUnknown type (%#lx) (%p)\n", hr, V_UNKNOWN(&source)->lpVtbl);
         break;
     }
+#ifdef __REACTOS__
+    case VT_ARRAY|VT_UI2:
+        return E_INVALIDARG;
+#endif
     default:
         FIXME("VT type not supported (%d)\n", V_VT(&source));
     }
