@@ -6405,9 +6405,9 @@ static const CSIDL_DATA CSIDL_Data[] =
     },
     { /* 0x4b */
         &FOLDERID_ImplicitAppShortcuts,
-        CSIDL_Type_Disallowed, /* FIXME */
+        CSIDL_Type_InAppData,
         NULL,
-        NULL
+        L"Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\ImplicitAppShortcuts"
     },
     { /* 0x4c */
         &FOLDERID_Libraries,
@@ -6502,9 +6502,9 @@ static const CSIDL_DATA CSIDL_Data[] =
     },
     { /* 0x5b */
         &FOLDERID_QuickLaunch,
-        CSIDL_Type_Disallowed, /* FIXME */
+        CSIDL_Type_InAppData,
         NULL,
-        NULL
+        L"Microsoft\\Internet Explorer\\Quick Launch"
     },
     { /* 0x5c */
         &FOLDERID_RecordedTVLibrary,
