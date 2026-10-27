@@ -520,6 +520,35 @@ static void serialize_table_idx( UINT idx, enum table target )
     add_bytes( &tables_disk, (const BYTE *)&idx, size );
 }
 
+#ifdef __REACTOS__
+static void serialize_coded_idx( UINT idx, UINT tag_bits, const enum table *targets, UINT count )
+{
+    UINT i, max_rows = 0, size;
+
+    for (i = 0; i < count; i++) if (tables[targets[i]].count > max_rows) max_rows = tables[targets[i]].count;
+    size = max_rows < (1u << (16 - tag_bits)) ? sizeof(USHORT) : sizeof(UINT);
+    add_bytes( &tables_disk, (const BYTE *)&idx, size );
+}
+
+static const enum table resolution_scope_tables[] = { TABLE_MODULE, TABLE_MODULEREF, TABLE_ASSEMBLYREF, TABLE_TYPEREF };
+static const enum table typedef_or_ref_tables[] = { TABLE_TYPEDEF, TABLE_TYPEREF, TABLE_TYPESPEC };
+static const enum table memberref_parent_tables[] =
+    { TABLE_TYPEDEF, TABLE_TYPEREF, TABLE_MODULEREF, TABLE_METHODDEF, TABLE_TYPESPEC };
+static const enum table has_constant_tables[] = { TABLE_FIELD, TABLE_PARAM, TABLE_PROPERTY };
+static const enum table has_customattribute_tables[] =
+{
+    TABLE_METHODDEF, TABLE_FIELD, TABLE_TYPEREF, TABLE_TYPEDEF, TABLE_PARAM, TABLE_INTERFACEIMPL, TABLE_MEMBERREF,
+    TABLE_MODULE, TABLE_DECLSECURITY, TABLE_PROPERTY, TABLE_EVENT, TABLE_STANDALONESIG, TABLE_MODULEREF,
+    TABLE_TYPESPEC, TABLE_ASSEMBLY, TABLE_ASSEMBLYREF, TABLE_FILE, TABLE_EXPORTEDTYPE, TABLE_MANIFESTRESOURCE,
+    TABLE_GENERICPARAM, TABLE_GENERICPARAMCONSTRAINT, TABLE_METHODSPEC
+};
+static const enum table customattribute_type_tables[] = { TABLE_METHODDEF, TABLE_MEMBERREF };
+static const enum table has_semantics_tables[] = { TABLE_EVENT, TABLE_PROPERTY };
+static const enum table methoddef_or_ref_tables[] = { TABLE_METHODDEF, TABLE_MEMBERREF };
+
+#define SERIALIZE_CODED_IDX( idx, bits, targets ) serialize_coded_idx( idx, bits, targets, ARRAY_SIZE(targets) )
+
+#endif
 static enum table resolution_scope_to_table( UINT token )
 {
     switch (token & 0x3)
@@ -669,7 +698,11 @@ static void serialize_typeref_table( void )
 
     for (i = 0; i < tables[TABLE_TYPEREF].count; i++)
     {
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->scope, 2, resolution_scope_tables );
+#else
         serialize_table_idx( row->scope, resolution_scope_to_table(row->scope) );
+#endif
         serialize_string_idx( row->name );
         serialize_string_idx( row->namespace );
         row++;
@@ -706,7 +739,11 @@ static void serialize_typedef_table( void )
         serialize_uint( row->flags );
         serialize_string_idx( row->name );
         serialize_string_idx( row->namespace );
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->extends, 2, typedef_or_ref_tables );
+#else
         serialize_table_idx( row->extends, typedef_or_ref_to_table(row->extends) );
+#endif
         serialize_table_idx( row->fieldlist, TABLE_FIELD );
         serialize_table_idx( row->methodlist, TABLE_METHODDEF );
         row++;
@@ -836,7 +873,11 @@ static void serialize_interfaceimpl_table( void )
     for (i = 0; i < tables_idx[TABLE_INTERFACEIMPL].count; i++)
     {
         serialize_table_idx( row->class, TABLE_TYPEDEF );
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->interface, 2, typedef_or_ref_tables );
+#else
         serialize_table_idx( row->interface, typedef_or_ref_to_table(row->interface) );
+#endif
         row++;
     }
 }
@@ -861,7 +902,11 @@ static void serialize_memberref_table( void )
 
     for (i = 0; i < tables[TABLE_MEMBERREF].count; i++)
     {
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->class, 3, memberref_parent_tables );
+#else
         serialize_table_idx( row->class, memberref_parent_to_table(row->class) );
+#endif
         serialize_string_idx( row->name );
         serialize_blob_idx( row->signature );
         row++;
@@ -902,7 +947,11 @@ static void serialize_constant_table( void )
     {
         serialize_byte( row->type );
         serialize_byte( row->padding );
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->parent, 2, has_constant_tables );
+#else
         serialize_table_idx( row->parent, has_constant_to_table(row->parent) );
+#endif
         serialize_blob_idx( row->value );
         row++;
     }
@@ -940,8 +989,16 @@ static void serialize_customattribute_table( void )
 
     for (i = 0; i < tables_idx[TABLE_CUSTOMATTRIBUTE].count; i++)
     {
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->parent, 5, has_customattribute_tables );
+#else
         serialize_table_idx( row->parent, has_customattribute_to_table(row->parent) );
+#endif
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->type, 3, customattribute_type_tables );
+#else
         serialize_table_idx( row->type, customattribute_type_to_table(row->type) );
+#endif
         serialize_blob_idx( row->value );
         row++;
     }
@@ -1119,7 +1176,11 @@ static void serialize_event_table( void )
     {
         serialize_ushort( row->flags );
         serialize_string_idx( row->name );
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->type, 2, typedef_or_ref_tables );
+#else
         serialize_table_idx( row->type, typedef_or_ref_to_table(row->type) );
+#endif
         row++;
     }
 }
@@ -1158,7 +1219,11 @@ static void serialize_methodsemantics_table( void )
     {
         serialize_ushort( row->semantics );
         serialize_table_idx( row->method, TABLE_METHODDEF );
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->association, 1, has_semantics_tables );
+#else
         serialize_table_idx( row->association, has_semantics_to_table(row->association) );
+#endif
         row++;
     }
 }
@@ -1188,8 +1253,16 @@ static void serialize_methodimpl_table( void )
 #else
         serialize_table_idx( row->class, row->class );
 #endif
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->body, 1, methoddef_or_ref_tables );
+#else
         serialize_table_idx( row->body, methoddef_or_ref_to_table(row->body) );
+#endif
+#ifdef __REACTOS__
+        SERIALIZE_CODED_IDX( row->declaration, 1, methoddef_or_ref_tables );
+#else
         serialize_table_idx( row->declaration, methoddef_or_ref_to_table(row->declaration) );
+#endif
         row++;
     }
 }
