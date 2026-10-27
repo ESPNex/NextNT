@@ -1935,6 +1935,14 @@ HRESULT WINAPI RoResolveNamespace(HSTRING name, HSTRING windowsMetaDataDir,
                                   DWORD *metaDataFilePathsCount, HSTRING **metaDataFilePaths,
                                   DWORD *subNamespacesCount, HSTRING **subNamespaces)
 {
+#ifdef __REACTOS__
+    TRACE("name %s, windowsMetaDataDir %s, metaDataFilePaths %p, subNamespaces %p.\n",
+            debugstr_hstring(name), debugstr_hstring(windowsMetaDataDir),
+            metaDataFilePaths, subNamespaces);
+
+    return metadata_resolve_namespace(name, windowsMetaDataDir, packageGraphDirsCount, packageGraphDirs,
+                                      metaDataFilePathsCount, metaDataFilePaths, subNamespacesCount, subNamespaces);
+#else
     FIXME("name %s, windowsMetaDataDir %s, metaDataFilePaths %p, subNamespaces %p stub!\n",
             debugstr_hstring(name), debugstr_hstring(windowsMetaDataDir),
             metaDataFilePaths, subNamespaces);
@@ -1943,6 +1951,7 @@ HRESULT WINAPI RoResolveNamespace(HSTRING name, HSTRING windowsMetaDataDir,
         return E_INVALIDARG;
 
     return RO_E_METADATA_NAME_NOT_FOUND;
+#endif
 }
 
 struct parse_type_context

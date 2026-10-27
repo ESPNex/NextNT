@@ -63,6 +63,9 @@ extern BOOLEAN metadata_property_present(HSTRING type_name, HSTRING property_nam
                                          BOOL need_setter);
 extern BOOLEAN metadata_enum_value_present(HSTRING type_name, HSTRING value_name);
 extern BOOLEAN metadata_contract_present(HSTRING contract_name, UINT16 major, UINT16 minor);
+extern HRESULT metadata_resolve_namespace(HSTRING name, HSTRING windows_dir, DWORD package_count,
+                                          const HSTRING *package_dirs, DWORD *paths_count, HSTRING **paths,
+                                          DWORD *children_count, HSTRING **children);
 #endif
 
 #define DEFINE_IINSPECTABLE_( pfx, iface_type, impl_type, impl_from, iface_mem, expr )             \

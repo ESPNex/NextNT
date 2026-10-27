@@ -396,3 +396,235 @@ HRESULT WINAPI RoGetMetaDataFile(const HSTRING name, IMetaDataDispenserEx *dispe
     IMetaDataImport_Release(scope);
     return S_OK;
 }
+
+struct string_list
+{
+    HSTRING *items;
+    DWORD count;
+    DWORD capacity;
+};
+
+static BOOL string_list_contains(const struct string_list *list, const WCHAR *str, UINT32 length)
+{
+    DWORD i;
+
+    for (i = 0; i < list->count; i++)
+    {
+        UINT32 item_length;
+        const WCHAR *item = WindowsGetStringRawBuffer(list->items[i], &item_length);
+
+        if (item_length == length && !wcsncmp(item, str, length))
+            return TRUE;
+    }
+    return FALSE;
+}
+
+static HRESULT string_list_add(struct string_list *list, const WCHAR *str, UINT32 length)
+{
+    HSTRING *items;
+    HRESULT hr;
+
+    if (string_list_contains(list, str, length))
+        return S_OK;
+
+    if (list->count == list->capacity)
+    {
+        DWORD capacity = list->capacity ? list->capacity * 2 : 8;
+
+        if (!(items = CoTaskMemRealloc(list->items, capacity * sizeof(*items))))
+            return E_OUTOFMEMORY;
+        list->items = items;
+        list->capacity = capacity;
+    }
+
+    if (FAILED(hr = WindowsCreateString(str, length, &list->items[list->count])))
+        return hr;
+    list->count++;
+    return S_OK;
+}
+
+static void string_list_free(struct string_list *list)
+{
+    DWORD i;
+
+    for (i = 0; i < list->count; i++)
+        WindowsDeleteString(list->items[i]);
+    CoTaskMemFree(list->items);
+    memset(list, 0, sizeof(*list));
+}
+
+static BOOL namespace_is_prefix(const WCHAR *prefix, UINT32 prefix_length, const WCHAR *name, UINT32 length)
+{
+    return prefix_length <= length && !wcsnicmp(prefix, name, prefix_length) &&
+           (prefix_length == length || name[prefix_length] == '.');
+}
+
+static HRESULT metadata_collect_children(const WCHAR *path, const WCHAR *name, UINT32 length,
+                                         struct string_list *children)
+{
+    WCHAR type_name[MAX_PATH];
+    IMetaDataImport *scope;
+    HCORENUM henum = NULL;
+    mdTypeDef type_def;
+    ULONG count, written, flags;
+    mdToken extends;
+    HRESULT hr = S_OK;
+
+    if (FAILED(metadata_open_scope(NULL, path, &scope)))
+        return S_OK;
+
+    while (SUCCEEDED(hr) && IMetaDataImport_EnumTypeDefs(scope, &henum, &type_def, 1, &count) == S_OK && count)
+    {
+        const WCHAR *child, *end, *last_dot;
+
+        if (FAILED(IMetaDataImport_GetTypeDefProps(scope, type_def, type_name, ARRAY_SIZE(type_name), &written,
+                                                   &flags, &extends)))
+            continue;
+        if (!(last_dot = wcsrchr(type_name, '.')))
+            continue;
+
+        if (!length)
+            child = type_name;
+        else if ((UINT32)(last_dot - type_name) > length && !wcsncmp(type_name, name, length) &&
+                 type_name[length] == '.')
+            child = type_name + length + 1;
+        else
+            continue;
+
+        if (!(end = wcschr(child, '.')) || end > last_dot)
+            end = last_dot;
+        if (end > child && end <= last_dot)
+            hr = string_list_add(children, child, end - child);
+    }
+
+    if (henum)
+        IMetaDataImport_CloseEnum(scope, henum);
+    IMetaDataImport_Release(scope);
+    return hr;
+}
+
+static HRESULT metadata_scan_directory(const WCHAR *dir, const WCHAR *name, UINT32 length,
+                                       struct string_list *paths, struct string_list *children)
+{
+    WCHAR pattern[MAX_PATH], path[MAX_PATH];
+    WIN32_FIND_DATAW data;
+    HANDLE find;
+    HRESULT hr = S_OK;
+
+    if (_snwprintf(pattern, ARRAY_SIZE(pattern), L"%s\\*.winmd", dir) < 0)
+        return S_OK;
+    pattern[ARRAY_SIZE(pattern) - 1] = 0;
+
+    if ((find = FindFirstFileW(pattern, &data)) == INVALID_HANDLE_VALUE)
+        return S_OK;
+
+    do
+    {
+        UINT32 stem_length = wcslen(data.cFileName);
+        BOOL candidate, descendant;
+        int written;
+
+        if (stem_length <= 6 || data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            continue;
+        stem_length -= 6;
+
+        candidate = length && namespace_is_prefix(data.cFileName, stem_length, name, length);
+        descendant = !length || namespace_is_prefix(name, length, data.cFileName, stem_length);
+        if (!candidate && !descendant)
+            continue;
+
+        written = _snwprintf(path, ARRAY_SIZE(path), L"%s\\%s", dir, data.cFileName);
+        if (written <= 0 || written >= ARRAY_SIZE(path))
+            continue;
+
+        if (candidate && paths && FAILED(hr = string_list_add(paths, path, written)))
+            break;
+        if (children && FAILED(hr = metadata_collect_children(path, name, length, children)))
+            break;
+    } while (FindNextFileW(find, &data));
+
+    FindClose(find);
+    return hr;
+}
+
+HRESULT metadata_resolve_namespace(HSTRING name, HSTRING windows_dir, DWORD package_count,
+                                   const HSTRING *package_dirs, DWORD *paths_count, HSTRING **paths,
+                                   DWORD *children_count, HSTRING **children)
+{
+    struct string_list path_list = {0}, child_list = {0};
+    WCHAR system_dir[MAX_PATH];
+    const WCHAR *buffer, *dir;
+    UINT32 length, dir_length;
+    HRESULT hr = S_OK;
+    DWORD i;
+
+    if (paths_count)
+        *paths_count = 0;
+    if (paths)
+        *paths = NULL;
+    if (children_count)
+        *children_count = 0;
+    if (children)
+        *children = NULL;
+
+    if (!paths && !children)
+        return E_INVALIDARG;
+
+    buffer = WindowsGetStringRawBuffer(name, &length);
+    if (wcslen(buffer) != length)
+        return E_INVALIDARG;
+    if (!length && (!children || paths))
+        return E_INVALIDARG;
+
+    dir = WindowsGetStringRawBuffer(windows_dir, &dir_length);
+    if (!dir_length)
+    {
+        if (!metadata_get_directory(system_dir, ARRAY_SIZE(system_dir)))
+            return E_UNEXPECTED;
+        dir = system_dir;
+    }
+
+    hr = metadata_scan_directory(dir, buffer, length, paths ? &path_list : NULL, children ? &child_list : NULL);
+    for (i = 0; SUCCEEDED(hr) && package_dirs && i < package_count; i++)
+    {
+        const WCHAR *package_dir = WindowsGetStringRawBuffer(package_dirs[i], &dir_length);
+
+        if (dir_length)
+            hr = metadata_scan_directory(package_dir, buffer, length, paths ? &path_list : NULL,
+                                         children ? &child_list : NULL);
+    }
+
+    if (FAILED(hr))
+    {
+        string_list_free(&path_list);
+        string_list_free(&child_list);
+        return hr;
+    }
+
+    if (!path_list.count && !child_list.count)
+    {
+        string_list_free(&path_list);
+        string_list_free(&child_list);
+        return RO_E_METADATA_NAME_NOT_FOUND;
+    }
+
+    if (paths)
+    {
+        *paths = path_list.items;
+        if (paths_count)
+            *paths_count = path_list.count;
+    }
+    else
+        string_list_free(&path_list);
+
+    if (children)
+    {
+        *children = child_list.items;
+        if (children_count)
+            *children_count = child_list.count;
+    }
+    else
+        string_list_free(&child_list);
+
+    return S_OK;
+}
