@@ -725,6 +725,9 @@ static void parse_context_cleanup(struct parse_context *c)
 }
 
 static HRESULT xmlelementcollection_create(struct node *node, IXMLElementCollection **ret);
+#ifdef __REACTOS__
+static HRESULT xmlattributecollection_create(struct node *node, IXMLElementCollection **ret);
+#endif
 
 /**********************************************************************
  * IXMLElement2
@@ -990,12 +993,26 @@ static HRESULT WINAPI xmlelem_removeChild(IXMLElement2 *iface, IXMLElement2 *chi
     return _node_remove_child(element->node, child->node);
 }
 
+#ifdef __REACTOS__
+static HRESULT WINAPI xmlelem_attributes(IXMLElement2 *iface, IXMLElementCollection **p)
+{
+    xmlelem *element = impl_from_IXMLElement2(iface);
+
+    TRACE("%p, %p.\n", iface, p);
+
+    if (!p)
+        return E_INVALIDARG;
+
+    return xmlattributecollection_create(element->node, p);
+}
+#else
 static HRESULT WINAPI xmlelem_attributes(IXMLElement2 *iface, IXMLElementCollection **p)
 {
     FIXME("%p, %p stub\n", iface, p);
 
     return E_NOTIMPL;
 }
+#endif
 
 static const struct IXMLElement2Vtbl xmlelem_vtbl =
 {
@@ -1045,6 +1062,195 @@ static HRESULT xmlelement_create(struct node *node, IXMLElement2 **ret)
     return S_OK;
 }
 
+#ifdef __REACTOS__
+/************************************************************************
+ * IXMLAttribute
+ */
+typedef struct
+{
+    IXMLAttribute IXMLAttribute_iface;
+    LONG ref;
+    BSTR name;
+    BSTR value;
+} xmlattr;
+
+static inline xmlattr *impl_from_IXMLAttribute(IXMLAttribute *iface)
+{
+    return CONTAINING_RECORD(iface, xmlattr, IXMLAttribute_iface);
+}
+
+static HRESULT WINAPI xmlattr_QueryInterface(IXMLAttribute *iface, REFIID riid, void **obj)
+{
+    TRACE("%p, %s, %p.\n", iface, debugstr_guid(riid), obj);
+
+    if (IsEqualGUID(riid, &IID_IUnknown) ||
+        IsEqualGUID(riid, &IID_IDispatch) ||
+        IsEqualGUID(riid, &IID_IXMLAttribute))
+    {
+        *obj = iface;
+        IXMLAttribute_AddRef(iface);
+        return S_OK;
+    }
+
+    *obj = NULL;
+    return E_NOINTERFACE;
+}
+
+static ULONG WINAPI xmlattr_AddRef(IXMLAttribute *iface)
+{
+    xmlattr *attr = impl_from_IXMLAttribute(iface);
+    ULONG ref = InterlockedIncrement(&attr->ref);
+    TRACE("%p, refcount %lu.\n", iface, ref);
+    return ref;
+}
+
+static ULONG WINAPI xmlattr_Release(IXMLAttribute *iface)
+{
+    xmlattr *attr = impl_from_IXMLAttribute(iface);
+    ULONG ref = InterlockedDecrement(&attr->ref);
+
+    TRACE("%p, refcount %lu.\n", iface, ref);
+
+    if (!ref)
+    {
+        SysFreeString(attr->name);
+        SysFreeString(attr->value);
+        free(attr);
+    }
+
+    return ref;
+}
+
+static HRESULT WINAPI xmlattr_GetTypeInfoCount(IXMLAttribute *iface, UINT *count)
+{
+    TRACE("%p, %p.\n", iface, count);
+
+    *count = 1;
+    return S_OK;
+}
+
+static HRESULT WINAPI xmlattr_GetTypeInfo(IXMLAttribute *iface, UINT index, LCID lcid, ITypeInfo **ti)
+{
+    TRACE("%p, %u, %lx, %p.\n", iface, index, lcid, ti);
+
+    return get_typeinfo(IXMLAttribute_tid, ti);
+}
+
+static HRESULT WINAPI xmlattr_GetIDsOfNames(IXMLAttribute *iface, REFIID riid, LPOLESTR *names,
+        UINT count, LCID lcid, DISPID *dispid)
+{
+    ITypeInfo *typeinfo;
+    HRESULT hr;
+
+    TRACE("%p, %s, %p, %u, %lx, %p.\n", iface, debugstr_guid(riid), names, count, lcid, dispid);
+
+    if (!names || !count || !dispid)
+        return E_INVALIDARG;
+
+    hr = get_typeinfo(IXMLAttribute_tid, &typeinfo);
+    if (SUCCEEDED(hr))
+    {
+        hr = ITypeInfo_GetIDsOfNames(typeinfo, names, count, dispid);
+        ITypeInfo_Release(typeinfo);
+    }
+
+    return hr;
+}
+
+static HRESULT WINAPI xmlattr_Invoke(IXMLAttribute *iface, DISPID dispid, REFIID riid, LCID lcid,
+        WORD flags, DISPPARAMS *params, VARIANT *result, EXCEPINFO *excepinfo, UINT *argerr)
+{
+    ITypeInfo *typeinfo;
+    HRESULT hr;
+
+    TRACE("%p, %ld, %s, %lx, %d, %p, %p, %p, %p.\n", iface, dispid, debugstr_guid(riid), lcid,
+          flags, params, result, excepinfo, argerr);
+
+    hr = get_typeinfo(IXMLAttribute_tid, &typeinfo);
+    if (SUCCEEDED(hr))
+    {
+        hr = ITypeInfo_Invoke(typeinfo, iface, dispid, flags, params, result, excepinfo, argerr);
+        ITypeInfo_Release(typeinfo);
+    }
+
+    return hr;
+}
+
+static HRESULT WINAPI xmlattr_get_name(IXMLAttribute *iface, BSTR *p)
+{
+    xmlattr *attr = impl_from_IXMLAttribute(iface);
+
+    TRACE("%p, %p.\n", iface, p);
+
+    if (!p)
+        return E_INVALIDARG;
+
+    return return_bstr(attr->name, p);
+}
+
+static HRESULT WINAPI xmlattr_get_value(IXMLAttribute *iface, BSTR *p)
+{
+    xmlattr *attr = impl_from_IXMLAttribute(iface);
+
+    TRACE("%p, %p.\n", iface, p);
+
+    if (!p)
+        return E_INVALIDARG;
+
+    return return_bstr(attr->value, p);
+}
+
+static const struct IXMLAttributeVtbl xmlattr_vtbl =
+{
+    xmlattr_QueryInterface,
+    xmlattr_AddRef,
+    xmlattr_Release,
+    xmlattr_GetTypeInfoCount,
+    xmlattr_GetTypeInfo,
+    xmlattr_GetIDsOfNames,
+    xmlattr_Invoke,
+    xmlattr_get_name,
+    xmlattr_get_value,
+};
+
+static HRESULT xmlattribute_create(const struct attribute *attribute, IDispatch **ret)
+{
+    xmlattr *attr;
+
+    *ret = NULL;
+
+    if (!(attr = calloc(1, sizeof(*attr))))
+        return E_OUTOFMEMORY;
+
+    attr->IXMLAttribute_iface.lpVtbl = &xmlattr_vtbl;
+    attr->ref = 1;
+    attr->name = SysAllocStringLen(attribute->name, SysStringLen(attribute->name));
+    attr->value = SysAllocStringLen(attribute->value, SysStringLen(attribute->value));
+    if (!attr->name || !attr->value)
+    {
+        IXMLAttribute_Release(&attr->IXMLAttribute_iface);
+        return E_OUTOFMEMORY;
+    }
+    CharUpperBuffW(attr->name, SysStringLen(attr->name));
+
+    *ret = (IDispatch *)&attr->IXMLAttribute_iface;
+    return S_OK;
+}
+
+static struct attribute *_node_get_attribute_at(struct node *node, LONG index)
+{
+    struct attribute *attr;
+
+    LIST_FOR_EACH_ENTRY(attr, &node->attributes, struct attribute, entry)
+    {
+        if (!index--)
+            return attr;
+    }
+
+    return NULL;
+}
+#endif
+
 /************************************************************************
  * IXMLElementCollection
  */
@@ -1057,6 +1263,9 @@ typedef struct _xmlelem_collection
     struct node *node;
 
     LONG current;
+#ifdef __REACTOS__
+    BOOL attributes;
+#endif
 } xmlelem_collection;
 
 static inline xmlelem_collection *impl_from_IXMLElementCollection(IXMLElementCollection *iface)
@@ -1165,6 +1374,13 @@ static HRESULT WINAPI xmlelem_collection_get_length(IXMLElementCollection *iface
     if (!p)
         return E_INVALIDARG;
 
+#ifdef __REACTOS__
+    if (collection->attributes)
+    {
+        *p = list_count(&collection->node->attributes);
+        return S_OK;
+    }
+#endif
     *p = list_count(&collection->node->children);
     return S_OK;
 }
@@ -1200,6 +1416,16 @@ static HRESULT WINAPI xmlelem_collection_item(IXMLElementCollection *iface, VARI
     if (V_VT(&var1) != VT_I4 || V_I4(&var1) < 0)
         return E_INVALIDARG;
 
+#ifdef __REACTOS__
+    if (collection->attributes)
+    {
+        struct attribute *attr;
+
+        if (!(attr = _node_get_attribute_at(collection->node, V_I4(&var1))))
+            return E_FAIL;
+        return xmlattribute_create(attr, disp);
+    }
+#endif
     if (!(node = _node_get_child(collection->node, V_I4(&var1))))
         return E_FAIL;
 
@@ -1277,6 +1503,26 @@ static HRESULT WINAPI xmlelem_collection_IEnumVARIANT_Next(
 
     while (celt)
     {
+#ifdef __REACTOS__
+        if (collection->attributes)
+        {
+            struct attribute *attr;
+
+            if (!(attr = _node_get_attribute_at(collection->node, collection->current + 1)))
+                break;
+
+            V_VT(var) = VT_DISPATCH;
+            hr = xmlattribute_create(attr, &V_DISPATCH(var));
+            if (FAILED(hr))
+                return hr;
+
+            ++collection->current;
+            if (fetched) ++*fetched;
+            var++;
+            celt--;
+            continue;
+        }
+#endif
         if (!(node = _node_get_child(collection->node, collection->current + 1)))
             break;
 
@@ -1353,12 +1599,40 @@ static HRESULT xmlelementcollection_create(struct node *node, IXMLElementCollect
     collection->ref = 1;
     collection->node = _node_grab(node);
     collection->current = -1;
+#ifdef __REACTOS__
+    collection->attributes = FALSE;
+#endif
 
     *ret = &collection->IXMLElementCollection_iface;
 
     TRACE("returning iface %p\n", *ret);
     return S_OK;
 }
+
+#ifdef __REACTOS__
+static HRESULT xmlattributecollection_create(struct node *node, IXMLElementCollection **ret)
+{
+    xmlelem_collection *collection;
+
+    *ret = NULL;
+
+    if (list_empty(&node->attributes))
+        return S_FALSE;
+
+    if (!(collection = calloc(1, sizeof(*collection))))
+        return E_OUTOFMEMORY;
+
+    collection->IXMLElementCollection_iface.lpVtbl = &xmlelem_collection_vtbl;
+    collection->IEnumVARIANT_iface.lpVtbl = &xmlelem_collection_IEnumVARIANTvtbl;
+    collection->ref = 1;
+    collection->node = _node_grab(node);
+    collection->current = -1;
+    collection->attributes = TRUE;
+
+    *ret = &collection->IXMLElementCollection_iface;
+    return S_OK;
+}
+#endif
 
 /* FIXME: IXMLDocument needs to implement
  *   - IXMLError

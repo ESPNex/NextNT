@@ -61,6 +61,9 @@ typedef enum tid_t
     IXMLDOMSelection_tid,
     IXMLDOMText_tid,
     IXMLElement2_tid,
+#ifdef __REACTOS__
+    IXMLAttribute_tid,
+#endif
     IXMLDocument2_tid,
     IXMLHTTPRequest_tid,
     IXSLProcessor_tid,
