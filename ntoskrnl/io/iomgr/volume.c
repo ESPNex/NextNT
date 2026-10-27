@@ -350,6 +350,7 @@ IopShutdownBaseFileSystems(IN PLIST_ENTRY ListHead)
 {
     PLIST_ENTRY ListEntry;
     PDEVICE_OBJECT DeviceObject;
+    PDRIVER_OBJECT FileSystemDriver;
     IO_STATUS_BLOCK StatusBlock;
     PIRP Irp;
     KEVENT Event;
@@ -369,6 +370,8 @@ IopShutdownBaseFileSystems(IN PLIST_ENTRY ListHead)
         /* Go to the next entry */
         ListEntry = ListEntry->Flink;
 
+        FileSystemDriver = DeviceObject->DriverObject;
+
         /* Get the attached device */
         DeviceObject = IoGetAttachedDevice(DeviceObject);
 
@@ -385,7 +388,7 @@ IopShutdownBaseFileSystems(IN PLIST_ENTRY ListHead)
                                            &StatusBlock);
         if (Irp)
         {
-            DPRINT1("Sending the shutdown request to file system %wZ\n", &DeviceObject->DriverObject->DriverName);
+            DPRINT1("Sending the shutdown request to file system %wZ\n", &FileSystemDriver->DriverName);
             Status = IoCallDriver(DeviceObject, Irp);
             if (Status == STATUS_PENDING)
             {
