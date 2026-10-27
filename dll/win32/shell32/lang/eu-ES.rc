@@ -732,6 +732,8 @@ BEGIN
     IDS_SHV_COLUMN_FONTTYPE "Letra-tipo mota"
     IDS_SHV_COLUMN_WORKGROUP "Lantalde"
     IDS_SHV_COLUMN_NETLOCATION "Sare kokalekua"
+    IDS_FILETYPE_JPG "JPG fitxategia"
+    IDS_FILETYPE_PNG "PNG fitxategia"
     IDS_SHV_COLUMN_DOCUMENTS "Dokumentuak"
     IDS_SHV_COLUMN_STATUS "Egoera"
     IDS_SHV_COLUMN_COMMENTS "Azalpenak"

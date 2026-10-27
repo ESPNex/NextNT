@@ -735,6 +735,8 @@ BEGIN
     IDS_SHV_COLUMN_FONTTYPE "Tipo de letra"
     IDS_SHV_COLUMN_WORKGROUP "Grupo de trabalho"
     IDS_SHV_COLUMN_NETLOCATION "Localizações na rede"
+    IDS_FILETYPE_JPG "Ficheiro JPG"
+    IDS_FILETYPE_PNG "Ficheiro PNG"
     IDS_SHV_COLUMN_DOCUMENTS "Documentos"
     IDS_SHV_COLUMN_STATUS "Estado"
     IDS_SHV_COLUMN_COMMENTS "Comentários"

@@ -724,6 +724,8 @@ BEGIN
     IDS_SHV_COLUMN_FONTTYPE "Betűtípus"
     IDS_SHV_COLUMN_WORKGROUP "Munkacsoport"
     IDS_SHV_COLUMN_NETLOCATION "Hálózati hely"
+    IDS_FILETYPE_JPG "JPG-fájl"
+    IDS_FILETYPE_PNG "PNG-fájl"
     IDS_SHV_COLUMN_DOCUMENTS "Dokumentumok"
     IDS_SHV_COLUMN_STATUS "Állapot"
     IDS_SHV_COLUMN_COMMENTS "Megjegyzések"

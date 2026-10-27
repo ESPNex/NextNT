@@ -383,6 +383,8 @@
 
 #define IDS_SYSTEMFOLDER                            30540 // FIXME: "Show translucent selection rectangle"
 #define IDS_FOLDERTYPEBACKGROUNDIMAGE               30543
+#define IDS_FILETYPE_JPG                            30596
+#define IDS_FILETYPE_PNG                            30598
 
 /* Modern Computer folder view */
 #define IDS_COMPUTER_DEVICES_AND_DRIVES             60020

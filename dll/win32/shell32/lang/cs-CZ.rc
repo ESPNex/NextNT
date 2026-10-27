@@ -733,6 +733,8 @@ BEGIN
     IDS_SHV_COLUMN_FONTTYPE "Druh písma" //fonttype
     IDS_SHV_COLUMN_WORKGROUP "Pracovní skupina"
     IDS_SHV_COLUMN_NETLOCATION "Síťové umístění"
+    IDS_FILETYPE_JPG "Soubor JPG"
+    IDS_FILETYPE_PNG "Soubor PNG"
     IDS_SHV_COLUMN_DOCUMENTS "Dokumenty"
     IDS_SHV_COLUMN_STATUS "Stav"
     IDS_SHV_COLUMN_COMMENTS "Komentáře"

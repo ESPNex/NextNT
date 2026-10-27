@@ -732,6 +732,8 @@ BEGIN
     IDS_SHV_COLUMN_FONTTYPE "फ़ॉन्ट प्रकार"
     IDS_SHV_COLUMN_WORKGROUP "कार्यसमूह"
     IDS_SHV_COLUMN_NETLOCATION "नेटवर्क स्थान"
+    IDS_FILETYPE_JPG "JPG फ़ाइल"
+    IDS_FILETYPE_PNG "PNG फ़ाइल"
     IDS_SHV_COLUMN_DOCUMENTS "डॉक्यूमेंट"
     IDS_SHV_COLUMN_STATUS "स्थिति"
     IDS_SHV_COLUMN_COMMENTS "टिप्पणियाँ"
