@@ -1373,7 +1373,6 @@ ByeBye:
     return Silent ? Result : FALSE; // Result;
 }
 
-static
 NTSTATUS
 IopUpdateControlKeyWithResources(
     IN PDEVICE_NODE DeviceNode)
@@ -1414,6 +1413,13 @@ IopUpdateControlKeyWithResources(
 
     if (!NT_SUCCESS(Status))
         return Status;
+
+    if (!DeviceNode->ResourceList || !DeviceNode->ResourceList->Count)
+    {
+        Status = ZwDeleteValueKey(ControlKey, &ValueName);
+        ZwClose(ControlKey);
+        return (Status == STATUS_OBJECT_NAME_NOT_FOUND) ? STATUS_SUCCESS : Status;
+    }
 
     /* Write the resource list */
     Status = ZwSetValueKey(ControlKey,

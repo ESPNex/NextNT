@@ -2393,6 +2393,7 @@ IopSendRemoveDevice(IN PDEVICE_OBJECT DeviceObject)
         DeviceNode->ResourceList->Count = 0;
         DeviceNode->ResourceListTranslated->Count = 0;
         IopUpdateResourceMapForPnPDevice(DeviceNode);
+        IopUpdateControlKeyWithResources(DeviceNode);
     }
 
     PiSetDevNodeState(DeviceNode, DeviceNodeRemoved);
