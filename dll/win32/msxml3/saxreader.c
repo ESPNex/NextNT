@@ -6538,6 +6538,15 @@ static HRESULT saxreader_get_property(const struct saxreader *reader, const WCHA
         return S_OK;
     }
 
+#ifdef __REACTOS__
+    if (!wcscmp(prop, L"charset"))
+    {
+        V_VT(value) = VT_BSTR;
+        V_BSTR(value) = NULL;
+        return S_OK;
+    }
+
+#endif
     FIXME("(%p)->(%s) unsupported property\n", reader, debugstr_w(prop));
 
     return E_NOTIMPL;
