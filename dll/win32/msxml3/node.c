@@ -4627,6 +4627,28 @@ static xmlNodePtr create_xmlnode_element(struct xmldoc_context *context, struct 
     return xmlnode;
 }
 
+#ifdef __REACTOS__
+static void xmldtd_link_element_attributes(void *payload, void *data, const xmlChar *name)
+{
+    xmlElementPtr src = payload, dst;
+    xmlAttributePtr attr, copy, *next;
+    xmlDtdPtr dtd = data;
+
+    if (!(dst = xmlGetDtdQElementDesc(dtd, src->name, src->prefix)))
+        return;
+
+    next = &dst->attributes;
+    for (attr = src->attributes; attr; attr = attr->nexth)
+    {
+        if (!(copy = xmlGetDtdQAttrDesc(dtd, attr->elem, attr->name, attr->prefix)))
+            continue;
+        *next = copy;
+        next = &copy->nexth;
+    }
+    *next = NULL;
+}
+
+#endif
 static xmlDtdPtr create_xmldtd_from_domnode(struct domnode *node)
 {
     struct string_buffer buffer;
@@ -4645,7 +4667,17 @@ static xmlDtdPtr create_xmldtd_from_domnode(struct domnode *node)
     SysFreeString(str);
 
     if ((dtd = xmlGetIntSubset(doc)))
+#ifdef __REACTOS__
+    {
+        xmlDtdPtr copy = xmlCopyDtd(dtd);
+
+        if (copy && dtd->elements)
+            xmlHashScan(dtd->elements, xmldtd_link_element_attributes, copy);
+        dtd = copy;
+    }
+#else
         dtd = xmlCopyDtd(dtd);
+#endif
     xmlFreeDoc(doc);
 
     return dtd;
