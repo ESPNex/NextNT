@@ -16,6 +16,20 @@
 static PCONFIGURATION_COMPONENT_DATA OslComponents[OSL_MAX_COMPONENTS];
 static ULONG OslComponentCount;
 
+typedef struct _OSL_PORTRAIT_PANEL
+{
+    PCSTR Manufacturer;
+    PCSTR Version;
+    ULONG Width;
+    ULONG Height;
+    ULONG Rotation;
+} OSL_PORTRAIT_PANEL;
+
+static const OSL_PORTRAIT_PANEL OslPortraitPanels[] =
+{
+    {"LENOVO", "IdeaPad Duet 3 10IGL5", 1200, 1920, LoaderFramebufferRotation90},
+};
+
 static CM_FRAMEBUF_DEVICE_DATA OslFrameBuffer;
 
 PCM_FRAMEBUF_DEVICE_DATA FrameBufferData;
@@ -95,6 +109,37 @@ OslAllocateResourceList(
 
 static
 VOID
+OslApplyPortraitPanel(VOID)
+{
+    const OSL_PORTRAIT_PANEL* Panel;
+    ULONG i;
+
+    if (OslFrameBuffer.Rotation != LoaderFramebufferRotationIdentity)
+        return;
+
+    for (i = 0; i < RTL_NUMBER_OF(OslPortraitPanels); i++)
+    {
+        Panel = &OslPortraitPanels[i];
+        if (OslFrameBuffer.ScreenWidth != Panel->Height ||
+            OslFrameBuffer.ScreenHeight != Panel->Width ||
+            (ULONGLONG)Panel->Width * Panel->Height * (OslFrameBuffer.BitsPerPixel / 8) > VramSize ||
+            !OslIsSystemVersion(Panel->Manufacturer, Panel->Version))
+        {
+            continue;
+        }
+
+        OslFrameBuffer.ScreenWidth = Panel->Width;
+        OslFrameBuffer.ScreenHeight = Panel->Height;
+        OslFrameBuffer.PixelsPerScanLine = Panel->Width;
+        OslFrameBuffer.Rotation = Panel->Rotation;
+        OslFrameBuffer.LogicalWidth = Panel->Height;
+        OslFrameBuffer.LogicalHeight = Panel->Width;
+        return;
+    }
+}
+
+static
+VOID
 OslAddDisplay(
     _In_ PCONFIGURATION_COMPONENT_DATA Bus)
 {
@@ -112,6 +157,7 @@ OslAddDisplay(
 
     VramAddress = (ULONG_PTR)Base;
     FrameBufferData = &OslFrameBuffer;
+    OslApplyPortraitPanel();
 
     OslFrameBuffer.Version = OSL_FRAMEBUFFER_VERSION;
     OslFrameBuffer.Revision = OSL_FRAMEBUFFER_REVISION;

@@ -18,6 +18,7 @@
 #define SMBIOS_TYPE_END             127
 #define SMBIOS_SYSTEM_MANUFACTURER  4
 #define SMBIOS_SYSTEM_PRODUCT       5
+#define SMBIOS_SYSTEM_VERSION       6
 #define SMBIOS_SYSTEM_MIN_LENGTH    6
 
 #define EDID_SIZE                   128
@@ -75,16 +76,17 @@ SmbiosGetString(
     return *String ? String : NULL;
 }
 
+static
 BOOLEAN
-OslGetSystemIdentifier(
-    _Out_writes_z_(Size) PSTR Buffer,
-    _In_ SIZE_T Size)
+SmbiosGetSystemStrings(
+    _Out_ PCSTR* Manufacturer,
+    _Out_ PCSTR* Product,
+    _Out_ PCSTR* Version)
 {
     const UCHAR* Entry = FwGetSmbiosEntryPoint();
     const UCHAR* Structure;
     const UCHAR* End;
     const UCHAR* Next;
-    PCSTR Manufacturer, Product;
 
     if (!Entry)
         return FALSE;
@@ -115,15 +117,11 @@ OslGetSystemIdentifier(
             if (Structure[1] < SMBIOS_SYSTEM_MIN_LENGTH)
                 return FALSE;
 
-            Manufacturer = SmbiosGetString(Structure, End, Structure[SMBIOS_SYSTEM_MANUFACTURER]);
-            Product = SmbiosGetString(Structure, End, Structure[SMBIOS_SYSTEM_PRODUCT]);
-            if (!Manufacturer || !Product)
-                return FALSE;
-
-            if (strstr(Product, Manufacturer))
-                return NT_SUCCESS(RtlStringCbCopyA(Buffer, Size, Product));
-
-            return NT_SUCCESS(RtlStringCbPrintfA(Buffer, Size, "%s %s", Manufacturer, Product));
+            *Manufacturer = SmbiosGetString(Structure, End, Structure[SMBIOS_SYSTEM_MANUFACTURER]);
+            *Product = SmbiosGetString(Structure, End, Structure[SMBIOS_SYSTEM_PRODUCT]);
+            *Version = (Structure[1] > SMBIOS_SYSTEM_VERSION) ?
+                       SmbiosGetString(Structure, End, Structure[SMBIOS_SYSTEM_VERSION]) : NULL;
+            return TRUE;
         }
 
         for (Next = Structure + Structure[1]; Next + 1 < End && (Next[0] || Next[1]); Next++)
@@ -133,6 +131,36 @@ OslGetSystemIdentifier(
     }
 
     return FALSE;
+}
+
+BOOLEAN
+OslGetSystemIdentifier(
+    _Out_writes_z_(Size) PSTR Buffer,
+    _In_ SIZE_T Size)
+{
+    PCSTR Manufacturer, Product, Version;
+
+    if (!SmbiosGetSystemStrings(&Manufacturer, &Product, &Version) || !Manufacturer || !Product)
+        return FALSE;
+
+    if (strstr(Product, Manufacturer))
+        return NT_SUCCESS(RtlStringCbCopyA(Buffer, Size, Product));
+
+    return NT_SUCCESS(RtlStringCbPrintfA(Buffer, Size, "%s %s", Manufacturer, Product));
+}
+
+BOOLEAN
+OslIsSystemVersion(
+    _In_ PCSTR Manufacturer,
+    _In_ PCSTR Version)
+{
+    PCSTR SystemManufacturer, SystemProduct, SystemVersion;
+
+    return SmbiosGetSystemStrings(&SystemManufacturer, &SystemProduct, &SystemVersion) &&
+           SystemManufacturer &&
+           SystemVersion &&
+           strcmp(SystemManufacturer, Manufacturer) == 0 &&
+           strstr(SystemVersion, Version) != NULL;
 }
 
 BOOLEAN

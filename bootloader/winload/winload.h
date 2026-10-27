@@ -102,6 +102,11 @@ OslGetSystemIdentifier(
     _In_ SIZE_T Size);
 
 BOOLEAN
+OslIsSystemVersion(
+    _In_ PCSTR Manufacturer,
+    _In_ PCSTR Version);
+
+BOOLEAN
 OslGetMonitorData(
     _Out_ PCM_MONITOR_DEVICE_DATA Monitor,
     _Out_ PULONG RefreshRate);
