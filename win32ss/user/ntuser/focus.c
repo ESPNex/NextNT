@@ -205,9 +205,24 @@ co_IntSendDeactivateMessages(HWND hWndPrev, HWND hWnd, BOOL Clear)
 
       if (co_IntSendMessage(hWndPrev, WM_NCACTIVATE, FALSE, lParam))
       {
+         USER_REFERENCE_ENTRY Ref;
+         PWND Wnd = hWnd ? ValidateHwndNoErr(hWnd) : NULL;
+
+         if (Wnd)
+         {
+            UserRefObjectCo(Wnd, &Ref);
+            Wnd->state |= WNDS_BEINGACTIVATED;
+         }
+
          co_IntSendMessage(hWndPrev, WM_ACTIVATE,
                     MAKEWPARAM(WA_INACTIVE, (WndPrev->style & WS_MINIMIZE) ? 0x20 : 0),
                     (LPARAM)hWnd);
+
+         if (Wnd)
+         {
+            Wnd->state &= ~WNDS_BEINGACTIVATED;
+            UserDerefObjectCo(Wnd);
+         }
 
          if (WndPrev && Clear)
             WndPrev->state &= ~(WNDS_ACTIVEFRAME|WNDS_HASCAPTION);
@@ -1172,13 +1187,8 @@ co_IntSetActiveWindow(
 
    if (WndPrev)
    {
-      BOOL Deactivated;
-
       if (ThreadQueue == gpqForeground) gpqForegroundPrev = ThreadQueue;
-      Wnd->state |= WNDS_BEINGACTIVATED;
-      Deactivated = co_IntSendDeactivateMessages(UserHMGetHandle(WndPrev), hWnd, TRUE);
-      Wnd->state &= ~WNDS_BEINGACTIVATED;
-      if (!Deactivated) return FALSE;
+      if (!co_IntSendDeactivateMessages(UserHMGetHandle(WndPrev), hWnd, TRUE)) return FALSE;
    }
 
    WndPrev = ThreadQueue->spwndActive; // Again keep to save changing active.
