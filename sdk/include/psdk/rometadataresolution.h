@@ -25,5 +25,10 @@
 HRESULT WINAPI RoIsApiContractMajorVersionPresent(const WCHAR *, UINT16, BOOL *);
 HRESULT WINAPI RoParseTypeName(HSTRING, DWORD *, HSTRING **);
 HRESULT WINAPI RoResolveNamespace(HSTRING, HSTRING, DWORD, const HSTRING *, DWORD *, HSTRING **, DWORD *, HSTRING **);
+#ifdef __REACTOS__
+#include <cor.h>
+#include <rometadataapi.h>
+HRESULT WINAPI RoGetMetaDataFile(const HSTRING, IMetaDataDispenserEx *, HSTRING *, IMetaDataImport2 **, mdTypeDef *);
+#endif
 
 #endif /* _ROMETADATARESOLUTION_H */
