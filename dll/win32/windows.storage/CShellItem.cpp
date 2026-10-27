@@ -1049,12 +1049,13 @@ IsIDListInBlock(const BYTE *pbBlock, SIZE_T cbBlock, UINT uOffset)
 }
 
 static HRESULT
-GetItemFromHIDA(IDataObject *pdtobj, DATAOBJ_GET_ITEM_FLAGS dwFlags, REFIID riid, void **ppv)
+GetItemFromHIDA(IDataObject *pdtobj, DATAOBJ_GET_ITEM_FLAGS dwFlags, REFIID riid, void **ppv, BOOL *pbHaveHIDA)
 {
     STGMEDIUM medium = { 0 };
     CIDA *pcida;
     HRESULT hr = CDataObjectHIDA::CreateCIDA(pdtobj, &pcida, medium);
 
+    *pbHaveHIDA = SUCCEEDED(hr);
     if (FAILED(hr))
         return hr;
 
@@ -1112,14 +1113,15 @@ GetItemFromHDROP(IDataObject *pdtobj, DATAOBJ_GET_ITEM_FLAGS dwFlags, REFIID rii
 EXTERN_C HRESULT WINAPI
 SHGetItemFromDataObject(IDataObject *pdtobj, DATAOBJ_GET_ITEM_FLAGS dwFlags, REFIID riid, void **ppv)
 {
+    BOOL bHaveHIDA;
     HRESULT hr;
 
     if (!pdtobj || !ppv)
         return E_INVALIDARG;
     *ppv = NULL;
 
-    hr = GetItemFromHIDA(pdtobj, dwFlags, riid, ppv);
-    if (FAILED(hr) && !(dwFlags & DOGIF_NO_HDROP))
+    hr = GetItemFromHIDA(pdtobj, dwFlags, riid, ppv, &bHaveHIDA);
+    if (FAILED(hr) && !bHaveHIDA && !(dwFlags & DOGIF_NO_HDROP))
         hr = GetItemFromHDROP(pdtobj, dwFlags, riid, ppv);
     return hr;
 }
