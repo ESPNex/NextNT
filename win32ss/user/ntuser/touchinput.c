@@ -9,12 +9,18 @@
 #define _HIDPI_NO_FUNCTION_MACROS_
 #include <hidclass.h>
 #include <hidpi.h>
+#include <loader_framebuffer.h>
 
 DBG_DEFAULT_CHANNEL(UserInput);
 
 #define TOUCHINPUT_USAGE_CERTIFICATION_STATUS 0x00C5
 #define TOUCHINPUT_COORDINATE_MAX 0xFFFF
 #define TOUCHINPUT_MAX_FEATURE_CAPS 8
+#define TOUCHINPUT_ROTATION_UNKNOWN MAXULONG
+
+typedef BOOLEAN (NTAPI *PTOUCHINPUT_GET_GOP_TRANSFORM)(PLOADER_PARAMETER_FRAMEBUFFER_TRANSFORM Transform);
+
+static ULONG TouchInputPanelRotation = TOUCHINPUT_ROTATION_UNKNOWN;
 
 typedef struct _TOUCHINPUT_ARRIVAL
 {
@@ -382,6 +388,51 @@ TouchInputScale(
 }
 
 static
+ULONG
+TouchInputGetPanelRotation(VOID)
+{
+    UNICODE_STRING Name = RTL_CONSTANT_STRING(L"InbvGetGopFrameBufferTransform");
+    PTOUCHINPUT_GET_GOP_TRANSFORM GetTransform;
+    LOADER_PARAMETER_FRAMEBUFFER_TRANSFORM Transform;
+    ULONG Rotation = LoaderFramebufferRotationIdentity;
+
+    if (TouchInputPanelRotation != TOUCHINPUT_ROTATION_UNKNOWN)
+        return TouchInputPanelRotation;
+
+    GetTransform = (PTOUCHINPUT_GET_GOP_TRANSFORM)MmGetSystemRoutineAddress(&Name);
+    if (GetTransform && GetTransform(&Transform) && Transform.Rotation <= LoaderFramebufferRotation270)
+        Rotation = Transform.Rotation;
+    if (Rotation != LoaderFramebufferRotationIdentity)
+        DbgPrint("Touch screen input follows the display rotation of %lu degrees\n", Rotation * 90);
+    TouchInputPanelRotation = Rotation;
+    return Rotation;
+}
+
+static
+VOID
+TouchInputRotateContact(
+    _Inout_ PTOUCH_CONTACT Contact)
+{
+    ULONG X = Contact->X, Y = Contact->Y;
+
+    switch (TouchInputGetPanelRotation())
+    {
+        case LoaderFramebufferRotation90:
+            Contact->X = Y;
+            Contact->Y = TOUCHINPUT_COORDINATE_MAX - X;
+            break;
+        case LoaderFramebufferRotation180:
+            Contact->X = TOUCHINPUT_COORDINATE_MAX - X;
+            Contact->Y = TOUCHINPUT_COORDINATE_MAX - Y;
+            break;
+        case LoaderFramebufferRotation270:
+            Contact->X = TOUCHINPUT_COORDINATE_MAX - Y;
+            Contact->Y = X;
+            break;
+    }
+}
+
+static
 VOID
 TouchInputReadContact(
     _Inout_ PTOUCHINPUT_DEVICE Device,
@@ -420,6 +471,7 @@ TouchInputReadContact(
     Contact->ContactId = Id;
     Contact->X = TouchInputScale(X, Device->MinimumX, Device->RangeX);
     Contact->Y = TouchInputScale(Y, Device->MinimumY, Device->RangeY);
+    TouchInputRotateContact(Contact);
     Contact->InContact = Tip;
     Contact->Confidence = Confidence;
 }
