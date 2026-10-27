@@ -2012,12 +2012,32 @@ bool domnode_is_namespace_declaration(const struct domnode *node)
     return node->flags & DOMNODE_NS_DECL;
 }
 
+#ifdef __REACTOS__
+static bool node_dump_has_default_namespace(struct node_dump_context *context)
+{
+    struct node_dump_ns *ns;
+
+    LIST_FOR_EACH_ENTRY_REV(ns, &context->namespaces, struct node_dump_ns, entry)
+    {
+        if (!ns->prefix)
+            return ns->uri && *ns->uri;
+    }
+
+    return false;
+}
+
+#endif
 static bool is_namespace_defined(struct node_dump_context *context, struct domnode *node)
 {
     struct node_dump_ns *ns;
 
+#ifdef __REACTOS__
+    if (!node->uri)
+        return node->type != NODE_ELEMENT || node->prefix || !node_dump_has_default_namespace(context);
+#else
     if (!node->uri)
         return true;
+#endif
 
     /* The xmlns:xml namespace is predefined. */
     if (is_same_namespace_prefix(node, L"xml"))
@@ -2034,7 +2054,14 @@ static bool is_namespace_defined(struct node_dump_context *context, struct domno
 
 static void node_dump_namespace_for_node(struct node_dump_context *context, struct domnode *node)
 {
+#ifdef __REACTOS__
+    if (!node->uri)
+        node_dump_push_namespace(context, NULL, SysAllocString(L""), true);
+    else
+        node_dump_push_namespace(context, node->prefix, node->uri, false);
+#else
     node_dump_push_namespace(context, node->prefix, node->uri, false);
+#endif
     node_dump_append(context, L" xmlns", 6);
     if (node->prefix)
     {
