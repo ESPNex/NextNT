@@ -19,6 +19,21 @@ enum ExtendedOperationFlags
     HideLocations = 0x80000000 // FOFX_DONTDISPLAYLOCATIONS
 };
 
+enum TransferFlags
+{
+    DefaultTransferFlags = TSF_COPY_LOCALIZED_NAME | TSF_COPY_WRITE_TIME | TSF_COPY_CREATION_TIME | TSF_OVERWRITE_EXIST,
+    MergedTransferFlags = TSF_COPY_WRITE_TIME | TSF_COPY_CREATION_TIME | TSF_OVERWRITE_EXIST,
+    MergedItemTransferFlag = 0x1000
+};
+
+static HRESULT SnapshotItem(IShellItem *item, IShellItem **snapshot)
+{
+    CComHeapPtr<ITEMIDLIST> pidl;
+    HRESULT hr = SHGetIDListFromObject(item, &pidl);
+    if (SUCCEEDED(hr)) hr = SHCreateItemFromIDList(pidl, IID_PPV_ARG(IShellItem, snapshot));
+    return hr;
+}
+
 CFileOperation::CFileOperation() : m_Owner(NULL), m_Flags(FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR), m_NextCookie(1), m_Aborted(FALSE), m_Performing(FALSE), m_Job(NULL), m_CallbackResult(S_OK)
 {
 }
@@ -55,7 +70,7 @@ STDMETHODIMP CFileOperation::Unadvise(DWORD cookie)
         m_Sinks.SetCount(m_Sinks.GetCount() - 1);
         return S_OK;
     }
-    return E_INVALIDARG;
+    return S_OK;
 }
 
 STDMETHODIMP CFileOperation::SetOperationFlags(DWORD flags)
@@ -99,11 +114,19 @@ HRESULT CFileOperation::Queue(UINT operation, IShellItem *item, IShellItem *dest
     if ((operation == FO_COPY || operation == FO_MOVE || operation == OP_NEW) && !destination) return E_INVALIDARG;
     if ((operation == FO_RENAME || operation == OP_NEW) && (!name || !*name)) return E_INVALIDARG;
     if (name && (wcschr(name, L'\\') || wcschr(name, L'/') || wcschr(name, L':'))) return E_INVALIDARG;
+    CComPtr<IShellItem> snapshot;
+    if (item && FAILED(SnapshotItem(item, &snapshot))) return E_INVALIDARG;
+    if (destination)
+    {
+        CComHeapPtr<ITEMIDLIST> pidl;
+        if (FAILED(SHGetIDListFromObject(destination, &pidl))) return E_INVALIDARG;
+        if (m_Destinations.Add(destination) == (SIZE_T)-1) return E_OUTOFMEMORY;
+    }
     Job *job = new Job;
     if (!job) return E_OUTOFMEMORY;
     job->Operation = operation;
     job->Attributes = attributes;
-    job->Item = item;
+    job->Item = snapshot;
     job->Destination = destination;
     job->Sink = sink;
     job->Name = name ? name : L"";
@@ -205,17 +228,149 @@ HRESULT CFileOperation::Notify(FILEOPCALLBACKEVENT event, PCWSTR sourcePath, PCW
         }
     }
     HRESULT hr = S_OK;
+    BOOL nested = post || event == FOCE_POSTDELETEITEM;
+    if (nested && m_Job->Sink)
+    {
+        HRESULT next = NotifySink(m_Job->Sink, event, source, destination, name, created, attributes, result);
+        if (FAILED(next)) hr = next;
+    }
     for (SIZE_T i = 0; i < m_ActiveSinks.GetCount(); ++i)
     {
         HRESULT next = NotifySink(m_ActiveSinks[i], event, source, destination, name, created, attributes, result);
         if (FAILED(next) && SUCCEEDED(hr)) hr = next;
     }
-    if (m_Job->Sink)
+    if (!nested && m_Job->Sink)
     {
         HRESULT next = NotifySink(m_Job->Sink, event, source, destination, name, created, attributes, result);
         if (FAILED(next) && SUCCEEDED(hr)) hr = next;
     }
     if (FAILED(hr)) m_CallbackResult = hr;
+    return hr;
+}
+
+HRESULT CFileOperation::NotifyMove(BOOL post, IShellItem *source, IShellItem *destination, PCWSTR name, DWORD flags, HRESULT result, IShellItem *created)
+{
+    HRESULT hr = S_OK;
+    if (post && m_Job->Sink)
+    {
+        HRESULT next = m_Job->Sink->PostMoveItem(flags, source, destination, name, result, created);
+        if (FAILED(next)) hr = next;
+    }
+    for (SIZE_T i = 0; i < m_ActiveSinks.GetCount(); ++i)
+    {
+        HRESULT next = post ? m_ActiveSinks[i]->PostMoveItem(flags, source, destination, name, result, created)
+                            : m_ActiveSinks[i]->PreMoveItem(flags, source, destination, name);
+        if (FAILED(next) && SUCCEEDED(hr)) hr = next;
+    }
+    if (!post && m_Job->Sink)
+    {
+        HRESULT next = m_Job->Sink->PreMoveItem(flags, source, destination, name);
+        if (FAILED(next) && SUCCEEDED(hr)) hr = next;
+    }
+    if (FAILED(hr)) m_CallbackResult = hr;
+    return hr;
+}
+
+BOOL CFileOperation::CanMoveDirectly(PCWSTR source, PCWSTR folder, PCWSTR target)
+{
+    if (GetFileAttributesW(target) != INVALID_FILE_ATTRIBUTES && (!(m_Flags & FOF_NOCONFIRMATION) || (m_Flags & FOF_RENAMEONCOLLISION)))
+        return FALSE;
+    DWORD attributes = GetFileAttributesW(source);
+    if (attributes == INVALID_FILE_ATTRIBUTES || !(attributes & FILE_ATTRIBUTE_DIRECTORY)) return TRUE;
+    WCHAR sourceVolume[MAX_PATH], targetVolume[MAX_PATH];
+    if (!GetVolumePathNameW(source, sourceVolume, _countof(sourceVolume)) || !GetVolumePathNameW(folder, targetVolume, _countof(targetVolume)))
+        return FALSE;
+    return !lstrcmpiW(sourceVolume, targetVolume);
+}
+
+HRESULT CFileOperation::MoveEntry(PCWSTR sourcePath, IShellItem *source, PCWSTR folderPath, IShellItem *folder, PCWSTR name, BOOL merged, FILEOP_PROGRESS *progress)
+{
+    WCHAR target[MAX_PATH];
+    PCWSTR targetName = *name ? name : PathFindFileNameW(sourcePath);
+    DWORD flags = merged ? MergedTransferFlags : DefaultTransferFlags;
+    HRESULT hr = StringCchCopyW(target, _countof(target), folderPath);
+    if (SUCCEEDED(hr) && !PathAppendW(target, targetName)) hr = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
+    if (FAILED(hr)) return hr;
+    hr = NotifyMove(FALSE, source, folder, merged ? L"" : name, flags, S_OK, NULL);
+    if (FAILED(hr)) return hr;
+
+    HRESULT result;
+    BOOL merge = FALSE;
+    DWORD sourceAttributes = GetFileAttributesW(sourcePath);
+    if (sourceAttributes == INVALID_FILE_ATTRIBUTES)
+        result = HRESULT_FROM_WIN32(GetLastError());
+    else
+    {
+        DWORD targetAttributes = GetFileAttributesW(target);
+        if (sourceAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            if (targetAttributes == INVALID_FILE_ATTRIBUTES)
+                result = MoveFileExW(sourcePath, target, 0) ? COPYENGINE_S_DONT_PROCESS_CHILDREN : HRESULT_FROM_WIN32(GetLastError());
+            else if (!(targetAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                result = COPYENGINE_E_FLD_IS_FILE_DEST;
+            else
+            {
+                merge = TRUE;
+                result = COPYENGINE_S_NOT_HANDLED;
+            }
+        }
+        else if (targetAttributes != INVALID_FILE_ATTRIBUTES && (targetAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            result = COPYENGINE_E_FILE_IS_FLD_DEST;
+        else
+            result = MoveFileExW(sourcePath, target, MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED) ? COPYENGINE_S_DONT_PROCESS_CHILDREN : HRESULT_FROM_WIN32(GetLastError());
+    }
+
+    CComPtr<IShellItem> created;
+    if (SUCCEEDED(result)) SHCreateItemFromParsingName(target, NULL, IID_PPV_ARG(IShellItem, &created));
+    hr = NotifyMove(TRUE, source, folder, targetName, merged ? flags | MergedItemTransferFlag : flags, result, created);
+    if (FAILED(result))
+    {
+        m_Aborted = TRUE;
+        return hr;
+    }
+    if (FAILED(hr)) return hr;
+    if (merge) return MergeDirectory(sourcePath, target, created, progress);
+
+    BOOL directory = (sourceAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    ++progress->CompletedItems;
+    SHChangeNotify(directory ? SHCNE_MKDIR : SHCNE_CREATE, SHCNF_PATHW, target, NULL);
+    SHChangeNotify(directory ? SHCNE_RMDIR : SHCNE_DELETE, SHCNF_PATHW, sourcePath, NULL);
+    return S_OK;
+}
+
+HRESULT CFileOperation::MergeDirectory(PCWSTR sourcePath, PCWSTR targetPath, IShellItem *target, FILEOP_PROGRESS *progress)
+{
+    CAtlArray<CStringW> files, folders;
+    WCHAR pattern[MAX_PATH];
+    HRESULT hr = StringCchCopyW(pattern, _countof(pattern), sourcePath);
+    if (SUCCEEDED(hr) && !PathAppendW(pattern, L"*")) hr = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
+    if (FAILED(hr)) return hr;
+    WIN32_FIND_DATAW data;
+    HANDLE find = FindFirstFileW(pattern, &data);
+    if (find != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if (!wcscmp(data.cFileName, L".") || !wcscmp(data.cFileName, L"..")) continue;
+            if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? folders.Add(data.cFileName) == (SIZE_T)-1 : files.Add(data.cFileName) == (SIZE_T)-1)
+                hr = E_OUTOFMEMORY;
+        } while (SUCCEEDED(hr) && FindNextFileW(find, &data));
+        FindClose(find);
+    }
+    for (UINT pass = 0; pass < 2 && SUCCEEDED(hr); ++pass)
+    {
+        CAtlArray<CStringW> &names = pass ? folders : files;
+        for (SIZE_T i = 0; i < names.GetCount() && SUCCEEDED(hr); ++i)
+        {
+            WCHAR child[MAX_PATH];
+            CComPtr<IShellItem> item;
+            hr = StringCchCopyW(child, _countof(child), sourcePath);
+            if (SUCCEEDED(hr) && !PathAppendW(child, names[i])) hr = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
+            if (SUCCEEDED(hr)) hr = SHCreateItemFromParsingName(child, NULL, IID_PPV_ARG(IShellItem, &item));
+            if (SUCCEEDED(hr)) hr = MoveEntry(child, item, targetPath, target, L"", TRUE, progress);
+        }
+    }
+    if (SUCCEEDED(hr) && RemoveDirectoryW(sourcePath)) SHChangeNotify(SHCNE_RMDIR, SHCNF_PATHW, sourcePath, NULL);
     return hr;
 }
 
@@ -254,7 +409,6 @@ STDMETHODIMP CFileOperation::PerformOperations()
 {
     if (m_Performing || !m_Jobs.GetCount()) return E_UNEXPECTED;
     m_Performing = TRUE;
-    m_Aborted = FALSE;
     m_CallbackResult = S_OK;
     m_ActiveSinks.SetCount(0);
     for (SIZE_T i = 0; i < m_Sinks.GetCount(); ++i) m_ActiveSinks.Add(m_Sinks[i].Sink);
@@ -282,9 +436,10 @@ STDMETHODIMP CFileOperation::PerformOperations()
             PWSTR path = NULL;
             hr = job->Item->GetDisplayName(SIGDN_FILESYSPATH, &path);
             ULONGLONG bytes = 0, items = 0;
-            if (SUCCEEDED(hr)) hr = SHELL32_CountFileOperation(path, &bytes, &items, started ? dialog.p : NULL);
+            HRESULT count = SUCCEEDED(hr) ? SHELL32_CountFileOperation(path, &bytes, &items, started ? dialog.p : NULL) : hr;
             CoTaskMemFree(path);
-            if (SUCCEEDED(hr))
+            if (count == HRESULT_FROM_WIN32(ERROR_CANCELLED)) hr = count;
+            if (SUCCEEDED(count))
             {
                 progress.TotalBytes += min(bytes, MAXULONGLONG - progress.TotalBytes);
                 progress.TotalItems += min(items, MAXULONGLONG - progress.TotalItems);
@@ -330,6 +485,8 @@ STDMETHODIMP CFileOperation::PerformOperations()
             if (SUCCEEDED(hr) && !PathAppendW(destination, name)) hr = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
         }
         if (SUCCEEDED(hr) && m_Job->Operation == OP_PROPERTIES) hr = ApplyProperties(m_Job->Item);
+        else if (SUCCEEDED(hr) && m_Job->Operation == FO_MOVE && CanMoveDirectly(source, folder, destination))
+            hr = MoveEntry(source, m_Job->Item, folder, m_Job->Destination, m_Job->Name, FALSE, &progress);
         else if (SUCCEEDED(hr) && m_Job->Operation == OP_NEW)
         {
             hr = Notify(FOCE_PRENEWITEM, NULL, destination, m_Job->Attributes, S_OK);

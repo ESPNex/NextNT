@@ -27,6 +27,7 @@ class CFileOperation :
     CAtlArray<Job *> m_Jobs;
     CAtlArray<Subscription> m_Sinks;
     CAtlArray<CComPtr<IFileOperationProgressSink> > m_ActiveSinks;
+    CAtlArray<CComPtr<IShellItem> > m_Destinations;
     CComPtr<IOperationsProgressDialog> m_Dialog;
     CComPtr<IPropertyChangeArray> m_Properties;
     HWND m_Owner;
@@ -40,6 +41,10 @@ class CFileOperation :
     HRESULT Notify(FILEOPCALLBACKEVENT event, PCWSTR source, PCWSTR destination, UINT attributes, HRESULT result);
     HRESULT NotifySink(IFileOperationProgressSink *sink, FILEOPCALLBACKEVENT event, IShellItem *source, IShellItem *destination, PCWSTR name, IShellItem *created, UINT attributes, HRESULT result);
     static HRESULT CALLBACK Callback(FILEOPCALLBACKEVENT event, PCWSTR source, PCWSTR destination, UINT attributes, HRESULT result, void *data);
+    HRESULT NotifyMove(BOOL post, IShellItem *source, IShellItem *destination, PCWSTR name, DWORD flags, HRESULT result, IShellItem *created);
+    BOOL CanMoveDirectly(PCWSTR source, PCWSTR folder, PCWSTR target);
+    HRESULT MoveEntry(PCWSTR sourcePath, IShellItem *source, PCWSTR folderPath, IShellItem *folder, PCWSTR name, BOOL merged, FILEOP_PROGRESS *progress);
+    HRESULT MergeDirectory(PCWSTR sourcePath, PCWSTR targetPath, IShellItem *target, FILEOP_PROGRESS *progress);
     HRESULT ApplyProperties(IShellItem *item);
     void ClearJobs();
 
