@@ -443,6 +443,19 @@ BOOL CRegFolder::_IsInNameSpace(_In_ LPCITEMIDLIST pidl)
             return TRUE;
     }
     HKEY hKey;
+    WCHAR szClsid[CHARS_IN_GUID], szKey[MAX_PATH];
+    if (m_pInfo->pszEnumKeyName && StringFromGUID2(clsid, szClsid, _countof(szClsid)) &&
+        SUCCEEDED(StringCchPrintfW(szKey, _countof(szKey),
+                                   L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\%s\\NameSpace\\%s",
+                                   m_pInfo->pszEnumKeyName, szClsid)))
+    {
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, szKey, 0, KEY_READ, &hKey) == ERROR_SUCCESS ||
+            RegOpenKeyExW(HKEY_LOCAL_MACHINE, szKey, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+        {
+            RegCloseKey(hKey);
+            return TRUE;
+        }
+    }
     if (!HCR_RegOpenClassIDKey(clsid, &hKey))
         return FALSE;
     RegCloseKey(hKey);
