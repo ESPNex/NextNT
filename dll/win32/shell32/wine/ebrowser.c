@@ -1448,9 +1448,15 @@ static HRESULT WINAPI IShellBrowser_fnContextSensitiveHelp(IShellBrowser *iface,
                                                            BOOL fEnterMode)
 {
     ExplorerBrowserImpl *This = impl_from_IShellBrowser(iface);
+#ifdef __REACTOS__
+    TRACE("%p (%d)\n", This, fEnterMode);
+
+    return S_OK;
+#else
     FIXME("stub, %p (%d)\n", This, fEnterMode);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI IShellBrowser_fnInsertMenusSB(IShellBrowser *iface,
@@ -1490,18 +1496,30 @@ static HRESULT WINAPI IShellBrowser_fnSetStatusTextSB(IShellBrowser *iface,
                                                       LPCOLESTR pszStatusText)
 {
     ExplorerBrowserImpl *This = impl_from_IShellBrowser(iface);
+#ifdef __REACTOS__
+    TRACE("%p (%s)\n", This, debugstr_w(pszStatusText));
+
+    return S_OK;
+#else
     FIXME("stub, %p (%s)\n", This, debugstr_w(pszStatusText));
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI IShellBrowser_fnEnableModelessSB(IShellBrowser *iface,
                                                        BOOL fEnable)
 {
     ExplorerBrowserImpl *This = impl_from_IShellBrowser(iface);
+#ifdef __REACTOS__
+    TRACE("%p (%d)\n", This, fEnable);
+
+    return S_OK;
+#else
     FIXME("stub, %p (%d)\n", This, fEnable);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI IShellBrowser_fnTranslateAcceleratorSB(IShellBrowser *iface,
@@ -1561,11 +1579,13 @@ static HRESULT WINAPI IShellBrowser_fnSendControlMsg(IShellBrowser *iface,
 #ifdef __REACTOS__
     TRACE("%p (%d, %d, %Ix, %Ix, %p)\n", This, id, uMsg, wParam, lParam, pret);
     if (pret) *pret = 0;
+
+    return S_OK;
 #else
     FIXME("stub, %p (%d, %d, %Ix, %Ix, %p)\n", This, id, uMsg, wParam, lParam, pret);
-#endif
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI IShellBrowser_fnQueryActiveShellView(IShellBrowser *iface,
@@ -1603,9 +1623,15 @@ static HRESULT WINAPI IShellBrowser_fnSetToolbarItems(IShellBrowser *iface,
                                                       UINT nButtons, UINT uFlags)
 {
     ExplorerBrowserImpl *This = impl_from_IShellBrowser(iface);
+#ifdef __REACTOS__
+    TRACE("%p (%p, %d, 0x%x)\n", This, lpButtons, nButtons, uFlags);
+
+    return S_OK;
+#else
     FIXME("stub, %p (%p, %d, 0x%x)\n", This, lpButtons, nButtons, uFlags);
 
     return E_NOTIMPL;
+#endif
 }
 
 static const IShellBrowserVtbl vt_IShellBrowser = {
