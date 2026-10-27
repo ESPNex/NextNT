@@ -5109,7 +5109,7 @@ FileStructW* _ILGetFileStructW(LPCITEMIDLIST pidl) {
         /* FileStructW is positioned after FileStruct */
         cbOffset < sizeof(pidl->mkid.cb) + sizeof(PIDLTYPE) + sizeof(FileStruct) ||
         /* There has to be enough space at cbOffset in the pidl to hold FileStructW and cbOffset */
-        cbOffset > pidl->mkid.cb - sizeof(cbOffset) - sizeof(FileStructW) ||
+        (SIZE_T)cbOffset + sizeof(cbOffset) + sizeof(FileStructW) > pidl->mkid.cb ||
         pidl->mkid.cb != cbOffset + pFileStructW->cbLen)
     {
         WARN("Invalid pidl format (cbOffset = %d)!\n", cbOffset);
