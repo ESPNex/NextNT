@@ -3272,7 +3272,6 @@ USBPORT_PdoPnP(IN PDEVICE_OBJECT PdoDevice,
 
             Irp->IoStatus.Status = STATUS_SUCCESS;
             IoCompleteRequest(Irp, IO_NO_INCREMENT);
-            IoDeleteDevice(PdoDevice);
             return STATUS_SUCCESS;
 
         case IRP_MN_CANCEL_REMOVE_DEVICE:
