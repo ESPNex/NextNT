@@ -2216,6 +2216,8 @@ Cleanup:
         ObDereferenceObject(FileObject);
     }
 
+    ZwClose(Handle);
+
     return Status;
 }
 
