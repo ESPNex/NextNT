@@ -113,6 +113,97 @@ FramePixel(_In_ ULONG X, _In_ ULONG Y)
 }
 
 static VOID
+RotatedRect(
+    _In_ ULONG Left,
+    _In_ ULONG Top,
+    _In_ ULONG Right,
+    _In_ ULONG Bottom,
+    _Out_ URECT* Physical)
+{
+    switch (FrameBufferRotation)
+    {
+        case LoaderFramebufferRotation90:
+            Physical->Left = FrameBufferWidth - Bottom;
+            Physical->Top = Left;
+            Physical->Right = FrameBufferWidth - Top;
+            Physical->Bottom = Right;
+            break;
+
+        case LoaderFramebufferRotation180:
+            Physical->Left = FrameBufferWidth - Right;
+            Physical->Top = FrameBufferHeight - Bottom;
+            Physical->Right = FrameBufferWidth - Left;
+            Physical->Bottom = FrameBufferHeight - Top;
+            break;
+
+        case LoaderFramebufferRotation270:
+            Physical->Left = Top;
+            Physical->Top = FrameBufferHeight - Right;
+            Physical->Right = Bottom;
+            Physical->Bottom = FrameBufferHeight - Left;
+            break;
+
+        default:
+            Physical->Left = Left;
+            Physical->Top = Top;
+            Physical->Right = Right;
+            Physical->Bottom = Bottom;
+            break;
+    }
+}
+
+static VOID
+RotatedPixel(
+    _In_ ULONG PhysicalX,
+    _In_ ULONG PhysicalY,
+    _Out_ PULONG X,
+    _Out_ PULONG Y,
+    _Out_ PLONG StepX,
+    _Out_ PLONG StepY)
+{
+    switch (FrameBufferRotation)
+    {
+        case LoaderFramebufferRotation90:
+            *X = PhysicalY;
+            *Y = FrameBufferWidth - 1 - PhysicalX;
+            *StepX = 0;
+            *StepY = -1;
+            break;
+
+        case LoaderFramebufferRotation180:
+            *X = FrameBufferWidth - 1 - PhysicalX;
+            *Y = FrameBufferHeight - 1 - PhysicalY;
+            *StepX = -1;
+            *StepY = 0;
+            break;
+
+        case LoaderFramebufferRotation270:
+            *X = FrameBufferHeight - 1 - PhysicalY;
+            *Y = PhysicalX;
+            *StepX = 0;
+            *StepY = 1;
+            break;
+
+        default:
+            *X = PhysicalX;
+            *Y = PhysicalY;
+            *StepX = 1;
+            *StepY = 0;
+            break;
+    }
+}
+
+static __inline PULONG
+PhysicalPixel(
+    _In_ ULONG X,
+    _In_ ULONG Y)
+{
+    return (PULONG)(FrameBufferStart +
+                    (ULONG_PTR)Y * BytesPerScanLine +
+                    (ULONG_PTR)X * BytesPerPixel);
+}
+
+static VOID
 FlushFrameRect(
     _In_ ULONG Left,
     _In_ ULONG Top,
@@ -178,6 +269,31 @@ FlushBackBufferRect(
 
             for (x = 0; x < Width; ++x)
                 Pixel[x] = CachedPalette[Back[x]];
+        }
+        FlushFrameRect(Left, Top, Left + Width, Top + Height);
+        return;
+    }
+
+    if ((VidpDisplayWidth == ScreenWidth) && (VidpDisplayHeight == ScreenHeight))
+    {
+        URECT Physical;
+
+        RotatedRect(Left, Top, Left + Width, Top + Height, &Physical);
+        for (y = Physical.Top; y < Physical.Bottom; ++y)
+        {
+            PULONG Pixel = PhysicalPixel(Physical.Left, y);
+            LONG_PTR Index, Step;
+            LONG StepX, StepY;
+            ULONG BackX, BackY;
+
+            RotatedPixel(Physical.Left, y, &BackX, &BackY, &StepX, &StepY);
+            Index = (LONG_PTR)BackY * VidpDisplayWidth + BackX;
+            Step = (LONG_PTR)StepY * VidpDisplayWidth + StepX;
+            for (x = Physical.Left; x < Physical.Right; ++x)
+            {
+                *Pixel++ = CachedPalette[BackBuffer[Index]];
+                Index += Step;
+            }
         }
         FlushFrameRect(Left, Top, Left + Width, Top + Height);
         return;
@@ -898,6 +1014,7 @@ VidBufferToScreenBltNative(
     _In_ ULONG Height,
     _In_ ULONG Delta)
 {
+    URECT Physical;
     ULONG x, y;
 
     if (!FrameBufferStart || BytesPerPixel != sizeof(ULONG))
@@ -933,12 +1050,22 @@ VidBufferToScreenBltNative(
         return TRUE;
     }
 
-    for (y = 0; y < Height; ++y)
+    RotatedRect(Left, Top, Left + Width, Top + Height, &Physical);
+    for (y = Physical.Top; y < Physical.Bottom; ++y)
     {
-        PULONG Src = (PULONG)(Buffer + y * Delta);
+        PULONG Pixel = PhysicalPixel(Physical.Left, y);
+        LONG_PTR Offset, Step;
+        LONG StepX, StepY;
+        ULONG SourceX, SourceY;
 
-        for (x = 0; x < Width; ++x)
-            *FramePixel(Left + x, Top + y) = Src[x];
+        RotatedPixel(Physical.Left, y, &SourceX, &SourceY, &StepX, &StepY);
+        Offset = (LONG_PTR)(SourceY - Top) * Delta + (LONG_PTR)(SourceX - Left) * sizeof(ULONG);
+        Step = (LONG_PTR)StepY * Delta + (LONG_PTR)StepX * sizeof(ULONG);
+        for (x = Physical.Left; x < Physical.Right; ++x)
+        {
+            *Pixel++ = *(PULONG)(Buffer + Offset);
+            Offset += Step;
+        }
     }
     FlushFrameRect(Left, Top, Left + Width, Top + Height);
 
