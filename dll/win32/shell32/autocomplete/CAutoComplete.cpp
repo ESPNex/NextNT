@@ -715,6 +715,8 @@ CAutoComplete::CAutoComplete()
     , m_bWindowRef(FALSE)
     , m_hwndEdit(NULL), m_fnOldEditProc(NULL), m_fnOldWordBreakProc(NULL)
     , m_hThread(NULL), m_pThread(NULL), m_bEnumReset(FALSE)
+    , m_lWorkerActive(FALSE), m_lPendingFinish(0)
+    , m_bWorkerListValid(FALSE)
 {
 }
 
@@ -1566,28 +1568,29 @@ CAutoComplete::ExtractInnerList(CSimpleArray<CStringW>& outerList,
     }
 }
 
-VOID CAutoComplete::ReLoadInnerList(PAC_THREAD pThread)
+BOOL CAutoComplete::ReLoadInnerList(PAC_THREAD pThread)
 {
     pThread->m_innerList.RemoveAll(); // clear contents
 
     if (!m_pEnum || pThread->m_strText.IsEmpty())
-        return;
+        return FALSE;
 
     // reload the items
     LPWSTR pszItem;
     ULONG cGot;
     HRESULT hr;
     CSimpleArray<CStringW>& innerList = pThread->m_innerList;
-    while (!m_pThread && m_hThread)
+    while (m_hThread)
     {
         // get next item
         hr = m_pEnum->Next(1, &pszItem, &cGot);
         if (hr != S_OK)
-            break;
+            return TRUE;
 
         innerList.Add(pszItem); // append item to innerList
         ::CoTaskMemFree(pszItem); // free
     }
+    return FALSE;
 }
 
 VOID CAutoComplete::StartCompletion(BOOL bAppendOK)
@@ -2086,6 +2089,7 @@ static unsigned __stdcall AutoCompThreadProc(void *arg)
 {
     CAutoComplete* pThis = reinterpret_cast<CAutoComplete*>(arg);
     pThis->AutoCompThreadProc();
+    pThis->Release();
     return 0;
 }
 
@@ -2095,7 +2099,14 @@ VOID CAutoComplete::AutoCompThreadProc()
     {
         PAC_THREAD pThread = InterlockedExchangeThreadData(&m_pThread, NULL);
         if (!pThread)
-            break;
+        {
+            InterlockedExchange(&m_lWorkerActive, FALSE);
+            if (!InterlockedCompareExchangePointer(reinterpret_cast<volatile PVOID *>(&m_pThread), NULL, NULL))
+                break;
+            if (InterlockedCompareExchange(&m_lWorkerActive, TRUE, FALSE) != FALSE)
+                break;
+            continue;
+        }
         DoThreadWork(pThread);
     }
 }
@@ -2119,13 +2130,15 @@ VOID CAutoComplete::DoThreadWork(PAC_THREAD pThread)
               static_cast<LPCWSTR>(pThread->m_strStemText), hr);
     }
 
-    if (pThread->m_bExpand || pThread->m_bReload || m_innerList.GetSize() == 0)
+    if (pThread->m_bExpand || pThread->m_bReload || !m_bWorkerListValid)
     {
-        ReLoadInnerList(pThread);
+        m_bWorkerListValid = ReLoadInnerList(pThread);
+        if (m_bWorkerListValid)
+            m_workerList = pThread->m_innerList;
     }
     else
     {
-        pThread->m_innerList = m_innerList;
+        pThread->m_innerList = m_workerList;
     }
 
     if (m_pThread || !m_hThread)
@@ -2145,9 +2158,11 @@ VOID CAutoComplete::DoThreadWork(PAC_THREAD pThread)
     DoSort(pThread->m_outerList, pThread->m_PrefixFilter);
     DoUniqueAndTrim(pThread->m_outerList, pThread->m_PrefixFilter);
 
+    InterlockedIncrement(&m_lPendingFinish);
     if (m_pThread || !m_hThread ||
         !::PostMessageW(m_hWnd, AUTOCOMP_FINISH, 0, (LPARAM)pThread))
     {
+        InterlockedDecrement(&m_lPendingFinish);
         delete pThread;
     }
 }
@@ -2161,6 +2176,15 @@ LRESULT CAutoComplete::OnAutoCompStart(UINT uMsg, WPARAM wParam, LPARAM lParam, 
     if (m_strText.CompareNoCase(strText) == 0)
     {
         // no change
+        return 0;
+    }
+
+    if (strText.IsEmpty())
+    {
+        m_strText.Empty();
+        m_outerList.RemoveAll();
+        m_hwndList.SendMessageW(LVM_SETITEMCOUNT, 0, 0);
+        HideDropDown();
         return 0;
     }
 
@@ -2193,8 +2217,9 @@ LRESULT CAutoComplete::OnAutoCompStart(UINT uMsg, WPARAM wParam, LPARAM lParam, 
     if (pThread->m_bReload && !strStemText.IsEmpty())
         pThread->m_bExpand = TRUE;
 
-    if (!pThread->m_bReset && !pThread->m_bExpand && !pThread->m_bReload &&
-        !m_hThread && !m_pThread && m_innerList.GetSize() > 0)
+    if (!pThread->m_bReset && !pThread->m_bExpand && !pThread->m_bReload && !m_pThread &&
+        !InterlockedCompareExchange(&m_lWorkerActive, FALSE, FALSE) &&
+        !InterlockedCompareExchange(&m_lPendingFinish, 0, 0) && m_innerList.GetSize() > 0)
     {
         pThread->m_innerList = m_innerList;
         for (INT iItem = 0; iItem < m_innerList.GetSize(); ++iItem)
@@ -2226,23 +2251,22 @@ LRESULT CAutoComplete::OnAutoCompStart(UINT uMsg, WPARAM wParam, LPARAM lParam, 
     pOld = InterlockedExchangeThreadData(&m_pThread, pThread);
     ATLASSERT(pOld == NULL);
 
-    BOOL bDoStart = FALSE;
-    if (m_hThread)
+    if (InterlockedCompareExchange(&m_lWorkerActive, TRUE, FALSE) == FALSE)
     {
-        if (WaitForSingleObject(m_hThread, 0) != WAIT_TIMEOUT)
-        {
+        if (m_hThread)
             CloseHandle(m_hThread);
-            m_hThread = NULL;
-            bDoStart = TRUE;
+        AddRef();
+        m_hThread = (HANDLE)_beginthreadex(NULL, 0, ::AutoCompThreadProc, this, CREATE_SUSPENDED, NULL);
+        if (m_hThread)
+        {
+            ResumeThread(m_hThread);
+        }
+        else
+        {
+            InterlockedExchange(&m_lWorkerActive, FALSE);
+            Release();
         }
     }
-    else
-    {
-        bDoStart = TRUE;
-    }
-
-    if (bDoStart)
-        m_hThread = (HANDLE)_beginthreadex(NULL, 0, ::AutoCompThreadProc, this, 0, NULL);
 
     return 0;
 }
@@ -2251,12 +2275,11 @@ LRESULT CAutoComplete::OnAutoCompStart(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 LRESULT CAutoComplete::OnAutoCompFinish(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
     PAC_THREAD pThread = reinterpret_cast<PAC_THREAD>(lParam);
+    InterlockedDecrement(&m_lPendingFinish);
     if (m_pThread == NULL)
     {
         FinishCompletion(pThread);
     }
-    CloseHandle(m_hThread);
-    m_hThread = NULL;
     delete pThread;
     return 0;
 }
@@ -2264,6 +2287,9 @@ LRESULT CAutoComplete::OnAutoCompFinish(UINT uMsg, WPARAM wParam, LPARAM lParam,
 VOID CAutoComplete::FinishCompletion(PAC_THREAD pThread)
 {
     if (m_pThread || !m_hThread)
+        return;
+
+    if (m_strText.CompareNoCase(pThread->m_strText) != 0)
         return;
 
     ApplyCompletion(pThread);

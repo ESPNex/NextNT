@@ -237,11 +237,15 @@ protected:
     HANDLE m_hThread;
     PAC_THREAD m_pThread;
     BOOL m_bEnumReset;
+    LONG m_lWorkerActive;
+    LONG m_lPendingFinish;
+    BOOL m_bWorkerListValid;
 
     // The following variables are non-POD:
     CStringW m_strText; // internal text (used in selecting item and reverting text)
     CStringW m_strStemText; // dirname + '\\'
     CStringW m_strQuickComplete; // used for [Ctrl]+[Enter]
+    CSimpleArray<CStringW> m_workerList;
     CACListView m_hwndList; // this listview is virtual
     CACScrollBar m_hwndScrollBar; // scroll bar contol
     CACSizeBox m_hwndSizeBox; // the size grip
@@ -258,7 +262,7 @@ protected:
     VOID LoadQuickComplete(LPCWSTR pwszRegKeyPath, LPCWSTR pwszQuickComplete);
     CStringW GetQuickEdit(LPCWSTR pszText) const;
     VOID RepositionDropDown();
-    VOID ReLoadInnerList(PAC_THREAD pThread);
+    BOOL ReLoadInnerList(PAC_THREAD pThread);
     VOID ExtractInnerList(CSimpleArray<CStringW>& outerList,
                           const CSimpleArray<CStringW>& innerList,
                           const CString& strText,
