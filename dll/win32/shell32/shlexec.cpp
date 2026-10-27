@@ -2221,6 +2221,16 @@ static UINT_PTR SHELL_execute_url(LPCWSTR lpFile, LPCWSTR wcmd, LPSHELLEXECUTEIN
         iSize = strlenW(lpFile);
 
     TRACE("Got URL: %s\n", debugstr_w(lpFile));
+
+    HKEY hProtocolKey;
+    CStringW strScheme(lpFile, iSize);
+    if (RegOpenKeyExW(HKEY_CLASSES_ROOT, strScheme, 0, KEY_QUERY_VALUE, &hProtocolKey) != ERROR_SUCCESS)
+        return SE_ERR_NOASSOC;
+    LONG lProtocolErr = RegQueryValueExW(hProtocolKey, L"URL Protocol", NULL, NULL, NULL, NULL);
+    RegCloseKey(hProtocolKey);
+    if (lProtocolErr != ERROR_SUCCESS)
+        return SE_ERR_NOASSOC;
+
     /* Looking for ...<protocol>\shell\<lpVerb>\command */
     len = iSize + lstrlenW(L"\\shell\\") + lstrlenW(L"\\command") + 1;
     if (psei->lpVerb && *psei->lpVerb)
