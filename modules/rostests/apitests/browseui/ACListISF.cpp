@@ -754,7 +754,10 @@ START_TEST(ACListISF)
         {
             CComPtr<IShellService> service;
             hr = list->QueryInterface(IID_IShellService, (void **)&service);
-            ok(hr == S_OK, "shell service: %lx\n", hr);
+            if (GetNTVersion() >= _WIN32_WINNT_WIN7)
+                ok(hr == E_NOINTERFACE, "shell service: %lx\n", hr);
+            else
+                ok(hr == S_OK, "shell service: %lx\n", hr);
             if (service)
             {
                 hr = service->SetOwner(NULL);
