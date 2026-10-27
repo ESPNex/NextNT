@@ -452,9 +452,13 @@ done:
 
    if (gpqForeground && (!gpqForeground->spwndActive || Wnd == gpqForeground->spwndActive))
    {
+      PUSER_MESSAGE_QUEUE Queue = gptiCurrent->MessageQueue;
+      PWND ActiveBefore = Queue->spwndActive;
+
       /* ReactOS can pass WndTo = NULL to co_IntSetForegroundWindow and returns FALSE. */
       //ERR("WinPosActivateOtherWindow Set FG 0x%p hWnd %p\n", WndTo, WndTo ? UserHMGetHandle(WndTo) : NULL);
-      if (co_IntSetForegroundWindow(WndTo))
+      if (co_IntSetForegroundWindow(WndTo) ||
+          (gptiCurrent->MessageQueue == Queue && Queue->spwndActive != ActiveBefore))
       {
          if (WndTo) UserDerefObjectCo(WndTo);
          return;
