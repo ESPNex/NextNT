@@ -66,25 +66,16 @@ TestRecentFolder(void)
 {
     CComPtr<IShellLinkW> Link;
     CComPtr<IPersistFile> Persist;
-    CComPtr<IShellItem> Item;
     WCHAR LinkPath[MAX_PATH], Target[MAX_PATH];
-    LPWSTR Recent = NULL, Display = NULL;
+    LPWSTR Recent = NULL;
     HRESULT hr;
 
     hr = SHGetKnownFolderPath(FOLDERID_Recent, 0, NULL, &Recent);
     ok_hr(hr, S_OK);
     if (FAILED(hr))
         return;
-    hr = SHCreateItemFromParsingName(g_File, NULL, IID_PPV_ARG(IShellItem, &Item));
-    ok_hr(hr, S_OK);
-    if (FAILED(hr) || FAILED(Item->GetDisplayName(SIGDN_NORMALDISPLAY, &Display)))
-    {
-        CoTaskMemFree(Recent);
-        return;
-    }
-    wsprintfW(LinkPath, L"%s\\%s.lnk", Recent, Display);
+    wsprintfW(LinkPath, L"%s\\%s.lnk", Recent, PathFindFileNameW(g_File));
     trace("expected recent link %ls\n", LinkPath);
-    CoTaskMemFree(Display);
     CoTaskMemFree(Recent);
     DeleteFileW(LinkPath);
 
