@@ -695,7 +695,7 @@ public:
 
         if (pceltFetched)
             *pceltFetched = Fetched;
-        if (Fetched == celt)
+        if (Fetched == celt || (Fetched && SUCCEEDED(hr)))
             return S_OK;
         return Fetched ? S_FALSE : hr;
     }
