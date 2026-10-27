@@ -1745,7 +1745,11 @@ static HRESULT WINAPI isaxattributes_getValueFromQName(ISAXAttributes *iface,
     TRACE("%p, %s, %d, %p, %p.\n", iface, debugstr_w(name), name_length, value, length);
 
     if (!name)
+#ifdef __REACTOS__
+        return locator->saxreader->version == MSXML4 ? E_INVALIDARG : E_POINTER;
+#else
         return E_POINTER;
+#endif
 
     attr = saxlocator_get_attribute_by_qname(locator, name, name_length, &index);
     if (attr)
