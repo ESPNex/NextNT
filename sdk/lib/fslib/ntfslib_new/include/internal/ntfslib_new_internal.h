@@ -1407,6 +1407,15 @@ NtfsUpdateReparseIndex(
     _In_ ULONGLONG FileReference,
     _In_ BOOLEAN Remove);
 
+NTSTATUS
+NtfsNextReparseIndexEntry(
+    _In_ PVolume DiskVolume,
+    _In_ ULONG StartTag,
+    _In_ ULONGLONG StartFileReference,
+    _In_ BOOLEAN Inclusive,
+    _Out_ PULONG Tag,
+    _Out_ PULONGLONG FileReference);
+
 typedef struct IndexSearchKey
 {
     ULONG CollationRule;

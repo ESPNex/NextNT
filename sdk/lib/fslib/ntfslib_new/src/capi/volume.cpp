@@ -66,6 +66,25 @@ NtfsVolumeReadSecurityDescriptorById(
             BufferLength);
 }
 
+NTSTATUS
+NtfsVolumeNextReparsePoint(
+    _In_ PNtfsVolume DiskVolume,
+    _In_ ULONG StartTag,
+    _In_ ULONGLONG StartFileReference,
+    _In_ BOOLEAN Inclusive,
+    _Out_ PULONG Tag,
+    _Out_ PULONGLONG FileReference)
+{
+    if (!DiskVolume)
+        return STATUS_INVALID_PARAMETER;
+    return NtfsNextReparseIndexEntry(reinterpret_cast<PVolume>(DiskVolume),
+                                     StartTag,
+                                     StartFileReference,
+                                     Inclusive,
+                                     Tag,
+                                     FileReference);
+}
+
 void
 NtfsVolumeDestroy(
     _In_opt_ PNtfsVolume DiskVolume)

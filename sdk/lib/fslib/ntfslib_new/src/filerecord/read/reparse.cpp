@@ -271,3 +271,222 @@ NtfsParseNameSurrogateReparsePoint(
     View->PrintNameLength = PrintNameLength / sizeof(WCHAR);
     return STATUS_SUCCESS;
 }
+
+static int
+NtfsCompareReparseKeys(
+    _In_reads_(3) const ULONG* Left,
+    _In_reads_(3) const ULONG* Right)
+{
+    for (ULONG Index = 0; Index < 3; Index++)
+    {
+        if (Left[Index] != Right[Index])
+            return Left[Index] < Right[Index] ? -1 : 1;
+    }
+    return 0;
+}
+
+static NTSTATUS
+NtfsScanReparseNode(
+    _In_ PIndexNodeHeader Header,
+    _In_ ULONG HeaderBytes,
+    _In_reads_(3) const ULONG* Start,
+    _In_ BOOLEAN Inclusive,
+    _Inout_ ULONG* Best,
+    _Inout_ PBOOLEAN Found)
+{
+    PUCHAR Base = reinterpret_cast<PUCHAR>(Header);
+    ULONG Offset;
+
+    if (HeaderBytes < sizeof(*Header) ||
+        Header->IndexOffset < sizeof(*Header) ||
+        Header->IndexOffset > Header->TotalIndexSize ||
+        Header->TotalIndexSize > HeaderBytes)
+    {
+        return STATUS_FILE_CORRUPT_ERROR;
+    }
+
+    for (Offset = Header->IndexOffset; Offset < Header->TotalIndexSize;)
+    {
+        PIndexEntry Entry = reinterpret_cast<PIndexEntry>(Base + Offset);
+        ULONG Remaining = Header->TotalIndexSize - Offset;
+        ULONG Key[3];
+        int Order;
+
+        if (Remaining < FIELD_OFFSET(IndexEntry, IndexStream) ||
+            Entry->EntryLength < FIELD_OFFSET(IndexEntry, IndexStream) ||
+            Entry->EntryLength > Remaining)
+        {
+            return STATUS_FILE_CORRUPT_ERROR;
+        }
+        if (Entry->Flags & INDEX_ENTRY_END)
+            return STATUS_SUCCESS;
+        if (Entry->StreamLength != sizeof(Key) ||
+            FIELD_OFFSET(IndexEntry, IndexStream) + sizeof(Key) > Entry->EntryLength)
+        {
+            return STATUS_FILE_CORRUPT_ERROR;
+        }
+
+        RtlCopyMemory(Key, Entry->IndexStream, sizeof(Key));
+        Order = NtfsCompareReparseKeys(Key, Start);
+        if ((Order > 0 || (Inclusive && Order == 0)) &&
+            (!*Found || NtfsCompareReparseKeys(Key, Best) < 0))
+        {
+            RtlCopyMemory(Best, Key, sizeof(Key));
+            *Found = TRUE;
+        }
+        Offset += Entry->EntryLength;
+    }
+    return STATUS_FILE_CORRUPT_ERROR;
+}
+
+NTSTATUS
+NtfsNextReparseIndexEntry(
+    _In_ PVolume DiskVolume,
+    _In_ ULONG StartTag,
+    _In_ ULONGLONG StartFileReference,
+    _In_ BOOLEAN Inclusive,
+    _Out_ PULONG Tag,
+    _Out_ PULONGLONG FileReference)
+{
+    WCHAR Path[] = L"\\$Extend\\$Reparse";
+    WCHAR IndexName[] = L"$R";
+    PFileRecord ReparseFile = NULL;
+    PAttribute RootAttribute;
+    PAttribute AllocationAttribute;
+    PAttribute BitmapAttribute;
+    PIndexRootEx IndexRoot;
+    PUCHAR RecordData = NULL;
+    ULONG Start[3];
+    ULONG Best[3];
+    BOOLEAN Found = FALSE;
+    ULONG IndexRecordSize;
+    NTSTATUS Status;
+
+    if (!DiskVolume || !DiskVolume->MFT || !Tag || !FileReference)
+        return STATUS_INVALID_PARAMETER;
+
+    Start[0] = StartTag;
+    Start[1] = (ULONG)StartFileReference;
+    Start[2] = (ULONG)(StartFileReference >> 32);
+    Status = DiskVolume->MFT->GetFileRecordFromQuery(Path, &ReparseFile);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    RootAttribute = ReparseFile->GetAttribute(TypeIndexRoot, IndexName);
+    if (!RootAttribute ||
+        RootAttribute->IsNonResident ||
+        RootAttribute->Resident.DataLength <
+            FIELD_OFFSET(IndexRootEx, Header) + sizeof(IndexNodeHeader))
+    {
+        Status = STATUS_FILE_CORRUPT_ERROR;
+        goto Done;
+    }
+
+    IndexRoot = reinterpret_cast<PIndexRootEx>(GetResidentDataPointer(RootAttribute));
+    IndexRecordSize = IndexRoot->BytesPerIndexRec;
+    if (IndexRoot->AttributeType != 0 ||
+        IndexRoot->CollationRule != ATTRDEF_COLLATION_ULONG_MULTI)
+    {
+        Status = STATUS_FILE_CORRUPT_ERROR;
+        goto Done;
+    }
+
+    Status = NtfsScanReparseNode(&IndexRoot->Header,
+                                 RootAttribute->Resident.DataLength -
+                                     FIELD_OFFSET(IndexRootEx, Header),
+                                 Start,
+                                 Inclusive,
+                                 Best,
+                                 &Found);
+    if (!NT_SUCCESS(Status))
+        goto Done;
+
+    AllocationAttribute = ReparseFile->GetAttribute(TypeIndexAllocation, IndexName);
+    BitmapAttribute = ReparseFile->GetAttribute(TypeBitmap, IndexName);
+    if (AllocationAttribute && BitmapAttribute)
+    {
+        ULONGLONG BitmapLength = GetAttributeDataSize(BitmapAttribute);
+        ULONGLONG Records;
+
+        if (IndexRecordSize < sizeof(IndexBuffer) ||
+            IndexRecordSize % DiskVolume->BytesPerSector != 0)
+        {
+            Status = STATUS_FILE_CORRUPT_ERROR;
+            goto Done;
+        }
+
+        RecordData = new(PagedPool, TAG_NTFS) UCHAR[IndexRecordSize];
+        if (!RecordData)
+        {
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto Done;
+        }
+
+        Records = GetAttributeDataSize(AllocationAttribute) / IndexRecordSize;
+        for (ULONGLONG Record = 0; Record < Records && (Record >> 3) < BitmapLength; Record++)
+        {
+            PIndexBuffer Node;
+            UCHAR BitmapValue;
+            ULONG Bytes = sizeof(BitmapValue);
+
+            Status = ReparseFile->CopyData(BitmapAttribute, &BitmapValue, &Bytes, Record >> 3);
+            if (!NT_SUCCESS(Status) || Bytes != 0)
+            {
+                if (NT_SUCCESS(Status))
+                    Status = STATUS_FILE_CORRUPT_ERROR;
+                goto Done;
+            }
+            if (!(BitmapValue & (1 << (Record & 7))))
+                continue;
+
+            Bytes = IndexRecordSize;
+            Status = ReparseFile->CopyData(AllocationAttribute,
+                                           RecordData,
+                                           &Bytes,
+                                           Record * IndexRecordSize);
+            if (!NT_SUCCESS(Status) || Bytes != 0)
+            {
+                if (NT_SUCCESS(Status))
+                    Status = STATUS_END_OF_FILE;
+                goto Done;
+            }
+
+            Node = reinterpret_cast<PIndexBuffer>(RecordData);
+            Status = NtfsApplyFixup(&Node->RecordHeader,
+                                    IndexRecordSize,
+                                    DiskVolume->BytesPerSector);
+            if (!NT_SUCCESS(Status) ||
+                RtlCompareMemory(Node->RecordHeader.TypeID, "INDX", 4) != 4)
+            {
+                Status = STATUS_FILE_CORRUPT_ERROR;
+                goto Done;
+            }
+
+            Status = NtfsScanReparseNode(&Node->IndexHeader,
+                                         IndexRecordSize -
+                                             FIELD_OFFSET(IndexBuffer, IndexHeader),
+                                         Start,
+                                         Inclusive,
+                                         Best,
+                                         &Found);
+            if (!NT_SUCCESS(Status))
+                goto Done;
+        }
+    }
+
+    if (Found)
+    {
+        *Tag = Best[0];
+        *FileReference = ((ULONGLONG)Best[2] << 32) | Best[1];
+        Status = STATUS_SUCCESS;
+    }
+    else
+    {
+        Status = STATUS_NO_MORE_FILES;
+    }
+
+Done:
+    delete[] RecordData;
+    delete ReparseFile;
+    return Status;
+}

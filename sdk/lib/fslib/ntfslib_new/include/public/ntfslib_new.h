@@ -915,6 +915,15 @@ NtfsVolumeReadSecurityDescriptorById(
     _In_opt_ PUCHAR Buffer,
     _Inout_ PULONG BufferLength);
 
+NTSTATUS
+NtfsVolumeNextReparsePoint(
+    _In_ PNtfsVolume DiskVolume,
+    _In_ ULONG StartTag,
+    _In_ ULONGLONG StartFileReference,
+    _In_ BOOLEAN Inclusive,
+    _Out_ PULONG Tag,
+    _Out_ PULONGLONG FileReference);
+
 void
 NtfsVolumeDestroy(
     _In_opt_ PNtfsVolume DiskVolume);
