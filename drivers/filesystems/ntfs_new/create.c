@@ -2389,9 +2389,11 @@ NtfsFsdCreate(_In_ PDEVICE_OBJECT VolumeDeviceObject,
         if ((CreateOptions & FILE_DIRECTORY_FILE) &&
             !IsDirectory)
         {
+            Status = (Disposition == FILE_CREATE && !NamedDataStream) ?
+                     STATUS_OBJECT_NAME_COLLISION : STATUS_NOT_A_DIRECTORY;
             NtfsReleaseMetadata(VolCB);
             KeLeaveCriticalRegion();
-            return NtfsCompleteFailedCreate(VolumeDeviceObject, Irp, NULL, CurrentFile, CachedRecord, STATUS_NOT_A_DIRECTORY);
+            return NtfsCompleteFailedCreate(VolumeDeviceObject, Irp, NULL, CurrentFile, CachedRecord, Status);
         }
         if ((CreateOptions & FILE_NON_DIRECTORY_FILE) &&
             IsDirectory)
