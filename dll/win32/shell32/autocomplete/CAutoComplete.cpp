@@ -4,6 +4,7 @@
  *    Copyright 2004    Maxime Bellengé <maxime.bellenge@laposte.net>
  *    Copyright 2009  Andrew Hill
  *    Copyright 2020-2021 Katayama Hirofumi MZ <katayama.hirofumi.mz@gmail.com>
+ *    Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -72,9 +73,54 @@ static BOOL DropPrefix(const CStringW& str, CStringW& strBody)
     return FALSE;
 }
 
-static BOOL DoesMatch(const CStringW& strTarget, const CStringW& strText)
+static LPCWSTR SkipProtocolPrefix(LPCWSTR psz)
+{
+    if (wcsncmp(psz, L"http", 4) != 0)
+        return NULL;
+    psz += 4;
+    if (*psz == L's')
+        ++psz;
+    if (psz[0] != L':' || psz[1] != L'/' || psz[2] != L'/')
+        return NULL;
+    return psz + 3;
+}
+
+static LPCWSTR SkipWwwPrefix(LPCWSTR psz)
+{
+    return (wcsncmp(psz, L"www.", 4) == 0) ? psz + 4 : NULL;
+}
+
+static AC_PREFIX_FILTER GetTextPrefixFilter(const CStringW& strText)
+{
+    CStringW strLower = strText.Left(8);
+    strLower.MakeLower();
+    if (SkipProtocolPrefix(strLower))
+        return AC_PREFIX_FILTER_NONE;
+    if (SkipWwwPrefix(strLower))
+        return AC_PREFIX_FILTER_PROTOCOL;
+    return AC_PREFIX_FILTER_ALL;
+}
+
+static LPCWSTR SkipItemPrefix(LPCWSTR psz, AC_PREFIX_FILTER PrefixFilter)
+{
+    LPCWSTR pchBody;
+
+    if (PrefixFilter == AC_PREFIX_FILTER_NONE)
+        return psz;
+    if ((pchBody = SkipProtocolPrefix(psz)) != NULL)
+        psz = pchBody;
+    if (PrefixFilter == AC_PREFIX_FILTER_PROTOCOL)
+        return psz;
+    if ((pchBody = SkipWwwPrefix(psz)) != NULL)
+        psz = pchBody;
+    return psz;
+}
+
+static BOOL DoesMatch(const CStringW& strTarget, const CStringW& strText, AC_PREFIX_FILTER PrefixFilter)
 {
     CStringW strBody;
+    if (PrefixFilter != AC_PREFIX_FILTER_DEFAULT)
+        return ::StrCmpNIW(SkipItemPrefix(strTarget, PrefixFilter), strText, strText.GetLength()) == 0;
     if (DropPrefix(strTarget, strBody))
     {
         if (::StrCmpNIW(strBody, strText, strText.GetLength()) == 0)
@@ -127,34 +173,37 @@ static LRESULT CALLBACK MouseProc(INT nCode, WPARAM wParam, LPARAM lParam)
 
 typedef CSimpleArray<CStringW> list_t;
 
-static inline INT compare1(const CStringW& str1, const CStringW& str2)
+static inline INT compare1(const CStringW& str1, const CStringW& str2, AC_PREFIX_FILTER PrefixFilter)
 {
+    if (PrefixFilter != AC_PREFIX_FILTER_DEFAULT)
+        return _wcsicmp(SkipItemPrefix(str1, PrefixFilter), SkipItemPrefix(str2, PrefixFilter));
+
     CStringW s1, s2;
     DropPrefix(str1, s1);
     DropPrefix(str2, s2);
     return s1.CompareNoCase(s2);
 }
 
-static inline INT pivot(list_t& list, INT i, INT j)
+static inline INT pivot(list_t& list, INT i, INT j, AC_PREFIX_FILTER PrefixFilter)
 {
     INT k = i + 1;
-    while (k <= j && compare1(list[i], list[k]) == 0)
+    while (k <= j && compare1(list[i], list[k], PrefixFilter) == 0)
         k++;
     if (k > j)
         return -1;
-    if (compare1(list[i], list[k]) >= 0)
+    if (compare1(list[i], list[k], PrefixFilter) >= 0)
         return i;
     return k;
 }
 
-static inline INT partition(list_t& list, INT i, INT j, const CStringW& x)
+static inline INT partition(list_t& list, INT i, INT j, const CStringW& x, AC_PREFIX_FILTER PrefixFilter)
 {
     INT left = i, right = j;
     while (left <= right)
     {
-        while (left <= j && compare1(list[left], x) < 0)
+        while (left <= j && compare1(list[left], x, PrefixFilter) < 0)
             left++;
-        while (right >= i && compare1(list[right], x) >= 0)
+        while (right >= i && compare1(list[right], x, PrefixFilter) >= 0)
             right--;
         if (left > right)
             break;
@@ -169,27 +218,27 @@ static inline INT partition(list_t& list, INT i, INT j, const CStringW& x)
     return left;
 }
 
-static void quicksort(list_t& list, INT i, INT j)
+static void quicksort(list_t& list, INT i, INT j, AC_PREFIX_FILTER PrefixFilter)
 {
     if (i == j)
         return;
-    INT p = pivot(list, i, j);
+    INT p = pivot(list, i, j, PrefixFilter);
     if (p == -1)
         return;
-    INT k = partition(list, i, j, list[p]);
-    quicksort(list, i, k - 1);
-    quicksort(list, k, j);
+    INT k = partition(list, i, j, list[p], PrefixFilter);
+    quicksort(list, i, k - 1, PrefixFilter);
+    quicksort(list, k, j, PrefixFilter);
 }
 
-static inline void DoSort(list_t& list)
+static inline void DoSort(list_t& list, AC_PREFIX_FILTER PrefixFilter)
 {
     if (list.GetSize() <= 1) // sanity check
         return;
-    quicksort(list, 0, list.GetSize() - 1); // quick sort
+    quicksort(list, 0, list.GetSize() - 1, PrefixFilter); // quick sort
 }
 
 // std::unique
-static INT DoUnique(list_t& list)
+static INT DoUnique(list_t& list, AC_PREFIX_FILTER PrefixFilter)
 {
     INT first = 0, last = list.GetSize();
     if (first == last)
@@ -197,15 +246,15 @@ static INT DoUnique(list_t& list)
     INT result = first;
     while (++first != last)
     {
-        if (compare1(list[result], list[first]) != 0)
+        if (compare1(list[result], list[first], PrefixFilter) != 0)
             list[++result] = list[first];
     }
     return ++result;
 }
 
-static inline void DoUniqueAndTrim(list_t& list)
+static inline void DoUniqueAndTrim(list_t& list, AC_PREFIX_FILTER PrefixFilter)
 {
-    INT last = DoUnique(list);
+    INT last = DoUnique(list, PrefixFilter);
     while (list.GetSize() > last)
     {
         list.RemoveAt(last);
@@ -665,7 +714,7 @@ CAutoComplete::CAutoComplete()
     , m_bEnabled(TRUE), m_hwndCombo(NULL), m_hFont(NULL), m_bResized(FALSE)
     , m_bWindowRef(FALSE)
     , m_hwndEdit(NULL), m_fnOldEditProc(NULL), m_fnOldWordBreakProc(NULL)
-    , m_hThread(NULL), m_pThread(NULL)
+    , m_hThread(NULL), m_pThread(NULL), m_bEnumReset(FALSE)
 {
 }
 
@@ -805,6 +854,23 @@ VOID CAutoComplete::DoAutoAppend(PAC_THREAD pThread)
     INT cItems = m_outerList.GetSize(); // get the number of items
     if (cItems == 0)
         return; // don't append
+
+    if (pThread->m_PrefixFilter != AC_PREFIX_FILTER_DEFAULT)
+    {
+        AC_PREFIX_FILTER PrefixFilter = GetTextPrefixFilter(strText);
+        for (INT iItem = 0; iItem < cItems; ++iItem)
+        {
+            CStringW strBody = SkipItemPrefix(m_outerList[iItem], PrefixFilter);
+            if (::StrCmpNIW(strBody, strText, strText.GetLength()) != 0)
+                continue;
+            if (strBody.GetLength() <= strText.GetLength())
+                return;
+            SetEditText(strText + strBody.Mid(strText.GetLength()));
+            SetEditSel(strText.GetLength(), strBody.GetLength());
+            return;
+        }
+        return;
+    }
 
     // get the common string
     CStringW strCommon;
@@ -1188,8 +1254,6 @@ STDMETHODIMP CAutoComplete::SetOptions(DWORD dwFlag)
 
     if (m_dwOptions & ACO_SEARCH)
         FIXME(" ACO_SEARCH not supported\n");
-    if (m_dwOptions & ACO_FILTERPREFIXES)
-        FIXME(" ACO_FILTERPREFIXES not supported\n");
     if (m_dwOptions & ACO_RTLREADING)
         FIXME(" ACO_RTLREADING not supported\n");
 
@@ -1234,11 +1298,14 @@ STDMETHODIMP CAutoComplete::GetDropDownStatus(DWORD *pdwFlags, LPWSTR *ppwszStri
 
 STDMETHODIMP CAutoComplete::ResetEnumerator()
 {
-    FIXME("(%p): stub\n", this);
+    TRACE("(%p)\n", this);
 
-    Reset();
+    m_bEnumReset = TRUE;
+    m_strText.Empty();
     m_hwndList.SendMessageW(LVM_SETITEMCOUNT, 0, 0);
     m_outerList.RemoveAll();
+    if (m_hWnd && CanAutoSuggest() && ::IsWindowVisible(m_hWnd))
+        StartCompletion(FALSE);
     return S_OK;
 }
 
@@ -1480,7 +1547,8 @@ VOID CAutoComplete::RepositionDropDown()
 VOID
 CAutoComplete::ExtractInnerList(CSimpleArray<CStringW>& outerList,
                                 const CSimpleArray<CStringW>& innerList,
-                                const CString& strText)
+                                const CString& strText,
+                                AC_PREFIX_FILTER PrefixFilter)
 {
     for (INT iItem = 0; iItem < innerList.GetSize(); ++iItem)
     {
@@ -1488,7 +1556,7 @@ CAutoComplete::ExtractInnerList(CSimpleArray<CStringW>& outerList,
             break;
 
         const CStringW& strTarget = innerList[iItem];
-        if (DoesMatch(strTarget, strText))
+        if (DoesMatch(strTarget, strText, PrefixFilter))
         {
             outerList.Add(strTarget);
 
@@ -2051,7 +2119,7 @@ VOID CAutoComplete::DoThreadWork(PAC_THREAD pThread)
               static_cast<LPCWSTR>(pThread->m_strStemText), hr);
     }
 
-    if (pThread->m_bExpand || m_innerList.GetSize() == 0)
+    if (pThread->m_bExpand || pThread->m_bReload || m_innerList.GetSize() == 0)
     {
         ReLoadInnerList(pThread);
     }
@@ -2066,7 +2134,7 @@ VOID CAutoComplete::DoThreadWork(PAC_THREAD pThread)
         return;
     }
 
-    ExtractInnerList(pThread->m_outerList, pThread->m_innerList, pThread->m_strText);
+    ExtractInnerList(pThread->m_outerList, pThread->m_innerList, pThread->m_strText, pThread->m_PrefixFilter);
 
     if (m_pThread || !m_hThread)
     {
@@ -2074,8 +2142,8 @@ VOID CAutoComplete::DoThreadWork(PAC_THREAD pThread)
         return;
     }
 
-    DoSort(pThread->m_outerList);
-    DoUniqueAndTrim(pThread->m_outerList);
+    DoSort(pThread->m_outerList, pThread->m_PrefixFilter);
+    DoUniqueAndTrim(pThread->m_outerList, pThread->m_PrefixFilter);
 
     if (m_pThread || !m_hThread ||
         !::PostMessageW(m_hWnd, AUTOCOMP_FINISH, 0, (LPARAM)pThread))
@@ -2097,6 +2165,14 @@ LRESULT CAutoComplete::OnAutoCompStart(UINT uMsg, WPARAM wParam, LPARAM lParam, 
     }
 
     PAC_THREAD pThread = new AC_THREAD { this, bAppendOK, strText };
+    if (FilterPrefixes())
+        pThread->m_PrefixFilter = GetTextPrefixFilter(strText);
+    if (m_bEnumReset)
+    {
+        pThread->m_bReset = TRUE;
+        pThread->m_bReload = TRUE;
+        m_bEnumReset = FALSE;
+    }
 
     // if previous text was empty
     if (m_strText.IsEmpty())
@@ -2114,6 +2190,27 @@ LRESULT CAutoComplete::OnAutoCompStart(UINT uMsg, WPARAM wParam, LPARAM lParam, 
         m_strStemText = strStemText;
     }
     pThread->m_strStemText = strStemText;
+    if (pThread->m_bReload && !strStemText.IsEmpty())
+        pThread->m_bExpand = TRUE;
+
+    if (!pThread->m_bReset && !pThread->m_bExpand && !pThread->m_bReload &&
+        !m_hThread && !m_pThread && m_innerList.GetSize() > 0)
+    {
+        pThread->m_innerList = m_innerList;
+        for (INT iItem = 0; iItem < m_innerList.GetSize(); ++iItem)
+        {
+            if (!DoesMatch(m_innerList[iItem], strText, pThread->m_PrefixFilter))
+                continue;
+            pThread->m_outerList.Add(m_innerList[iItem]);
+            if (pThread->m_outerList.GetSize() >= MAX_ITEM_COUNT)
+                break;
+        }
+        DoSort(pThread->m_outerList, pThread->m_PrefixFilter);
+        DoUniqueAndTrim(pThread->m_outerList, pThread->m_PrefixFilter);
+        ApplyCompletion(pThread);
+        delete pThread;
+        return 0;
+    }
 
     // Reclaim a request the worker has not taken yet, so its reset and
     // expansion are not lost, then publish the new one.
@@ -2121,6 +2218,7 @@ LRESULT CAutoComplete::OnAutoCompStart(UINT uMsg, WPARAM wParam, LPARAM lParam, 
     if (pOld)
     {
         pThread->m_bReset |= pOld->m_bReset;
+        pThread->m_bReload |= pOld->m_bReload;
         if (!strStemText.IsEmpty())
             pThread->m_bExpand |= pOld->m_bExpand;
         delete pOld;
@@ -2168,6 +2266,11 @@ VOID CAutoComplete::FinishCompletion(PAC_THREAD pThread)
     if (m_pThread || !m_hThread)
         return;
 
+    ApplyCompletion(pThread);
+}
+
+VOID CAutoComplete::ApplyCompletion(PAC_THREAD pThread)
+{
     if (!CanAutoSuggest() && !CanAutoAppend())
         return;
 

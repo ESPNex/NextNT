@@ -119,6 +119,14 @@ protected:
 //////////////////////////////////////////////////////////////////////////////
 // AC_THREAD --- Thread data for CAutoComplete
 
+typedef enum AC_PREFIX_FILTER
+{
+    AC_PREFIX_FILTER_DEFAULT,
+    AC_PREFIX_FILTER_NONE,
+    AC_PREFIX_FILTER_PROTOCOL,
+    AC_PREFIX_FILTER_ALL,
+} AC_PREFIX_FILTER;
+
 typedef struct AC_THREAD
 {
     CAutoComplete *m_pThis;
@@ -129,6 +137,8 @@ typedef struct AC_THREAD
     BOOL m_bReset;
     BOOL m_bExpand;
     CStringW m_strStemText;
+    AC_PREFIX_FILTER m_PrefixFilter;
+    BOOL m_bReload;
 
     VOID ReLoadInnerList(const CStringW& strText);
 } AC_THREAD, *PAC_THREAD;
@@ -187,6 +197,7 @@ public:
     VOID StartCompletion(BOOL bAppendOK);
     VOID AutoCompThreadProc();
     VOID FinishCompletion(PAC_THREAD pThread);
+    VOID ApplyCompletion(PAC_THREAD pThread);
 
     LRESULT EditWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT OnEditChar(WPARAM wParam, LPARAM lParam);
@@ -225,6 +236,7 @@ protected:
     EDITWORDBREAKPROCW m_fnOldWordBreakProc;
     HANDLE m_hThread;
     PAC_THREAD m_pThread;
+    BOOL m_bEnumReset;
 
     // The following variables are non-POD:
     CStringW m_strText; // internal text (used in selecting item and reverting text)
@@ -249,7 +261,8 @@ protected:
     VOID ReLoadInnerList(PAC_THREAD pThread);
     VOID ExtractInnerList(CSimpleArray<CStringW>& outerList,
                           const CSimpleArray<CStringW>& innerList,
-                          const CString& strText);
+                          const CString& strText,
+                          AC_PREFIX_FILTER PrefixFilter);
 
     // message map
     BEGIN_MSG_MAP(CAutoComplete)
