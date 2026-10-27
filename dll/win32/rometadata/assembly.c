@@ -179,7 +179,18 @@ struct table_schema
     static const struct table_column name##_columns[] = {__VA_ARGS__}; \
     static const struct table_schema name##_schema = { ARRAY_SIZE(name##_columns), name##_columns, #name }
 
+#ifdef __REACTOS__
+enum basic_column_code
+{
+    basic_SHORT = 96,
+    basic_USHORT = 97,
+    basic_ULONG = 99,
+    basic_BYTE = 100
+};
+#define BASIC_PADDED(n, t, p) { COLUMN_BASIC, { .basic = {basic_##t, sizeof(t), sizeof(p) } }, n }
+#else
 #define BASIC_PADDED(n, t, p) { COLUMN_BASIC, { .basic = {i##t, sizeof(t), sizeof(p) } }, n }
+#endif
 #define BASIC(n, t) BASIC_PADDED(n, t, t)
 #define HEAP(n, h) { COLUMN_HEAP_IDX, { .heap = (HEAP_##h) }, n }
 #define TABLE(n, t) { COLUMN_TABLE_IDX, { .table = TABLE_##t }, n }

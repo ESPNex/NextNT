@@ -1156,7 +1156,11 @@ static HRESULT WINAPI import_FindMemberRef(IMetaDataImport *iface, mdTypeRef typ
 }
 
 
+#ifdef __REACTOS__
+typedef HRESULT (WINAPI *token_enum_func)(IMetaDataImport *, HCORENUM *, mdTypeDef, mdToken *, ULONG, ULONG *);
+#else
 typedef HRESULT (*WINAPI token_enum_func)(IMetaDataImport *, HCORENUM *, mdTypeDef, mdToken *, ULONG, ULONG *);
+#endif
 static HRESULT token_get_parent_typedef(IMetaDataImport *iface, mdToken token, token_enum_func enum_func, mdTypeDef *parent)
 {
     CorTokenType type = TypeFromToken(token);
