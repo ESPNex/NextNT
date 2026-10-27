@@ -91,8 +91,11 @@ HRESULT WINAPI IEnumFORMATETCImpl::Skip(ULONG celt)
 {
     TRACE("(%p)->(num=%u)\n", this, celt);
 
-    if (posFmt + celt >= countFmt)
+    if (celt > countFmt - posFmt)
+    {
+        posFmt = countFmt;
         return S_FALSE;
+    }
     posFmt += celt;
     return S_OK;
 }
@@ -115,7 +118,7 @@ HRESULT WINAPI IEnumFORMATETCImpl::Clone(LPENUMFORMATETC* ppenum)
     hResult = IEnumFORMATETC_Constructor(countFmt, pFmt, ppenum);
     if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
-    return (*ppenum)->Skip(posFmt);
+    return S_OK;
 }
 
 HRESULT IEnumFORMATETC_Constructor(UINT cfmt, const FORMATETC afmt[], IEnumFORMATETC **ppFormat)
@@ -207,6 +210,34 @@ HRESULT WINAPI CIDLDataObj::Initialize(HWND hwndOwner, PCIDLIST_ABSOLUTE pMyPidl
     HRESULT hr = SetData(&Format, &medium, TRUE);
     if (!FAILED_UNEXPECTEDLY(hr) && bAddAdditionalFormats)
     {
+        BOOL bFileSystem = TRUE;
+        for (UINT i = 0; i < cidlx && bFileSystem; ++i)
+        {
+            CComHeapPtr<ITEMIDLIST> pidl(ILCombine(pMyPidl, apidlx[i]));
+            CComPtr<IShellFolder> psfParent;
+            PCUITEMID_CHILD pidlChild;
+            SFGAOF Attributes = SFGAO_FILESYSTEM;
+
+            if (ILIsEmpty(pidl))
+                continue;
+            bFileSystem = SUCCEEDED(SHBindToParent(pidl, IID_PPV_ARG(IShellFolder, &psfParent), &pidlChild)) &&
+                          SUCCEEDED(psfParent->GetAttributesOf(1, &pidlChild, &Attributes)) &&
+                          (Attributes & SFGAO_FILESYSTEM);
+        }
+
+        if (!bFileSystem)
+        {
+            Format.cfFormat = RegisterClipboardFormatW(CFSTR_PREFERREDDROPEFFECT);
+            medium.hGlobal = GlobalAlloc(GHND, sizeof(DWORD));
+            if (!medium.hGlobal)
+                return E_OUTOFMEMORY;
+            DWORD *pdwEffect = (DWORD *)GlobalLock(medium.hGlobal);
+            if (pdwEffect)
+                *pdwEffect = DROPEFFECT_LINK;
+            GlobalUnlock(medium.hGlobal);
+            return SetData(&Format, &medium, TRUE);
+        }
+
         /* The Windows default shell IDataObject::GetData fails with DV_E_CLIPFORMAT if the desktop is present.
          * Windows does return HDROP in EnumFormatEtc and does not fail until GetData is called.
          * Failing GetData causes 7-Zip 23.01 to not add its menu to the desktop folder. */
