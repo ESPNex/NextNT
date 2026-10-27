@@ -1187,8 +1187,25 @@ co_IntSetActiveWindow(
 
    if (WndPrev)
    {
+      USER_REFERENCE_ENTRY RefPrev;
+      BOOL PrevValid, PrevDestroyed;
+
       if (ThreadQueue == gpqForeground) gpqForegroundPrev = ThreadQueue;
-      if (!co_IntSendDeactivateMessages(UserHMGetHandle(WndPrev), hWnd, TRUE)) return FALSE;
+      UserRefObjectCo(WndPrev, &RefPrev);
+      PrevValid = (VerifyWnd(WndPrev) != NULL);
+      if (!co_IntSendDeactivateMessages(UserHMGetHandle(WndPrev), hWnd, TRUE))
+      {
+         UserDerefObjectCo(WndPrev);
+         return FALSE;
+      }
+      PrevDestroyed = PrevValid && !VerifyWnd(WndPrev);
+      UserDerefObjectCo(WndPrev);
+      if (PrevDestroyed && ThreadQueue == pti->MessageQueue)
+      {
+         ThreadQueue->spwndActive = NULL;
+         ThreadQueue->spwndFocus = NULL;
+         return FALSE;
+      }
    }
 
    WndPrev = ThreadQueue->spwndActive; // Again keep to save changing active.
