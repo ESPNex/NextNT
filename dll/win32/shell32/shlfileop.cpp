@@ -1783,6 +1783,46 @@ static HRESULT delete_files(FILE_OPERATION *op, const FILE_LIST *flFrom)
 }
 
 /* the FO_RENAME files */
+static DWORD merge_renamed_dir(FILE_OPERATION *op, LPCWSTR src, LPCWSTR dest)
+{
+    CAtlArray<CStringW> Names;
+    WCHAR szPattern[MAX_PATH], szFrom[MAX_PATH], szTo[MAX_PATH];
+    WIN32_FIND_DATAW wfd;
+    DWORD ret = ERROR_SUCCESS;
+
+    if (!PathCombineW(szPattern, src, L"*"))
+        return ERROR_FILENAME_EXCED_RANGE;
+    HANDLE hFind = FindFirstFileW(szPattern, &wfd);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if (!IsDotDir(wfd.cFileName) && Names.Add(wfd.cFileName) == (SIZE_T)-1)
+                ret = ERROR_NOT_ENOUGH_MEMORY;
+        } while (ret == ERROR_SUCCESS && FindNextFileW(hFind, &wfd));
+        FindClose(hFind);
+    }
+
+    for (SIZE_T i = 0; i < Names.GetCount() && ret == ERROR_SUCCESS; i++)
+    {
+        if (!PathCombineW(szFrom, src, Names[i]) || !PathCombineW(szTo, dest, Names[i]))
+            return ERROR_FILENAME_EXCED_RANGE;
+        DWORD dwFrom = GetFileAttributesW(szFrom), dwTo = GetFileAttributesW(szTo);
+        if (dwFrom == INVALID_FILE_ATTRIBUTES)
+            continue;
+        if (dwTo != INVALID_FILE_ATTRIBUTES && IsAttribDir(dwFrom) != IsAttribDir(dwTo))
+            ret = IsAttribDir(dwTo) ? DE_FILEDESTISFLD : DE_FLDDESTISFILE;
+        else if (dwTo != INVALID_FILE_ATTRIBUTES && IsAttribDir(dwTo))
+            ret = merge_renamed_dir(op, szFrom, szTo);
+        else
+            ret = SHNotifyMoveFileW(op, szFrom, szTo, IsAttribDir(dwFrom));
+    }
+
+    if (ret == ERROR_SUCCESS)
+        ret = SHNotifyRemoveDirectoryW(src);
+    return ret;
+}
+
 static HRESULT rename_files(FILE_OPERATION *op,  const FILE_LIST *flFrom, const FILE_LIST *flTo)
 {
     const FILE_ENTRY *feFrom;
@@ -1809,6 +1849,9 @@ static HRESULT rename_files(FILE_OPERATION *op,  const FILE_LIST *flFrom, const 
 
         if (!(op->req->fFlags & FOF_NOCONFIRMATION))
             return ERROR_ALREADY_EXISTS;
+
+        if (IsAttribDir(feFrom->attributes) && lstrcmpiW(feFrom->szFullPath, feTo->szFullPath))
+            return merge_renamed_dir(op, feFrom->szFullPath, feTo->szFullPath);
     }
 
     return SHNotifyMoveFileW(op, feFrom->szFullPath, feTo->szFullPath, IsAttribDir(feFrom->attributes));
