@@ -2095,10 +2095,16 @@ HICON WINAPI DuplicateIcon( HINSTANCE hInstance, HICON hIcon)
  * ExtractIconA                [SHELL32.@]
  */
 HICON WINAPI ExtractIconA(HINSTANCE hInstance, LPCSTR lpszFile, UINT nIconIndex)
-{   
+{
     HICON ret;
-    INT len = MultiByteToWideChar(CP_ACP, 0, lpszFile, -1, NULL, 0);
-    LPWSTR lpwstrFile = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
+    INT len;
+    LPWSTR lpwstrFile;
+
+    if (!lpszFile)
+        return ExtractIconW(hInstance, NULL, nIconIndex);
+
+    len = MultiByteToWideChar(CP_ACP, 0, lpszFile, -1, NULL, 0);
+    lpwstrFile = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
 
     TRACE("%p %s %d\n", hInstance, lpszFile, nIconIndex);
 
@@ -2119,6 +2125,9 @@ HICON WINAPI ExtractIconW(HINSTANCE hInstance, LPCWSTR lpszFile, UINT nIconIndex
     UINT cx = GetSystemMetrics(SM_CXICON), cy = GetSystemMetrics(SM_CYICON);
 
     TRACE("%p %s %d\n", hInstance, debugstr_w(lpszFile), nIconIndex);
+
+    if (!lpszFile || !*lpszFile)
+        return NULL;
 
     if (nIconIndex == (UINT)-1)
     {

@@ -1005,6 +1005,9 @@ HICON WINAPI ExtractAssociatedIconW(HINSTANCE hInst, LPWSTR lpIconPath, LPWORD l
     if(lpiIcon == NULL)
         lpiIcon = &wDummyIcon;
 
+    if (!*lpIconPath)
+        return LoadIconW(shell32_hInstance, MAKEINTRESOURCEW(IDI_SHELL_DOCUMENT));
+
     hIcon = ExtractIconW(hInst, lpIconPath, *lpiIcon);
 
     if( hIcon < (HICON)2 )
@@ -1021,12 +1024,12 @@ HICON WINAPI ExtractAssociatedIconW(HINSTANCE hInst, LPWSTR lpIconPath, LPWORD l
       }
 
       if( hIcon == (HICON)1 )
-        *lpiIcon = 2;   /* MSDOS icon - we found .exe but no icons in it */
+        *lpiIcon = IDI_SHELL_EXE;   /* MSDOS icon - we found .exe but no icons in it */
       else
-        *lpiIcon = 6;   /* generic icon - found nothing */
+        *lpiIcon = IDI_SHELL_DOCUMENT;   /* generic icon - found nothing */
 
-      if (GetModuleFileNameW(hInst, lpIconPath, MAX_PATH))
-        hIcon = LoadIconW(hInst, MAKEINTRESOURCEW(*lpiIcon));
+      if (GetModuleFileNameW(shell32_hInstance, lpIconPath, MAX_PATH))
+        hIcon = LoadIconW(shell32_hInstance, MAKEINTRESOURCEW(*lpiIcon));
     }
     return hIcon;
 }
