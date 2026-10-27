@@ -5066,6 +5066,83 @@ static int xpath_icompare_values(struct xpath_parser_context *ctxt, bool inf, bo
     return ret;
 }
 
+#ifdef __REACTOS__
+static bool xslpattern_collate(const WCHAR *str1, const WCHAR *str2, bool inf, bool strict)
+{
+    int ret = CompareStringW(LOCALE_USER_DEFAULT, 0, str1 ? str1 : L"", -1, str2 ? str2 : L"", -1) - CSTR_EQUAL;
+
+    if (inf)
+        return strict ? ret < 0 : ret <= 0;
+    return strict ? ret > 0 : ret >= 0;
+}
+
+static bool xslpattern_compare_values(struct xpath_parser_context *ctxt, bool inf, bool strict)
+{
+    struct xpath_object *arg1, *arg2, *set;
+    const WCHAR *str;
+    bool ret = false;
+    WCHAR *value;
+    int i;
+
+    arg2 = xpath_pop_value(ctxt);
+    arg1 = xpath_pop_value(ctxt);
+
+    if (arg1 && arg2 && arg2->type == _XPATH_STRING
+            && (arg1->type == _XPATH_STRING || arg1->type == _XPATH_NODESET))
+    {
+        set = arg1;
+        str = arg2->stringval;
+    }
+    else if (arg1 && arg2 && arg1->type == _XPATH_STRING && arg2->type == _XPATH_NODESET)
+    {
+        set = arg2;
+        str = arg1->stringval;
+        inf = !inf;
+    }
+    else
+    {
+        if (arg1 && arg2)
+        {
+            xpath_push_value(ctxt, arg1);
+            xpath_push_value(ctxt, arg2);
+            return xpath_compare_values(ctxt, inf, strict);
+        }
+        xpath_object_release(ctxt->context, arg1);
+        xpath_object_release(ctxt->context, arg2);
+        xpath_parser_context_set_error(ctxt, XPATH_INVALID_OPERAND);
+        return false;
+    }
+
+    if (set->type == _XPATH_STRING)
+    {
+        ret = xslpattern_collate(set->stringval, str, inf, strict);
+    }
+    else if (set->nodesetval && set->nodesetval->count > 0)
+    {
+        ret = set->all;
+        for (i = 0; i < set->nodesetval->count; ++i)
+        {
+            bool match;
+
+            if (!(value = xpath_cast_node_to_string(set->nodesetval->nodes[i])))
+                continue;
+            match = xslpattern_collate(value, str, inf, strict);
+            free(value);
+
+            if (match != set->all)
+            {
+                ret = match;
+                break;
+            }
+        }
+    }
+
+    xpath_object_release(ctxt->context, arg1);
+    xpath_object_release(ctxt->context, arg2);
+    return ret;
+}
+
+#endif
 static bool xpath_iequal_values(struct xpath_parser_context *ctxt)
 {
     WCHAR *arg1, *arg2;
@@ -5156,6 +5233,11 @@ static int xpath_comp_op_eval(struct xpath_parser_context *ctxt, struct xpath_st
             if (ctxt->error != XPATH_EXPRESSION_OK) return 0;
             total += xpath_comp_op_eval(ctxt, &comp->steps.values[op->ch2]);
             if (ctxt->error != XPATH_EXPRESSION_OK) return 0;
+#ifdef __REACTOS__
+            if (!ctxt->context->xpath)
+                ret = xslpattern_compare_values(ctxt, op->value, op->value2);
+            else
+#endif
             ret = xpath_compare_values(ctxt, op->value, op->value2);
             xpath_push_value(ctxt, xpath_new_boolean(ctxt, ret));
             break;
