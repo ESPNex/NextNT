@@ -484,6 +484,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/preinstall.cmake.lst "")
 
 set(_preinstall_boot_partition_file ${CMAKE_CURRENT_BINARY_DIR}/partition.boot.fat)
 set(_preinstall_system_partition_file ${CMAKE_CURRENT_BINARY_DIR}/partition.ntfs)
+set(_preinstall_vhd_partition_file ${CMAKE_CURRENT_BINARY_DIR}/partition.vhd.ntfs)
 set(_preinstall_image_file ${REACTOS_BINARY_DIR}/LiberNT.img)
 set(_preinstall_vhd_file ${REACTOS_BINARY_DIR}/LiberNT.vhd)
 set(_preinstall_vhdx_file ${REACTOS_BINARY_DIR}/LiberNT.vhdx)
@@ -737,6 +738,8 @@ if(_preinstall_system_partition_size_mb LESS 1)
     message(FATAL_ERROR "PREINSTALL_IMAGE_SIZE_MB must leave room for the ${_preinstall_boot_partition_start_mb}-MB area before the boot partition, the ${_preinstall_boot_partition_size_mb}-MB boot partition, and the NTFS system partition")
 endif()
 math(EXPR _preinstall_system_partition_sectors "${_preinstall_system_partition_size_mb} * 2048")
+set(_preinstall_vhd_size_mb 81920)
+math(EXPR _preinstall_vhd_partition_sectors "(${_preinstall_vhd_size_mb} - ${_preinstall_boot_partition_start_mb} - ${_preinstall_boot_partition_size_mb}) * 2048")
 
 # BIOS boot-sector binaries are available on x86/x64. UEFI platforms also put
 # their removable-media loader in the FAT boot partition.
@@ -987,15 +990,31 @@ set(_liberntvhd_layout_args
     -start ${_preinstall_boot_partition_start}
     -type ${_preinstall_boot_partition_type}
     ${_liberntimg_boot_partition_args}
-    -partition ${_preinstall_system_partition_file}
+    -partition ${_preinstall_vhd_partition_file}
     -start ${_preinstall_system_partition_start}
     -type 07
     ${_liberntimg_system_partition_args})
 add_custom_target(liberntvhd
-    COMMAND ${CMAKE_COMMAND} -E rm -f ${_preinstall_vhd_file} ${_preinstall_vhdx_file}
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${_preinstall_vhd_file} ${_preinstall_vhdx_file} ${_preinstall_vhd_partition_file}
+    COMMAND native-ntfsimg
+        --format
+        ${_preinstall_vhd_partition_file}
+        ${_preinstall_vhd_partition_sectors}
+        ${_preinstall_system_partition_start}
+        ${_preinstall_ntfs_sectors_per_cluster}
+        LiberNT
+    COMMAND native-ntfsimg
+        --addfiles
+        ${_preinstall_vhd_partition_file}
+        ${CMAKE_CURRENT_BINARY_DIR}/preinstall.effective.lst
+    COMMAND native-ntfsimg
+        --apply-security
+        ${_preinstall_vhd_partition_file}
+        ${REACTOS_SOURCE_DIR}/boot/bootdata/filesecurity.txt
     COMMAND native-mkdiskimg -o ${_preinstall_vhd_file} ${_liberntvhd_layout_args} -vhd
     COMMAND native-mkdiskimg -o ${_preinstall_vhdx_file} ${_liberntvhd_layout_args} -vhdx
-    DEPENDS ${_liberntimg_deps}
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${_preinstall_vhd_partition_file}
+    DEPENDS ${_liberntimg_deps} native-ntfsimg
     VERBATIM)
 add_dependencies(liberntvhd preinstall_partition)
 
