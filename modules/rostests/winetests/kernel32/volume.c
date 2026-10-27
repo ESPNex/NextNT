@@ -1669,7 +1669,7 @@ static void test_mounted_folder(void)
         ok(ret, "got error %lu\n", GetLastError());
 
 #ifdef __REACTOS__
-        sprintf(buf, "C:\\winetest_link\\%s", sysroot + 3);
+        sprintf(buf, "C:\\winetest_link\\%s\\", sysroot + 3);
         ret = GetVolumePathNameA( buf, path, sizeof(path) );
 #else
         ret = GetVolumePathNameA( "C:\\winetest_link\\windows\\", path, sizeof(path) );
