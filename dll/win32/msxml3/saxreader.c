@@ -6521,7 +6521,11 @@ static HRESULT saxreader_get_property(const struct saxreader *reader, const WCHA
     if (!wcscmp(prop, L"xmldecl-standalone"))
     {
         V_VT(value) = VT_BSTR;
+#ifdef __REACTOS__
+        return return_bstr(reader->xmldecl_standalone, &V_BSTR(value));
+#else
         return return_bstr(reader->xmldecl_encoding, &V_BSTR(value));
+#endif
     }
 
     if (!wcscmp(prop, L"max-xml-size"))
