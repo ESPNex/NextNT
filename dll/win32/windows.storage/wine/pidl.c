@@ -4112,13 +4112,14 @@ HRESULT WINAPI SHBindToParent(LPCITEMIDLIST pidl, REFIID riid, LPVOID *ppv, LPCI
 
     TRACE_(shell)("pidl=%p\n", pidl);
     pdump(pidl);
-    
-    if (!pidl || !ppv)
-        return E_INVALIDARG;
-    
-    *ppv = NULL;
+
     if (ppidlLast)
         *ppidlLast = NULL;
+
+    if (!pidl || !ppv)
+        return E_INVALIDARG;
+
+    *ppv = NULL;
 
     hr = SHGetDesktopFolder(&psfDesktop);
     if (FAILED(hr))

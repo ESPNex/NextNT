@@ -1284,7 +1284,7 @@ HRESULT WINAPI CFSFolder::BindToObject(
     {
         hr = GetCLSIDForFileType(pidl, L"CLSID", &clsidFolder);
         if (hr == S_FALSE)
-            return E_FAIL;
+            return IsEqualIID(riid, IID_IUnknown) ? E_NOTIMPL : E_FAIL;
         if (hr != S_OK)
             return hr;
         if (!ClassHasSubKey(clsidFolder, L"ShellFolder"))
@@ -1863,10 +1863,20 @@ HRESULT WINAPI CFSFolder::SetNameOf(
     PathCombineW(szSrc, m_sPathTarget, pszName);
 
     /* build destination path */
-    if (dwFlags == SHGDN_NORMAL || dwFlags & SHGDN_INFOLDER)
+    if (PathIsFileSpecW(lpName))
+    {
         PathCombineW(szDest, m_sPathTarget, lpName);
+    }
     else
+    {
+        WCHAR szDestDir[MAX_PATH + 1];
+
         lstrcpynW(szDest, lpName, MAX_PATH);
+        lstrcpynW(szDestDir, szDest, MAX_PATH);
+        PathRemoveFileSpecW(szDestDir);
+        if (lstrcmpiW(szDestDir, m_sPathTarget))
+            return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+    }
 
     if (!(dwFlags & SHGDN_FORPARSING) && !bIsFolder && SHELL_FS_HideExtension(szSrc))
     {
