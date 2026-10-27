@@ -582,7 +582,7 @@ static void write_prolog_buffer(mxwriter *writer)
 
     /* encoding */
 #ifdef __REACTOS__
-    if (writer->dest || writer->class_version != MSXML6 || !writer->encoding_set)
+    if (writer->dest || writer->class_version < MSXML4 || !writer->encoding_set)
     {
 #endif
     write_output_buffer(writer, L" encoding=", 10);
@@ -1032,7 +1032,7 @@ static HRESULT WINAPI mxwriter_put_encoding(IMXWriter *iface, BSTR encoding)
     TRACE("(%p)->(%s)\n", This, debugstr_w(encoding));
 
 #ifdef __REACTOS__
-    if (This->class_version == MSXML6 && encoding && !*encoding)
+    if (This->class_version >= MSXML4 && encoding && !*encoding)
         return S_OK;
 #endif
     enc = parse_encoding_name(encoding);
@@ -1142,7 +1142,7 @@ static HRESULT WINAPI mxwriter_put_version(IMXWriter *iface, BSTR version)
     TRACE("(%p)->(%s)\n", This, debugstr_w(version));
 
 #ifdef __REACTOS__
-    if (This->class_version == MSXML6 && (!version || !*version))
+    if (This->class_version >= MSXML4 && (!version || !*version))
         return S_OK;
 #endif
     if (!version) return E_INVALIDARG;
@@ -1812,7 +1812,7 @@ static HRESULT WINAPI SAXDeclHandler_attributeDecl(ISAXDeclHandler *iface,
     }
 
 #ifdef __REACTOS__
-    if (This->class_version == MSXML6 && n_default &&
+    if (This->class_version >= MSXML4 && n_default &&
         ((n_default == 9 && !wcsncmp(Default, L"#REQUIRED", 9)) ||
          (n_default == 8 && !wcsncmp(Default, L"#IMPLIED", 8))))
     {
