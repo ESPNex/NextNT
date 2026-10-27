@@ -48,7 +48,9 @@ static INBV_DISPLAY_STRING_FILTER InbvDisplayFilter = NULL;
 static ULONG ResourceCount = 0;
 static PUCHAR ResourceList[1 + IDB_MAX_RESOURCES]; // First entry == NULL, followed by 'ResourceCount' entries.
 static LOADER_PARAMETER_FRAMEBUFFER InbvGopFramebuffer;
+static LOADER_PARAMETER_FRAMEBUFFER_TRANSFORM InbvGopTransform;
 static BOOLEAN InbvGopInfoValid = FALSE;
+static BOOLEAN InbvGopTransformValid = FALSE;
 
 static LOADER_PARAMETER_BGRT InbvBgrtInfo;
 static BOOLEAN InbvBgrtInfoValid = FALSE;
@@ -238,6 +240,16 @@ InbvDriverInitialize(
                           &Extension->GopFramebuffer,
                           sizeof(InbvGopFramebuffer));
             InbvGopInfoValid = TRUE;
+
+            if (Extension->Size >= RTL_SIZEOF_THROUGH_FIELD(LOADER_PARAMETER_EXTENSION, GopFramebufferTransform) &&
+                Extension->GopFramebufferTransform.Size >= sizeof(InbvGopTransform) &&
+                Extension->GopFramebufferTransform.Version == LOADER_PARAMETER_FRAMEBUFFER_TRANSFORM_VERSION)
+            {
+                RtlCopyMemory(&InbvGopTransform,
+                              &Extension->GopFramebufferTransform,
+                              sizeof(InbvGopTransform));
+                InbvGopTransformValid = TRUE;
+            }
         }
 
         if (Extension->Size >= RTL_SIZEOF_THROUGH_FIELD(LOADER_PARAMETER_EXTENSION, BgrtInfo) &&
@@ -741,6 +753,18 @@ InbvGetGopFrameBufferInfo(
         return FALSE;
 
     RtlCopyMemory(FrameBufferInfo, &InbvGopFramebuffer, sizeof(InbvGopFramebuffer));
+    return TRUE;
+}
+
+BOOLEAN
+NTAPI
+InbvGetGopFrameBufferTransform(
+    _Out_ PLOADER_PARAMETER_FRAMEBUFFER_TRANSFORM Transform)
+{
+    if (!Transform || !InbvGopInfoValid || !InbvGopTransformValid)
+        return FALSE;
+
+    RtlCopyMemory(Transform, &InbvGopTransform, sizeof(InbvGopTransform));
     return TRUE;
 }
 

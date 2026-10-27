@@ -58,6 +58,12 @@ InbvGetGopFrameBufferInfo(
 
 BOOLEAN
 NTAPI
+InbvGetGopFrameBufferTransform(
+    _Out_ PLOADER_PARAMETER_FRAMEBUFFER_TRANSFORM Transform
+);
+
+BOOLEAN
+NTAPI
 InbvHasValidGopFrameBuffer(VOID);
 
 CODE_SEG("INIT")
