@@ -2256,7 +2256,7 @@ HRESULT node_get_xml(struct domnode *node, BSTR *ret)
         {
             node_dump(n, &context);
 #ifdef __REACTOS__
-            if (node->properties->version < MSXML6)
+            if (node->properties->version < MSXML6 || node->properties->preserving != VARIANT_TRUE)
 #endif
             node_dump_append(&context, L"\r\n", 2);
         }
