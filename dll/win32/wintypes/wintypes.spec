@@ -4,7 +4,7 @@
 @ stub RoCreateNonAgilePropertySet
 @ stub RoCreatePropertySetSerializer
 @ stub RoGetBufferMarshaler
-@ stub RoGetMetaDataFile
+@ stdcall RoGetMetaDataFile(ptr ptr ptr ptr ptr)
 @ stdcall RoIsApiContractMajorVersionPresent(wstr long ptr)
 @ stub RoIsApiContractPresent
 @ stdcall RoParseTypeName(ptr ptr ptr)

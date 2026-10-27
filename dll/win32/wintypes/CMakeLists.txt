@@ -5,6 +5,7 @@ list(APPEND SOURCE
     buffer.c
     main.c
     map.c
+    metadata.c
     storage.c
     valueset.c
     private.h)
@@ -19,6 +20,6 @@ add_dependencies(wintypes wintypes_private_idl)
 set_module_type(wintypes win32dll)
 target_compile_definitions(wintypes PRIVATE __WINESRC__)
 target_link_libraries(wintypes uuid wine wine_dll_canunload)
-add_importlibs(wintypes combase msvcrt kernel32 ntdll)
+add_importlibs(wintypes combase rometadata msvcrt kernel32 ntdll)
 add_cd_file(TARGET wintypes DESTINATION reactos/system32 FOR all)
 set_wine_module_FIXME(wintypes)

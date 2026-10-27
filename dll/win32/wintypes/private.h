@@ -55,6 +55,14 @@ extern IActivationFactory *buffer_activation_factory;
 extern IActivationFactory *property_set_factory;
 #ifdef __REACTOS__
 extern IActivationFactory *value_set_factory;
+
+extern BOOLEAN metadata_type_present(HSTRING type_name);
+extern BOOLEAN metadata_method_present(HSTRING type_name, HSTRING method_name, BOOL check_arity, UINT32 arity);
+extern BOOLEAN metadata_event_present(HSTRING type_name, HSTRING event_name);
+extern BOOLEAN metadata_property_present(HSTRING type_name, HSTRING property_name, BOOL need_getter,
+                                         BOOL need_setter);
+extern BOOLEAN metadata_enum_value_present(HSTRING type_name, HSTRING value_name);
+extern BOOLEAN metadata_contract_present(HSTRING contract_name, UINT16 major, UINT16 minor);
 #endif
 
 #define DEFINE_IINSPECTABLE_( pfx, iface_type, impl_type, impl_from, iface_mem, expr )             \
