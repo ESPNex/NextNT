@@ -55,8 +55,11 @@ enum  {
     DVIDM_ARRANGESORT_LAST = FCIDM_SHVIEWLAST,
     DVIDM_ARRANGESORT_FIRST = DVIDM_ARRANGESORT_LAST - (DEFVIEW_ARRANGESORT_MAX - 1),
     DVIDM_COMMDLG_SELECT = DVIDM_ARRANGESORT_FIRST - 1,
+    DEFVIEW_CLIENT_MAX = 0x100,
+    DVIDM_CLIENT_LAST = DVIDM_COMMDLG_SELECT - 1,
+    DVIDM_CLIENT_FIRST = DVIDM_CLIENT_LAST - (DEFVIEW_CLIENT_MAX - 1),
 
-    DVIDM_CONTEXTMENU_LAST = DVIDM_COMMDLG_SELECT - 1,
+    DVIDM_CONTEXTMENU_LAST = DVIDM_CLIENT_FIRST - 1,
     // FIXME: FCIDM_SHVIEWFIRST is 0 and using that with QueryContextMenu is a
     // bad idea because it hides bugs related to the ids in ici.lpVerb.
     // CONTEXT_MENU_BASE_ID acknowledges this but failed to apply the fix everywhere.
@@ -323,6 +326,7 @@ private:
     HMENU                     m_hMenuViewModes;       // Handle to the popup menu with the view modes
     HMENU                     m_hContextMenu;         // Handle to the open context menu
     BOOL                      m_bmenuBarInitialized;
+    UINT                      m_idClientLast;
     UINT                      m_uState;
     UINT                      m_cidl;
     PCUITEMID_CHILD          *m_apidl;
@@ -386,6 +390,8 @@ private:
     HICON                     m_hMyComputerIcon;
 
     HRESULT _MergeToolbar();
+    void _MergeMenus();
+    void _UnmergeMenus();
     BOOL _Sort(int Col = -1);
     HRESULT _DoFolderViewCB(UINT uMsg, WPARAM wParam, LPARAM lParam);
     HRESULT _GetSnapToGrid();
@@ -760,6 +766,7 @@ CDefView::CDefView() :
     m_hMenuViewModes(NULL),
     m_hContextMenu(NULL),
     m_bmenuBarInitialized(FALSE),
+    m_idClientLast(DVIDM_CLIENT_FIRST),
     m_uState(0),
     m_cidl(0),
     m_apidl(NULL),
@@ -2755,7 +2762,8 @@ HRESULT CDefView::FillViewMenu()
     if (!hViewMenu)
         return E_FAIL;
 
-    m_hMenuViewModes = ::LoadMenuW(shell32_hInstance, L"MENU_001");
+    if (!m_hMenuViewModes)
+        m_hMenuViewModes = ::LoadMenuW(shell32_hInstance, L"MENU_001");
     if (!m_hMenuViewModes)
         return E_FAIL;
 
@@ -3279,13 +3287,59 @@ LRESULT CDefView::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled
 }
 
 // internal
+void CDefView::_MergeMenus()
+{
+    if (!m_pShellBrowser)
+        return;
+
+    if (!m_hMenu)
+    {
+        OLEMENUGROUPWIDTHS omw = { { 0, 0, 0, 0, 0, 0 } };
+
+        m_hMenu = CreateMenu();
+        if (!m_hMenu)
+            return;
+        m_pShellBrowser->InsertMenusSB(m_hMenu, &omw);
+    }
+
+    FillEditMenu();
+    FillViewMenu();
+
+    QCMINFO qcm = { m_hMenu, 0, DVIDM_CLIENT_FIRST, DVIDM_CLIENT_LAST, NULL };
+    m_idClientLast = DVIDM_CLIENT_FIRST;
+    if (SUCCEEDED(_DoFolderViewCB(SFVM_MERGEMENU, 0, (LPARAM)&qcm)))
+        m_idClientLast = min(qcm.idCmdFirst, (UINT)DVIDM_CLIENT_LAST + 1);
+
+    m_pShellBrowser->SetMenuSB(m_hMenu, NULL, m_hWnd);
+    m_bmenuBarInitialized = TRUE;
+}
+
+void CDefView::_UnmergeMenus()
+{
+    if (!m_hMenu)
+        return;
+
+    _DoFolderViewCB(SFVM_UNMERGEFROMMENU, 0, (LPARAM)m_hMenu);
+    m_idClientLast = DVIDM_CLIENT_FIRST;
+
+    if (m_pShellBrowser)
+    {
+        m_pShellBrowser->SetMenuSB(NULL, NULL, NULL);
+        m_pShellBrowser->RemoveMenusSB(m_hMenu);
+    }
+
+    DestroyMenu(m_hMenu);
+    m_hMenu = NULL;
+    m_bmenuBarInitialized = FALSE;
+}
+
 void CDefView::OnDeactivate()
 {
     TRACE("%p\n", this);
 
     if (m_uState != SVUIA_DEACTIVATE)
     {
-        // TODO: cleanup menu after deactivation
+        _UnmergeMenus();
         m_uState = SVUIA_DEACTIVATE;
     }
 }
@@ -3306,13 +3360,8 @@ void CDefView::DoActivate(UINT uState)
     }
     else
     {
-        if(m_hMenu && !m_bmenuBarInitialized)
-        {
-            FillEditMenu();
-            FillViewMenu();
-            m_pShellBrowser->SetMenuSB(m_hMenu, 0, m_hWnd);
-            m_bmenuBarInitialized = TRUE;
-        }
+        if (!m_bmenuBarInitialized)
+            _MergeMenus();
 
         if (SVUIA_ACTIVATE_FOCUS == uState)
         {
@@ -3381,6 +3430,12 @@ LRESULT CDefView::OnCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHand
     hwndCmd = GET_WM_COMMAND_HWND(wParam, lParam);
 
     TRACE("(%p)->(0x%08x 0x%08x %p) stub\n", this, dwCmdID, dwCmd, hwndCmd);
+
+    if (dwCmdID >= DVIDM_CLIENT_FIRST && dwCmdID < m_idClientLast)
+    {
+        _DoFolderViewCB(SFVM_INVOKECOMMAND, dwCmdID - DVIDM_CLIENT_FIRST, 0);
+        return 0;
+    }
 
     if (dwCmdID >= DVIDM_ARRANGESORT_FIRST && dwCmdID <= DVIDM_ARRANGESORT_LAST)
     {
@@ -4003,6 +4058,8 @@ LRESULT CDefView::OnInitMenuPopup(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL 
         ListView_CancelEditLabel(m_ListView);
     if (m_pCM)
         OnMenuMessage(uMsg, wParam, lParam, bHandled);
+    if (m_idClientLast != DVIDM_CLIENT_FIRST)
+        _DoFolderViewCB(SFVM_INITMENUPOPUP, MAKEWPARAM(DVIDM_CLIENT_FIRST, nPos), (LPARAM)hmenu);
 
     HMENU hViewMenu = GetSubmenuByID(m_hMenu, FCIDM_MENU_VIEW);
 
@@ -4152,6 +4209,12 @@ HRESULT WINAPI CDefView::Refresh()
     m_ListView.DeleteAllItems();
     FillList();
 
+    if (m_bmenuBarInitialized)
+    {
+        _UnmergeMenus();
+        _MergeMenus();
+    }
+
     return S_OK;
 }
 
@@ -4186,11 +4249,7 @@ HRESULT WINAPI CDefView::DestroyViewWindow()
         m_hMenuViewModes = NULL;
     }
 
-    if (m_hMenu)
-    {
-        DestroyMenu(m_hMenu);
-        m_hMenu = NULL;
-    }
+    _UnmergeMenus();
 
     if (m_hWnd)
         _DoFolderViewCB(SFVM_WINDOWCLOSING, (WPARAM)m_hWnd, 0);
@@ -5181,7 +5240,6 @@ HRESULT STDMETHODCALLTYPE CDefView::CreateViewWindow2(LPSV2CVW2_PARAMS view_para
 
 HRESULT STDMETHODCALLTYPE CDefView::CreateViewWindow3(IShellBrowser *psb, IShellView *psvPrevious, SV3CVW3_FLAGS view_flags, FOLDERFLAGS mask, FOLDERFLAGS flags, FOLDERVIEWMODE mode, const SHELLVIEWID *view_id, const RECT *prcView, HWND *hwnd)
 {
-    OLEMENUGROUPWIDTHS omw = { { 0, 0, 0, 0, 0, 0 } };
     const UINT SUPPORTED_SV3CVW3 = SV3CVW3_FORCEVIEWMODE | SV3CVW3_FORCEFOLDERFLAGS;
     const UINT IGNORE_FWF = FWF_OWNERDATA; // FIXME: Support this
 
@@ -5258,12 +5316,7 @@ HRESULT STDMETHODCALLTYPE CDefView::CreateViewWindow3(IShellBrowser *psb, IShell
     SetWindowPos(HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
     UpdateWindow();
 
-    if (!m_hMenu)
-    {
-        m_hMenu = CreateMenu();
-        m_pShellBrowser->InsertMenusSB(m_hMenu, &omw);
-        TRACE("-- after fnInsertMenusSB\n");
-    }
+    _MergeMenus();
 
     _MergeToolbar();
 
