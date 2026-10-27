@@ -734,6 +734,7 @@ struct device_query_context
 #ifdef __REACTOS__
     DEVPROP_FILTER_EXPRESSION *filter_exprs;
     ULONG filter_exprs_len;
+    LONG close_pending;
 #endif
 
     CRITICAL_SECTION cs;
@@ -901,10 +902,27 @@ static BOOL device_query_context_object_matches( struct device_query_context *ct
     return matches;
 }
 
+static void CALLBACK device_query_context_notify_closed_async( TP_CALLBACK_INSTANCE *instance, void *data );
+
 #endif
 static void device_query_context_release( struct device_query_context *ctx )
 {
+#ifdef __REACTOS__
+    LONG ref = InterlockedDecrement( &ctx->ref );
+
+    if (ref == 1 && !(ctx->flags & DevQueryFlagAsyncClose) && ReadAcquire( &ctx->close_pending ))
+        SetEvent( ctx->closed );
+    if (!ref && (ctx->flags & DevQueryFlagAsyncClose) && InterlockedExchange( &ctx->close_pending, FALSE ))
+    {
+        ctx->ref = 1;
+        if (!TrySubmitThreadpoolCallback( device_query_context_notify_closed_async, ctx, NULL ))
+            device_query_context_notify_closed_async( NULL, ctx );
+        return;
+    }
+    if (!ref)
+#else
     if (!InterlockedDecrement( &ctx->ref ))
+#endif
     {
         free( ctx->prop_keys );
 #ifdef __REACTOS__
@@ -1167,6 +1185,9 @@ static void CALLBACK device_query_enum_objects_async( TP_CALLBACK_INSTANCE *inst
         }
         break;
     case ERROR_CANCELLED:
+#ifdef __REACTOS__
+        success = FALSE;
+#else
         if (!(ctx->flags & DevQueryFlagAsyncClose))
         {
             LeaveCriticalSection( &ctx->cs );
@@ -1175,6 +1196,7 @@ static void CALLBACK device_query_enum_objects_async( TP_CALLBACK_INSTANCE *inst
             return;
         }
         success = TrySubmitThreadpoolCallback( device_query_context_notify_closed_async, ctx, NULL );
+#endif
         break;
     default:
         goto abort;
@@ -1270,6 +1292,17 @@ void WINAPI DevCloseObjectQuery( HDEVQUERY query )
         CM_Unregister_Notification( ctx->notify );
         device_query_context_release( ctx ); /* Reference held by CM_Register_Notification. */
     }
+#ifdef __REACTOS__
+    if (async && (old == DevQueryStateInitialized || old == DevQueryStateEnumCompleted))
+        ctx->close_pending = TRUE;
+    LeaveCriticalSection( &ctx->cs );
+    if (!async)
+    {
+        InterlockedExchange( &ctx->close_pending, TRUE );
+        if (ReadAcquire( &ctx->ref ) > 1)
+            WaitForSingleObject( ctx->closed, INFINITE );
+    }
+#else
     if (async && old == DevQueryStateEnumCompleted)
     {
         /* No asynchronous operation involving this query is active, so we need to notify DevQueryStateClosed. */
@@ -1286,6 +1319,7 @@ void WINAPI DevCloseObjectQuery( HDEVQUERY query )
     }
     else
         LeaveCriticalSection( &ctx->cs );
+#endif
 
     device_query_context_release( ctx );
     return;
