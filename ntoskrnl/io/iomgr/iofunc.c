@@ -2364,6 +2364,22 @@ IopQueryDirectoryFile(IN HANDLE FileHandle,
 #undef CHECK_LENGTH
     }
 
+    if (PreviousMode == KernelMode && FileName)
+    {
+        AuxBuffer = ExAllocatePoolWithTag(NonPagedPool,
+                                          FileName->Length + sizeof(UNICODE_STRING),
+                                          TAG_IOBUF);
+        if (!AuxBuffer)
+            return STATUS_INSUFFICIENT_RESOURCES;
+        RtlCopyMemory((PVOID)((ULONG_PTR)AuxBuffer + sizeof(UNICODE_STRING)),
+                      FileName->Buffer,
+                      FileName->Length);
+        SearchPattern = (PUNICODE_STRING)AuxBuffer;
+        SearchPattern->Buffer = (PWCHAR)((ULONG_PTR)AuxBuffer + sizeof(UNICODE_STRING));
+        SearchPattern->Length = FileName->Length;
+        SearchPattern->MaximumLength = FileName->Length;
+    }
+
     /* Get File Object */
     Status = ObReferenceObjectByHandle(FileHandle,
                                        FILE_LIST_DIRECTORY,
