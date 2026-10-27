@@ -39,7 +39,7 @@ START_TEST(SHEnumClassesOfCategories)
     }
 
     pSHEnumClassesOfCategories = (SHENUMCLASSESOFCATEGORIES)GetProcAddress(hbrowseui, MAKEINTRESOURCEA(136));
-    ok(pSHEnumClassesOfCategories != NULL, "GetProcAddress() failed\n");
+    ok(pSHEnumClassesOfCategories != NULL || GetNTVersion() >= _WIN32_WINNT_WIN7, "GetProcAddress() failed\n");
     if (!pSHEnumClassesOfCategories)
     {
         skip("No function, as on NT 6.1+\n");
