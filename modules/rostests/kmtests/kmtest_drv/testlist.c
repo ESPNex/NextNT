@@ -218,6 +218,7 @@ KMT_TESTFUNC Test_KeArm64Numa;
 #endif
 KMT_TESTFUNC Test_KeDeviceQueue;
 KMT_TESTFUNC Test_KeDpc;
+KMT_TESTFUNC Test_KeDpcReadyThread;
 KMT_TESTFUNC Test_KeEvent;
 KMT_TESTFUNC Test_KeFloatPointState;
 KMT_TESTFUNC Test_KeGuardedMutex;
@@ -538,6 +539,7 @@ const KMT_TEST TestList[] =
     { "KeCriticalRegionKM",                 Test_KeCriticalRegionKM },
     { "KeDeviceQueue",                      Test_KeDeviceQueue },
     { "KeDpc",                              Test_KeDpc },
+    { "KeDpcReadyThread",                   Test_KeDpcReadyThread },
     { "KeEvent",                            Test_KeEvent },
     { "KeFloatPointState",                  Test_KeFloatPointState },
     { "KeGuardedMutex",                     Test_KeGuardedMutex },
