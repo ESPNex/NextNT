@@ -337,7 +337,7 @@ HKCR,".jfif","",0x00000000,"jpegfile"
 HKCR,".jfif","Content Type",0x00000000,"image/jpeg"
 HKCR,".jfif","PerceivedType",0x00000000,"image"
 HKCR,"jpegfile","",0x00000000,"JPEG Image"
-HKCR,"jpegfile","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\shimgvw.dll,-303"
+HKCR,"jpegfile","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\shell32.dll,-30596"
 HKCR,"jpegfile\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shimgvw.dll,0"
 HKCR,"jpegfile\shell\open\command","",0x00020000,"rundll32.exe %SystemRoot%\system32\shimgvw.dll,ImageView_Fullscreen %1"
 HKCR,"jpegfile\shell\edit\command","",0x00020000,"%SystemRoot%\system32\mspaint.exe ""%1"""
@@ -362,7 +362,7 @@ HKCR,".png","",0x00000000,"pngfile"
 HKCR,".png","Content Type",0x00000000,"image/png"
 HKCR,".png","PerceivedType",0x00000000,"image"
 HKCR,"pngfile","",0x00000000,"PNG Image"
-HKCR,"pngfile","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\shimgvw.dll,-305"
+HKCR,"pngfile","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\shell32.dll,-30598"
 HKCR,"pngfile\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shimgvw.dll,2"
 HKCR,"pngfile\shell\open\command","",0x00020000,"rundll32.exe %SystemRoot%\system32\shimgvw.dll,ImageView_Fullscreen %1"
 HKCR,"pngfile\shell\edit\command","",0x00020000,"%SystemRoot%\system32\mspaint.exe ""%1"""
@@ -601,6 +601,29 @@ HKCR,".avi","PerceivedType",0x00000000,"video"
 HKCR,"AVIFile","",0x00000000,%AVIFILE%
 HKCR,"AVIFile\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shell32.dll,-224"
 HKCR,"AVIFile\shell\open\command","",0x00020000,"%SystemRoot%\system32\mplay32.exe ""%1"""
+
+; Windows Media file types
+HKCR,".mp3","",0x00000000,"WMP11.AssocFile.MP3"
+HKCR,".mp3","Content Type",0x00000000,"audio/mpeg"
+HKCR,".mp3","PerceivedType",0x00000000,"audio"
+HKCR,"WMP11.AssocFile.MP3","",0x00000000,%MP3FILE%
+HKCR,"WMP11.AssocFile.MP3\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shell32.dll,-225"
+HKCR,"WMP11.AssocFile.MP3\shell\open\command","",0x00020000,"%SystemRoot%\system32\mplay32.exe ""%1"""
+HKCR,".wma","",0x00000000,"WMP11.AssocFile.WMA"
+HKCR,".wma","Content Type",0x00000000,"audio/x-ms-wma"
+HKCR,".wma","PerceivedType",0x00000000,"audio"
+HKCR,"WMP11.AssocFile.WMA","",0x00000000,%WMAFILE%
+HKCR,"WMP11.AssocFile.WMA\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shell32.dll,-225"
+HKCR,"WMP11.AssocFile.WMA\shell\open\command","",0x00020000,"%SystemRoot%\system32\mplay32.exe ""%1"""
+HKCR,".mp4","",0x00000000,"WMP11.AssocFile.MP4"
+HKCR,".mp4","Content Type",0x00000000,"video/mp4"
+HKCR,".mp4","PerceivedType",0x00000000,"video"
+HKCR,"WMP11.AssocFile.MP4","",0x00000000,%MP4FILE%
+HKCR,"WMP11.AssocFile.MP4\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shell32.dll,-224"
+HKCR,"WMP11.AssocFile.MP4\shell\open\command","",0x00020000,"%SystemRoot%\system32\mplay32.exe ""%1"""
+
+; Binary files
+HKCR,".bin","NoOpen",0x00000000,""
 
 ; WSH
 HKCR,".wsf","",0x00000000,"WSFFile"
@@ -876,6 +899,9 @@ WAVFILE="Wave Sound"
 MIDFILE="MIDI Sequence"
 CDAFILE="CD Audio Track"
 AVIFILE="Video Clip"
+MP3FILE="MP3 Format Sound"
+WMAFILE="Windows Media Audio file"
+MP4FILE="MP4 Video"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Cascading Style Sheet"
@@ -914,6 +940,9 @@ CPLFILE_OPENWITH="Mit der Systemsteuerung öffnen"
 ;MIDFILE="MIDI Sequence"
 ;CDAFILE="CD Audio Track"
 ;AVIFILE="Video Clip"
+MP3FILE="MP3-Formatsound"
+WMAFILE="Windows Media-Audiodatei"
+MP4FILE="MP4-Video"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 ;CSSFILE="Cascading Style Sheet"
@@ -950,6 +979,9 @@ WAVFILE="Archivo de audio"
 MIDFILE="Secuencia MIDI"
 CDAFILE="Pista de audio CD"
 AVIFILE="Secuencia de vídeo"
+MP3FILE="Sonido en formato MP3"
+WMAFILE="Archivo de audio de Windows Media"
+MP4FILE="Vídeo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Hoja de estilos en cascada"
@@ -986,6 +1018,9 @@ WAVFILE="Son Wave"
 MIDFILE="Séquence MIDI"
 CDAFILE="Piste de CD Audio"
 AVIFILE="Clip Vidéo"
+MP3FILE="Son au format MP3"
+WMAFILE="Fichier audio Windows Media"
+MP4FILE="Vidéo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Fichier CSS"
@@ -1022,6 +1057,9 @@ WAVFILE="Audio wave"
 MIDFILE="Sequenza MIDI"
 CDAFILE="Traccia Audio CD"
 AVIFILE="Filmato video"
+MP3FILE="Suono in formato MP3"
+WMAFILE="File audio Windows Media"
+MP4FILE="Video MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 ;CSSFILE="Cascading Style Sheet"
@@ -1058,6 +1096,9 @@ WAVFILE="Dźwięk typu wave"
 MIDFILE="Sekwencja MIDI"
 CDAFILE="Ścieżka CD audio"
 AVIFILE="Arkusz stylu kaskadowego"
+MP3FILE="Dźwięk w formacie MP3"
+WMAFILE="Plik audio Windows Media"
+MP4FILE="Wideo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 ;CSSFILE="Cascading Style Sheet"
@@ -1095,6 +1136,9 @@ WAVFILE="Ficheiro de audio"
 MIDFILE="Sequência MIDI"
 CDAFILE="Pista de audio CD"
 AVIFILE="Sequência de vídeo"
+MP3FILE="Som em formato MP3"
+WMAFILE="Ficheiro de áudio Windows Media"
+MP4FILE="Vídeo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Folha de estilos em cascada"
@@ -1132,6 +1176,9 @@ WAVFILE="Fișier audio Wave"
 MIDFILE="Secvență audio MIDI"
 CDAFILE="Pistă de CD audio"
 AVIFILE="Fișier video"
+MP3FILE="Sunet în format MP3"
+WMAFILE="Fișier audio Windows Media"
+MP4FILE="Video MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Foaie de stiluri în cascadă"
@@ -1168,6 +1215,9 @@ WAVFILE="Файл аудио Wave"
 MIDFILE="Файл MIDI"
 CDAFILE="CD аудиодорожка"
 AVIFILE="Видеозапись"
+MP3FILE="Звук в формате MP3"
+WMAFILE="Звуковой файл Windows Media"
+MP4FILE="Видео MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Каскадная таблица стилей"
@@ -1204,6 +1254,9 @@ WAVFILE="WAVE 音訊"
 MIDFILE="MIDI 編曲"
 CDAFILE="CD 曲目"
 AVIFILE="視訊短片"
+MP3FILE="MP3 格式音效"
+WMAFILE="Windows Media 音訊檔"
+MP4FILE="MP4 視訊"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="階層式樣式表"
@@ -1240,6 +1293,9 @@ CPLFILE_OPENWITH="Denetim Masası'yla Aç"
 ;MIDFILE="MIDI Dizisi"
 ;CDAFILE="CD Ses Parçası"
 ;AVIFILE="Video Klibi"
+MP3FILE="MP3 Biçimli Ses"
+WMAFILE="Windows Media Ses Dosyası"
+MP4FILE="MP4 Video"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 ;CSSFILE="Basamaklı Stil Şablonu"
@@ -1276,6 +1332,9 @@ WAVFILE="WAVE 音訊"
 MIDFILE="MIDI 編曲"
 CDAFILE="CD 曲目"
 AVIFILE="視訊短片"
+MP3FILE="MP3 格式音效"
+WMAFILE="Windows Media 音訊檔"
+MP4FILE="MP4 視訊"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="階層式樣式表"
@@ -1313,6 +1372,9 @@ WAVFILE="Wave 音声"
 MIDFILE="MIDI シーケンス"
 CDAFILE="CD 音声トラック"
 AVIFILE="ビデオ クリップ"
+MP3FILE="MP3 形式サウンド"
+WMAFILE="Windows Media オーディオ ファイル"
+MP4FILE="MP4 ビデオ"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="カスケード スタイル シート"
@@ -1349,6 +1411,9 @@ WAVFILE="波形声音"
 MIDFILE="MIDI 序列"
 CDAFILE="CD 音频曲目"
 AVIFILE="视频剪辑"
+MP3FILE="MP3 格式声音"
+WMAFILE="Windows Media 音频文件"
+MP4FILE="MP4 视频"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="层叠样式表文档"
