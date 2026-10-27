@@ -215,6 +215,7 @@ typedef struct _TASK_GROUP
     WCHAR szExePath[MAX_PATH];
     WCHAR szLinkPath[MAX_PATH];
     WCHAR szAppId[128];
+    WCHAR szPinAppId[128];
     FILETIME PinCreationTime;
     TASK_ANIM Anim;
     union
@@ -259,11 +260,18 @@ typedef struct _TASKBAR_PIN_RECORD
 {
     WCHAR szShortcut[MAX_PATH];
     WCHAR szTarget[MAX_PATH];
+    WCHAR szAppId[128];
     FILETIME CreationTime;
 } TASKBAR_PIN_RECORD, *PTASKBAR_PIN_RECORD;
 
+static PCWSTR
+TaskbarPinRecordKey(const TASKBAR_PIN_RECORD *pRecord)
+{
+    return pRecord->szAppId[0] ? pRecord->szAppId : pRecord->szTarget;
+}
+
 static BOOL CALLBACK
-CollectTaskbarPin(PCWSTR pszShortcut, PCWSTR pszTarget,
+CollectTaskbarPin(PCWSTR pszShortcut, PCWSTR pszTarget, PCWSTR pszAppId,
                   const FILETIME *pCreationTime, LPARAM lParam)
 {
     CAtlArray<TASKBAR_PIN_RECORD> *pRecords =
@@ -274,7 +282,9 @@ CollectTaskbarPin(PCWSTR pszShortcut, PCWSTR pszTarget,
     if (FAILED(StringCchCopyW(Record.szShortcut, _countof(Record.szShortcut),
                               pszShortcut)) ||
         FAILED(StringCchCopyW(Record.szTarget, _countof(Record.szTarget),
-                              pszTarget)))
+                              pszTarget)) ||
+        FAILED(StringCchCopyW(Record.szAppId, _countof(Record.szAppId),
+                              pszAppId)))
     {
         return TRUE;
     }
@@ -1067,6 +1077,57 @@ public:
         return NULL;
     }
 
+    static PCWSTR TaskGroupKey(IN PTASK_GROUP TaskGroup)
+    {
+        if (TaskGroup->szAppId[0])
+            return TaskGroup->szAppId;
+        return TaskGroup->szPinAppId[0] ? TaskGroup->szPinAppId : TaskGroup->szExePath;
+    }
+
+    static PCWSTR TaskGroupAppId(IN PTASK_GROUP TaskGroup)
+    {
+        return TaskGroup->szAppId[0] ? TaskGroup->szAppId : TaskGroup->szPinAppId;
+    }
+
+    PTASK_GROUP FindTaskGroupByKey(IN PCWSTR pszKey)
+    {
+        for (PTASK_GROUP TaskGroup = m_TaskGroups; TaskGroup; TaskGroup = TaskGroup->Next)
+        {
+            if (pszKey[0] && !lstrcmpiW(TaskGroupKey(TaskGroup), pszKey))
+                return TaskGroup;
+        }
+        return NULL;
+    }
+
+    PTASK_GROUP FindPinGroup(IN PCWSTR pszTarget, IN PCWSTR pszAppId)
+    {
+        PTASK_GROUP TaskGroup;
+
+        if (!pszAppId[0])
+            return FindTaskGroupByKey(pszTarget);
+        for (TaskGroup = m_TaskGroups; TaskGroup; TaskGroup = TaskGroup->Next)
+        {
+            if (!_wcsicmp(TaskGroup->szAppId, pszAppId) || !_wcsicmp(TaskGroup->szPinAppId, pszAppId))
+                return TaskGroup;
+        }
+        for (TaskGroup = m_TaskGroups; TaskGroup; TaskGroup = TaskGroup->Next)
+        {
+            if (!TaskGroup->szAppId[0] && !TaskGroup->szPinAppId[0] && !TaskGroup->IsPinned &&
+                TaskGroup->szExePath[0] && !lstrcmpiW(TaskGroup->szExePath, pszTarget))
+            {
+                return TaskGroup;
+            }
+        }
+        return NULL;
+    }
+
+    static VOID GetPinnedLinkName(IN PTASK_GROUP TaskGroup, OUT LPWSTR pszOut, IN size_t cch)
+    {
+        pszOut[0] = 0;
+        if (TaskGroup->szLinkPath[0] && SUCCEEDED(StringCchCopyW(pszOut, cch, PathFindFileNameW(TaskGroup->szLinkPath))))
+            PathRemoveExtensionW(pszOut);
+    }
+
     PTASK_GROUP AppendTaskGroup(IN PCWSTR pszExePath)
     {
         PTASK_GROUP TaskGroup = (PTASK_GROUP)HeapAlloc(hProcessHeap,
@@ -1149,6 +1210,7 @@ public:
             TaskGroup->IsPinned = TRUE;
             TaskGroup->PinSeen = TRUE;
             TaskGroup->PinCreationTime = pRecord->CreationTime;
+            StringCchCopyW(TaskGroup->szPinAppId, _countof(TaskGroup->szPinAppId), pRecord->szAppId);
             StringCchCopyW(TaskGroup->szLinkPath,
                            _countof(TaskGroup->szLinkPath),
                            pRecord->szShortcut);
@@ -1170,6 +1232,7 @@ public:
         }
         TaskGroup->PinSeen = FALSE;
         TaskGroup->szLinkPath[0] = 0;
+        TaskGroup->szPinAppId[0] = 0;
         ZeroMemory(&TaskGroup->PinCreationTime,
                    sizeof(TaskGroup->PinCreationTime));
         if (TaskGroup->dwTaskCount == 0)
@@ -1187,20 +1250,22 @@ public:
         }
     }
 
-    HRESULT ApplySavedTaskbarPin(IN PCWSTR pszTarget, IN PCWSTR pszShortcut, IN HICON hIcon)
+    HRESULT ApplySavedTaskbarPin(IN PCWSTR pszTarget, IN PCWSTR pszShortcut, IN HICON hIcon, IN PCWSTR pszAppId)
     {
         TASKBAR_PIN_RECORD Record = {};
         WIN32_FILE_ATTRIBUTE_DATA Attributes;
         HRESULT hr = StringCchCopyW(Record.szTarget, _countof(Record.szTarget), pszTarget);
         if (SUCCEEDED(hr))
             hr = StringCchCopyW(Record.szShortcut, _countof(Record.szShortcut), pszShortcut);
+        if (SUCCEEDED(hr))
+            hr = StringCchCopyW(Record.szAppId, _countof(Record.szAppId), pszAppId);
         if (FAILED(hr))
             return hr;
         if (!GetFileAttributesExW(pszShortcut, GetFileExInfoStandard, &Attributes))
             return HRESULT_FROM_WIN32(GetLastError());
         Record.CreationTime = Attributes.ftCreationTime;
 
-        PTASK_GROUP Group = FindTaskGroupByPath(pszTarget);
+        PTASK_GROUP Group = FindPinGroup(pszTarget, Record.szAppId);
         if (!Group)
             Group = AppendTaskGroup(pszTarget);
         if (!Group)
@@ -1237,7 +1302,7 @@ public:
             BOOL bDuplicate = FALSE;
             for (SIZE_T j = 0; j < i; ++j)
             {
-                if (!lstrcmpiW(Records[i].szTarget, Records[j].szTarget))
+                if (!lstrcmpiW(TaskbarPinRecordKey(&Records[i]), TaskbarPinRecordKey(&Records[j])))
                 {
                     bDuplicate = TRUE;
                     break;
@@ -1246,7 +1311,7 @@ public:
             if (bDuplicate)
                 continue;
 
-            TaskGroup = FindTaskGroupByPath(Records[i].szTarget);
+            TaskGroup = FindPinGroup(Records[i].szTarget, Records[i].szAppId);
             if (!TaskGroup)
                 TaskGroup = AppendTaskGroup(Records[i].szTarget);
             if (TaskGroup)
@@ -1323,7 +1388,7 @@ public:
         TaskbarPin_LoadOrder(Saved);
         for (i = 0; i < Saved.GetCount(); ++i)
         {
-            TaskGroup = FindTaskGroupByPath(Saved[i].szTarget);
+            TaskGroup = FindTaskGroupByKey(Saved[i].szTarget);
             if (TaskGroup && TaskGroup->IsPinned && TaskGroup->Index >= 0 &&
                 !IsGroupListed(Desired, TaskGroup))
             {
@@ -1332,7 +1397,7 @@ public:
         }
         for (i = 0; i < Records.GetCount(); ++i)
         {
-            TaskGroup = FindTaskGroupByPath(Records[i].szTarget);
+            TaskGroup = FindTaskGroupByKey(TaskbarPinRecordKey(&Records[i]));
             if (TaskGroup && TaskGroup->IsPinned && TaskGroup->Index >= 0 &&
                 !IsGroupListed(Desired, TaskGroup))
             {
@@ -1366,10 +1431,10 @@ public:
             PTASK_GROUP TaskGroup = FindTaskGroupByIndex(i);
             TASKBAR_PIN_ORDER Entry;
 
-            if (!TaskGroup || !TaskGroup->IsPinned || !TaskGroup->szExePath[0])
+            if (!TaskGroup || !TaskGroup->IsPinned || !TaskGroupKey(TaskGroup)[0])
                 continue;
             if (SUCCEEDED(StringCchCopyW(Entry.szTarget, _countof(Entry.szTarget),
-                                         TaskGroup->szExePath)))
+                                         TaskGroupKey(TaskGroup))))
             {
                 Order.Add(Entry);
             }
@@ -2414,7 +2479,8 @@ public:
         TaskGroup = m_TaskGroups;
         while (TaskGroup != NULL)
         {
-            if (szAppId[0] ? (_wcsicmp(TaskGroup->szAppId, szAppId) == 0) :
+            if (szAppId[0] ? (_wcsicmp(TaskGroup->szAppId, szAppId) == 0 ||
+                              (!TaskGroup->szAppId[0] && _wcsicmp(TaskGroup->szPinAppId, szAppId) == 0)) :
                 (!TaskGroup->szAppId[0] &&
                  ((szExePath[0] && TaskGroup->szExePath[0] &&
                    _wcsicmp(TaskGroup->szExePath, szExePath) == 0) ||
@@ -2424,6 +2490,8 @@ public:
             {
                 TaskGroup->dwTaskCount++;
                 TaskGroup->dwProcessId = dwProcessId;
+                if (szAppId[0] && !TaskGroup->szAppId[0])
+                    StringCchCopyW(TaskGroup->szAppId, _countof(TaskGroup->szAppId), szAppId);
                 ClearTaskGroupLaunch(TaskGroup);
                 return TaskGroup;
             }
@@ -3440,18 +3508,18 @@ public:
         return TaskItem != NULL ? TaskItem->Group : NULL;
     }
 
-    VOID LaunchTaskPath(IN PCWSTR pszTarget, IN PCWSTR pszSource)
+    VOID LaunchTaskPath(IN PCWSTR pszTarget, IN PCWSTR pszSource, IN PCWSTR pszCommand = NULL)
     {
-        CStringW Target = pszTarget, Source = pszSource;
-        PTASK_GROUP TaskGroup = FindTaskGroupByPath(Target);
+        CStringW Target = pszTarget, Source = pszSource, Command = pszCommand;
+        PTASK_GROUP TaskGroup = FindTaskGroupByKey(Target);
         if (TaskGroup)
             TaskGroup->LaunchInProgress = TRUE;
         CancelTaskPreview();
         HANDLE Process = NULL;
-        HRESULT hr = TaskbarPin_Launch(Source, &Process);
+        HRESULT hr = Command.IsEmpty() ? TaskbarPin_Launch(Source, &Process) : TaskbarPin_LaunchCommand(Command, &Process);
 
         // The Run As path can dispatch window creation and unpin messages.
-        TaskGroup = FindTaskGroupByPath(Target);
+        TaskGroup = FindTaskGroupByKey(Target);
         if (TaskGroup)
         {
             TaskGroup->LaunchInProgress = FALSE;
@@ -3485,7 +3553,17 @@ public:
     {
         if (TaskGroup == NULL || (!TaskGroup->szLinkPath[0] && !TaskGroup->szExePath[0]))
             return;
-        LaunchTaskPath(TaskGroup->szExePath, TaskGroup->szLinkPath[0] ? TaskGroup->szLinkPath : TaskGroup->szExePath);
+        if (!TaskGroup->szLinkPath[0] && TaskGroupAppId(TaskGroup)[0])
+        {
+            CStringW Command, Name;
+            HWND Window;
+            if (CollectGroupWindows(TaskGroup, &Window, 1) && TaskbarPin_GetRelaunch(Window, Command, Name))
+            {
+                LaunchTaskPath(TaskGroupKey(TaskGroup), NULL, Command);
+                return;
+            }
+        }
+        LaunchTaskPath(TaskGroupKey(TaskGroup), TaskGroup->szLinkPath[0] ? TaskGroup->szLinkPath : TaskGroup->szExePath);
     }
 
     BOOL IsTaskGroupLaunching(IN PTASK_GROUP TaskGroup)
@@ -3586,9 +3664,9 @@ public:
         cWindows = CollectGroupWindows(TaskGroup, ahWnd, _countof(ahWnd));
         if (!cWindows)
         {
-            CStringW Target = TaskGroup->szExePath;
+            CStringW Target = TaskGroupKey(TaskGroup);
             RefreshWindowList();
-            TaskGroup = FindTaskGroupByPath(Target);
+            TaskGroup = FindTaskGroupByKey(Target);
             if (!TaskGroup)
                 return;
             cWindows = CollectGroupWindows(TaskGroup, ahWnd, _countof(ahWnd));
@@ -3794,7 +3872,11 @@ public:
             return;
         // Popup menus dispatch shell events: the original group may be freed while open.
         CStringW Target = TaskGroup ? TaskGroup->szExePath : L"";
+        CStringW Key = TaskGroup ? TaskGroupKey(TaskGroup) : L"";
+        CStringW AppId = TaskGroup ? TaskGroupAppId(TaskGroup) : L"";
         CStringW Source = TaskGroup && TaskGroup->szLinkPath[0] ? TaskGroup->szLinkPath : Target;
+        CStringW Command, RelaunchName;
+        BOOL bRelaunch = FALSE, bPrevented = FALSE;
         HICON hPinIcon = CopyTaskButtonIcon(TaskGroup, TaskItem);
         if (TaskItem)
             Windows.Add(TaskItem->hWnd);
@@ -3808,15 +3890,24 @@ public:
         }
         // Refresh after taking snapshots: a pin change may replace or free the group.
         SyncTaskbarPins();
-        TaskGroup = FindTaskGroupByPath(Target);
+        TaskGroup = FindTaskGroupByKey(Key);
         BOOL bPinned = TaskGroup && TaskGroup->IsPinned;
         Source = bPinned ? TaskGroup->szLinkPath : Target;
+        CStringW PinAppId = bPinned ? TaskGroup->szPinAppId : L"";
+        if (!AppId.IsEmpty() && Windows.GetCount() > 0)
+            bRelaunch = TaskbarPin_GetRelaunch(Windows[0], Command, RelaunchName, &bPrevented);
         TaskPreview_Hide();
-        GetAppDisplayName(Target, szName, _countof(szName));
+        szName[0] = 0;
+        if (bRelaunch)
+            StringCchCopyW(szName, _countof(szName), RelaunchName);
+        else if (!PinAppId.IsEmpty())
+            GetPinnedLinkName(TaskGroup, szName, _countof(szName));
+        if (!szName[0])
+            GetAppDisplayName(Target, szName, _countof(szName));
         if (szName[0])
             AppendMenuW(hMenu, MF_STRING, IDM_JUMP_LAUNCH, szName);
 
-        if (!TaskbarPin_IsDisabled() && (bPinned || TaskbarPin_IsPinnable(Source)))
+        if (!TaskbarPin_IsDisabled() && (bPinned || (!bPrevented && (bRelaunch || TaskbarPin_IsPinnable(Source)))))
         {
             if (GetMenuItemCount(hMenu) > 0)
                 AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
@@ -3832,23 +3923,26 @@ public:
         cmd = TrackTaskMenu(hMenu);
         DestroyMenu(hMenu);
         if (cmd == IDM_JUMP_LAUNCH)
-            LaunchTaskPath(Target, Source);
+            LaunchTaskPath(Key, Source, !bPinned && bRelaunch ? Command.GetString() : NULL);
         else if (cmd == IDM_JUMP_PIN || cmd == IDM_JUMP_UNPIN)
         {
             CStringW Shortcut;
             HRESULT hr;
             if (cmd == IDM_JUMP_PIN)
             {
-                hr = TaskbarPin_Create(Source, &Shortcut, hPinIcon);
+                if (bRelaunch)
+                    hr = TaskbarPin_CreateRelaunch(Command, RelaunchName, AppId, &Shortcut, hPinIcon);
+                else
+                    hr = TaskbarPin_Create(Source, &Shortcut, hPinIcon);
                 if (SUCCEEDED(hr))
-                    hr = ApplySavedTaskbarPin(Target, Shortcut, hPinIcon);
+                    hr = ApplySavedTaskbarPin(Target, Shortcut, hPinIcon, bRelaunch ? AppId.GetString() : L"");
             }
             else
             {
-                hr = TaskbarPin_Remove(Target);
+                hr = TaskbarPin_Remove(Target, PinAppId);
                 if (SUCCEEDED(hr))
                 {
-                    TaskGroup = FindTaskGroupByPath(Target);
+                    TaskGroup = FindTaskGroupByKey(Key);
                     if (TaskGroup && TaskGroup->IsPinned)
                         SetTaskGroupPin(TaskGroup, NULL);
                 }
@@ -4258,8 +4352,12 @@ public:
                 else if (TaskGroup != NULL && TaskGroup->IsPinned &&
                          pTip->pszText != NULL && pTip->cchTextMax > 0)
                 {
-                    GetAppDisplayName(TaskGroup->szExePath, pTip->pszText,
-                                      pTip->cchTextMax);
+                    pTip->pszText[0] = 0;
+                    if (TaskGroup->szPinAppId[0])
+                        GetPinnedLinkName(TaskGroup, pTip->pszText, pTip->cchTextMax);
+                    if (!pTip->pszText[0])
+                        GetAppDisplayName(TaskGroup->szExePath, pTip->pszText,
+                                          pTip->cchTextMax);
                 }
                 break;
             }
@@ -4909,14 +5007,17 @@ public:
             !GetDropPinPath(pDataObj, Path))
             return S_OK;
 
-        if (FAILED(TaskbarPin_Create(Path)))
+        CStringW Shortcut;
+        if (FAILED(TaskbarPin_Create(Path, &Shortcut)))
             return S_OK;
 
         SyncTaskbarPins();
         if (TaskbarPin_ResolveTarget(Path, Target))
         {
-            PTASK_GROUP TaskGroup = FindTaskGroupByPath(Target);
+            PTASK_GROUP TaskGroup = m_TaskGroups;
 
+            while (TaskGroup && lstrcmpiW(TaskGroup->szLinkPath, Shortcut))
+                TaskGroup = TaskGroup->Next;
             if (TaskGroup && TaskGroup->Index >= 0 && Index >= 0 && Index < (INT)m_ButtonCount)
                 MoveTaskButtonAnimated(TaskGroup->Index, Index);
             SaveTaskbarPinOrder();

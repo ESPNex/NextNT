@@ -10,6 +10,67 @@
 #include <taskbarpinlock.h>
 #include <taskbarpinicon.h>
 #include <olectl.h>
+#include <propsys.h>
+
+static const PROPERTYKEY TaskbarPinPkeyAppUserModelId =
+    { { 0x9f4c2855, 0x9f79, 0x4b39, { 0xa8, 0xd0, 0xe1, 0xd4, 0x2d, 0xe1, 0xd5, 0xf3 } }, 5 };
+static const PROPERTYKEY TaskbarPinPkeyRelaunchCommand =
+    { { 0x9f4c2855, 0x9f79, 0x4b39, { 0xa8, 0xd0, 0xe1, 0xd4, 0x2d, 0xe1, 0xd5, 0xf3 } }, 2 };
+static const PROPERTYKEY TaskbarPinPkeyRelaunchDisplayNameResource =
+    { { 0x9f4c2855, 0x9f79, 0x4b39, { 0xa8, 0xd0, 0xe1, 0xd4, 0x2d, 0xe1, 0xd5, 0xf3 } }, 4 };
+static const PROPERTYKEY TaskbarPinPkeyPreventPinning =
+    { { 0x9f4c2855, 0x9f79, 0x4b39, { 0xa8, 0xd0, 0xe1, 0xd4, 0x2d, 0xe1, 0xd5, 0xf3 } }, 9 };
+
+static BOOL
+ReadTaskbarPinString(IPropertyStore *pStore, REFPROPERTYKEY Key, CStringW &Value)
+{
+    PROPVARIANT Variant;
+
+    Value.Empty();
+    PropVariantInit(&Variant);
+    if (SUCCEEDED(pStore->GetValue(Key, &Variant)) && Variant.vt == VT_LPWSTR && Variant.pwszVal)
+        Value = Variant.pwszVal;
+    PropVariantClear(&Variant);
+    return !Value.IsEmpty();
+}
+
+static BOOL
+GetTaskbarPinAppId(PCWSTR pszShortcut, CStringW &AppId)
+{
+    AppId.Empty();
+    CComPtr<IShellLinkW> Link;
+    CComPtr<IPersistFile> Persist;
+    CComPtr<IPropertyStore> Store;
+    HRESULT hr = Link.CoCreateInstance(CLSID_ShellLink, IID_IShellLinkW, NULL, CLSCTX_INPROC_SERVER);
+    if (SUCCEEDED(hr))
+        hr = Link->QueryInterface(IID_PPV_ARG(IPersistFile, &Persist));
+    if (SUCCEEDED(hr))
+        hr = Persist->Load(pszShortcut, STGM_READ);
+    if (SUCCEEDED(hr))
+        hr = Link->QueryInterface(IID_PPV_ARG(IPropertyStore, &Store));
+    return SUCCEEDED(hr) && ReadTaskbarPinString(Store, TaskbarPinPkeyAppUserModelId, AppId);
+}
+
+static BOOL
+SplitTaskbarPinCommand(PCWSTR pszCommand, CStringW &Target, CStringW &Arguments)
+{
+    WCHAR szPath[MAX_PATH];
+
+    PCWSTR pszArguments = PathGetArgsW(pszCommand);
+    INT cch = (INT)(pszArguments - pszCommand);
+
+    Target.Empty();
+    Arguments = pszArguments;
+    if (cch <= 0 || cch >= (INT)_countof(szPath))
+        return FALSE;
+    CopyMemory(szPath, pszCommand, cch * sizeof(WCHAR));
+    szPath[cch] = UNICODE_NULL;
+    PathRemoveBlanksW(szPath);
+    PathUnquoteSpacesW(szPath);
+    Target = szPath;
+    return !Target.IsEmpty() && !lstrcmpiW(PathFindExtensionW(Target), L".exe") &&
+           GetFileAttributesW(Target) != INVALID_FILE_ATTRIBUTES;
+}
 
 static BOOL
 NormalizeTaskbarPinPath(PCWSTR pszPath, CStringW &Path)
@@ -355,10 +416,12 @@ EnumTaskbarPinFolder(PCWSTR pszFolder, TASKBAR_PIN_ENUM_PROC pfnCallback, LPARAM
                     else
                     {
                         FILETIME CreationTime;
+                        CStringW AppId;
 
+                        GetTaskbarPinAppId(szShortcut, AppId);
                         CreationTime.dwLowDateTime = pEntry->CreationTime.LowPart;
                         CreationTime.dwHighDateTime = (DWORD)pEntry->CreationTime.HighPart;
-                        if (!pfnCallback(szShortcut, Target, &CreationTime, lParam))
+                        if (!pfnCallback(szShortcut, Target, AppId, &CreationTime, lParam))
                         {
                             CloseHandle(hFolder);
                             return S_OK;
@@ -406,15 +469,17 @@ TaskbarPin_Enum(TASKBAR_PIN_ENUM_PROC pfnCallback, LPARAM lParam)
 struct TASKBAR_PIN_FIND_DATA
 {
     PCWSTR pszTarget;
+    PCWSTR pszAppId;
     CStringW *pShortcut;
     BOOL bFound;
 };
 
 static BOOL CALLBACK
-FindTaskbarPinCallback(PCWSTR pszShortcut, PCWSTR pszTarget, const FILETIME *pCreationTime, LPARAM lParam)
+FindTaskbarPinCallback(PCWSTR pszShortcut, PCWSTR pszTarget, PCWSTR pszAppId, const FILETIME *pCreationTime, LPARAM lParam)
 {
     TASKBAR_PIN_FIND_DATA *pData = (TASKBAR_PIN_FIND_DATA *)lParam;
-    if (lstrcmpiW(pData->pszTarget, pszTarget) != 0)
+    if (pData->pszAppId[0] ? _wcsicmp(pData->pszAppId, pszAppId) != 0
+                           : (pszAppId[0] || lstrcmpiW(pData->pszTarget, pszTarget) != 0))
         return TRUE;
 
     if (pData->pShortcut)
@@ -424,13 +489,15 @@ FindTaskbarPinCallback(PCWSTR pszShortcut, PCWSTR pszTarget, const FILETIME *pCr
 }
 
 HRESULT
-TaskbarPin_Find(PCWSTR pszTarget, CStringW *pShortcut)
+TaskbarPin_Find(PCWSTR pszTarget, CStringW *pShortcut, PCWSTR pszAppId)
 {
     CStringW Target;
-    if (!NormalizeTaskbarPinPath(pszTarget, Target))
+    if (!pszAppId)
+        pszAppId = L"";
+    if (!pszAppId[0] && !NormalizeTaskbarPinPath(pszTarget, Target))
         return E_INVALIDARG;
 
-    TASKBAR_PIN_FIND_DATA Data = { Target, pShortcut, FALSE };
+    TASKBAR_PIN_FIND_DATA Data = { Target, pszAppId, pShortcut, FALSE };
     HRESULT hr = TaskbarPin_Enum(FindTaskbarPinCallback, (LPARAM)&Data);
     return FAILED(hr) ? hr : Data.bFound ? S_OK : S_FALSE;
 }
@@ -558,9 +625,11 @@ SaveTaskbarPinIcon(PCWSTR pszShortcut, HICON hIcon, CStringW &IconPath)
 HRESULT
 TaskbarPin_Create(PCWSTR pszSource, CStringW *pShortcut, HICON hIcon)
 {
-    CStringW Target, Existing, Destination, Folder;
+    CStringW Target, Existing, Destination, Folder, SourceAppId;
     if (!TaskbarPin_IsPinnable(pszSource, &Target))
         return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+    if (lstrcmpiW(PathFindExtensionW(pszSource), L".lnk") == 0)
+        GetTaskbarPinAppId(pszSource, SourceAppId);
     HRESULT hr = GetTaskbarPinFolder(TRUE, Folder);
     if (FAILED(hr))
         return hr;
@@ -568,7 +637,7 @@ TaskbarPin_Create(PCWSTR pszSource, CStringW *pShortcut, HICON hIcon)
     hr = Lock.Acquire(Folder);
     if (FAILED(hr))
         return hr;
-    hr = TaskbarPin_Find(Target, &Existing);
+    hr = TaskbarPin_Find(Target, &Existing, SourceAppId);
     if (FAILED(hr))
         return hr;
     if (hr == S_OK)
@@ -634,7 +703,7 @@ TaskbarPin_Create(PCWSTR pszSource, CStringW *pShortcut, HICON hIcon)
 }
 
 HRESULT
-TaskbarPin_Remove(PCWSTR pszTarget)
+TaskbarPin_Remove(PCWSTR pszTarget, PCWSTR pszAppId)
 {
     if (TaskbarPin_IsDisabled())
         return HRESULT_FROM_WIN32(ERROR_ACCESS_DISABLED_BY_POLICY);
@@ -646,7 +715,7 @@ TaskbarPin_Remove(PCWSTR pszTarget)
     hr = Lock.Acquire(Folder);
     if (FAILED(hr))
         return hr;
-    while ((hr = TaskbarPin_Find(pszTarget, &Shortcut)) == S_OK)
+    while ((hr = TaskbarPin_Find(pszTarget, &Shortcut, pszAppId)) == S_OK)
     {
         CStringW IconPath;
         TaskbarPin_GetOwnedIconPath(Shortcut, IconPath);
@@ -658,6 +727,163 @@ TaskbarPin_Remove(PCWSTR pszTarget)
         Shortcut.Empty();
     }
     return FAILED(hr) ? hr : S_OK;
+}
+
+BOOL
+TaskbarPin_GetRelaunch(HWND hWnd, CStringW &Command, CStringW &Name, BOOL *pbPrevented)
+{
+    CComPtr<IPropertyStore> Store;
+    PROPVARIANT Variant;
+    BOOL bPrevent = FALSE;
+
+    Command.Empty();
+    Name.Empty();
+    if (pbPrevented)
+        *pbPrevented = FALSE;
+    if (FAILED(SHGetPropertyStoreForWindow(hWnd, IID_PPV_ARGS(&Store))))
+        return FALSE;
+    PropVariantInit(&Variant);
+    if (SUCCEEDED(Store->GetValue(TaskbarPinPkeyPreventPinning, &Variant)) && Variant.vt == VT_BOOL)
+        bPrevent = Variant.boolVal != VARIANT_FALSE;
+    PropVariantClear(&Variant);
+    if (pbPrevented)
+        *pbPrevented = bPrevent;
+    if (bPrevent || !ReadTaskbarPinString(Store, TaskbarPinPkeyRelaunchCommand, Command) ||
+        !ReadTaskbarPinString(Store, TaskbarPinPkeyRelaunchDisplayNameResource, Name))
+    {
+        Command.Empty();
+        Name.Empty();
+        return FALSE;
+    }
+    if (Name[0] == L'@')
+    {
+        WCHAR szName[MAX_PATH];
+        if (SUCCEEDED(SHLoadIndirectString(Name, szName, _countof(szName), NULL)))
+            Name = szName;
+    }
+    return TRUE;
+}
+
+HRESULT
+TaskbarPin_LaunchCommand(PCWSTR pszCommand, HANDLE *phProcess)
+{
+    CStringW Target, Arguments, CommandLine;
+
+    if (!phProcess)
+        return E_POINTER;
+    *phProcess = NULL;
+    if (!SplitTaskbarPinCommand(pszCommand, Target, Arguments))
+        return HRESULT_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
+    CommandLine = pszCommand;
+    STARTUPINFOW Startup = { sizeof(Startup) };
+    PROCESS_INFORMATION Process = {};
+    BOOL Started = CreateProcessW(Target, CommandLine.GetBuffer(), NULL, NULL, FALSE, 0, NULL, NULL, &Startup, &Process);
+    DWORD Error = Started ? ERROR_SUCCESS : GetLastError();
+    CommandLine.ReleaseBuffer();
+    if (!Started)
+        return Error ? HRESULT_FROM_WIN32(Error) : E_FAIL;
+    CloseHandle(Process.hThread);
+    *phProcess = Process.hProcess;
+    return S_OK;
+}
+
+HRESULT
+TaskbarPin_CreateRelaunch(PCWSTR pszCommand, PCWSTR pszName, PCWSTR pszAppId, CStringW *pShortcut, HICON hIcon)
+{
+    CStringW Name = pszName, Target, Arguments, Existing, Destination, Folder, IconPath, SavedTarget, SavedAppId;
+
+    if (TaskbarPin_IsDisabled())
+        return HRESULT_FROM_WIN32(ERROR_ACCESS_DISABLED_BY_POLICY);
+    if (!pszAppId || !pszAppId[0] || !pszCommand || !SplitTaskbarPinCommand(pszCommand, Target, Arguments))
+        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+    HRESULT hr = GetTaskbarPinFolder(TRUE, Folder);
+    if (FAILED(hr))
+        return hr;
+    CTaskbarPinLock Lock;
+    hr = Lock.Acquire(Folder);
+    if (FAILED(hr))
+        return hr;
+    hr = TaskbarPin_Find(NULL, &Existing, pszAppId);
+    if (FAILED(hr))
+        return hr;
+    if (hr == S_OK)
+    {
+        if (pShortcut)
+            *pShortcut = Existing;
+        return S_OK;
+    }
+
+    INT cchName = Name.GetLength();
+    PWSTR pszBuffer = Name.GetBuffer();
+    for (INT i = 0; i < cchName; ++i)
+    {
+        if (wcschr(L"\\/:*?\"<>|", pszBuffer[i]) || pszBuffer[i] < L' ')
+            pszBuffer[i] = L'_';
+    }
+    Name.ReleaseBuffer(cchName);
+    Name.Trim(L" .");
+    if (Name.IsEmpty())
+        Name = PathFindFileNameW(Target);
+    hr = ChooseTaskbarPinDestination(Name + L".lnk", Target, Destination);
+    if (FAILED(hr))
+        return hr;
+
+    CComPtr<IShellLinkW> Link;
+    CComPtr<IPropertyStore> Store;
+    CComPtr<IPersistFile> Persist;
+    hr = Link.CoCreateInstance(CLSID_ShellLink, IID_IShellLinkW, NULL, CLSCTX_INPROC_SERVER);
+    if (SUCCEEDED(hr))
+        hr = Link->SetPath(Target);
+    if (SUCCEEDED(hr))
+        hr = Link->SetArguments(Arguments);
+    if (SUCCEEDED(hr))
+    {
+        WCHAR szWorking[MAX_PATH];
+        if (SUCCEEDED(StringCchCopyW(szWorking, _countof(szWorking), Target)) && PathRemoveFileSpecW(szWorking))
+            Link->SetWorkingDirectory(szWorking);
+        hr = Link->QueryInterface(IID_PPV_ARG(IPropertyStore, &Store));
+    }
+    if (SUCCEEDED(hr))
+    {
+        PROPVARIANT Variant;
+        PropVariantInit(&Variant);
+        Variant.vt = VT_LPWSTR;
+        Variant.pwszVal = const_cast<PWSTR>(pszAppId);
+        hr = Store->SetValue(TaskbarPinPkeyAppUserModelId, Variant);
+    }
+    if (SUCCEEDED(hr))
+        hr = Store->Commit();
+    if (SUCCEEDED(hr))
+        hr = Link->QueryInterface(IID_PPV_ARG(IPersistFile, &Persist));
+    if (SUCCEEDED(hr))
+        hr = Persist->Save(Destination, TRUE);
+    if (FAILED(hr))
+    {
+        DeleteFileW(Destination);
+        return hr;
+    }
+
+    if (hIcon)
+        hr = SaveTaskbarPinIcon(Destination, hIcon, IconPath);
+    if (SUCCEEDED(hr) &&
+        (!TaskbarPin_ResolveTarget(Destination, SavedTarget) || SavedTarget.CompareNoCase(Target) != 0 ||
+         !GetTaskbarPinAppId(Destination, SavedAppId) || SavedAppId.CompareNoCase(pszAppId) != 0))
+    {
+        hr = HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    }
+    if (FAILED(hr))
+    {
+        DeleteFileW(Destination);
+        if (!IconPath.IsEmpty())
+            DeleteFileW(IconPath);
+        return hr;
+    }
+
+    StampTaskbarPin(Destination);
+    SHChangeNotify(SHCNE_CREATE, SHCNF_PATHW | SHCNF_FLUSHNOWAIT, Destination, NULL);
+    if (pShortcut)
+        *pShortcut = Destination;
+    return S_OK;
 }
 
 #define TASKBAR_PIN_ORDER_KEY   L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Taskband"
