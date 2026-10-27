@@ -227,6 +227,21 @@ HRESULT WINAPI CShellItem::BindToHandler(IBindCtx *pbc, REFGUID rbhid, REFIID ri
             return ret;
         return psf_parent->BindToObject(ILFindLastID(m_pidl), pbc, riid, ppvOut);
     }
+    else if (IsEqualGUID(rbhid, BHID_Storage) || IsEqualGUID(rbhid, BHID_Stream))
+    {
+        CComPtr<IShellFolder> psf_parent;
+        if (_ILIsDesktop(m_pidl))
+        {
+            ret = SHGetDesktopFolder(&psf_parent);
+            if (FAILED(ret))
+                return ret;
+            return psf_parent->QueryInterface(riid, ppvOut);
+        }
+        ret = get_parent_shellfolder(&psf_parent);
+        if (FAILED(ret))
+            return ret;
+        return psf_parent->BindToStorage(ILFindLastID(m_pidl), pbc, riid, ppvOut);
+    }
     else if (IsEqualGUID(rbhid, BHID_ThumbnailHandler))
     {
         CComPtr<IShellFolder> psf_parent;
