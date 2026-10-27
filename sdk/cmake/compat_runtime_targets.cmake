@@ -250,6 +250,7 @@ set(COMPAT_RUNTIME_MODULES
     resutils
     riched20
     riched32
+    rometadata
     rpcrt4
     rsaenh
     rstrtmgr
