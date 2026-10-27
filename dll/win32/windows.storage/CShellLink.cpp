@@ -2344,6 +2344,22 @@ HRESULT CShellLink::SetTargetFromPIDLOrPath(LPCITEMIDLIST pidl, LPCWSTR pszFile)
         pszFile = szPath;
     }
 
+    WIN32_FIND_DATAW wfd = {};
+    WCHAR szTarget[MAX_PATH];
+    if (m_pPidl && SHGetPathFromIDListW(m_pPidl, szTarget))
+    {
+        HANDLE hFind = FindFirstFileW(szTarget, &wfd);
+        if (hFind != INVALID_HANDLE_VALUE)
+            FindClose(hFind);
+        else
+            ZeroMemory(&wfd, sizeof(wfd));
+    }
+    m_Header.dwFileAttributes = wfd.dwFileAttributes;
+    m_Header.ftCreationTime = wfd.ftCreationTime;
+    m_Header.ftLastAccessTime = wfd.ftLastAccessTime;
+    m_Header.ftLastWriteTime = wfd.ftLastWriteTime;
+    m_Header.nFileSizeLow = wfd.nFileSizeLow;
+
     /* Update the cached path (for link info) */
     ShellLink_GetVolumeInfo(pszFile, &volume);
 
