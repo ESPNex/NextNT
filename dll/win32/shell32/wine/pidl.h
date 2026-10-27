@@ -150,12 +150,6 @@ static inline BYTE _ILGetType(LPCITEMIDLIST pidl)
     return pidl && pidl->mkid.cb >= 3 ? pidl->mkid.abID[0] : 0;
 }
 
-static inline BYTE _ILGetFSType(LPCITEMIDLIST pidl)
-{
-    const BYTE type = _ILGetType(pidl);
-    return (type & PT_FOLDERTYPEMASK) == PT_FS ? type : 0;
-}
-
 #pragma pack(push, 1)
 typedef BYTE PIDLTYPE;
 
@@ -259,6 +253,15 @@ typedef struct tagPIDLDATA
 	}u;
 } PIDLDATA, *LPPIDLDATA;
 #pragma pack(pop)
+
+static inline BYTE _ILGetFSType(LPCITEMIDLIST pidl)
+{
+    const BYTE type = _ILGetType(pidl);
+    if ((type & PT_FOLDERTYPEMASK) != PT_FS ||
+        pidl->mkid.cb < FIELD_OFFSET(SHITEMID, abID) + FIELD_OFFSET(PIDLDATA, u.file.szNames) + sizeof(CHAR))
+        return 0;
+    return type;
+}
 
 /*
  * getting special values from simple pidls
