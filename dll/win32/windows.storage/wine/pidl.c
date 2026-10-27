@@ -4263,6 +4263,34 @@ HRESULT WINAPI SHGetNameFromIDList(PCIDLIST_ABSOLUTE pidl, SIGDN sigdnName, PWST
             break;
 
         case SIGDN_URL:
+        {
+            WCHAR path[MAX_PATH];
+            DWORD len = 3 * MAX_PATH;
+
+            if (!SHGetPathFromIDListW(pidl, path))
+            {
+                ret = E_NOTIMPL;
+                break;
+            }
+            *ppszName = CoTaskMemAlloc(len * sizeof(WCHAR));
+            if (!*ppszName)
+            {
+                ret = E_OUTOFMEMORY;
+                break;
+            }
+            ret = UrlCreateFromPathW(path, *ppszName, &len, 0);
+            if (FAILED(ret))
+            {
+                CoTaskMemFree(*ppszName);
+                *ppszName = NULL;
+            }
+            else
+            {
+                ret = S_OK;
+            }
+            break;
+        }
+
         default:
             FIXME("Unsupported SIGDN %x\n", sigdnName);
             ret = E_FAIL;
