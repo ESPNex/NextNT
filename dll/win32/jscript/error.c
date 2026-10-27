@@ -398,7 +398,14 @@ HRESULT throw_error(script_ctx_t *ctx, HRESULT error, const WCHAR *str)
     reset_ei(ei);
     ei->error = error;
     if(str)
+#ifdef __REACTOS__
+    {
         ei->message = format_error_message(error, str);
+        ei->resource_message = ei->message != NULL;
+    }
+#else
+        ei->message = format_error_message(error, str);
+#endif
     return DISP_E_EXCEPTION;
 }
 
@@ -414,6 +421,12 @@ void handle_dispatch_exception(script_ctx_t *ctx, EXCEPINFO *ei)
         ctx->ei->source = jsstr_alloc_len(ei->bstrSource, SysStringLen(ei->bstrSource));
     if(ei->bstrDescription)
         ctx->ei->message = jsstr_alloc_len(ei->bstrDescription, SysStringLen(ei->bstrDescription));
+#ifdef __REACTOS__
+    ctx->ei->host_info = TRUE;
+    if(ei->bstrHelpFile)
+        ctx->ei->help_file = jsstr_alloc_len(ei->bstrHelpFile, SysStringLen(ei->bstrHelpFile));
+    ctx->ei->help_context = ei->dwHelpContext;
+#endif
     SysFreeString(ei->bstrSource);
     SysFreeString(ei->bstrDescription);
     SysFreeString(ei->bstrHelpFile);
@@ -430,7 +443,14 @@ void set_error_location(jsexcept_t *ei, bytecode_t *code, unsigned loc, unsigned
             ei->source = jsstr_alloc_len(res, len);
         }
         if(!ei->message)
+#ifdef __REACTOS__
+        {
             ei->message = format_error_message(ei->error, NULL);
+            ei->resource_message = ei->message != NULL;
+        }
+#else
+            ei->message = format_error_message(ei->error, NULL);
+#endif
     }
 
     TRACE("source %s in %s\n", debugstr_w(code->source + loc), debugstr_w(code->source));

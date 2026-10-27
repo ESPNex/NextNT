@@ -256,6 +256,13 @@ static HRESULT WINAPI JScriptError_GetExceptionInfo(IActiveScriptError *iface, E
         jsstr_to_bstr(This->ei.source, &excepinfo->bstrSource);
     if(This->ei.message)
         jsstr_to_bstr(This->ei.message, &excepinfo->bstrDescription);
+#ifdef __REACTOS__
+    if(This->ei.help_file)
+        jsstr_to_bstr(This->ei.help_file, &excepinfo->bstrHelpFile);
+    excepinfo->dwHelpContext = This->ei.help_context;
+    if(!This->ei.host_info && !This->ei.resource_message)
+        excepinfo->wReserved = LOWORD(GetUserDefaultLCID());
+#endif
     return S_OK;
 }
 
@@ -335,6 +342,15 @@ void reset_ei(jsexcept_t *ei)
         jsstr_release(ei->line);
         ei->line = NULL;
     }
+#ifdef __REACTOS__
+    if(ei->help_file) {
+        jsstr_release(ei->help_file);
+        ei->help_file = NULL;
+    }
+    ei->help_context = 0;
+    ei->host_info = FALSE;
+    ei->resource_message = FALSE;
+#endif
 }
 
 void enter_script(script_ctx_t *ctx, jsexcept_t *ei)

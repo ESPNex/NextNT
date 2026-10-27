@@ -1228,7 +1228,11 @@ static void set_error_value(script_ctx_t *ctx, jsval_t value)
     ei->valid_value = TRUE;
     ei->value = value;
 
+#ifdef __REACTOS__
+    if(is_object_instance(value) && (obj = to_jsdisp(get_object(value))) && is_class(obj, JSCLASS_ERROR)) {
+#else
     if(is_object_instance(value) && (obj = to_jsdisp(get_object(value)))) {
+#endif
         UINT32 number;
         jsstr_t *str;
         jsval_t v;

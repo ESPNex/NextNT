@@ -267,6 +267,12 @@ struct _jsexcept_t {
 
     BOOL enter_notified;
     jsexcept_t *prev;
+#ifdef __REACTOS__
+    BOOL host_info;
+    BOOL resource_message;
+    jsstr_t *help_file;
+    DWORD help_context;
+#endif
 };
 
 void enter_script(script_ctx_t*,jsexcept_t*);
