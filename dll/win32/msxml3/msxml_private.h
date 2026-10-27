@@ -220,6 +220,9 @@ struct domdoc_properties
     bool normalize_attribute_values;
     int max_element_depth;
     IUri *uri;
+#ifdef __REACTOS__
+    bool free_threaded;
+#endif
 };
 
 struct domnode

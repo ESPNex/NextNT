@@ -1433,6 +1433,9 @@ static struct domdoc_properties* domdoc_properties_clone(struct domdoc_propertie
         pcopy->uri = properties->uri;
         if (pcopy->uri)
             IUri_AddRef(pcopy->uri);
+#ifdef __REACTOS__
+        pcopy->free_threaded = properties->free_threaded;
+#endif
     }
 
     return pcopy;

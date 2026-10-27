@@ -206,6 +206,20 @@ static HRESULT WINAPI xsltemplate_putref_stylesheet( IXSLTemplate *iface,
         return S_OK;
     }
 
+#ifdef __REACTOS__
+    {
+        struct domnode *obj = get_node_obj(node);
+
+        if (obj)
+        {
+            struct domnode *doc = obj->owner ? obj->owner : obj;
+
+            if (!doc->properties || !doc->properties->free_threaded)
+                return E_FAIL;
+        }
+    }
+
+#endif
     /* FIXME: test for document type */
     xsltemplate_set_node(This, node);
 

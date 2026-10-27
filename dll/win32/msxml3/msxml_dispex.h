@@ -148,6 +148,9 @@ static inline HRESULT return_bstrn(const WCHAR *value, int len, BSTR *p)
 }
 
 extern HRESULT dom_document_create(MSXML_VERSION class_version, void **document);
+#ifdef __REACTOS__
+extern HRESULT dom_freethreaded_document_create(MSXML_VERSION class_version, void **document);
+#endif
 
 typedef struct bsc_t bsc_t;
 

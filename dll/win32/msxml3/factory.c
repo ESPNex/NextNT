@@ -335,7 +335,11 @@ HRESULT WINAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, void **ppv )
              IsEqualCLSID( rclsid, &CLSID_FreeThreadedDOMDocument40 ) ||
              IsEqualCLSID( rclsid, &CLSID_FreeThreadedDOMDocument60 ))
     {
+#ifdef __REACTOS__
+        return DOMClassFactory_Create(rclsid, riid, ppv, dom_freethreaded_document_create);
+#else
         return DOMClassFactory_Create(rclsid, riid, ppv, dom_document_create);
+#endif
     }
     else if( IsEqualCLSID( rclsid, &CLSID_SAXXMLReader) ||
              IsEqualCLSID( rclsid, &CLSID_SAXXMLReader30 ) ||

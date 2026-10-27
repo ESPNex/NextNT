@@ -2463,6 +2463,29 @@ HRESULT dom_document_create(MSXML_VERSION version, void **obj)
     return hr;
 }
 
+#ifdef __REACTOS__
+HRESULT dom_freethreaded_document_create(MSXML_VERSION version, void **obj)
+{
+    struct domnode *node;
+    HRESULT hr;
+
+    TRACE("%d, %p.\n", version, obj);
+
+    *obj = NULL;
+
+    if (FAILED(hr = domnode_create(NODE_DOCUMENT, NULL, 0, NULL, 0, NULL, &node)))
+        return hr;
+    node->properties = domdoc_create_properties(version);
+    node->properties->free_threaded = true;
+
+    hr = create_domdoc(node, (IUnknown **)obj);
+    if (FAILED(hr))
+        domnode_destroy_tree(node);
+
+    return hr;
+}
+#endif
+
 HRESULT create_domdoc(struct domnode *node, IUnknown **obj)
 {
     domdoc *object;
