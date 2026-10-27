@@ -1172,8 +1172,13 @@ co_IntSetActiveWindow(
 
    if (WndPrev)
    {
+      BOOL Deactivated;
+
       if (ThreadQueue == gpqForeground) gpqForegroundPrev = ThreadQueue;
-      if (!co_IntSendDeactivateMessages(UserHMGetHandle(WndPrev), hWnd, TRUE)) return FALSE;
+      Wnd->state |= WNDS_BEINGACTIVATED;
+      Deactivated = co_IntSendDeactivateMessages(UserHMGetHandle(WndPrev), hWnd, TRUE);
+      Wnd->state &= ~WNDS_BEINGACTIVATED;
+      if (!Deactivated) return FALSE;
    }
 
    WndPrev = ThreadQueue->spwndActive; // Again keep to save changing active.
