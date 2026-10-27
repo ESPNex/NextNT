@@ -270,6 +270,54 @@ LxGetDword(
     return In[0] | ((ULONG)In[1] << 8) | ((ULONG)In[2] << 16) | ((ULONG)In[3] << 24);
 }
 
+static const ULONG LxIconSizes[] = { 16, 20, 24, 32, 40, 48, 64, 256 };
+
+typedef struct _LX_ICON_PLANE
+{
+    ULONG Width;
+    const UCHAR *Pixels;
+    PUCHAR Owned;
+} LX_ICON_PLANE, *PLX_ICON_PLANE;
+
+static
+VOID
+LxScaleIcon(
+    _In_reads_bytes_(SourceWidth * SourceWidth * 4) const UCHAR *Source,
+    _In_ ULONG SourceWidth,
+    _Out_writes_bytes_(Width * Width * 4) PUCHAR Target,
+    _In_ ULONG Width)
+{
+    ULONG64 Area = (ULONG64)SourceWidth * SourceWidth;
+    ULONG X, Y, SourceX, SourceY, Channel;
+
+    for (Y = 0; Y < Width; Y++)
+    {
+        ULONG Top = Y * SourceWidth, Bottom = (Y + 1) * SourceWidth;
+
+        for (X = 0; X < Width; X++)
+        {
+            ULONG Left = X * SourceWidth, Right = (X + 1) * SourceWidth;
+            ULONG64 Sum[4] = { 0, 0, 0, 0 };
+
+            for (SourceY = Top / Width; SourceY * Width < Bottom; SourceY++)
+            {
+                ULONG Height = min(Bottom, (SourceY + 1) * Width) - max(Top, SourceY * Width);
+
+                for (SourceX = Left / Width; SourceX * Width < Right; SourceX++)
+                {
+                    ULONG Span = min(Right, (SourceX + 1) * Width) - max(Left, SourceX * Width);
+                    const UCHAR *Pixel = Source + ((SIZE_T)SourceY * SourceWidth + SourceX) * 4;
+
+                    for (Channel = 0; Channel < 4; Channel++)
+                        Sum[Channel] += (ULONG64)Pixel[Channel] * Span * Height;
+                }
+            }
+            for (Channel = 0; Channel < 4; Channel++)
+                Target[((SIZE_T)Y * Width + X) * 4 + Channel] = (UCHAR)((Sum[Channel] + Area / 2) / Area);
+        }
+    }
+}
+
 PUCHAR
 LxBuildIcon(
     _In_ PLX_WIN_ICON_MSG Message,
@@ -277,10 +325,12 @@ LxBuildIcon(
     _Out_ PULONG IconSize)
 {
     PLX_WIN_ICON_IMAGE Images = (PLX_WIN_ICON_IMAGE)(Message + 1);
+    LX_ICON_PLANE Planes[16 + ARRAYSIZE(LxIconSizes)];
+    ULONG PlaneCount = 0, SourceCount;
     const UCHAR *Pixels;
-    ULONG64 Needed, Total;
-    PUCHAR Icon, Entry, Image;
-    ULONG Index, Offset;
+    ULONG64 Needed, Total, PixelOffset = 0;
+    PUCHAR Icon = NULL, Entry, Image;
+    ULONG Index, Offset, Plane;
 
     *IconSize = 0;
     if ((Message->Count == 0) || (Message->Count > 16) ||
@@ -289,37 +339,75 @@ LxBuildIcon(
         return NULL;
     }
     Needed = sizeof(*Message) + (ULONG64)Message->Count * sizeof(LX_WIN_ICON_IMAGE);
-    Total = 6 + 16ULL * Message->Count;
+    Pixels = (const UCHAR *)(Images + Message->Count);
     for (Index = 0; Index < Message->Count; Index++)
     {
         ULONG Width = Images[Index].Width;
 
         if ((Width == 0) || (Width > LX_MAX_ICON) || (Images[Index].Height != Width))
             return NULL;
-        Needed += (ULONG64)Width * Width * 4;
-        Total += sizeof(BITMAPINFOHEADER) + (ULONG64)Width * Width * 4 + (ULONG64)((Width + 31) / 32) * 4 * Width;
+        Planes[PlaneCount].Width = Width;
+        Planes[PlaneCount].Pixels = Pixels + PixelOffset;
+        Planes[PlaneCount].Owned = NULL;
+        PlaneCount++;
+        PixelOffset += (ULONG64)Width * Width * 4;
     }
-    if ((Needed > Size) || (Total > LX_CACHE_MAX_FILE))
+    if (Needed + PixelOffset > Size)
         return NULL;
 
-    Icon = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (SIZE_T)Total);
+    SourceCount = PlaneCount;
+    for (Index = 0; Index < ARRAYSIZE(LxIconSizes); Index++)
+    {
+        ULONG Width = LxIconSizes[Index], Best = LX_NO_ENTRY;
+
+        for (Plane = 0; Plane < PlaneCount; Plane++)
+        {
+            if (Planes[Plane].Width == Width)
+                break;
+        }
+        if (Plane < PlaneCount)
+            continue;
+        for (Plane = 0; Plane < SourceCount; Plane++)
+        {
+            if ((Planes[Plane].Width > Width) && ((Best == LX_NO_ENTRY) || (Planes[Plane].Width < Planes[Best].Width)))
+                Best = Plane;
+        }
+        if (Best == LX_NO_ENTRY)
+            continue;
+        Planes[PlaneCount].Owned = HeapAlloc(GetProcessHeap(), 0, (SIZE_T)Width * Width * 4);
+        if (Planes[PlaneCount].Owned == NULL)
+            continue;
+        LxScaleIcon(Planes[Best].Pixels, Planes[Best].Width, Planes[PlaneCount].Owned, Width);
+        Planes[PlaneCount].Width = Width;
+        Planes[PlaneCount].Pixels = Planes[PlaneCount].Owned;
+        PlaneCount++;
+    }
+
+    Total = 6 + 16ULL * PlaneCount;
+    for (Plane = 0; Plane < PlaneCount; Plane++)
+    {
+        ULONG Width = Planes[Plane].Width;
+
+        Total += sizeof(BITMAPINFOHEADER) + (ULONG64)Width * Width * 4 + (ULONG64)((Width + 31) / 32) * 4 * Width;
+    }
+    if (Total <= LX_CACHE_MAX_FILE)
+        Icon = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (SIZE_T)Total);
     if (Icon == NULL)
-        return NULL;
+        goto Cleanup;
     LxPutWord(Icon, 0);
     LxPutWord(Icon + 2, 1);
-    LxPutWord(Icon + 4, Message->Count);
-    Offset = 6 + 16 * Message->Count;
-    Pixels = (const UCHAR *)(Images + Message->Count);
-    for (Index = 0; Index < Message->Count; Index++)
+    LxPutWord(Icon + 4, (USHORT)PlaneCount);
+    Offset = 6 + 16 * PlaneCount;
+    for (Plane = 0; Plane < PlaneCount; Plane++)
     {
-        ULONG Width = Images[Index].Width;
+        ULONG Width = Planes[Plane].Width;
         ULONG MaskStride = ((Width + 31) / 32) * 4;
         ULONG Bytes = sizeof(BITMAPINFOHEADER) + Width * Width * 4 + MaskStride * Width;
         BITMAPINFOHEADER Header;
         PUCHAR Mask;
         ULONG Row, Column;
 
-        Entry = Icon + 6 + 16 * Index;
+        Entry = Icon + 6 + 16 * Plane;
         Entry[0] = (UCHAR)(Width >= 256 ? 0 : Width);
         Entry[1] = (UCHAR)(Width >= 256 ? 0 : Width);
         LxPutWord(Entry + 4, 1);
@@ -340,7 +428,7 @@ LxBuildIcon(
         Mask = Image + sizeof(Header) + Width * Width * 4;
         for (Row = 0; Row < Width; Row++)
         {
-            const UCHAR *Source = Pixels + (SIZE_T)(Width - 1 - Row) * Width * 4;
+            const UCHAR *Source = Planes[Plane].Pixels + (SIZE_T)(Width - 1 - Row) * Width * 4;
             PUCHAR Target = Image + sizeof(Header) + (SIZE_T)Row * Width * 4;
 
             for (Column = 0; Column < Width; Column++)
@@ -364,9 +452,12 @@ LxBuildIcon(
             }
         }
         Offset += Bytes;
-        Pixels += (SIZE_T)Width * Width * 4;
     }
     *IconSize = Offset;
+
+Cleanup:
+    for (Plane = SourceCount; Plane < PlaneCount; Plane++)
+        HeapFree(GetProcessHeap(), 0, Planes[Plane].Owned);
     return Icon;
 }
 
