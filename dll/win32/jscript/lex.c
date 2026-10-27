@@ -450,8 +450,17 @@ HRESULT parse_decimal(const WCHAR **iter, const WCHAR *end, double *ret)
         }
 
         while(ptr < end && is_digit(*ptr)) {
+#ifdef __REACTOS__
+            int digit = *ptr++ - '0';
+
+            if(e > (INT_MAX - digit) / 10)
+                e = INT_MAX;
+            else
+                e = e*10 + digit;
+#else
             if(e > INT_MAX/10 || (e = e*10 + *ptr++ - '0')<0)
                 e = INT_MAX;
+#endif
         }
         e *= sign;
 
