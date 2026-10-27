@@ -694,7 +694,11 @@ static int next_token(parser_ctx_t *ctx, unsigned *loc, void *lval)
             switch(*ctx->ptr) {
             case '-':  /* -- or --> */
                 ctx->ptr++;
+#ifdef __REACTOS__
+                if(ctx->nl && ctx->ptr < ctx->end && *ctx->ptr == '>') {
+#else
                 if(ctx->is_html && ctx->nl && ctx->ptr < ctx->end && *ctx->ptr == '>') {
+#endif
                     ctx->ptr++;
                     return tHTMLCOMMENT;
                 }
