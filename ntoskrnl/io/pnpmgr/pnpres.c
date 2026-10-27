@@ -635,7 +635,6 @@ IopReleaseMessageVector(ULONG Vector)
 #endif
 }
 
-static
 VOID
 IopReleaseNewMessageVectors(PCM_RESOURCE_LIST ResourceList, ULONG OldCount)
 {
