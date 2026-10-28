@@ -2383,7 +2383,7 @@ UDFCleanUpFile__(
                                 DirNdx2->FileInfo = Parallel ?
                                     ParFileInfo : FileInfo->PrevLinkedFile;
                             }
-                            ASSERT(!DirNdx2->FileInfo->RefCount);
+                            ASSERT(!DirNdx2->FileInfo || !DirNdx2->FileInfo->RefCount);
                         }
                     }
                 }
@@ -2413,7 +2413,7 @@ UDFCleanUpFile__(
                 if(DirNdx2 && (DirNdx2->FileInfo == FileInfo)) {
                     DirNdx2->FileInfo =
                         Parallel ? ParFileInfo : NULL;
-                    ASSERT(!DirNdx2->FileInfo->RefCount);
+                    ASSERT(!DirNdx2->FileInfo || !DirNdx2->FileInfo->RefCount);
                 }
             }
         }

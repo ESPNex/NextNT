@@ -2917,7 +2917,7 @@ UDFCheckTrackFPAddressing(
     user_data = 0;
     for(i=0; i<=0x200; i++) {
 
-        RtlZeroMemory(pLLR_in, sizeof(pLLR_in)+16);
+        RtlZeroMemory(pLLR_in, sizeof(*pLLR_in)+16);
         pLLR_in->ExpectedBlkType = ReadCd_BlkType_Any;
         pLLR_in->LBA = i;
         pLLR_in->NumOfBlocks = 1;

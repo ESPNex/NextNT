@@ -102,8 +102,8 @@ UDFDirIndexFree(
     uint32 k;
     PDIR_INDEX_ITEM* FrameList;
 
-    FrameList = (PDIR_INDEX_ITEM*)(hDirNdx+1);
     if(!hDirNdx) return;
+    FrameList = (PDIR_INDEX_ITEM*)(hDirNdx+1);
     for(k=0; k<hDirNdx->FrameCount; k++, FrameList++) {
         if(*FrameList) MyFreePool__(*FrameList);
     }

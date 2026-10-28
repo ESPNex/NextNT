@@ -2751,6 +2751,7 @@ WCacheFlushAllRW(
         block_array = Cache->FrameList[frame].Frame;
         if(!block_array) {
             BrutePoint();
+            continue;
         }
         ASSERT(!WCacheGetModFlag(block_array, Lba-firstLba));
     }

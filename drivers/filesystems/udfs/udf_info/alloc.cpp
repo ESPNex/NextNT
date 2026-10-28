@@ -1149,7 +1149,7 @@ UDFGetTotalSpace(
             s+=Vcb->Partitions[i].PartitionLen;
         }
     } else {
-        if(s & ((int64)1 << 63)) s=0;  /* FIXME ReactOS this shift value was 64, which is undefiened behavior. */
+        if(s < 0) s=0;  /* FIXME ReactOS this shift value was 64, which is undefiened behavior. */
         s= Vcb->LastPossibleLBA - Vcb->Partitions[0].PartitionRoot;
     }
     return s >> Vcb->LB2B_Bits;
