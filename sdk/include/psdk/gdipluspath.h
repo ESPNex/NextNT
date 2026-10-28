@@ -790,7 +790,7 @@ class PathGradientBrush : public Brush
     Status
     GetCenterColor(Color *color) const
     {
-        if (color != NULL)
+        if (color == NULL)
             return SetStatus(InvalidParameter);
 
         ARGB argb;
