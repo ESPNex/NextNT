@@ -38,6 +38,8 @@ static const GUID SelfTestMsrGuid =
 { 0xE3C9E316, 0x0B5C, 0x4DB8, { 0x81, 0x7D, 0xF9, 0x2D, 0xF0, 0x02, 0x15, 0xAE } };
 static const GUID SelfTestBasicDataGuid =
 { 0xEBD0A0A2, 0xB9E5, 0x4433, { 0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7 } };
+static const GUID SelfTestRecoveryGuid =
+{ 0xDE94BBA4, 0x06D1, 0x4D40, { 0xA1, 0x6A, 0xBF, 0xD5, 0x01, 0x79, 0xD6, 0xAC } };
 
 static VOID
 SelfTestLog(
@@ -818,6 +820,264 @@ SelfTestFindTargets(
     return Count;
 }
 
+static BOOLEAN
+SelfTestSectorIsZero(
+    _In_ ULONG DiskNumber,
+    _In_ ULONGLONG Offset,
+    _In_ ULONG SectorSize,
+    _In_ BOOLEAN Clear)
+{
+    WCHAR Path[64];
+    HANDLE Disk;
+    PBYTE Sector;
+    LARGE_INTEGER Position;
+    DWORD Read = 0;
+    ULONG Index;
+    BOOLEAN Zero = FALSE;
+
+    StringCchPrintfW(Path, ARRAYSIZE(Path), L"\\\\.\\PhysicalDrive%lu", DiskNumber);
+    Disk = CreateFileW(Path, GENERIC_READ | (Clear ? GENERIC_WRITE : 0), FILE_SHARE_READ | FILE_SHARE_WRITE,
+                       NULL, OPEN_EXISTING, 0, NULL);
+    if (Disk == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+    Sector = VirtualAlloc(NULL, SectorSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    Position.QuadPart = Offset;
+    if (Sector && Clear &&
+        (!SetFilePointerEx(Disk, Position, NULL, FILE_BEGIN) ||
+         !WriteFile(Disk, Sector, SectorSize, &Read, NULL) || Read != SectorSize))
+    {
+        VirtualFree(Sector, 0, MEM_RELEASE);
+        Sector = NULL;
+    }
+    if (Sector && SetFilePointerEx(Disk, Position, NULL, FILE_BEGIN) &&
+        ReadFile(Disk, Sector, SectorSize, &Read, NULL) && Read == SectorSize)
+    {
+        for (Index = 0; Index < SectorSize && Sector[Index] == 0; Index++);
+        Zero = (Index == SectorSize);
+    }
+
+    if (Sector)
+        VirtualFree(Sector, 0, MEM_RELEASE);
+    CloseHandle(Disk);
+    return Zero;
+}
+
+static BOOLEAN
+SelfTestPartitionOffset(
+    _In_ PCWSTR DeviceName,
+    _Out_ PULONGLONG Offset)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    IO_STATUS_BLOCK IoStatusBlock;
+    UNICODE_STRING Path;
+    PARTITION_INFORMATION_EX Info;
+    HANDLE Handle;
+    NTSTATUS Status;
+
+    *Offset = 0;
+    RtlInitUnicodeString(&Path, DeviceName);
+    InitializeObjectAttributes(&ObjectAttributes, &Path, OBJ_CASE_INSENSITIVE, NULL, NULL);
+    Status = NtOpenFile(&Handle, SYNCHRONIZE | FILE_READ_ATTRIBUTES, &ObjectAttributes, &IoStatusBlock,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE, FILE_SYNCHRONOUS_IO_NONALERT);
+    if (!NT_SUCCESS(Status))
+        return FALSE;
+
+    Status = NtDeviceIoControlFile(Handle, NULL, NULL, NULL, &IoStatusBlock, IOCTL_DISK_GET_PARTITION_INFO_EX,
+                                   NULL, 0, &Info, sizeof(Info));
+    NtClose(Handle);
+    if (!NT_SUCCESS(Status))
+        return FALSE;
+
+    *Offset = Info.StartingOffset.QuadPart;
+    return TRUE;
+}
+
+static VOID
+SelfTestAlongside(
+    _In_ PSELFTEST_CONTEXT Context,
+    _In_ ULONG DiskNumber)
+{
+    static const struct
+    {
+        const GUID *Type;
+        ULONGLONG Start;
+        ULONGLONG Length;
+        ULONGLONG Attributes;
+        PCWSTR Name;
+    } Plan[] =
+    {
+        { &SelfTestEfiGuid, 1, 100, 0, L"EFI system partition" },
+        { &SelfTestMsrGuid, 101, 16, 0, L"Microsoft reserved partition" },
+        { &SelfTestBasicDataGuid, 117, 1024, 0, L"Basic data partition" },
+        { &SelfTestRecoveryGuid, 2165, 512,
+          GPT_BASIC_DATA_ATTRIBUTE_NO_DRIVE_LETTER | GPT_ATTRIBUTE_PLATFORM_REQUIRED, L"Basic data partition" },
+    };
+    const ULONGLONG GapStart = (117 + 1024) * SELFTEST_MEGABYTE;
+    const ULONGLONG GapEnd = 2165 * SELFTEST_MEGABYTE;
+    PDRIVE_LAYOUT_INFORMATION_EX Layout;
+    CREATE_DISK CreateDisk;
+    WCHAR Path[64];
+    WCHAR FileSystem[MAX_PATH];
+    HANDLE Disk;
+    DWORD Returned;
+    DWORD Size = FIELD_OFFSET(DRIVE_LAYOUT_INFORMATION_EX, PartitionEntry[ARRAYSIZE(Plan)]);
+    PDISKENTRY DiskEntry;
+    PPARTENTRY Region = NULL;
+    PPARTENTRY SystemPart = NULL;
+    PLIST_ENTRY Entry;
+    DISK_GEOMETRY Geometry;
+    ULONGLONG Offset = 0;
+    ULONG Index, Found;
+    BOOL Ok;
+
+    Layout = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, Size);
+    StringCchPrintfW(Path, ARRAYSIZE(Path), L"\\\\.\\PhysicalDrive%lu", DiskNumber);
+    Disk = CreateFileW(Path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                       NULL, OPEN_EXISTING, 0, NULL);
+    Ok = (Layout != NULL && Disk != INVALID_HANDLE_VALUE);
+    if (Ok)
+    {
+        ZeroMemory(&CreateDisk, sizeof(CreateDisk));
+        CreateDisk.PartitionStyle = PARTITION_STYLE_GPT;
+        CreateDisk.Gpt.MaxPartitionCount = 128;
+        Ok = DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &Geometry, sizeof(Geometry), &Returned, NULL) &&
+             SUCCEEDED(CoCreateGuid(&CreateDisk.Gpt.DiskId)) &&
+             DeviceIoControl(Disk, IOCTL_DISK_CREATE_DISK, &CreateDisk, sizeof(CreateDisk), NULL, 0, &Returned, NULL);
+    }
+    if (Disk != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(Disk);
+        Disk = INVALID_HANDLE_VALUE;
+    }
+    Ok = Ok &&
+         SelfTestSectorIsZero(DiskNumber, Plan[2].Start * SELFTEST_MEGABYTE, Geometry.BytesPerSector, TRUE) &&
+         SelfTestSectorIsZero(DiskNumber, Plan[3].Start * SELFTEST_MEGABYTE, Geometry.BytesPerSector, TRUE);
+    if (Ok)
+    {
+        Disk = CreateFileW(Path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                           NULL, OPEN_EXISTING, 0, NULL);
+        Ok = (Disk != INVALID_HANDLE_VALUE);
+    }
+    if (Ok)
+    {
+        Layout->PartitionStyle = PARTITION_STYLE_GPT;
+        Layout->PartitionCount = ARRAYSIZE(Plan);
+        Layout->Gpt.DiskId = CreateDisk.Gpt.DiskId;
+        Layout->Gpt.MaxPartitionCount = 128;
+        for (Index = 0; Index < ARRAYSIZE(Plan) && Ok; Index++)
+        {
+            PPARTITION_INFORMATION_EX Partition = &Layout->PartitionEntry[Index];
+
+            Partition->PartitionStyle = PARTITION_STYLE_GPT;
+            Partition->StartingOffset.QuadPart = Plan[Index].Start * SELFTEST_MEGABYTE;
+            Partition->PartitionLength.QuadPart = Plan[Index].Length * SELFTEST_MEGABYTE;
+            Partition->RewritePartition = TRUE;
+            Partition->Gpt.PartitionType = *Plan[Index].Type;
+            Partition->Gpt.Attributes = Plan[Index].Attributes;
+            StringCchCopyW(Partition->Gpt.Name, ARRAYSIZE(Partition->Gpt.Name), Plan[Index].Name);
+            Ok = SUCCEEDED(CoCreateGuid(&Partition->Gpt.PartitionId));
+        }
+    }
+    if (Ok)
+    {
+        Ok = DeviceIoControl(Disk, IOCTL_DISK_SET_DRIVE_LAYOUT_EX, Layout, Size, NULL, 0, &Returned, NULL);
+        DeviceIoControl(Disk, IOCTL_DISK_UPDATE_PROPERTIES, NULL, 0, NULL, 0, &Returned, NULL);
+    }
+    if (Disk != INVALID_HANDLE_VALUE)
+        CloseHandle(Disk);
+    if (Layout)
+        HeapFree(GetProcessHeap(), 0, Layout);
+    if (!SelfTestCheck(Context, Ok, L"W.windows", L"disk %lu laid out as ESP, MSR, Windows, gap, Recovery", DiskNumber))
+        return;
+
+    if (!SelfTestRefreshList(Context))
+    {
+        SelfTestCheck(Context, FALSE, L"W.list", L"CreatePartitionList failed");
+        return;
+    }
+
+    DiskEntry = SelfTestFindDisk(Context->List, DiskNumber);
+    for (Entry = DiskEntry ? DiskEntry->PrimaryPartListHead.Flink : NULL;
+         DiskEntry && Entry != &DiskEntry->PrimaryPartListHead;
+         Entry = Entry->Flink)
+    {
+        PPARTENTRY PartEntry = CONTAINING_RECORD(Entry, PARTENTRY, ListEntry);
+        ULONGLONG Start = PartEntry->StartSector.QuadPart * DiskEntry->BytesPerSector;
+
+        if (!PartEntry->IsPartitioned && Start >= GapStart && Start < GapEnd)
+        {
+            Region = PartEntry;
+            break;
+        }
+    }
+    if (!SelfTestCheck(Context, Region != NULL, L"W.region", L"free region between Windows and Recovery"))
+        return;
+
+    if (!SelfTestCheck(Context, CreatePartition(Context->List, Region, 0, 0) && Region->Volume != NULL,
+                       L"W.create", L"data partition in the gap"))
+    {
+        return;
+    }
+
+    Ok = InitSystemPartition(Context->List, Region, &SystemPart, SelfTestFsVolCallback, Context);
+    if (!SelfTestCheck(Context,
+                       Ok && SystemPart != NULL && SystemPart->Volume != NULL &&
+                       SystemPart->DiskEntry->DiskNumber == DiskNumber &&
+                       SystemPart->StartSector.QuadPart * DiskEntry->BytesPerSector == SELFTEST_MEGABYTE,
+                       L"W.sysinit", L"existing ESP reused"))
+    {
+        return;
+    }
+
+    Context->SystemVolume = SystemPart->Volume;
+    Context->InstallVolume = Region->Volume;
+    if (!SelfTestCheck(Context,
+                       FsVolCommitOpsQueue(Context->List, Context->SystemVolume, Context->InstallVolume,
+                                           SelfTestFsVolCallback, Context),
+                       L"W.commit", L"FsVolCommitOpsQueue"))
+    {
+        return;
+    }
+
+    Layout = SelfTestReadLayout(DiskNumber);
+    if (!SelfTestCheck(Context, Layout != NULL && Layout->PartitionCount == ARRAYSIZE(Plan) + 1,
+                       L"W.layout", L"%lu partitions", Layout ? Layout->PartitionCount : 0))
+    {
+        if (Layout)
+            HeapFree(GetProcessHeap(), 0, Layout);
+        return;
+    }
+
+    for (Index = 0; Index < ARRAYSIZE(Plan); Index++)
+    {
+        for (Found = 0; Found < Layout->PartitionCount; Found++)
+        {
+            if ((ULONGLONG)Layout->PartitionEntry[Found].StartingOffset.QuadPart == Plan[Index].Start * SELFTEST_MEGABYTE)
+                break;
+        }
+        SelfTestCheck(Context,
+                      Found < Layout->PartitionCount && Layout->PartitionEntry[Found].PartitionNumber == Index + 1,
+                      L"W.numbers", L"partition at %I64u MB keeps number %lu (now %lu)", Plan[Index].Start, Index + 1,
+                      Found < Layout->PartitionCount ? Layout->PartitionEntry[Found].PartitionNumber : 0);
+    }
+    HeapFree(GetProcessHeap(), 0, Layout);
+
+    SelfTestCheck(Context,
+                  SelfTestPartitionOffset(Context->InstallVolume->Info.DeviceName, &Offset) &&
+                  Offset == Region->StartSector.QuadPart * DiskEntry->BytesPerSector,
+                  L"W.target", L"install volume %s starts at %I64u", Context->InstallVolume->Info.DeviceName, Offset);
+    FileSystem[0] = UNICODE_NULL;
+    SelfTestCheck(Context,
+                  SelfTestGetFileSystem(Context->InstallVolume->Info.DeviceName, FileSystem, ARRAYSIZE(FileSystem)) &&
+                  _wcsicmp(FileSystem, L"NTFS") == 0,
+                  L"W.format", L"install volume file system %s", FileSystem);
+    SelfTestCheck(Context, SelfTestSectorIsZero(DiskNumber, Plan[2].Start * SELFTEST_MEGABYTE, DiskEntry->BytesPerSector, FALSE),
+                  L"W.untouched", L"Windows partition boot sector");
+    SelfTestCheck(Context, SelfTestSectorIsZero(DiskNumber, Plan[3].Start * SELFTEST_MEGABYTE, DiskEntry->BytesPerSector, FALSE),
+                  L"W.untouched", L"Recovery partition boot sector");
+}
+
 ULONG
 RunSetupSelfTest(
     _In_ PSETUPDATA SetupData)
@@ -889,6 +1149,15 @@ RunSetupSelfTest(
 
     for (Index = Count; Index > 0; Index--)
         SelfTestClearDisk(&Context, Targets[Index - 1]);
+
+    SelfTestAlongside(&Context, Targets[0]);
+    if (Context.List)
+    {
+        DestroyPartitionList(Context.List);
+        Context.List = NULL;
+        SetupData->PartitionList = NULL;
+    }
+    SelfTestClearDisk(&Context, Targets[0]);
 
 Done:
     SelfTestLog(&Context, L"SETUPTEST END pass %lu fail %lu", Context.Passes, Context.Failures);
