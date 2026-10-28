@@ -2791,7 +2791,7 @@ NtIsProcessInJob(
     {
         /* Reference the process object by handle */
         Status = ObReferenceObjectByHandle(ProcessHandle,
-                                           PROCESS_QUERY_INFORMATION,
+                                           PROCESS_QUERY_LIMITED_INFORMATION,
                                            PsProcessType,
                                            PreviousMode,
                                            (PVOID *)&Process,
