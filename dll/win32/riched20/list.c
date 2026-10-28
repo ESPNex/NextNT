@@ -133,6 +133,10 @@ void ME_DestroyDisplayItem(ME_DisplayItem *item)
 ME_DisplayItem *ME_MakeDI(ME_DIType type)
 {
   ME_DisplayItem *item = calloc(1, sizeof(*item));
+#ifdef __REACTOS__
+  if (!item)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
   item->type = type;
   item->prev = item->next = NULL;

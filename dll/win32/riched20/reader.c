@@ -2623,6 +2623,10 @@ RTFFlushCPOutputBuffer(RTF_Info *info)
 {
         int bufferMax = info->dwCPOutputCount * 2 * sizeof(WCHAR);
         WCHAR *buffer = malloc(bufferMax);
+#ifdef __REACTOS__
+        if (!buffer)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         int length;
 
         length = MultiByteToWideChar(info->codePage, 0, info->cpOutputBuffer,

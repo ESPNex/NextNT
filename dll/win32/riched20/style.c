@@ -121,6 +121,10 @@ BOOL cf2w_to_cfany(CHARFORMAT2W *to, const CHARFORMAT2W *from)
 ME_Style *ME_MakeStyle(CHARFORMAT2W *style)
 {
   ME_Style *s = malloc(sizeof(*s));
+#ifdef __REACTOS__
+  if (!s)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
   assert(style->cbSize == sizeof(CHARFORMAT2W));
   s->fmt = *style;

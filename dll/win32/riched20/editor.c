@@ -255,6 +255,10 @@ BOOL me_debug = FALSE;
 
 static ME_TextBuffer *ME_MakeText(void) {
   ME_TextBuffer *buf = malloc(sizeof(*buf));
+#ifdef __REACTOS__
+  if (!buf)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   ME_DisplayItem *p1 = ME_MakeDI(diTextStart);
   ME_DisplayItem *p2 = ME_MakeDI(diTextEnd);
   
@@ -616,6 +620,10 @@ void ME_RTFParAttrHook(RTF_Info *info)
       while (info->rtfParam > info->nestingLevel)
       {
         RTFTable *tableDef = calloc(1, sizeof(*tableDef));
+#ifdef __REACTOS__
+        if (!tableDef)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         tableDef->parent = info->tableDef;
         info->tableDef = tableDef;
 
@@ -651,6 +659,10 @@ void ME_RTFParAttrHook(RTF_Info *info)
         if (!info->tableDef)
             info->tableDef = calloc(1, sizeof(*info->tableDef));
         tableDef = info->tableDef;
+#ifdef __REACTOS__
+        if (!tableDef)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         RTFFlushOutputBuffer(info);
         if (tableDef->row_start && tableDef->row_start->nFlags & MEPF_ROWEND)
           para = para_next( tableDef->row_start );
@@ -3092,6 +3104,10 @@ static BOOL ME_ShowContextMenu(ME_TextEditor *editor, int x, int y)
 ME_TextEditor *ME_MakeEditor(ITextHost *texthost, BOOL bEmulateVersion10)
 {
   ME_TextEditor *ed = malloc( sizeof(*ed) );
+#ifdef __REACTOS__
+  if (!ed)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   int i;
   LONG selbarwidth;
   HRESULT hr;
@@ -4384,6 +4400,10 @@ LRESULT editor_handle_message( ME_TextEditor *editor, UINT msg, WPARAM wParam,
 
         dwBufLen = ImmGetCompositionStringW(hIMC, dwIndex, NULL, 0);
         lpCompStr = malloc(dwBufLen + sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!lpCompStr)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         ImmGetCompositionStringW(hIMC, dwIndex, lpCompStr, dwBufLen);
         lpCompStr[dwBufLen/sizeof(WCHAR)] = 0;
 #ifndef __REACTOS__

@@ -164,6 +164,10 @@ static HRESULT EnumFormatImpl_Create(const FORMATETC *fmtetc, UINT fmtetc_cnt,
     TRACE("\n");
 
     ret = malloc(sizeof(EnumFormatImpl));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     ret->IEnumFORMATETC_iface.lpVtbl = &VT_EnumFormatImpl;
     ret->ref = 1;
     ret->cur = 0;
@@ -406,6 +410,10 @@ HRESULT ME_GetDataObject(ME_TextEditor *editor, const ME_Cursor *start, int nCha
     TRACE("(%p,%d,%d)\n", editor, ME_GetCursorOfs(start), nChars);
 
     obj = malloc(sizeof(DataObjectImpl));
+#ifdef __REACTOS__
+    if (!obj)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     if(cfRTF == 0)
         cfRTF = RegisterClipboardFormatA("Rich Text Format");
 
