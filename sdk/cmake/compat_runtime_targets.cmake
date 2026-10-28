@@ -334,6 +334,7 @@ set(COMPAT_RUNTIME_MODULES
     wlanapi
     wldap32
     wmi
+    wmiutils
     wmvcore
     ws2_32
     ws2help

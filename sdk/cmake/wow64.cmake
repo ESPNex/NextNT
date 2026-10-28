@@ -297,7 +297,8 @@ add_cd_file(TARGET wow64_i386 FILE ${WOW64_I386_FILES} DESTINATION reactos/SysWO
 
 _wow64_get_target_file(wbemprox _wow64_wbemprox_file)
 _wow64_get_target_file(wbemdisp _wow64_wbemdisp_file)
-add_cd_file(TARGET wow64_i386 FILE ${_wow64_wbemprox_file} ${_wow64_wbemdisp_file} DESTINATION reactos/SysWOW64/wbem FOR all)
+_wow64_get_target_file(wmiutils _wow64_wmiutils_file)
+add_cd_file(TARGET wow64_i386 FILE ${_wow64_wbemprox_file} ${_wow64_wbemdisp_file} ${_wow64_wmiutils_file} DESTINATION reactos/SysWOW64/wbem FOR all)
 
 if(WOW64_I386_OPTIONAL_FILES)
     add_cd_file(TARGET wow64_i386 FILE ${WOW64_I386_OPTIONAL_FILES}
