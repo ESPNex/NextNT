@@ -12,6 +12,7 @@ Firefox.x64
 Steam.x64
 
 [Apps.arm64]
+FFmpeg.arm64
 VCRedist.arm64
 VCRedist.x64
 VCRedist.x86
@@ -44,6 +45,15 @@ Type = "exe"
 Space = 20
 Arguments = "/install /quiet /norestart"
 Signer = "Microsoft Corporation"
+
+[FFmpeg.arm64]
+Name = "FFmpeg codecs for H.264 and AAC (ARM64)"
+Url = "https://github.com/LiberNT/LiberNT/releases/download/ffmpeg-n8.1.3-1/libernt-ffmpeg-n8.1.3-1-arm64.msi"
+File = "libernt-ffmpeg-n8.1.3-1-arm64.msi"
+Type = "msi"
+Space = 4
+Sha256 = "bd5e871ca61186a13684e4e0970720b7fd928f6e5236cbc11d6a9f2fca0bf7aa"
+Detect = "%11%\avcodec-62.dll"
 
 [VCRedist.arm64]
 Name = "Microsoft Visual C++ Redistributable (ARM64)"
