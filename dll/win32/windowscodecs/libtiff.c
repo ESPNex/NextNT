@@ -1178,6 +1178,10 @@ static HRESULT CDECL tiff_decoder_get_metadata_blocks(struct decoder *iface,
     result.reader_clsid = CLSID_WICIfdMetadataReader;
 
     *blocks = malloc(sizeof(**blocks));
+#ifdef __REACTOS__
+    if (!*blocks)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     **blocks = result;
 
     return S_OK;
