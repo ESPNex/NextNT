@@ -163,6 +163,10 @@ static BOOL DP_CreateDirectPlay2( LPVOID lpDP )
   This->dp2->spData.dwSPVersion = DPSP_MAJORVERSION;
 
   This->dp2->spData.lpCB = calloc( 1, sizeof( *This->dp2->spData.lpCB ) );
+#ifdef __REACTOS__
+  if (!This->dp2->spData.lpCB)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   This->dp2->spData.lpCB->dwSize = sizeof( *This->dp2->spData.lpCB );
   This->dp2->spData.lpCB->dwVersion = DPSP_MAJORVERSION;
 
@@ -176,6 +180,10 @@ static BOOL DP_CreateDirectPlay2( LPVOID lpDP )
   /* Setup lobby provider information */
   This->dp2->dplspData.dwSPVersion = DPSP_MAJORVERSION;
   This->dp2->dplspData.lpCB = calloc( 1, sizeof( *This->dp2->dplspData.lpCB ) );
+#ifdef __REACTOS__
+  if (!This->dp2->dplspData.lpCB)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   This->dp2->dplspData.lpCB->dwSize = sizeof(  *This->dp2->dplspData.lpCB );
 
   if( FAILED( dplobbysp_create( &IID_IDPLobbySP, (void**)&This->dp2->dplspData.lpISP, This ) )
@@ -3113,6 +3121,10 @@ static HRESULT DP_IF_EnumSessions( IDirectPlayImpl *This, DPSESSIONDESC2 *sdesc,
     }
 
     data = calloc( 1, sizeof( *data ) );
+#ifdef __REACTOS__
+    if (!data)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     /* FIXME: need to kill the thread on object deletion */
     data->lpSpData  = &This->dp2->spData;
     data->requestGuid = sdesc->guidApplication;

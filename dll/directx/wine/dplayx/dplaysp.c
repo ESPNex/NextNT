@@ -646,6 +646,10 @@ static HRESULT WINAPI IDirectPlaySPImpl_SetSPData( IDirectPlaySP *iface, void *l
 #endif
 
   lpSpData = malloc( dwDataSize );
+#ifdef __REACTOS__
+  if (!lpSpData)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   CopyMemory( lpSpData, lpData, dwDataSize );
 
   /* If we have data already allocated, free it and replace it */
