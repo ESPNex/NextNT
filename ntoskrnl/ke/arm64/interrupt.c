@@ -23,6 +23,8 @@
 extern ULONG FASTCALL HalGetInterruptSource(VOID);
 extern VOID NTAPI HalPerformEndOfInterrupt(VOID);
 extern BOOLEAN NTAPI HalArm64ProfileSample(ULONG Increment);
+extern VOID NTAPI HalArm64ConnectInterrupt(ULONG Vector);
+extern VOID NTAPI HalArm64DisconnectInterrupt(ULONG Vector);
 
 /* Simple vector→KINTERRUPT chain table (SPIs + optional LPIs) */
 #define ARM64_LPI_BASE 8192
@@ -1394,6 +1396,7 @@ KiArm64ConnectInterrupt(IN PKINTERRUPT Interrupt)
         InitializeListHead(&Interrupt->InterruptListEntry);
         KeMemoryBarrier();
         Table[Vector] = Interrupt;
+        HalArm64ConnectInterrupt(Vector);
         if ((Vector >= 32 && KiArm64IntConnections[Vector] != 0) ||
             HalEnableSystemInterrupt(Vector, Interrupt->Irql, Interrupt->Mode))
         {
@@ -1401,7 +1404,10 @@ KiArm64ConnectInterrupt(IN PKINTERRUPT Interrupt)
             Interrupt->Connected = TRUE;
         }
         else
+        {
+            HalArm64DisconnectInterrupt(Vector);
             KiArm64SynchronizeInterruptChain(Interrupt, FALSE);
+        }
     }
     else
     {
@@ -1467,6 +1473,7 @@ KeDisconnectInterrupt(IN PKINTERRUPT Interrupt)
         ASSERT(Head == Interrupt);
         ASSERT(KiArm64IntConnections[Vector] != 0);
         KiArm64IntConnections[Vector]--;
+        HalArm64DisconnectInterrupt(Vector);
         if (Vector < 32 || KiArm64IntConnections[Vector] == 0)
             HalDisableSystemInterrupt(Vector, Interrupt->Irql);
     }
