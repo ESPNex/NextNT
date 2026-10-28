@@ -1,0 +1,454 @@
+diff --git a/mcs/class/System.ServiceProcess/System.ServiceProcess/ServiceController.cs b/mcs/class/System.ServiceProcess/System.ServiceProcess/ServiceController.cs
+index 9cecbce11f..d5f1c2be6f 100644
+--- a/mcs/class/System.ServiceProcess/System.ServiceProcess/ServiceController.cs
++++ b/mcs/class/System.ServiceProcess/System.ServiceProcess/ServiceController.cs
+@@ -269,7 +269,8 @@ public void Continue ()
+ 
+ 		protected override void Dispose (bool disposing)
+ 		{
+-			_impl.Dispose (disposing);
++			if (_impl != null)
++				_impl.Dispose (disposing);
+ 			base.Dispose (disposing);
+ 		}
+ 
+diff --git a/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Certificate2.cs b/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Certificate2.cs
+index dfe76a55a0..4937440e57 100644
+--- a/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Certificate2.cs
++++ b/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Certificate2.cs
+@@ -552,41 +552,48 @@ public override string ToString (bool verbose)
+ 
+ 		public override void Import (byte[] rawData)
+ 		{
+-			base.Import (rawData);
++			Import (rawData, (string) null, X509KeyStorageFlags.DefaultKeySet);
+ 		}
+ 
+ 		public override void Import (byte[] rawData, string password, X509KeyStorageFlags keyStorageFlags)
+ 		{
+-			base.Import (rawData, password, keyStorageFlags);
++			using (var safePasswordHandle = new SafePasswordHandle (password))
++				ImportHandle (X509Helper.Import (rawData, safePasswordHandle, keyStorageFlags));
+ 		}
+ 
+ 		[CLSCompliantAttribute (false)]
+ 		public override void Import (byte[] rawData, SecureString password, X509KeyStorageFlags keyStorageFlags)
+ 		{
+-			base.Import (rawData, password, keyStorageFlags);
++			using (var safePasswordHandle = new SafePasswordHandle (password))
++				ImportHandle (X509Helper.Import (rawData, safePasswordHandle, keyStorageFlags));
+ 		}
+ 
+ 		public override void Import (string fileName)
+ 		{
+-			base.Import (fileName);
++			Import (File.ReadAllBytes (fileName), (string) null, X509KeyStorageFlags.DefaultKeySet);
+ 		}
+ 
+ 		public override void Import (string fileName, string password, X509KeyStorageFlags keyStorageFlags)
+ 		{
+-			base.Import (fileName, password, keyStorageFlags);
++			Import (File.ReadAllBytes (fileName), password, keyStorageFlags);
+ 		}
+ 
+ 		[CLSCompliantAttribute (false)]
+ 		public override void Import (string fileName, SecureString password, X509KeyStorageFlags keyStorageFlags)
+ 		{
+-			base.Import (fileName, password, keyStorageFlags);
++			Import (File.ReadAllBytes (fileName), password, keyStorageFlags);
+ 		}
+ 
+ 		#region Mono Implementation
+ 
+ 		public bool Verify ()
+ 		{
++#if MX_WINCRYPTO
++			using (var chain = new X509Chain (false))
++				return chain.Build (this);
++#else
+ 			return Impl.Verify (this);
++#endif
+ 		}
+ 
+ 		#endregion
+diff --git a/mcs/class/System/System.Security.Cryptography.X509Certificates/X509ChainImplWin32.cs b/mcs/class/System/System.Security.Cryptography.X509Certificates/X509ChainImplWin32.cs
+new file mode 100644
+index 0000000000..5a825be023
+--- /dev/null
++++ b/mcs/class/System/System.Security.Cryptography.X509Certificates/X509ChainImplWin32.cs
+@@ -0,0 +1,350 @@
++//
++// X509ChainImplWin32.cs: X509Chain built by the Windows certificate chain engine
++//
++// Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
++//
++// Permission is hereby granted, free of charge, to any person obtaining
++// a copy of this software and associated documentation files (the
++// "Software"), to deal in the Software without restriction, including
++// without limitation the rights to use, copy, modify, merge, publish,
++// distribute, sublicense, and/or sell copies of the Software, and to
++// permit persons to whom the Software is furnished to do so, subject to
++// the following conditions:
++//
++// The above copyright notice and this permission notice shall be
++// included in all copies or substantial portions of the Software.
++//
++// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
++// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
++// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++//
++
++#if SECURITY_DEP && MX_WINCRYPTO
++
++using System.Collections.Generic;
++using System.Runtime.InteropServices;
++
++namespace System.Security.Cryptography.X509Certificates
++{
++	internal class X509ChainImplWin32 : X509ChainImpl
++	{
++		const uint X509_ASN_ENCODING = 0x00000001;
++		const uint PKCS_7_ASN_ENCODING = 0x00010000;
++		const uint CERT_STORE_ADD_ALWAYS = 4;
++		const uint CERT_STORE_CREATE_NEW_FLAG = 0x00002000;
++		const uint USAGE_MATCH_TYPE_AND = 0;
++		const uint CERT_CHAIN_REVOCATION_CHECK_END_CERT = 0x10000000;
++		const uint CERT_CHAIN_REVOCATION_CHECK_CHAIN = 0x20000000;
++		const uint CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT = 0x40000000;
++		const uint CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY = 0x80000000;
++		static readonly IntPtr CERT_STORE_PROV_MEMORY = (IntPtr) 2;
++		static readonly IntPtr CERT_CHAIN_POLICY_BASE = (IntPtr) 1;
++		static readonly IntPtr HCCE_CURRENT_USER = IntPtr.Zero;
++		static readonly IntPtr HCCE_LOCAL_MACHINE = (IntPtr) 1;
++
++		static readonly X509ChainStatusFlags[] KnownFlags = {
++			X509ChainStatusFlags.NotTimeValid,
++			X509ChainStatusFlags.NotTimeNested,
++			X509ChainStatusFlags.Revoked,
++			X509ChainStatusFlags.NotSignatureValid,
++			X509ChainStatusFlags.NotValidForUsage,
++			X509ChainStatusFlags.UntrustedRoot,
++			X509ChainStatusFlags.RevocationStatusUnknown,
++			X509ChainStatusFlags.Cyclic,
++			X509ChainStatusFlags.InvalidExtension,
++			X509ChainStatusFlags.InvalidPolicyConstraints,
++			X509ChainStatusFlags.InvalidBasicConstraints,
++			X509ChainStatusFlags.InvalidNameConstraints,
++			X509ChainStatusFlags.HasNotSupportedNameConstraint,
++			X509ChainStatusFlags.HasNotDefinedNameConstraint,
++			X509ChainStatusFlags.HasNotPermittedNameConstraint,
++			X509ChainStatusFlags.HasExcludedNameConstraint,
++			X509ChainStatusFlags.PartialChain,
++			X509ChainStatusFlags.CtlNotTimeValid,
++			X509ChainStatusFlags.CtlNotSignatureValid,
++			X509ChainStatusFlags.CtlNotValidForUsage,
++			X509ChainStatusFlags.OfflineRevocation,
++			X509ChainStatusFlags.NoIssuanceChainPolicy,
++		};
++
++		static readonly X509ChainStatus[] Empty = new X509ChainStatus [0];
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_TRUST_STATUS {
++			public uint dwErrorStatus;
++			public uint dwInfoStatus;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_ENHKEY_USAGE {
++			public uint cUsageIdentifier;
++			public IntPtr rgpszUsageIdentifier;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_USAGE_MATCH {
++			public uint dwType;
++			public CERT_ENHKEY_USAGE Usage;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_CHAIN_PARA {
++			public uint cbSize;
++			public CERT_USAGE_MATCH RequestedUsage;
++			public CERT_USAGE_MATCH RequestedIssuancePolicy;
++			public uint dwUrlRetrievalTimeout;
++			public int fCheckRevocationFreshnessTime;
++			public uint dwRevocationFreshnessTime;
++			public IntPtr pftCacheResync;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_CHAIN_CONTEXT {
++			public uint cbSize;
++			public CERT_TRUST_STATUS TrustStatus;
++			public uint cChain;
++			public IntPtr rgpChain;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_SIMPLE_CHAIN {
++			public uint cbSize;
++			public CERT_TRUST_STATUS TrustStatus;
++			public uint cElement;
++			public IntPtr rgpElement;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_CHAIN_ELEMENT {
++			public uint cbSize;
++			public IntPtr pCertContext;
++			public CERT_TRUST_STATUS TrustStatus;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_CONTEXT {
++			public uint dwCertEncodingType;
++			public IntPtr pbCertEncoded;
++			public uint cbCertEncoded;
++			public IntPtr pCertInfo;
++			public IntPtr hCertStore;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_CHAIN_POLICY_PARA {
++			public uint cbSize;
++			public uint dwFlags;
++			public IntPtr pvExtraPolicyPara;
++		}
++
++		[StructLayout (LayoutKind.Sequential)]
++		struct CERT_CHAIN_POLICY_STATUS {
++			public uint cbSize;
++			public uint dwError;
++			public int lChainIndex;
++			public int lElementIndex;
++			public IntPtr pvExtraPolicyStatus;
++		}
++
++		[DllImport ("crypt32.dll", SetLastError = true)]
++		static extern IntPtr CertCreateCertificateContext (uint dwCertEncodingType, byte[] pbCertEncoded, uint cbCertEncoded);
++
++		[DllImport ("crypt32.dll")]
++		static extern bool CertFreeCertificateContext (IntPtr pCertContext);
++
++		[DllImport ("crypt32.dll", SetLastError = true)]
++		static extern IntPtr CertOpenStore (IntPtr lpszStoreProvider, uint dwEncodingType, IntPtr hCryptProv, uint dwFlags, IntPtr pvPara);
++
++		[DllImport ("crypt32.dll", SetLastError = true)]
++		static extern bool CertAddEncodedCertificateToStore (IntPtr hCertStore, uint dwCertEncodingType, byte[] pbCertEncoded, uint cbCertEncoded, uint dwAddDisposition, IntPtr ppCertContext);
++
++		[DllImport ("crypt32.dll")]
++		static extern bool CertCloseStore (IntPtr hCertStore, uint dwFlags);
++
++		[DllImport ("crypt32.dll", SetLastError = true)]
++		static extern bool CertGetCertificateChain (IntPtr hChainEngine, IntPtr pCertContext, ref long pTime, IntPtr hAdditionalStore, ref CERT_CHAIN_PARA pChainPara, uint dwFlags, IntPtr pvReserved, out IntPtr ppChainContext);
++
++		[DllImport ("crypt32.dll", SetLastError = true)]
++		static extern bool CertVerifyCertificateChainPolicy (IntPtr pszPolicyOID, IntPtr pChainContext, ref CERT_CHAIN_POLICY_PARA pPolicyPara, ref CERT_CHAIN_POLICY_STATUS pPolicyStatus);
++
++		[DllImport ("crypt32.dll")]
++		static extern void CertFreeCertificateChain (IntPtr pChainContext);
++
++		bool machine;
++		X509ChainElementCollection elements;
++		X509ChainPolicy policy;
++		X509ChainStatus[] status;
++		IntPtr chain;
++
++		public X509ChainImplWin32 (bool useMachineContext)
++		{
++			machine = useMachineContext;
++			elements = new X509ChainElementCollection ();
++			policy = new X509ChainPolicy ();
++		}
++
++		public override bool IsValid {
++			get { return true; }
++		}
++
++		public override IntPtr Handle {
++			get { return chain; }
++		}
++
++		public override X509ChainElementCollection ChainElements {
++			get { return elements; }
++		}
++
++		public override X509ChainPolicy ChainPolicy {
++			get { return policy; }
++			set { policy = value; }
++		}
++
++		public override X509ChainStatus[] ChainStatus {
++			get { return status ?? Empty; }
++		}
++
++		public override void AddStatus (X509ChainStatusFlags error)
++		{
++		}
++
++		static X509ChainStatus[] StatusArray (uint error)
++		{
++			var list = new List<X509ChainStatus> ();
++			foreach (var flag in KnownFlags) {
++				if ((error & (uint) flag) != 0)
++					list.Add (new X509ChainStatus (flag));
++			}
++			return list.ToArray ();
++		}
++
++		static IntPtr AllocUsage (OidCollection oids, List<IntPtr> allocations, out uint count)
++		{
++			count = 0;
++			if (oids == null || oids.Count == 0)
++				return IntPtr.Zero;
++			IntPtr array = Marshal.AllocHGlobal (IntPtr.Size * oids.Count);
++			allocations.Add (array);
++			foreach (Oid oid in oids) {
++				IntPtr value = Marshal.StringToHGlobalAnsi (oid.Value);
++				allocations.Add (value);
++				Marshal.WriteIntPtr (array, (int) count * IntPtr.Size, value);
++				count++;
++			}
++			return array;
++		}
++
++		uint RevocationFlags ()
++		{
++			if (policy.RevocationMode == X509RevocationMode.NoCheck)
++				return 0;
++			uint flags = policy.RevocationMode == X509RevocationMode.Offline ? CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY : 0;
++			switch (policy.RevocationFlag) {
++			case X509RevocationFlag.EndCertificateOnly:
++				return flags | CERT_CHAIN_REVOCATION_CHECK_END_CERT;
++			case X509RevocationFlag.EntireChain:
++				return flags | CERT_CHAIN_REVOCATION_CHECK_CHAIN;
++			default:
++				return flags | CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT;
++			}
++		}
++
++		public override bool Build (X509Certificate2 certificate)
++		{
++			if (certificate == null)
++				throw new ArgumentException ("certificate");
++
++			Reset ();
++
++			byte[] raw = certificate.RawData;
++			var allocations = new List<IntPtr> ();
++			IntPtr context = IntPtr.Zero;
++			IntPtr store = IntPtr.Zero;
++			try {
++				context = CertCreateCertificateContext (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, raw, (uint) raw.Length);
++				if (context == IntPtr.Zero)
++					throw new CryptographicException (Marshal.GetLastWin32Error ());
++
++				if (policy.ExtraStore != null && policy.ExtraStore.Count > 0) {
++					store = CertOpenStore (CERT_STORE_PROV_MEMORY, 0, IntPtr.Zero, CERT_STORE_CREATE_NEW_FLAG, IntPtr.Zero);
++					if (store == IntPtr.Zero)
++						throw new CryptographicException (Marshal.GetLastWin32Error ());
++					foreach (X509Certificate2 extra in policy.ExtraStore) {
++						byte[] data = extra.RawData;
++						CertAddEncodedCertificateToStore (store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, data, (uint) data.Length, CERT_STORE_ADD_ALWAYS, IntPtr.Zero);
++					}
++				}
++
++				var para = new CERT_CHAIN_PARA ();
++				para.cbSize = (uint) Marshal.SizeOf (typeof (CERT_CHAIN_PARA));
++				para.RequestedUsage.dwType = USAGE_MATCH_TYPE_AND;
++				para.RequestedUsage.Usage.rgpszUsageIdentifier = AllocUsage (policy.ApplicationPolicy, allocations, out para.RequestedUsage.Usage.cUsageIdentifier);
++				para.RequestedIssuancePolicy.dwType = USAGE_MATCH_TYPE_AND;
++				para.RequestedIssuancePolicy.Usage.rgpszUsageIdentifier = AllocUsage (policy.CertificatePolicy, allocations, out para.RequestedIssuancePolicy.Usage.cUsageIdentifier);
++				para.dwUrlRetrievalTimeout = (uint) Math.Min (policy.UrlRetrievalTimeout.TotalMilliseconds, uint.MaxValue);
++
++				long time = policy.VerificationTime.ToFileTime ();
++				if (!CertGetCertificateChain (machine ? HCCE_LOCAL_MACHINE : HCCE_CURRENT_USER, context, ref time, store, ref para, RevocationFlags (), IntPtr.Zero, out chain))
++					throw new CryptographicException (Marshal.GetLastWin32Error ());
++			} finally {
++				foreach (IntPtr allocation in allocations)
++					Marshal.FreeHGlobal (allocation);
++				if (store != IntPtr.Zero)
++					CertCloseStore (store, 0);
++				if (context != IntPtr.Zero)
++					CertFreeCertificateContext (context);
++			}
++
++			var chainContext = (CERT_CHAIN_CONTEXT) Marshal.PtrToStructure (chain, typeof (CERT_CHAIN_CONTEXT));
++			if (chainContext.cChain > 0) {
++				IntPtr simplePtr = Marshal.ReadIntPtr (chainContext.rgpChain);
++				var simple = (CERT_SIMPLE_CHAIN) Marshal.PtrToStructure (simplePtr, typeof (CERT_SIMPLE_CHAIN));
++				for (int i = 0; i < simple.cElement; i++) {
++					IntPtr elementPtr = Marshal.ReadIntPtr (simple.rgpElement, i * IntPtr.Size);
++					var element = (CERT_CHAIN_ELEMENT) Marshal.PtrToStructure (elementPtr, typeof (CERT_CHAIN_ELEMENT));
++					var cert = (CERT_CONTEXT) Marshal.PtrToStructure (element.pCertContext, typeof (CERT_CONTEXT));
++					byte[] data = new byte [cert.cbCertEncoded];
++					Marshal.Copy (cert.pbCertEncoded, data, 0, data.Length);
++					elements.Add (new X509Certificate2 (data));
++					elements [i].StatusFlags = (X509ChainStatusFlags) element.TrustStatus.dwErrorStatus;
++					elements [i].UncompressFlags ();
++				}
++			}
++			status = StatusArray (chainContext.TrustStatus.dwErrorStatus);
++
++			var policyPara = new CERT_CHAIN_POLICY_PARA ();
++			policyPara.cbSize = (uint) Marshal.SizeOf (typeof (CERT_CHAIN_POLICY_PARA));
++			policyPara.dwFlags = (uint) policy.VerificationFlags;
++			var policyStatus = new CERT_CHAIN_POLICY_STATUS ();
++			policyStatus.cbSize = (uint) Marshal.SizeOf (typeof (CERT_CHAIN_POLICY_STATUS));
++			if (!CertVerifyCertificateChainPolicy (CERT_CHAIN_POLICY_BASE, chain, ref policyPara, ref policyStatus))
++				throw new CryptographicException (Marshal.GetLastWin32Error ());
++			return policyStatus.dwError == 0;
++		}
++
++		public override void Reset ()
++		{
++			status = null;
++			elements.Clear ();
++			if (chain != IntPtr.Zero) {
++				CertFreeCertificateChain (chain);
++				chain = IntPtr.Zero;
++			}
++		}
++
++		protected override void Dispose (bool disposing)
++		{
++			if (chain != IntPtr.Zero) {
++				CertFreeCertificateChain (chain);
++				chain = IntPtr.Zero;
++			}
++			base.Dispose (disposing);
++		}
++	}
++}
++
++#endif
+diff --git a/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Helper2.cs b/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Helper2.cs
+index ecd7f2bb17..97933f1a6c 100644
+--- a/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Helper2.cs
++++ b/mcs/class/System/System.Security.Cryptography.X509Certificates/X509Helper2.cs
+@@ -67,7 +67,11 @@ internal static MX.X509Certificate GetMonoCertificate (X509Certificate2 certific
+ 
+ 		internal static X509ChainImpl CreateChainImpl (bool useMachineContext)
+ 		{
++#if MX_WINCRYPTO
++			return new X509ChainImplWin32 (useMachineContext);
++#else
+ 			return new X509ChainImplMono (useMachineContext);
++#endif
+ 		}
+ 
+ 		public static bool IsValid (X509ChainImpl impl)
+diff --git a/mcs/class/System/win32_net_4_x_System.dll.sources b/mcs/class/System/win32_net_4_x_System.dll.sources
+index 03e6a43bc9..486396e725 100644
+--- a/mcs/class/System/win32_net_4_x_System.dll.sources
++++ b/mcs/class/System/win32_net_4_x_System.dll.sources
+@@ -87,3 +87,4 @@ System.Net.NetworkInformation/Win32UnixFactoryPal.cs
+ ../../../external/corefx/src/System.Net.Security/src/System/Net/Security/NegoState.cs
+ ../../../external/corefx/src/System.Net.Security/src/System/Net/Security/NegotiateStream.cs
+ ../../../external/corefx/src/System.Net.Security/src/System/Net/Security/NegotiateStreamPal.Windows.cs
++System.Security.Cryptography.X509Certificates/X509ChainImplWin32.cs

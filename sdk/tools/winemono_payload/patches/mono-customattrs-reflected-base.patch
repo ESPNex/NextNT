@@ -1,0 +1,115 @@
+diff --git a/mcs/class/corlib/System.Reflection/RuntimeEventInfo.cs b/mcs/class/corlib/System.Reflection/RuntimeEventInfo.cs
+index 2770576edd..8091847a7e 100644
+--- a/mcs/class/corlib/System.Reflection/RuntimeEventInfo.cs
++++ b/mcs/class/corlib/System.Reflection/RuntimeEventInfo.cs
+@@ -204,17 +204,17 @@ public override string ToString ()
+ 
+ 		public override bool IsDefined (Type attributeType, bool inherit)
+ 		{
+-			return MonoCustomAttrs.IsDefined (this, attributeType, inherit);
++			return MonoCustomAttrs.IsDefined (this, attributeType, false);
+ 		}
+ 
+ 		public override object[] GetCustomAttributes( bool inherit)
+ 		{
+-			return MonoCustomAttrs.GetCustomAttributes (this, inherit);
++			return MonoCustomAttrs.GetCustomAttributes (this, false);
+ 		}
+ 
+ 		public override object[] GetCustomAttributes( Type attributeType, bool inherit)
+ 		{
+-			return MonoCustomAttrs.GetCustomAttributes (this, attributeType, inherit);
++			return MonoCustomAttrs.GetCustomAttributes (this, attributeType, false);
+ 		}
+ 
+ 		public override IList<CustomAttributeData> GetCustomAttributesData () {
+diff --git a/mcs/class/corlib/System/MonoCustomAttrs.cs b/mcs/class/corlib/System/MonoCustomAttrs.cs
+index 7bb4716dad..c6cfc46c00 100644
+--- a/mcs/class/corlib/System/MonoCustomAttrs.cs
++++ b/mcs/class/corlib/System/MonoCustomAttrs.cs
+@@ -560,7 +560,7 @@ static PropertyInfo GetBasePropertyDefinition (RuntimePropertyInfo property)
+ 				return null;
+ 
+ 			MethodInfo baseMethod = ((RuntimeMethodInfo)method).GetBaseMethod ();
+-			if (baseMethod != null && baseMethod != method) {
++			if (baseMethod != null && baseMethod.DeclaringType != method.DeclaringType) {
+ 				ParameterInfo[] parameters = property.GetIndexParameters ();
+ 				if (parameters != null && parameters.Length > 0) {
+ 					Type[] paramTypes = new Type[parameters.Length];
+@@ -587,7 +587,7 @@ static EventInfo GetBaseEventDefinition (RuntimeEventInfo evt)
+ 				return null;
+ 
+ 			MethodInfo baseMethod = ((RuntimeMethodInfo)method).GetBaseMethod ();
+-			if (baseMethod != null && baseMethod != method) {
++			if (baseMethod != null && baseMethod.DeclaringType != method.DeclaringType) {
+ 				BindingFlags flags = method.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
+ 				flags |= method.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+ 
+@@ -619,7 +619,7 @@ static ICustomAttributeProvider GetBase (ICustomAttributeProvider obj)
+ 				if (member is MethodInfo) {
+ 					method = (MethodInfo)member;
+ 					MethodInfo bmethod = ((RuntimeMethodInfo)method).GetBaseMethod ();
+-					if (bmethod == method)
++					if (bmethod.DeclaringType == method.DeclaringType)
+ 						return null;
+ 					return bmethod.GetParameters ()[parinfo.Position];
+ 				}
+@@ -634,7 +634,7 @@ static ICustomAttributeProvider GetBase (ICustomAttributeProvider obj)
+ 				return null;
+ 
+ 			MethodInfo baseMethod = ((RuntimeMethodInfo)method).GetBaseMethod ();
+-			if (baseMethod == method)
++			if (baseMethod.DeclaringType == method.DeclaringType)
+ 				return null;
+ 
+ 			return baseMethod;
+diff --git a/mcs/class/referencesource/mscorlib/system/attribute.cs b/mcs/class/referencesource/mscorlib/system/attribute.cs
+index abe544ee02..c7346cec81 100644
+--- a/mcs/class/referencesource/mscorlib/system/attribute.cs
++++ b/mcs/class/referencesource/mscorlib/system/attribute.cs
+@@ -43,44 +43,7 @@ static Attribute[] InternalGetCustomAttributes (EventInfo element, Type type, bo
+ 
+         static Attribute[] InternalParamGetCustomAttributes (ParameterInfo parameter, Type attributeType, bool inherit)
+         {
+-            if (parameter.Member.MemberType != MemberTypes.Method)
+-                return null;
+-
+-            var method = (MethodInfo) parameter.Member;
+-            var definition = method.GetBaseDefinition ();
+-
+-			if (attributeType == null)
+-				attributeType = typeof (Attribute);
+-
+-            if (method == definition)
+-		return (Attribute []) parameter.GetCustomAttributes (attributeType, inherit);
+-
+-            var types = new List<Type> ();
+-            var custom_attributes = new List<Attribute> ();
+-
+-            while (true) {
+-                var param = method.GetParametersInternal () [parameter.Position];
+-                var param_attributes = (Attribute []) param.GetCustomAttributes (attributeType, false);
+-                foreach (var param_attribute in param_attributes) {
+-                    var param_type = param_attribute.GetType ();
+-                    if (types.Contains (param_type))
+-                        continue;
+-
+-                    types.Add (param_type);
+-                    custom_attributes.Add (param_attribute);
+-                }
+-
+-                var base_method = ((RuntimeMethodInfo)method).GetBaseMethod ();
+-                if (base_method == method)
+-                    break;
+-
+-                method = base_method;
+-            }
+-
+-            var attributes = (Attribute []) Array.CreateInstance (attributeType, custom_attributes.Count);
+-            custom_attributes.CopyTo (attributes, 0);
+-
+-            return attributes;
++            return (Attribute []) MonoCustomAttrs.GetCustomAttributes (parameter, attributeType ?? typeof (Attribute), inherit);
+         }
+ 
+         static bool InternalIsDefined (PropertyInfo element, Type attributeType, bool inherit)

@@ -1,0 +1,44 @@
+diff --git a/mcs/class/corlib/System/AppDomain.cs b/mcs/class/corlib/System/AppDomain.cs
+index ed2c28c9ac..8201e08b2e 100644
+--- a/mcs/class/corlib/System/AppDomain.cs
++++ b/mcs/class/corlib/System/AppDomain.cs
+@@ -1321,7 +1321,7 @@ private Assembly DoAssemblyResolve (string name, Assembly requestingAssembly, bo
+ 				del = AssemblyResolve;
+ 
+ 			if (del == null)
+-				return null;
++				return refonly ? null : LoadWindowsRuntimeProjection (name);
+ 			
+ 			/* Prevent infinite recursion */
+ 			Dictionary<string, object> ht;
+@@ -1352,13 +1352,29 @@ private Assembly DoAssemblyResolve (string name, Assembly requestingAssembly, bo
+ 					if (assembly != null)
+ 						return assembly;
+ 				}
+-				return null;
++				return refonly ? null : LoadWindowsRuntimeProjection (name);
+ 			}
+ 			finally {
+ 				ht.Remove (name);
+ 			}
+ 		}
+ 
++		static Assembly LoadWindowsRuntimeProjection (string name)
++		{
++			AssemblyName aname;
++			try {
++				aname = new AssemblyName (name);
++			} catch (ArgumentException) {
++				return null;
++			}
++			if (aname.Name != "Windows" || aname.Version == null || aname.Version != new Version (255, 255, 255, 255))
++				return null;
++			string path = Path.Combine (Path.GetDirectoryName (typeof (object).Assembly.Location), "Windows.dll");
++			if (!File.Exists (path))
++				return null;
++			return Assembly.LoadFrom (path);
++		}
++
+ #if MONO_FEATURE_SRE
+ 		internal Assembly DoTypeBuilderResolve (TypeBuilder tb)
+ 		{

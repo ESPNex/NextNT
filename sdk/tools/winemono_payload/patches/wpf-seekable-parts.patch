@@ -1,0 +1,19 @@
+diff --git a/src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/ZipWrappingStream.cs b/src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/ZipWrappingStream.cs
+index 2f8d8517..de0afbe4 100644
+--- a/src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/ZipWrappingStream.cs
++++ b/src/Microsoft.DotNet.Wpf/src/WindowsBase/System/IO/Packaging/ZipWrappingStream.cs
+@@ -24,6 +24,14 @@ public ZipWrappingStream(ZipArchiveEntry zipArchiveEntry, Stream stream, FileMod
+         {
+             _zipArchiveEntry = zipArchiveEntry;
+             _baseStream = stream;
++            if (!stream.CanSeek && stream.CanRead && !stream.CanWrite)
++            {
++                MemoryStream seekable = new MemoryStream();
++                stream.CopyTo(seekable);
++                stream.Dispose();
++                seekable.Position = 0;
++                _baseStream = seekable;
++            }
+             _packageFileMode = packageFileMode;
+             _packageFileAccess = packageFileAccess;
+             _canRead = canRead;
