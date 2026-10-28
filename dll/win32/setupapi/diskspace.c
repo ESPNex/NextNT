@@ -70,6 +70,10 @@ HDSKSPC WINAPI SetupCreateDiskSpaceListW(PVOID Reserved1, DWORD Reserved2, UINT 
     }
 
     list = calloc(1, sizeof(*list));
+#ifdef __REACTOS__
+    if (!list)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     list->flags = Flags;
     return list;
 }
@@ -398,6 +402,10 @@ BOOL WINAPI SetupAddToDiskSpaceListW(HDSKSPC handle, const WCHAR *file,
         return FALSE;
     }
     full_path = malloc(len * sizeof(WCHAR));
+#ifdef __REACTOS__
+    if (!full_path)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     GetFullPathNameW(file, len, full_path, NULL);
 
     if (!ascii_isalpha(full_path[0]) || full_path[1] != ':' || full_path[len - 2] == '\\')
