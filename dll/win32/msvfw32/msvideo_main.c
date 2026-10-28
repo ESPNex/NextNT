@@ -886,6 +886,10 @@ static BOOL enum_compressors(HWND list, COMPVARS *pcv, BOOL enum_all)
             idx = SendMessageW(list, CB_ADDSTRING, 0, (LPARAM)icinfo.szDescription);
 
             ic = malloc(sizeof(*ic));
+#ifdef __REACTOS__
+            if (!ic)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             ic->icinfo = icinfo;
             ic->hic = hic;
             SendMessageW(list, CB_SETITEMDATA, idx, (LPARAM)ic);
@@ -939,6 +943,10 @@ static INT_PTR CALLBACK icm_choose_compressor_dlgproc(HWND hdlg, UINT msg, WPARA
         SendDlgItemMessageW(hdlg, IDC_COMP_LIST, CB_ADDSTRING, 0, (LPARAM)buf);
 
         ic = malloc(sizeof(*ic));
+#ifdef __REACTOS__
+        if (!ic)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         ic->icinfo.fccType = streamtypeVIDEO;
         ic->icinfo.fccHandler = comptypeDIB;
         ic->hic = 0;

@@ -84,6 +84,10 @@ HDRAWDIB VFWAPI DrawDibOpen(void)
     TRACE("(void)\n");
 
     whdd = calloc(1, sizeof(WINE_HDD));
+#ifdef __REACTOS__
+    if (!whdd)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     TRACE("=> %p\n", whdd);
 
     while (MSVIDEO_GetHddPtr((HDRAWDIB)HDD_HandleRef) != NULL) HDD_HandleRef++;

@@ -1266,6 +1266,10 @@ sendstring_done:
             if (mwi->mci)
             {
                 cmdW = malloc((wcslen((WCHAR *)lParam) + 64) * sizeof(WCHAR));
+#ifdef __REACTOS__
+                if (!cmdW)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                 wsprintfW(cmdW, formatW, mwi->alias);
                 lstrcatW(cmdW, (WCHAR *)lParam);
 
