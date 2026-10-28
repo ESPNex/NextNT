@@ -217,6 +217,23 @@ static HRESULT hresult_from_http_response(DWORD code)
 }
 
 #ifdef __REACTOS__
+static void update_job_bytes_total(BackgroundCopyJobImpl *job)
+{
+    BackgroundCopyFileImpl *file;
+    UINT64 total = 0;
+
+    LIST_FOR_EACH_ENTRY(file, &job->files, BackgroundCopyFileImpl, entryFromJob)
+    {
+        if (file->fileProgress.BytesTotal == BG_SIZE_UNKNOWN)
+        {
+            total = BG_SIZE_UNKNOWN;
+            break;
+        }
+        total += file->fileProgress.BytesTotal;
+    }
+    job->jobProgress.BytesTotal = total;
+}
+
 static void set_remote_file_error(BackgroundCopyJobImpl *job, BackgroundCopyFileImpl *file, HRESULT code)
 {
     EnterCriticalSection(&job->cs);
@@ -324,7 +341,14 @@ static void CALLBACK progress_callback_http(HINTERNET handle, DWORD_PTR context,
         if (WinHttpQueryHeaders(handle, WINHTTP_QUERY_CONTENT_LENGTH|WINHTTP_QUERY_FLAG_NUMBER,
                                 NULL, &len, &size, NULL))
         {
+#ifdef __REACTOS__
+            EnterCriticalSection(&job->cs);
             file->fileProgress.BytesTotal = len;
+            update_job_bytes_total(job);
+            LeaveCriticalSection(&job->cs);
+#else
+            file->fileProgress.BytesTotal = len;
+#endif
         }
         break;
     }
@@ -517,6 +541,9 @@ static DWORD CALLBACK progress_callback_local(LARGE_INTEGER totalSize, LARGE_INT
     file->fileProgress.BytesTotal = totalSize.QuadPart;
     file->fileProgress.BytesTransferred = totalTransferred.QuadPart;
     job->jobProgress.BytesTransferred += diff;
+#ifdef __REACTOS__
+    update_job_bytes_total(job);
+#endif
     LeaveCriticalSection(&job->cs);
 
     return (job->state == BG_JOB_STATE_TRANSFERRING
