@@ -2469,6 +2469,7 @@ IopAssignDeviceResources(
    {
        DPRINT1("Failed to fixup a resource list from supplied resources for %wZ\n", &DeviceNode->InstancePath);
        PiSetDevNodeProblem(DeviceNode, CM_PROB_NORMAL_CONFLICT);
+       DeviceNode->UserFlags |= DNUF_NEED_RESTART;
        goto ByeBye;
    }
 
@@ -2493,6 +2494,7 @@ Finish:
    if (DeviceNode->ResourceList)
        IopResDbReserve(DeviceNode, DeviceNode->ResourceList, NULL);
 
+   DeviceNode->UserFlags &= ~DNUF_NEED_RESTART;
    PiSetDevNodeState(DeviceNode, DeviceNodeResourcesAssigned);
 
    KeReleaseMutex(&IopResourceAssignmentLock, FALSE);

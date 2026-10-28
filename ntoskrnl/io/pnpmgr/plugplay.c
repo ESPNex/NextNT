@@ -1141,6 +1141,9 @@ IopGetDeviceNodeStatus(PDEVICE_NODE DeviceNode)
     if (DeviceNode->UserFlags & DNUF_WILL_BE_REMOVED)
         Output |= DN_WILL_BE_REMOVED;
 
+    if (DeviceNode->UserFlags & DNUF_NEED_RESTART)
+        Output |= DN_NEED_RESTART;
+
     if (DeviceNode->Flags & DNF_HAS_PROBLEM)
         Output |= DN_HAS_PROBLEM;
 
