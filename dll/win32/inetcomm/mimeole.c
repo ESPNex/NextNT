@@ -655,6 +655,10 @@ static header_t *read_prop(MimeBody *body, char **ptr)
         if(!prop->name)
         {
             prop_entry = malloc(sizeof(*prop_entry));
+#ifdef __REACTOS__
+            if (!prop_entry)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             prop_entry->prop.name = strdup(*ptr);
             prop_entry->prop.id = body->next_prop_id++;
             prop_entry->prop.flags = 0;
@@ -666,6 +670,10 @@ static header_t *read_prop(MimeBody *body, char **ptr)
     }
 
     ret = malloc(sizeof(*ret));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     ret->prop = prop;
     PropVariantInit(&ret->value);
     list_init(&ret->params);
@@ -712,6 +720,10 @@ static char *unquote_string(const char *str)
         str++;
     }
     ret = strdup(str);
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     for(cp = ret; *cp; cp++)
     {
         if(*cp == '\\')
@@ -750,12 +762,20 @@ static void add_param(header_t *header, const char *p)
     }
 
     name = malloc(cp - key + 1);
+#ifdef __REACTOS__
+    if (!name)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     memcpy(name, key, cp - key);
     name[cp - key] = '\0';
 
     value = cp + 1;
 
     param = malloc(sizeof(*param));
+#ifdef __REACTOS__
+    if (!param)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     param->name = name;
     param->value = unquote_string(value);
     list_add_tail(&header->params, &param->entry);
@@ -2276,6 +2296,10 @@ static HRESULT create_body_offset_list(IStream *stm, const char *boundary, struc
                         list_add_tail(body_offsets, &cur_body->entry);
                     }
                     cur_body = malloc(sizeof(*cur_body));
+#ifdef __REACTOS__
+                    if (!cur_body)
+                        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                     cur_body->offsets.cbBoundaryStart = boundary_start;
                     cur_body->offsets.cbHeaderStart = start + ptr - buf;
                 }
