@@ -307,7 +307,7 @@ PartMgrUpdatePartitionDevices(
             }
 
             partExt->OnDiskNumber = partNumber;
-            partEntry->PartitionNumber = partNumber; // mark it as a found one
+            partEntry->PartitionNumber = partExt->DetectedNumber;
             totalPartitions++;
         }
         else
@@ -388,6 +388,8 @@ PartMgrUpdatePartitionDevices(
             continue;
         }
 
+        partEntry->PartitionNumber = pdoNumber;
+
         // mark partition as removable if parent device is removable
         if (FdoExtension->LowerDevice->Characteristics & FILE_REMOVABLE_MEDIA)
             partitionDevice->Characteristics |= FILE_REMOVABLE_MEDIA;
@@ -434,6 +436,42 @@ PartMgrUpdatePartitionDevices(
     FdoExtension->EnumeratedPartitionsTotal = totalPartitions;
 }
 
+static
+CODE_SEG("PAGE")
+VOID
+PartMgrUseDeviceNumbers(
+    _In_ PFDO_EXTENSION FdoExtension,
+    _Inout_ PDRIVE_LAYOUT_INFORMATION_EX Layout)
+{
+    PAGED_CODE();
+
+    for (UINT32 i = 0; i < Layout->PartitionCount; i++)
+    {
+        PPARTITION_INFORMATION_EX partEntry = &Layout->PartitionEntry[i];
+
+        if (partEntry->PartitionNumber == 0)
+            continue;
+
+        for (PSINGLE_LIST_ENTRY curEntry = FdoExtension->PartitionList.Next;
+             curEntry != NULL;
+             curEntry = curEntry->Next)
+        {
+            PPARTITION_EXTENSION partExt = CONTAINING_RECORD(curEntry, PARTITION_EXTENSION, ListEntry);
+
+            if (partEntry->StartingOffset.QuadPart != partExt->StartingOffset ||
+                partEntry->PartitionLength.QuadPart != partExt->PartitionLength ||
+                (Layout->PartitionStyle == PARTITION_STYLE_GPT &&
+                 !IsEqualGUID(&partEntry->Gpt.PartitionId, &partExt->Gpt.PartitionId)))
+            {
+                continue;
+            }
+
+            partEntry->PartitionNumber = partExt->DetectedNumber;
+            break;
+        }
+    }
+}
+
 /**
  * @brief
  * Retrieves the disk partition layout from the given disk FDO.
@@ -462,6 +500,8 @@ PartMgrGetDriveLayout(
     NTSTATUS status = IoReadPartitionTableEx(FdoExtension->LowerDevice, &layoutEx);
     if (!NT_SUCCESS(status))
         return status;
+
+    PartMgrUseDeviceNumbers(FdoExtension, layoutEx);
 
     if (FdoExtension->LayoutCache)
         ExFreePool(FdoExtension->LayoutCache);
