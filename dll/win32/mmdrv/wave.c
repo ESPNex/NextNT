@@ -73,7 +73,10 @@ QueueWaveBuffer(
     queue_node = previous_node;
 
     /* Append our buffer here, and terminate the queue */
-    queue_node->lpNext = wave_header;
+    if ( queue_node )
+        queue_node->lpNext = wave_header;
+    else
+        session_info->wave_queue = wave_header;
     wave_header->lpNext = NULL;
 
     /* When no buffers are playing there's no play queue so we start one */
