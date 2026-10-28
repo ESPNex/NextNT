@@ -622,6 +622,10 @@ static struct work_item * alloc_work_item(struct queue *queue, LONG priority, IR
     struct work_item *item;
 
     item = calloc(1, sizeof(*item));
+#ifdef __REACTOS__
+    if (!item)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     item->IUnknown_iface.lpVtbl = &work_item_vtbl;
     item->result = result;
