@@ -298,6 +298,10 @@ static EnumConnectionsImpl *EnumConnectionsImpl_Construct(IUnknown *pUnk,
 							  CONNECTDATA *pCD)
 {
   EnumConnectionsImpl *Obj = malloc(sizeof(*Obj));
+#ifdef __REACTOS__
+  if (!Obj)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   DWORD i;
 
   Obj->IEnumConnections_iface.lpVtbl = &EnumConnectionsImpl_VTable;

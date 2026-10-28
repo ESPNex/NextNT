@@ -664,6 +664,10 @@ HRESULT WINAPI GetRecordInfoFromTypeInfo(ITypeInfo* pTI, IRecordInfo** ppRecInfo
     }
 
     ret = calloc(1, sizeof(*ret));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     ret->IRecordInfo_iface.lpVtbl = &IRecordInfoImplVtbl;
     ret->ref = 1;
     ret->pTypeInfo = pTypeInfo;
