@@ -65,6 +65,10 @@ struct inf_file
     unsigned int     nb_sections;     /* number of used sections */
     unsigned int     alloc_sections;  /* total number of allocated section pointers */
     struct section **sections;        /* section pointers array */
+#ifdef __REACTOS__
+    unsigned int    *section_hash;
+    unsigned int     hash_size;
+#endif
     unsigned int     nb_fields;
     unsigned int     alloc_fields;
     struct field    *fields;
@@ -173,6 +177,54 @@ static const WCHAR *get_inf_dir( const struct inf_file *file, unsigned int *len 
 }
 
 
+#ifdef __REACTOS__
+static unsigned int section_name_hash( const WCHAR *name )
+{
+    unsigned int hash = 2166136261u;
+
+    for (; *name; name++) hash = (hash ^ towlower( *name )) * 16777619u;
+    return hash;
+}
+
+static void section_hash_insert( unsigned int *table, unsigned int size, const WCHAR *name, unsigned int index )
+{
+    unsigned int slot = section_name_hash( name ) & (size - 1);
+
+    while (table[slot]) slot = (slot + 1) & (size - 1);
+    table[slot] = index + 1;
+}
+
+static BOOL section_hash_reserve( struct inf_file *file, unsigned int count )
+{
+    unsigned int size = file->hash_size ? file->hash_size : 64;
+    unsigned int *table;
+    unsigned int i;
+
+    while (count * 2 > size) size *= 2;
+    if (size == file->hash_size) return TRUE;
+    if (!(table = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, size * sizeof(*table) ))) return FALSE;
+    for (i = 0; i < file->nb_sections; i++)
+        section_hash_insert( table, size, file->sections[i]->name, i );
+    HeapFree( GetProcessHeap(), 0, file->section_hash );
+    file->section_hash = table;
+    file->hash_size = size;
+    return TRUE;
+}
+
+static int find_section( const struct inf_file *file, const WCHAR *name )
+{
+    unsigned int slot, index;
+
+    if (!file->hash_size) return -1;
+    slot = section_name_hash( name ) & (file->hash_size - 1);
+    while ((index = file->section_hash[slot]))
+    {
+        if (!strcmpiW( name, file->sections[index - 1]->name )) return index - 1;
+        slot = (slot + 1) & (file->hash_size - 1);
+    }
+    return -1;
+}
+#else
 /* find a section by name */
 static int find_section( const struct inf_file *file, const WCHAR *name )
 {
@@ -182,6 +234,7 @@ static int find_section( const struct inf_file *file, const WCHAR *name )
         if (!strcmpiW( name, file->sections[i]->name )) return i;
     return -1;
 }
+#endif
 
 
 /* find a line by name */
@@ -212,11 +265,17 @@ static int add_section( struct inf_file *file, const WCHAR *name )
         if (!(file->sections = grow_array( file->sections, &file->alloc_sections,
                                            sizeof(file->sections[0]) ))) return -1;
     }
+#ifdef __REACTOS__
+    if (!section_hash_reserve( file, file->nb_sections + 1 )) return -1;
+#endif
     if (!(section = HeapAlloc( GetProcessHeap(), 0, sizeof(*section) ))) return -1;
     section->name        = name;
     section->nb_lines    = 0;
     section->alloc_lines = sizeof(section->lines)/sizeof(section->lines[0]);
     file->sections[file->nb_sections] = section;
+#ifdef __REACTOS__
+    section_hash_insert( file->section_hash, file->hash_size, name, file->nb_sections );
+#endif
     return file->nb_sections++;
 }
 
@@ -336,8 +395,8 @@ static const WCHAR *get_string_subst( const struct inf_file *file, const WCHAR *
     struct section *strings_section;
     struct line *line;
     struct field *field;
-    unsigned int i, j;
-    int dirid;
+    unsigned int j;
+    int dirid, section_index;
     WCHAR *dirid_str, *end;
     const WCHAR *ret = NULL;
     WCHAR StringLangId[13] = {'S','t','r','i','n','g','s','.',0};
@@ -362,40 +421,34 @@ static const WCHAR *get_string_subst( const struct inf_file *file, const WCHAR *
 
     strcpyW(StringLangId + 8, Lang + 2);
     // now you have e.g. Strings.07 for german neutral translations
-    for (i = 0; i < file->nb_sections; i++) // search in all sections
+    if ((section_index = find_section( file, StringLangId )) != -1)
     {
-        if (!strcmpiW(file->sections[i]->name,StringLangId)) // if the section is a Strings.* section
+        strings_section = file->sections[section_index]; // select this section for further use
+        for (j = 0, line = strings_section->lines; j < strings_section->nb_lines; j++, line++) // process all lines in this section
         {
-            strings_section = file->sections[i]; // select this section for further use
-            for (j = 0, line = strings_section->lines; j < strings_section->nb_lines; j++, line++) // process all lines in this section
+            if (line->key_field == -1) continue; // if no key then skip
+            if (strncmpiW( str, file->fields[line->key_field].text, *len )) continue; // if wrong key name, then skip
+            if (!file->fields[line->key_field].text[*len]) // if value exist
             {
-                if (line->key_field == -1) continue; // if no key then skip
-                if (strncmpiW( str, file->fields[line->key_field].text, *len )) continue; // if wrong key name, then skip
-                if (!file->fields[line->key_field].text[*len]) // if value exist
-                {
-                    field = &file->fields[line->first_field]; // then extract value and
-                    break; // no more search necessary
-                }
+                field = &file->fields[line->first_field]; // then extract value and
+                break; // no more search necessary
             }
         }
     }
 
     strcpyW(StringLangId + 8, Lang); // append the Language identifier from GetLocaleInfo
     // now you have e.g. Strings.0407 for german translations
-    for (i = 0; i < file->nb_sections; i++) // search in all sections
+    if ((section_index = find_section( file, StringLangId )) != -1)
     {
-        if (!strcmpiW(file->sections[i]->name,StringLangId)) // if the section is a Strings.* section
+        strings_section = file->sections[section_index]; // select this section for further use
+        for (j = 0, line = strings_section->lines; j < strings_section->nb_lines; j++, line++) // process all lines in this section
         {
-            strings_section = file->sections[i]; // select this section for further use
-            for (j = 0, line = strings_section->lines; j < strings_section->nb_lines; j++, line++) // process all lines in this section
+            if (line->key_field == -1) continue; // if no key then skip
+            if (strncmpiW( str, file->fields[line->key_field].text, *len )) continue; // if wrong key name, then skip
+            if (!file->fields[line->key_field].text[*len]) // if value exist
             {
-                if (line->key_field == -1) continue; // if no key then skip
-                if (strncmpiW( str, file->fields[line->key_field].text, *len )) continue; // if wrong key name, then skip
-                if (!file->fields[line->key_field].text[*len]) // if value exist
-                {
-                    field = &file->fields[line->first_field]; // then extract value and
-                    break; // no more search necessary
-                }
+                field = &file->fields[line->first_field]; // then extract value and
+                break; // no more search necessary
             }
         }
     }
@@ -924,6 +977,9 @@ static void free_inf_file( struct inf_file *file )
     HeapFree( GetProcessHeap(), 0, file->filename );
     HeapFree( GetProcessHeap(), 0, file->driver_store_dir );
     HeapFree( GetProcessHeap(), 0, file->sections );
+#ifdef __REACTOS__
+    HeapFree( GetProcessHeap(), 0, file->section_hash );
+#endif
     HeapFree( GetProcessHeap(), 0, file->fields );
     HeapFree( GetProcessHeap(), 0, file->strings );
     HeapFree( GetProcessHeap(), 0, file );
@@ -977,6 +1033,9 @@ HINF PARSER_clone_inf(HINF hinf)
             new_section->alloc_lines = new_section->nb_lines;
             copy->sections[copy->nb_sections++] = new_section;
         }
+#ifdef __REACTOS__
+        if (!section_hash_reserve( copy, copy->nb_sections )) goto failed;
+#endif
     }
     return copy;
 
