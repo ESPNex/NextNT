@@ -95,6 +95,10 @@ HPAINTBUFFER WINAPI BeginBufferedPaint(HDC targetdc, const RECT *rect,
         FIXME("painting parameters are ignored\n");
 
     buffer = malloc(sizeof(*buffer));
+#ifdef __REACTOS__
+    if (!buffer)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     buffer->targetdc = targetdc;
     buffer->rect = *rect;
     buffer->memorydc = CreateCompatibleDC(targetdc);

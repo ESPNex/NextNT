@@ -188,6 +188,10 @@ HRESULT MSSTYLES_OpenThemeFile(LPCWSTR lpThemeFile, LPCWSTR pszColorName, LPCWST
     }
 
     *tf = calloc(1, sizeof(THEME_FILE));
+#ifdef __REACTOS__
+    if (!*tf)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     (*tf)->hTheme = hTheme;
     
     GetFullPathNameW(lpThemeFile, MAX_PATH, (*tf)->szThemeFile, NULL);
@@ -497,6 +501,10 @@ static PTHEME_CLASS MSSTYLES_AddClass(PTHEME_FILE tf, LPCWSTR pszAppName, LPCWST
     if(cur) return cur;
 
     cur = malloc(sizeof(*cur));
+#ifdef __REACTOS__
+    if (!cur)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     cur->signature = THEME_CLASS_SIGNATURE;
     cur->refcount = 0;
     cur->hTheme = tf->hTheme;
@@ -586,6 +594,10 @@ static PTHEME_PARTSTATE MSSTYLES_AddPartState(PTHEME_CLASS tc, int iPartId, int 
     if(cur) return cur;
 
     cur = malloc(sizeof(*cur));
+#ifdef __REACTOS__
+    if (!cur)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     cur->iPartId = iPartId;
     cur->iStateId = iStateId;
     cur->properties = NULL;
@@ -760,6 +772,10 @@ static PTHEME_PROPERTY MSSTYLES_AddProperty(PTHEME_PARTSTATE ps, int iPropertyPr
     if(cur) return cur;
 
     cur = malloc(sizeof(*cur));
+#ifdef __REACTOS__
+    if (!cur)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     cur->iPrimitiveType = iPropertyPrimitive;
     cur->iPropertyId = iPropertyId;
     cur->lpValue = lpValue;
@@ -801,6 +817,10 @@ static PTHEME_PROPERTY MSSTYLES_AddMetric(PTHEME_FILE tf, int iPropertyPrimitive
     if(cur) return cur;
 
     cur = malloc(sizeof(*cur));
+#ifdef __REACTOS__
+    if (!cur)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     cur->iPrimitiveType = iPropertyPrimitive;
     cur->iPropertyId = iPropertyId;
     cur->lpValue = lpValue;
@@ -1576,6 +1596,10 @@ HBITMAP MSSTYLES_LoadBitmap (PTHEME_CLASS tc, LPCWSTR lpFilename, BOOL* hasAlpha
     }
     /* Not found? Load from resources */
     img = malloc(sizeof(*img));
+#ifdef __REACTOS__
+    if (!img)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 #if defined(__REACTOS__) && defined(ENABLE_PNG_SUPPORT)
     if (MSSTYLES_TryLoadPng(tc->hTheme, szFile, L"IMAGE", &img->image))
     {
