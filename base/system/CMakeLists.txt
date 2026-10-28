@@ -1,4 +1,5 @@
 
+add_subdirectory(applaunch)
 add_subdirectory(autochk)
 add_subdirectory(bootok)
 add_subdirectory(chkdsk)
