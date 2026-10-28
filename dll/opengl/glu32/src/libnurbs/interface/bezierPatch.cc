@@ -52,6 +52,10 @@
 bezierPatch* bezierPatchMake(float umin, float vmin, float umax, float vmax, int uorder, int vorder, int dimension)
 {
   bezierPatch* ret = (bezierPatch*) malloc(sizeof(bezierPatch));
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
   ret->umin = umin;
   ret->vmin = vmin;
@@ -61,6 +65,10 @@ bezierPatch* bezierPatchMake(float umin, float vmin, float umax, float vmax, int
   ret->vorder = vorder;
   ret->dimension = dimension;
   ret->ctlpoints = (float*) malloc(sizeof(float) * dimension * uorder * vorder);
+#ifdef __REACTOS__
+  if (!ret->ctlpoints)
+    abort();
+#endif
   assert(ret->ctlpoints);
 
   ret->next = NULL;
@@ -71,6 +79,10 @@ bezierPatch* bezierPatchMake(float umin, float vmin, float umax, float vmax, int
 bezierPatch* bezierPatchMake2(float umin, float vmin, float umax, float vmax, int uorder, int vorder, int dimension, int ustride, int vstride,  float* ctlpoints)
 {
   bezierPatch* ret = (bezierPatch*) malloc(sizeof(bezierPatch));
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
   ret->umin = umin;
   ret->vmin = vmin;
@@ -80,6 +92,10 @@ bezierPatch* bezierPatchMake2(float umin, float vmin, float umax, float vmax, in
   ret->vorder = vorder;
   ret->dimension = dimension;
   ret->ctlpoints = (float*) malloc(sizeof(float) * dimension * uorder * vorder);
+#ifdef __REACTOS__
+  if (!ret->ctlpoints)
+    abort();
+#endif
   assert(ret->ctlpoints);
 
   /*copy the control points there*/

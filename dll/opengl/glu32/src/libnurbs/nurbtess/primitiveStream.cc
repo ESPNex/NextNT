@@ -71,6 +71,10 @@ void primStream::insert(Real u, Real v)
    */
   if(index_vertices+1 >= size_vertices) {
     Real* temp = (Real*) malloc (sizeof(Real) * (2*size_vertices + 2));
+#ifdef __REACTOS__
+    if (!temp)
+      abort();
+#endif
     assert(temp);
     
     /*copy*/
@@ -100,8 +104,16 @@ void primStream::end(Int type)
 
   if(index_lengths >= size_lengths){
     Int* temp = (Int*) malloc(sizeof(Int) * (2*size_lengths + 2));
+#ifdef __REACTOS__
+    if (!temp)
+      abort();
+#endif
     assert(temp);
     Int* tempTypes = (Int*) malloc(sizeof(Int) * (2*size_lengths + 2));
+#ifdef __REACTOS__
+    if (!tempTypes)
+      abort();
+#endif
     assert(tempTypes);
     
     /*copy*/
@@ -145,11 +157,23 @@ void primStream::print()
 primStream::primStream(Int sizeLengths, Int sizeVertices)
 {
   lengths = (Int*)malloc (sizeof(Int) * sizeLengths);
+#ifdef __REACTOS__
+  if (!lengths)
+    abort();
+#endif
   assert(lengths);
   types = (Int*)malloc (sizeof(Int) * sizeLengths);
+#ifdef __REACTOS__
+  if (!types)
+    abort();
+#endif
   assert(types);
   
   vertices = (Real*) malloc(sizeof(Real) * sizeVertices);
+#ifdef __REACTOS__
+  if (!vertices)
+    abort();
+#endif
   assert(vertices);
   
   index_lengths = 0;

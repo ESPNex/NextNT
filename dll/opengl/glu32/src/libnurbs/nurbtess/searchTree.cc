@@ -46,6 +46,10 @@
 treeNode* TreeNodeMake(void *key)
 {
   treeNode *ret = (treeNode*) malloc(sizeof(treeNode));
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
   ret->key = key;
   ret->parent = NULL;

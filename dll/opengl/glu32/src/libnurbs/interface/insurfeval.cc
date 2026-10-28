@@ -265,7 +265,15 @@ void OpenGLSurfaceEvaluator::inBPMEval(bezierPatchMesh* bpm)
   
   bpm->vertex_array = (float*) malloc(sizeof(float)* (bpm->index_UVarray/2) * 3+1); /*in case the origional dimenion is 4, then we need 4 space to pass to evaluator.*/
   assert(bpm->vertex_array);
+#ifdef __REACTOS__
+  if (!bpm->vertex_array)
+    abort();
+#endif
   bpm->normal_array = (float*) malloc(sizeof(float)* (bpm->index_UVarray/2) * 3);
+#ifdef __REACTOS__
+  if (!bpm->normal_array)
+    abort();
+#endif
   assert(bpm->normal_array);
 #ifdef CRACK_TEST
 if(  global_ev_u1 ==2 &&   global_ev_u2 == 3
@@ -1170,12 +1178,28 @@ void OpenGLSurfaceEvaluator::inEvalUStrip(int n_upper, REAL v_upper, REAL* upper
  typedef REAL REAL3[3];
 
   REAL3* upperXYZ = (REAL3*) malloc(sizeof(REAL3)*n_upper);
+#ifdef __REACTOS__
+  if (!upperXYZ)
+    abort();
+#endif
   assert(upperXYZ);
   REAL3* upperNormal = (REAL3*) malloc(sizeof(REAL3) * n_upper);
+#ifdef __REACTOS__
+  if (!upperNormal)
+    abort();
+#endif
   assert(upperNormal);
   REAL3* lowerXYZ = (REAL3*) malloc(sizeof(REAL3)*n_lower);
+#ifdef __REACTOS__
+  if (!lowerXYZ)
+    abort();
+#endif
   assert(lowerXYZ);
   REAL3* lowerNormal = (REAL3*) malloc(sizeof(REAL3) * n_lower);
+#ifdef __REACTOS__
+  if (!lowerNormal)
+    abort();
+#endif
   assert(lowerNormal);
   
   inEvalULine(n_upper, v_upper, upper_val,  1, upperXYZ, upperNormal);
@@ -1359,12 +1383,28 @@ void OpenGLSurfaceEvaluator::inEvalVStrip(int n_left, REAL u_left, REAL* left_va
   typedef REAL REAL3[3];
 
   REAL3* leftXYZ = (REAL3*) malloc(sizeof(REAL3)*n_left);
+#ifdef __REACTOS__
+  if (!leftXYZ)
+    abort();
+#endif
   assert(leftXYZ);
   REAL3* leftNormal = (REAL3*) malloc(sizeof(REAL3) * n_left);
+#ifdef __REACTOS__
+  if (!leftNormal)
+    abort();
+#endif
   assert(leftNormal);
   REAL3* rightXYZ = (REAL3*) malloc(sizeof(REAL3)*n_right);
+#ifdef __REACTOS__
+  if (!rightXYZ)
+    abort();
+#endif
   assert(rightXYZ);
   REAL3* rightNormal = (REAL3*) malloc(sizeof(REAL3) * n_right);
+#ifdef __REACTOS__
+  if (!rightNormal)
+    abort();
+#endif
   assert(rightNormal);
   
   inEvalVLine(n_left, u_left, left_val,  1, leftXYZ, leftNormal);

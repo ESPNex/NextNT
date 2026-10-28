@@ -753,6 +753,10 @@ void sampleCompBotSimple(Real* botVertex,
   Int gridLeftU = leftGridChain->getUlineIndex(gridIndex);
   Int gridRightU = rightGridChain->getUlineIndex(gridIndex);
   Real2* gridPoints = (Real2*) malloc(sizeof(Real2) * (gridRightU - gridLeftU +1));
+#ifdef __REACTOS__
+  if (!gridPoints)
+    abort();
+#endif
   assert(gridPoints);
 
   for(k=0, i=gridRightU; i>= gridLeftU; i--, k++)

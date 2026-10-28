@@ -151,6 +151,10 @@ sweepRange* sweepRangeMake(directedLine* left, Int leftType,
 			   directedLine* right, Int rightType)
 {
   sweepRange* ret = (sweepRange*)malloc(sizeof(sweepRange));
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
   ret->left = left;
   ret->leftType = leftType;
@@ -429,11 +433,19 @@ directedLine** DBGfindDiagonals(directedLine *polygons, Int& num_diagonals)
   directedLine** array = polygons->toArrayAllPolygons(total_num_edges);
   quicksort( (void**)array, 0, total_num_edges-1, (Int (*)(void*, void*)) compInY);
   sweepRange** ranges = (sweepRange**) malloc(sizeof(sweepRange*) * total_num_edges);
+#ifdef __REACTOS__
+  if (!ranges)
+    abort();
+#endif
   assert(ranges);
 
   sweepY(total_num_edges, array, ranges);
 
  directedLine** diagonal_vertices = (directedLine**) malloc(sizeof(directedLine*) * total_num_edges);
+#ifdef __REACTOS__
+ if (!diagonal_vertices)
+   abort();
+#endif
   assert(diagonal_vertices);
   findDiagonals(total_num_edges, array, ranges, num_diagonals, diagonal_vertices);
 
@@ -452,6 +464,10 @@ directedLine* partitionY(directedLine *polygons, sampledLine **retSampledLines)
   quicksort( (void**)array, 0, total_num_edges-1, (Int (*)(void*, void*)) compInY);
 
   sweepRange** ranges = (sweepRange**) malloc(sizeof(sweepRange*) * (total_num_edges));
+#ifdef __REACTOS__
+  if (!ranges)
+    abort();
+#endif
   assert(ranges);
 
 
@@ -471,6 +487,10 @@ directedLine* partitionY(directedLine *polygons, sampledLine **retSampledLines)
   Int num_diagonals;
   /*number diagonals is < total_num_edges*total_num_edges*/
   directedLine** diagonal_vertices = (directedLine**) malloc(sizeof(directedLine*) * total_num_edges*2/*total_num_edges*/);
+#ifdef __REACTOS__
+  if (!diagonal_vertices)
+    abort();
+#endif
   assert(diagonal_vertices);
 
 
@@ -488,6 +508,10 @@ num_diagonals=deleteRepeatDiagonals(num_diagonals, diagonal_vertices, diagonal_v
 
 
   Int *removedDiagonals=(Int*)malloc(sizeof(Int) * num_diagonals);
+#ifdef __REACTOS__
+  if (!removedDiagonals)
+    abort();
+#endif
   for(i=0; i<num_diagonals; i++)
     removedDiagonals[i] = 0;
 

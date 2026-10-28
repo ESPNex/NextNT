@@ -72,6 +72,10 @@ sampledLine::sampledLine(Int n_points)
 {
   npoints = n_points;
   points = (Real2*) malloc(sizeof(Real2) * n_points);
+#ifdef __REACTOS__
+  if (!points)
+    abort();
+#endif
   assert(points);
   next = NULL;
 }
@@ -84,6 +88,10 @@ sampledLine::sampledLine(Int n_points, Real2 pts[])
   int i;
   npoints = n_points;
   points = (Real2*) malloc(sizeof(Real2) * n_points);
+#ifdef __REACTOS__
+  if (!points)
+    abort();
+#endif
   assert(points);
   for(i=0; i<npoints; i++) {
     points[i][0] = pts[i][0];
@@ -96,6 +104,10 @@ sampledLine::sampledLine(Real pt1[2], Real pt2[2])
 {
   npoints = 2;
   points = (Real2*) malloc(sizeof(Real2) * 2);
+#ifdef __REACTOS__
+  if (!points)
+    abort();
+#endif
   assert(points);
   points[0][0] = pt1[0];
   points[0][1] = pt1[1];
@@ -154,6 +166,10 @@ void sampledLine::tessellate(Real u_reso, Real v_reso)
   Real du = (points[npoints-1][0] - points[0][0])/n;
   Real dv = (points[npoints-1][1] - points[0][1])/n;
   Real2 *temp = (Real2*) malloc(sizeof(Real2) * (n+1));
+#ifdef __REACTOS__
+  if (!temp)
+    abort();
+#endif
   assert(temp);
 
   Real u,v;

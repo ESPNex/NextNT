@@ -119,13 +119,29 @@ void triangulateConvexPolyVertical(directedLine* topV, directedLine* botV, primS
     }
 
   Real2* temp_leftVerts = (Real2 *) malloc(sizeof(Real2) * n_leftVerts);
+#ifdef __REACTOS__
+  if (!temp_leftVerts)
+    abort();
+#endif
   assert(temp_leftVerts);
   Real2* temp_rightVerts = (Real2 *) malloc(sizeof(Real2) * n_rightVerts);
+#ifdef __REACTOS__
+  if (!temp_rightVerts)
+    abort();
+#endif
   assert(temp_rightVerts);
 
   leftVerts = (Real**) malloc(sizeof(Real2*) * n_leftVerts);
+#ifdef __REACTOS__
+  if (!leftVerts)
+    abort();
+#endif
   assert(leftVerts);
   rightVerts = (Real**) malloc(sizeof(Real2*) * n_rightVerts);
+#ifdef __REACTOS__
+  if (!rightVerts)
+    abort();
+#endif
   assert(rightVerts);
   for(i=0; i<n_leftVerts; i++)
     leftVerts[i] = temp_leftVerts[i];
@@ -180,8 +196,16 @@ void triangulateConvexPolyHoriz(directedLine* leftV, directedLine* rightV, primS
       n_upperVerts += tempV->get_npoints();
     }
   lowerVerts = (Real2 *) malloc(sizeof(Real2) * n_lowerVerts);
+#ifdef __REACTOS__
+  if (!lowerVerts)
+    abort();
+#endif
   assert(n_lowerVerts);
   upperVerts = (Real2 *) malloc(sizeof(Real2) * n_upperVerts);
+#ifdef __REACTOS__
+  if (!upperVerts)
+    abort();
+#endif
   assert(n_upperVerts);
   i=0;
   for(tempV = leftV; tempV != rightV; tempV = tempV->getNext())
@@ -405,12 +429,28 @@ void findGridChains(directedLine* topV, directedLine* botV,
 
   /*find the interval inside  the polygon for each gridline*/
   Int *leftGridIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!leftGridIndices)
+    abort();
+#endif
   assert(leftGridIndices);
   Int *rightGridIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!rightGridIndices)
+    abort();
+#endif
   assert(rightGridIndices);
   Int *leftGridInnerIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!leftGridInnerIndices)
+    abort();
+#endif
   assert(leftGridInnerIndices);
   Int *rightGridInnerIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!rightGridInnerIndices)
+    abort();
+#endif
   assert(rightGridInnerIndices);
 
   findLeftGridIndices(topV, firstGridIndex, lastGridIndex, grid,  leftGridIndices, leftGridInnerIndices);
@@ -988,6 +1028,10 @@ void findLeftGridIndices(directedLine* topEdge, Int firstGridIndex, Int lastGrid
   //uintercBuf stores all the interction u value for each grid line
   //notice that lastGridIndex<= firstGridIndex
   Real *uintercBuf = (Real *) malloc (sizeof(Real) * (firstGridIndex-lastGridIndex+1));
+#ifdef __REACTOS__
+  if (!uintercBuf)
+    abort();
+#endif
   assert(uintercBuf);
 #endif
 
@@ -1106,6 +1150,10 @@ void findRightGridIndices(directedLine* topEdge, Int firstGridIndex, Int lastGri
   //uintercBuf stores all the interction u value for each grid line
   //notice that firstGridIndex >= lastGridIndex
   Real *uintercBuf = (Real *) malloc (sizeof(Real) * (firstGridIndex-lastGridIndex+1));
+#ifdef __REACTOS__
+  if (!uintercBuf)
+    abort();
+#endif
   assert(uintercBuf);
 #endif
 
@@ -1244,6 +1292,10 @@ if(grid->get_n_ulines() == 2 ||
       Int n_cusps;//num interior cusps
       Int n_edges = polygon->numEdges();
       directedLine** cusps = (directedLine**) malloc(sizeof(directedLine*) * n_edges);
+#ifdef __REACTOS__
+      if (!cusps)
+        abort();
+#endif
       assert(cusps);
       findInteriorCuspsX(polygon, n_cusps, cusps);
 
@@ -1327,12 +1379,28 @@ if(grid->get_n_ulines() == 2 ||
 
   /*find the interval inside  the polygon for each gridline*/
   Int *leftGridIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!leftGridIndices)
+    abort();
+#endif
   assert(leftGridIndices);
   Int *rightGridIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!rightGridIndices)
+    abort();
+#endif
   assert(rightGridIndices);
   Int *leftGridInnerIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!leftGridInnerIndices)
+    abort();
+#endif
   assert(leftGridInnerIndices);
   Int *rightGridInnerIndices = (Int*) malloc(sizeof(Int) * (firstGridIndex - lastGridIndex +1));
+#ifdef __REACTOS__
+  if (!rightGridInnerIndices)
+    abort();
+#endif
   assert(rightGridInnerIndices);
 
   findLeftGridIndices(topV, firstGridIndex, lastGridIndex, grid,  leftGridIndices, leftGridInnerIndices);
@@ -2382,10 +2450,18 @@ void stripOfFanLeft(vertexArray* leftChain,
   grid_v_value = grid->get_v_value(vlineIndex);
 
   Real2* trimVerts=(Real2*) malloc(sizeof(Real2)* (largeIndex-smallIndex+1));
+#ifdef __REACTOS__
+  if (!trimVerts)
+    abort();
+#endif
   assert(trimVerts);
 
 
   Real2* gridVerts=(Real2*) malloc(sizeof(Real2)* (ulineLargeIndex-ulineSmallIndex+1));
+#ifdef __REACTOS__
+  if (!gridVerts)
+    abort();
+#endif
   assert(gridVerts);
 
   Int k,i;

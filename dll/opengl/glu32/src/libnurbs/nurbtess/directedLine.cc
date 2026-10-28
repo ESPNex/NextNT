@@ -568,6 +568,10 @@ directedLine** directedLine::toArrayAllPolygons(Int& total_num_edges)
 {
   total_num_edges=numEdgesAllPolygons();
   directedLine** ret = (directedLine**) malloc(sizeof(directedLine*) * total_num_edges);
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
 
   directedLine *temp;

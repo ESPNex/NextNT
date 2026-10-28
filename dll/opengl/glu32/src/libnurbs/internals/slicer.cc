@@ -620,6 +620,10 @@ static void triangulateRectTopGen(Arc_ptr arc, int n_ulines, REAL* u_val, Real v
     {
       int i,k;
       REAL* upper_val = (REAL*) malloc(sizeof(REAL) * arc->pwlArc->npts);
+#ifdef __REACTOS__
+      if (!upper_val)
+        abort();
+#endif
       assert(upper_val);
       if(dir)
 	{
@@ -652,6 +656,10 @@ static void triangulateRectTopGen(Arc_ptr arc, int n_ulines, REAL* u_val, Real v
     {
       int i,k;
       REAL* left_val = (REAL*) malloc(sizeof(REAL) * arc->pwlArc->npts);
+#ifdef __REACTOS__
+      if (!left_val)
+        abort();
+#endif
       assert(left_val);   
       if(dir)
 	{
@@ -692,6 +700,10 @@ static void triangulateRectTopGen(Arc_ptr arc, int n_ulines, REAL* u_val, Real v
   if(dir ==0) //have to reverse u_val
     {
       temp_u_val = (REAL*) malloc(sizeof(REAL) * n_ulines);
+#ifdef __REACTOS__
+      if (!temp_u_val)
+        abort();
+#endif
       assert(temp_u_val);
       for(i=0; i<n_ulines; i++)
 	temp_u_val[i] = u_val[n_ulines-1-i];
@@ -831,8 +843,16 @@ static void triangulateRectGen(Arc_ptr loop, int n_ulines, int n_vlines, Backend
 return;
 */
   REAL* u_val=(REAL*) malloc(sizeof(REAL)*n_ulines);
+#ifdef __REACTOS__
+  if (!u_val)
+    abort();
+#endif
   assert(u_val);
   REAL* v_val=(REAL*)malloc(sizeof(REAL) * n_vlines);
+#ifdef __REACTOS__
+  if (!v_val)
+    abort();
+#endif
   assert(v_val);
   REAL u_stepsize = (right->tail()[0] - left->tail()[0])/( (REAL) n_ulines+1);
   REAL v_stepsize = (top->tail()[1] - bot->tail()[1])/( (REAL) n_vlines+1);
@@ -965,6 +985,10 @@ directedLine* arcLoopToDLineLoop(Arc_ptr loop)
 void Slicer::evalRBArray(rectBlockArray* rbArray, gridWrap* grid)
 {
   TrimVertex *trimVert = (TrimVertex*)malloc(sizeof(TrimVertex));
+#ifdef __REACTOS__
+  if (!trimVert)
+    abort();
+#endif
   trimVert -> nuid = 0;//????
 
   Real* u_values = grid->get_u_values();

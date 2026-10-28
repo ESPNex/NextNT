@@ -595,10 +595,18 @@ void stripOfFanRight(vertexArray* rightChain,
   grid_v_value = grid->get_v_value(vlineIndex);
 
   Real2* trimVerts=(Real2*) malloc(sizeof(Real2)* (largeIndex-smallIndex+1));
+#ifdef __REACTOS__
+  if (!trimVerts)
+    abort();
+#endif
   assert(trimVerts);
 
 
   Real2* gridVerts=(Real2*) malloc(sizeof(Real2)* (ulineLargeIndex-ulineSmallIndex+1));
+#ifdef __REACTOS__
+  if (!gridVerts)
+    abort();
+#endif
   assert(gridVerts);
 
   Int k,i;

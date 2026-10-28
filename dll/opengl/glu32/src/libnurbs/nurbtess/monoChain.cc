@@ -175,6 +175,10 @@ monoChain** monoChain::toArrayAllLoops(Int& num_chains)
 {
   num_chains = numChainsAllLoops();
   monoChain **ret =  (monoChain**) malloc(sizeof(monoChain*) * num_chains);
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
   monoChain *temp;
   Int index = 0;
@@ -665,6 +669,10 @@ directedLine* MC_partitionY(directedLine *polygons, sampledLine **retSampledLine
 //printf("after quicksort\n");  
 
   sweepRange** ranges = (sweepRange**)malloc(sizeof(sweepRange*) * (total_num_chains));
+#ifdef __REACTOS__
+  if (!ranges)
+    abort();
+#endif
   assert(ranges);
 
   if(MC_sweepY(total_num_chains, array, ranges))
@@ -680,6 +688,10 @@ directedLine* MC_partitionY(directedLine *polygons, sampledLine **retSampledLine
   Int num_diagonals;
   /*number diagonals is < total_num_edges*total_num_edges*/
   directedLine** diagonal_vertices = (directedLine**) malloc(sizeof(directedLine*) * total_num_chains*2/*total_num_edges*/);
+#ifdef __REACTOS__
+  if (!diagonal_vertices)
+    abort();
+#endif
   assert(diagonal_vertices);
 
 //printf("before call MC_findDiagonales\n");
@@ -704,6 +716,10 @@ directedLine* MC_partitionY(directedLine *polygons, sampledLine **retSampledLine
 //  }
 
   Int *removedDiagonals=(Int*)malloc(sizeof(Int) * num_diagonals);
+#ifdef __REACTOS__
+  if (!removedDiagonals)
+    abort();
+#endif
   for(i=0; i<num_diagonals; i++)
     removedDiagonals[i] = 0;
 //  printf("first pass\n");

@@ -65,8 +65,16 @@ gridWrap::gridWrap(Int nUlines, Real* uvals,
   v_min = vvals[0];
   v_max = vvals[nVlines-1];
   u_values = (Real*) malloc(sizeof(Real) * n_ulines);
+#ifdef __REACTOS__
+  if (!u_values)
+    abort();
+#endif
   assert(u_values);
   v_values = (Real*) malloc(sizeof(Real) * n_vlines);
+#ifdef __REACTOS__
+  if (!v_values)
+    abort();
+#endif
   assert(v_values);  
   
   Int i;
@@ -89,8 +97,16 @@ gridWrap::gridWrap(Int nUlines, Int nVlines,
   v_min = vMin;
   v_max = vMax;
   u_values = (Real*) malloc(sizeof(Real) * n_ulines);
+#ifdef __REACTOS__
+  if (!u_values)
+    abort();
+#endif
   assert(u_values);
   v_values = (Real*) malloc(sizeof(Real) * n_vlines);
+#ifdef __REACTOS__
+  if (!v_values)
+    abort();
+#endif
   assert(v_values);
   
   Int i;
@@ -184,12 +200,24 @@ gridBoundaryChain::gridBoundaryChain(
 : grid(gr), firstVlineIndex(first_vline_index), nVlines(n_vlines)
 {
   ulineIndices = (Int*) malloc(sizeof(Int) * n_vlines);
+#ifdef __REACTOS__
+  if (!ulineIndices)
+    abort();
+#endif
   assert(ulineIndices);
 
   innerIndices = (Int*) malloc(sizeof(Int) * n_vlines);
+#ifdef __REACTOS__
+  if (!innerIndices)
+    abort();
+#endif
   assert(innerIndices);
 
   vertices = (Real2*) malloc(sizeof(Real2) * n_vlines);
+#ifdef __REACTOS__
+  if (!vertices)
+    abort();
+#endif
   assert(vertices);
   
 

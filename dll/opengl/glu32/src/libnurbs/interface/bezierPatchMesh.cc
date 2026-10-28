@@ -112,6 +112,10 @@ bezierPatchMesh *bezierPatchMeshMake(int maptype, float umin, float umax, int us
   }
 
   bezierPatchMesh *ret = (bezierPatchMesh*) malloc(sizeof(bezierPatchMesh));
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
 
   ret->bpatch_normal = NULL;
@@ -131,10 +135,22 @@ bezierPatchMesh *bezierPatchMeshMake(int maptype, float umin, float umax, int us
   ret->size_UVarray = size_UVarray;
   ret->size_length_array = size_length_array;
   ret->UVarray = (float*) malloc(sizeof(float) * size_UVarray);
+#ifdef __REACTOS__
+  if (!ret->UVarray)
+    abort();
+#endif
   assert(ret->UVarray);
   ret->length_array = (int *)malloc(sizeof(int) * size_length_array);
+#ifdef __REACTOS__
+  if (!ret->length_array)
+    abort();
+#endif
   assert(ret->length_array);
   ret->type_array = (GLenum *)malloc(sizeof(GLenum) * size_length_array);
+#ifdef __REACTOS__
+  if (!ret->type_array)
+    abort();
+#endif
   assert(ret->type_array);
 
   ret->index_UVarray = 0;
@@ -152,6 +168,10 @@ bezierPatchMesh *bezierPatchMeshMake(int maptype, float umin, float umax, int us
 bezierPatchMesh *bezierPatchMeshMake2(int size_UVarray, int size_length_array)
 {
   bezierPatchMesh *ret = (bezierPatchMesh*) malloc(sizeof(bezierPatchMesh));
+#ifdef __REACTOS__
+  if (!ret)
+    abort();
+#endif
   assert(ret);
 
   ret->bpatch = NULL;
@@ -162,10 +182,22 @@ bezierPatchMesh *bezierPatchMeshMake2(int size_UVarray, int size_length_array)
   ret->size_UVarray = size_UVarray;
   ret->size_length_array = size_length_array;
   ret->UVarray = (float*) malloc(sizeof(float) * size_UVarray);
+#ifdef __REACTOS__
+  if (!ret->UVarray)
+    abort();
+#endif
   assert(ret->UVarray);
   ret->length_array = (int *)malloc(sizeof(int) * size_length_array);
+#ifdef __REACTOS__
+  if (!ret->length_array)
+    abort();
+#endif
   assert(ret->length_array);
   ret->type_array = (GLenum *)malloc(sizeof(GLenum) * size_length_array);
+#ifdef __REACTOS__
+  if (!ret->type_array)
+    abort();
+#endif
   assert(ret->type_array);
 
   ret->index_UVarray = 0;
@@ -260,8 +292,16 @@ void bezierPatchMeshEndStrip(bezierPatchMesh *bpm)
   if(bpm->index_length_array >= bpm->size_length_array)
     {
       int *temp = (int*) malloc(sizeof(int) * (bpm->size_length_array*2 + 1));
+#ifdef __REACTOS__
+      if (!temp)
+        abort();
+#endif
       assert(temp);
       GLenum *temp_type = (GLenum*) malloc(sizeof(GLenum) * (bpm->size_length_array*2 + 1));
+#ifdef __REACTOS__
+      if (!temp_type)
+        abort();
+#endif
       assert(temp_type);
       /*update the size*/
       bpm->size_length_array = bpm->size_length_array*2 + 1;
@@ -294,6 +334,10 @@ void bezierPatchMeshInsertUV(bezierPatchMesh *bpm, float u, float v)
   if(bpm->index_UVarray+1 >= bpm->size_UVarray)
     {
       float *temp = (float*) malloc(sizeof(float) * (bpm->size_UVarray * 2 + 2));
+#ifdef __REACTOS__
+      if (!temp)
+        abort();
+#endif
       assert(temp);
       
       /*update the size*/
@@ -435,10 +479,22 @@ void bezierPatchMeshDelDeg(bezierPatchMesh* bpm)
   int index_new_UVarray;
 
   new_length_array = (int*)malloc(sizeof(int) * bpm->index_length_array);
+#ifdef __REACTOS__
+  if (!new_length_array)
+    abort();
+#endif
   assert(new_length_array);
   new_type_array = (GLenum*)malloc(sizeof(GLenum) * bpm->index_length_array);
+#ifdef __REACTOS__
+  if (!new_type_array)
+    abort();
+#endif
   assert(new_length_array);
   new_UVarray = (float*) malloc(sizeof(float) * bpm->index_UVarray);
+#ifdef __REACTOS__
+  if (!new_UVarray)
+    abort();
+#endif
   assert(new_UVarray);
 
   index_new_length_array = 0;
@@ -492,8 +548,16 @@ void bezierPatchMeshEval(bezierPatchMesh* bpm)
   float *ctlpoints = bpm->bpatch->ctlpoints;
   
   bpm->vertex_array = (float*) malloc(sizeof(float)* (bpm->index_UVarray/2) * 3);
+#ifdef __REACTOS__
+  if (!bpm->vertex_array)
+    abort();
+#endif
   assert(bpm->vertex_array);
   bpm->normal_array = (float*) malloc(sizeof(float)* (bpm->index_UVarray/2) * 3);
+#ifdef __REACTOS__
+  if (!bpm->normal_array)
+    abort();
+#endif
   assert(bpm->normal_array);
 
   k=0;

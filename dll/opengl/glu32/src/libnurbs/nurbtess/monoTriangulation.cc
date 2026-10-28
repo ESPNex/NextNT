@@ -57,6 +57,10 @@ void monoTriangulationOpt(directedLine* poly, primStream* pStream)
   Int n_cusps;
   Int n_edges = poly->numEdges();
   directedLine** cusps = (directedLine**) malloc(sizeof(directedLine*)*n_edges);
+#ifdef __REACTOS__
+  if (!cusps)
+    abort();
+#endif
   assert(cusps);
   findInteriorCuspsX(poly, n_cusps, cusps);
   if(n_cusps ==0) //u monotine
@@ -389,6 +393,10 @@ void  monoTriangulationRecGenOpt(Real* topVertex, Real* botVertex,
     Int n_cusps;
     Int n_edges = poly->numEdges();
     directedLine** cusps = (directedLine**) malloc(sizeof(directedLine*)*n_edges);
+#ifdef __REACTOS__
+    if (!cusps)
+      abort();
+#endif
     assert(cusps);
     findInteriorCuspsX(poly, n_cusps, cusps);
 
@@ -1120,6 +1128,10 @@ vertexArray::vertexArray(Real2* vertices, Int nVertices)
   Int i;
   size = index = nVertices;
   array = (Real**) malloc(sizeof(Real*) * nVertices);
+#ifdef __REACTOS__
+  if (!array)
+    abort();
+#endif
   assert(array);
   for(i=0; i<nVertices; i++)
     {
@@ -1132,6 +1144,10 @@ vertexArray::vertexArray(Int s)
 {
   size = s;
   array = (Real**) malloc(sizeof(Real*) * s);
+#ifdef __REACTOS__
+  if (!array)
+    abort();
+#endif
   assert(array);
   index = 0;
 }
@@ -1146,6 +1162,10 @@ void vertexArray::appendVertex(Real* ptr)
   Int i;
   if(index >= size){
     Real** temp = (Real**) malloc(sizeof(Real*) * (2*size +1));
+#ifdef __REACTOS__
+    if (!temp)
+      abort();
+#endif
     assert(temp);
     for(i=0; i<index; i++)
       temp[i] = array[i];
@@ -1342,6 +1362,10 @@ Int vertexArray::skipEqualityFromStart(Real v, Int start, Int end)
 reflexChain::reflexChain(Int size, Int is_increasing)
 {
   queue = (Real2*) malloc(sizeof(Real2) * size);
+#ifdef __REACTOS__
+  if (!queue)
+    abort();
+#endif
   assert(queue);
   index_queue = 0;
   size_queue = size;
@@ -1361,6 +1385,10 @@ void reflexChain::insert(Real u, Real v)
   Int i;
   if(index_queue >= size_queue) {
     Real2 *temp = (Real2*) malloc(sizeof(Real2) * (2*size_queue+1));
+#ifdef __REACTOS__
+    if (!temp)
+      abort();
+#endif
     assert(temp);
 
     /*copy*/

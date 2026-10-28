@@ -55,8 +55,16 @@ rectBlock::rectBlock(gridBoundaryChain* left, gridBoundaryChain* right, Int begi
 
   Int n = upGridLineIndex-lowGridLineIndex+1; //number of grid lines
   leftIndices = (Int*) malloc(sizeof(Int) * n);
+#ifdef __REACTOS__
+  if (!leftIndices)
+    abort();
+#endif
   assert(leftIndices);
   rightIndices = (Int*) malloc(sizeof(Int) * n);
+#ifdef __REACTOS__
+  if (!rightIndices)
+    abort();
+#endif
   assert(rightIndices);
   for(i=0; i<n; i++)
     {
@@ -131,6 +139,10 @@ rectBlockArray::rectBlockArray(Int s)
   n_elements = 0;
   size = s;
   array = (rectBlock**) malloc(sizeof(rectBlock*) * s);
+#ifdef __REACTOS__
+  if (!array)
+    abort();
+#endif
   assert(array);
 //initialization
   for(i=0; i<s; i++)
@@ -155,6 +167,10 @@ void rectBlockArray::insert(rectBlock* newBlock)
   if(n_elements == size) //full
     {
       rectBlock** temp = (rectBlock**) malloc(sizeof(rectBlock) * (2*size+1));
+#ifdef __REACTOS__
+      if (!temp)
+        abort();
+#endif
       assert(temp);
       //initialization
       for(i=0; i<2*size+1; i++)
