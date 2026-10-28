@@ -1157,7 +1157,7 @@ CreateGptPartitionEntry(
     RtlCopyMemory(PartEntry->GptName, PartitionInfo->Gpt.Name, sizeof(PartEntry->GptName));
     PartEntry->PartitionType = GptPartitionClass(&PartEntry->PartitionTypeGuid);
     PartEntry->IsPartitioned = TRUE;
-    PartEntry->OnDiskPartitionNumber = PartitionInfo->PartitionNumber;
+    PartEntry->OnDiskPartitionNumber = PartitionIndex + 1;
     PartEntry->PartitionNumber = PartitionInfo->PartitionNumber;
     PartEntry->PartitionIndex = PartitionIndex;
     InitPartitionDeviceName(PartEntry);
@@ -1174,6 +1174,8 @@ AddPartitionToDisk(
 {
     PPARTITION_INFORMATION PartitionInfo;
     PPARTENTRY PartEntry;
+    ULONG OnDiskNumber = 0;
+    ULONG Index;
 
     if (DiskEntry->DiskStyle == PARTITION_STYLE_GPT)
     {
@@ -1207,7 +1209,17 @@ AddPartitionToDisk(
 
     PartEntry->LogicalPartition = LogicalPartition;
     PartEntry->IsPartitioned = TRUE;
-    PartEntry->OnDiskPartitionNumber = PartitionInfo->PartitionNumber;
+    if (!IsContainerPartition(PartitionInfo->PartitionType))
+    {
+        for (Index = 0; Index <= PartitionIndex; Index++)
+        {
+            UCHAR PartitionType = DiskEntry->LayoutBuffer->PartitionEntry[Index].PartitionType;
+
+            if (PartitionType != PARTITION_ENTRY_UNUSED && !IsContainerPartition(PartitionType))
+                OnDiskNumber++;
+        }
+    }
+    PartEntry->OnDiskPartitionNumber = OnDiskNumber;
     PartEntry->PartitionNumber = PartitionInfo->PartitionNumber;
     PartEntry->PartitionIndex = PartitionIndex;
     InitPartitionDeviceName(PartEntry);
