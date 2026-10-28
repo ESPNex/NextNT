@@ -330,6 +330,9 @@ INT cmd_type(LPTSTR param)
     UINT nFileSpecs = 0;
     HANDLE hFind;
     WIN32_FIND_DATA FindData;
+    TCHAR szFullPath[MAX_PATH];
+    SIZE_T cchDirectory;
+    LPTSTR pszSeparator;
 
     if (!_tcsncmp(param, _T("/?"), 2))
     {
@@ -396,6 +399,13 @@ INT cmd_type(LPTSTR param)
             dwLastError = ERROR_SUCCESS;
             bFileFound = FALSE;
 
+            pszSeparator = _tcsrchr(argv[i], _T('\\'));
+            if (!pszSeparator || (_tcsrchr(argv[i], _T('/')) > pszSeparator))
+                pszSeparator = _tcsrchr(argv[i], _T('/'));
+            if (!pszSeparator && argv[i][0] && argv[i][1] == _T(':'))
+                pszSeparator = &argv[i][1];
+            cchDirectory = pszSeparator ? (SIZE_T)(pszSeparator - argv[i] + 1) : 0;
+
             hFind = FindFirstFile(argv[i], &FindData);
 
             if (hFind != INVALID_HANDLE_VALUE)
@@ -412,7 +422,11 @@ INT cmd_type(LPTSTR param)
                     }
 
                     bFileFound = TRUE;
-                    if (!DoTypeFile(FindData.cFileName, hConsoleOut, bNoFileName, bPaging))
+                    if (cchDirectory + _tcslen(FindData.cFileName) >= ARRAYSIZE(szFullPath))
+                        continue;
+                    memcpy(szFullPath, argv[i], cchDirectory * sizeof(TCHAR));
+                    _tcscpy(szFullPath + cchDirectory, FindData.cFileName);
+                    if (!DoTypeFile(szFullPath, hConsoleOut, bNoFileName, bPaging))
                     {
                         FindClose(hFind);
                         goto Quit;
@@ -444,7 +458,7 @@ INT cmd_type(LPTSTR param)
                               (LPTSTR)&errmsg,
                               0,
                               NULL);
-                ConErrPrintf(_T("%s - %s"), argv[i], errmsg);
+                ConErrPrintf(_T("%s"), errmsg);
                 LocalFree(errmsg);
                 nErrorLevel = 1;
             }
