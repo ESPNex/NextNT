@@ -86,7 +86,11 @@ static inline DISPID prop_to_id(jsdisp_t *This, dispex_prop_t *prop)
 
 static inline dispex_prop_t *get_prop(jsdisp_t *This, DISPID id)
 {
+#ifdef __REACTOS__
+    DWORD idx = (DWORD)id - 1;
+#else
     DWORD idx = id - 1;
+#endif
 
     if(idx >= This->prop_cnt)
         return NULL;

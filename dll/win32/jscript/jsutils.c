@@ -664,7 +664,12 @@ HRESULT to_integer(script_ctx_t *ctx, jsval_t v, double *ret)
 
 INT32 double_to_int32(double number)
 {
+#ifdef __REACTOS__
+    INT32 exp;
+    UINT32 result;
+#else
     INT32 exp, result;
+#endif
     union {
         double d;
         INT64 n;
@@ -687,21 +692,33 @@ INT32 double_to_int32(double number)
      * to shift.  If the exponent is greater than 52 we need to shift the value
      * left by (exp - 52), if the value is less than 52 we need to shift right
      * accordingly. */
+#ifdef __REACTOS__
+    result = (exp > 52) ? (UINT64)bits.n << (exp - 52) : (UINT64)bits.n >> (52 - exp);
+#else
     result = (exp > 52) ? bits.n << (exp - 52) : bits.n >> (52 - exp);
+#endif
 
     /* IEEE-754 double precision values are stored omitting an implicit 1 before
      * the decimal point; we need to reinsert this now.  We may also the shifted
      * invalid bits into the result that are not a part of the mantissa (the sign
      * and exponent bits from the floatingpoint representation); mask these out. */
     if(exp < 32) {
+#ifdef __REACTOS__
+        UINT32 missing_one = 1U << exp;
+#else
         INT32 missing_one = 1 << exp;
+#endif
         result &= missing_one - 1;
         result += missing_one;
     }
 
     /* If the input value was negative (we could test either 'number' or 'bits',
      * but testing 'bits' is likely faster) invert the result appropriately. */
+#ifdef __REACTOS__
+    return bits.n < 0 ? (INT32)(0U - result) : (INT32)result;
+#else
     return bits.n < 0 ? -result : result;
+#endif
 }
 
 /* ECMA-262 3rd Edition    9.5 */
