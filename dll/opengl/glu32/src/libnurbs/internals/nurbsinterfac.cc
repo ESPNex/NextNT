@@ -432,8 +432,15 @@ NurbsTessellator::getnurbsproperty( long type, long tag, INREAL *value )
 {
     Mapdesc *mapdesc = maplist.locate( type );
 
+#ifdef __REACTOS__
+    if( mapdesc == 0 ) {
+	do_nurbserror( 35 );
+	return;
+    }
+#else
     if( mapdesc == 0 ) 
 	do_nurbserror( 35 );
+#endif
 
     if( mapdesc->isProperty( tag  ) ) {
 	*value = mapdesc->getProperty( tag );
