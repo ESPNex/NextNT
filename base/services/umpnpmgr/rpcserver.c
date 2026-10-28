@@ -3486,7 +3486,7 @@ SetupDeviceInstance(
     if (ret != CR_SUCCESS)
         goto done;
 
-    if (ulStatus & DN_STARTED)
+    if (ulStatus & (DN_STARTED | DN_NEED_RESTART))
     {
         goto done;
     }
