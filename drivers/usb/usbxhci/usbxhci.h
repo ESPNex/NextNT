@@ -15,6 +15,7 @@
 #include <usbbusif.h>
 #include <usbdlib.h>
 #include <drivers/usbport/usbmport.h>
+#include <drivers/kdusbshare.h>
 
 #include "hardware.h"
 
@@ -263,6 +264,8 @@ typedef struct _XHCI_EXTENSION {
   /* TRUE if we raised the system clock resolution via ExSetTimerResolution
    * during StartController and must restore it on StopController. */
   BOOLEAN TimerResolutionRaised;
+  BOOLEAN DebugShare;
+  KD_USB_SHARE DebugShareInfo;
 } XHCI_EXTENSION, *PXHCI_EXTENSION;
 
 typedef struct _XHCI_COMMAND_CONTEXT {

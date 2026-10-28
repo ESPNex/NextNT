@@ -107,6 +107,7 @@ typedef struct _XHCI_PROTOCOL_CAPABILITY {
 #define XHCI_PORTSC_PLS(value)    (((value) << XHCI_PORTSC_PLS_SHIFT) & XHCI_PORTSC_PLS_MASK)
 #define XHCI_PORTSC_PIC_MASK       0x0000C000
 #define XHCI_PORTSC_LWS            0x00010000
+#define XHCI_PORT_LINK_STATE_RESUME 15
 #define XHCI_PORTSC_CSC            0x00020000
 #define XHCI_PORTSC_PEC            0x00040000
 #define XHCI_PORTSC_WRC            0x00080000
@@ -251,6 +252,9 @@ typedef struct _XHCI_OPERATIONAL_REGISTERS {
     volatile ULONG Reserved3[241];
     XHCI_PORT_REGISTER PortRegister[XHCI_MAX_PORTS];
 } XHCI_OPERATIONAL_REGISTERS, *PXHCI_OPERATIONAL_REGISTERS;
+
+#define XHCI_CRCR_CS               0x00000002
+#define XHCI_CRCR_CRR              0x00000008
 
 typedef struct DECLSPEC_ALIGN(16) _XHCI_TRB {
     ULONG Parameter1;

@@ -1200,12 +1200,22 @@ XHCI_IsValidPort(
 }
 
 static
+BOOLEAN
+XHCI_IsDebuggerPort(
+    _In_ PXHCI_EXTENSION Extension,
+    _In_ USHORT Port)
+{
+    return Extension && Extension->DebugShare && Port == Extension->DebugShareInfo.Port;
+}
+
+static
 volatile ULONG *
 XHCI_GetPortStatusRegister(
     _In_ PXHCI_EXTENSION Extension,
     _In_ USHORT Port)
 {
-    if (!XHCI_IsValidPort(Extension, Port) || !Extension->OperationalRegisters)
+    if (!XHCI_IsValidPort(Extension, Port) || XHCI_IsDebuggerPort(Extension, Port) ||
+        !Extension->OperationalRegisters)
         return NULL;
 
     return &Extension->OperationalRegisters->PortRegister[Port - 1].PortStatusAndControl;
@@ -1217,7 +1227,8 @@ XHCI_GetPortPowerRegister(
     _In_ PXHCI_EXTENSION Extension,
     _In_ USHORT Port)
 {
-    if (!XHCI_IsValidPort(Extension, Port) || !Extension->OperationalRegisters)
+    if (!XHCI_IsValidPort(Extension, Port) || XHCI_IsDebuggerPort(Extension, Port) ||
+        !Extension->OperationalRegisters)
         return NULL;
 
     return &Extension->OperationalRegisters->PortRegister[Port - 1].PortPowerManagement;
@@ -1315,6 +1326,9 @@ XHCI_ModifyPortBits(
     ULONG Value;
     ULONG NewValue;
 
+    if (XHCI_IsDebuggerPort(Extension, Port))
+        return MP_STATUS_SUCCESS;
+
     PortStatusReg = XHCI_GetPortStatusRegister(Extension, Port);
     if (!PortStatusReg)
         return MP_STATUS_ERROR;
@@ -1372,18 +1386,13 @@ XHCI_ModifyPortBits(
 
 static
 MPSTATUS
-XHCI_SetPortLinkState(
-    _In_ PXHCI_EXTENSION Extension,
+XHCI_WritePortLinkState(
+    _In_ volatile ULONG *PortStatusReg,
     _In_ USHORT Port,
     _In_ ULONG LinkState)
 {
-    volatile ULONG *PortStatusReg;
     ULONG Value;
     ULONG NewValue;
-
-    PortStatusReg = XHCI_GetPortStatusRegister(Extension, Port);
-    if (!PortStatusReg)
-        return MP_STATUS_ERROR;
 
     Value = XHCI_READ_REGISTER_ULONG(PortStatusReg);
 
@@ -1410,6 +1419,25 @@ XHCI_SetPortLinkState(
     XHCI_WRITE_REGISTER_ULONG(PortStatusReg, NewValue & XHCI_PORTSC_WRITE_MASK);
 
     return MP_STATUS_SUCCESS;
+}
+
+static
+MPSTATUS
+XHCI_SetPortLinkState(
+    _In_ PXHCI_EXTENSION Extension,
+    _In_ USHORT Port,
+    _In_ ULONG LinkState)
+{
+    volatile ULONG *PortStatusReg;
+
+    if (XHCI_IsDebuggerPort(Extension, Port))
+        return MP_STATUS_SUCCESS;
+
+    PortStatusReg = XHCI_GetPortStatusRegister(Extension, Port);
+    if (!PortStatusReg)
+        return MP_STATUS_ERROR;
+
+    return XHCI_WritePortLinkState(PortStatusReg, Port, LinkState);
 }
 
 static
@@ -1687,6 +1715,14 @@ XHCI_ApplyEndpointLpmPolicy(
 }
 
 static
+ULONGLONG
+XHCI_GetCommandRingPointer(
+    _In_ PXHCI_EXTENSION Extension)
+{
+    return (Extension->CommandRingPhysical.QuadPart & ~0x3FULL) | (Extension->CommandRingCycleState & 0x1);
+}
+
+static
 MPSTATUS
 XHCI_ProgramDcbaaCrcrAndConfig(
     _Inout_ PXHCI_EXTENSION Extension)
@@ -1707,7 +1743,7 @@ XHCI_ProgramDcbaaCrcrAndConfig(
     }
 
     Dcbaa = Extension->DcbaaPhysical.QuadPart;
-    Crcr = Extension->CommandRingPhysical.QuadPart & ~0x3FULL;
+    Crcr = XHCI_GetCommandRingPointer(Extension);
     DcbaaLow = (ULONG)(Dcbaa & 0xFFFFFFFF);
     DcbaaHigh = (ULONG)(Dcbaa >> 32);
     CrcrLow = (ULONG)(Crcr & 0xFFFFFFFF);
@@ -1748,8 +1784,6 @@ XHCI_ProgramDcbaaCrcrAndConfig(
         }
     }
 #endif
-
-    CrcrLow |= (Extension->CommandRingCycleState & 0x1);
 
     DPRINT("usbxhci: programming DCBAA=%08lx:%08lx CRCR=%08lx:%08lx\n",
             DcbaaHigh, DcbaaLow, CrcrHigh, CrcrLow);
@@ -6777,7 +6811,8 @@ XHCI_HandlePortChange(
     ULONG ChangeMask;
     PXHCI_DEVICE_SLOT Slot;
 
-    if (!Extension || PortId == 0 || PortId > Extension->NumberOfPorts)
+    if (!Extension || PortId == 0 || PortId > Extension->NumberOfPorts ||
+        XHCI_IsDebuggerPort(Extension, PortId))
         return;
 
     PortScReg = XHCI_GetPortStatusRegister(Extension, PortId);
@@ -10437,6 +10472,99 @@ Exit:
 }
 
 static
+BOOLEAN
+XHCI_DebugEndpointsRunning(
+    _In_ PXHCI_EXTENSION Extension)
+{
+    PKD_USB_SHARE Share = &Extension->DebugShareInfo;
+    PXHCI_ENDPOINT_CONTEXT EpCtx;
+    ULONG Index, Dci;
+
+    for (Index = 0; Index < Share->SlotCount; Index++)
+    {
+        if (!Share->ContextAddresses[Index])
+            continue;
+
+        for (Dci = 1; Dci < 32; Dci++)
+        {
+            if (!(Share->Endpoints[Index] & (1UL << Dci)))
+                continue;
+
+            EpCtx = XHCI_GetDeviceEndpointContextVa(Extension, (PVOID)(ULONG_PTR)Share->ContextAddresses[Index], Dci - 1);
+            if ((EpCtx->EpInfo & XHCI_EPCTX_STATE_MASK) == XHCI_EPCTX_STATE_RUNNING)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+static
+BOOLEAN
+XHCI_StopCommandRing(
+    _Inout_ PXHCI_EXTENSION Extension,
+    _In_ ULONGLONG Crcr)
+{
+    volatile ULONG *CrcrLow = &Extension->OperationalRegisters->CrCrLow;
+
+    XHCI_WRITE_REGISTER_ULONG(CrcrLow, (ULONG)Crcr | XHCI_CRCR_CS);
+    XHCI_WRITE_REGISTER_ULONG(&Extension->OperationalRegisters->CrCrHigh, (ULONG)(Crcr >> 32));
+    return XHCI_WaitForRegisterBits(CrcrLow, XHCI_CRCR_CRR, FALSE, XHCI_WAIT_HALT_US);
+}
+
+static
+VOID
+XHCI_StopDebugEndpoints(
+    _Inout_ PXHCI_EXTENSION Extension)
+{
+    PKD_USB_SHARE Share = &Extension->DebugShareInfo;
+    ULONGLONG Crcr = XHCI_GetCommandRingPointer(Extension);
+    ULONG Index, Dci, Count = 0, Wait;
+
+    if (!XHCI_StopCommandRing(Extension, Crcr))
+    {
+        DPRINT1("usbxhci: the kernel debugger's command ring did not stop, CRCR 0x%08lx\n",
+                XHCI_READ_REGISTER_ULONG(&Extension->OperationalRegisters->CrCrLow));
+        return;
+    }
+
+    XHCI_WRITE_REGISTER_ULONG(&Extension->OperationalRegisters->CrCrLow, (ULONG)Crcr);
+    XHCI_WRITE_REGISTER_ULONG(&Extension->OperationalRegisters->CrCrHigh, (ULONG)(Crcr >> 32));
+    for (Index = 0; Index < Share->SlotCount; Index++)
+    {
+        for (Dci = 1; Dci < 32; Dci++)
+        {
+            if ((Share->Endpoints[Index] & (1UL << Dci)) &&
+                XHCI_QueueCommand(Extension, XHCI_TRB_TYPE_STOP_EP, 0, 0,
+                                  XHCI_COMMAND_SLOT_FIELD(Share->Slots[Index]) | XHCI_COMMAND_EP_FIELD(Dci),
+                                  NULL) == MP_STATUS_SUCCESS)
+            {
+                Count++;
+            }
+        }
+    }
+
+    for (Wait = 0; Count && Wait < 1000 && XHCI_DebugEndpointsRunning(Extension); Wait++)
+        KeStallExecutionProcessor(100);
+
+    XHCI_StopCommandRing(Extension, Crcr);
+    RtlZeroMemory(Extension->CommandRing, Count * sizeof(XHCI_TRB));
+    XHCI_ResetCommandRingState(Extension);
+}
+
+static
+MPSTATUS
+XHCI_TakeOverFromDebugger(
+    _Inout_ PXHCI_EXTENSION Extension)
+{
+    XHCI_StopDebugEndpoints(Extension);
+    if (XHCI_HaltController(Extension, XHCI_WAIT_HALT_US) != MP_STATUS_SUCCESS)
+        return XHCI_ResetController(Extension);
+
+    return MP_STATUS_SUCCESS;
+}
+
+static
 MPSTATUS
 XHCI_ResetController(
     _In_ PXHCI_EXTENSION Extension)
@@ -10452,6 +10580,13 @@ XHCI_ResetController(
 
     UsbCmd = &Extension->OperationalRegisters->UsbCmd;
     UsbSts = &Extension->OperationalRegisters->UsbSts;
+
+    if (Extension->DebugShare)
+    {
+        DPRINT1("usbxhci: resetting the controller ends the kernel debugger's use of root port %lu\n",
+                Extension->DebugShareInfo.Port);
+        Extension->DebugShare = FALSE;
+    }
 
     Command = XHCI_READ_REGISTER_ULONG(UsbCmd);
     if (Command & XHCI_USBCMD_RS)
@@ -12895,6 +13030,120 @@ XHCI_CloseEndpoint(PVOID MiniPortExtension,
     }
 }
 
+static
+VOID
+XHCI_ReadDebugShare(
+    _Inout_ PXHCI_EXTENSION Extension)
+{
+    UNICODE_STRING KeyName = RTL_CONSTANT_STRING(KD_USB_SHARE_KEY_PATH);
+    UNICODE_STRING ValueName = RTL_CONSTANT_STRING(KD_USB_SHARE_VALUE);
+    ULONG Buffer[(FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data) + sizeof(KD_USB_SHARE) + sizeof(ULONG) - 1) /
+                 sizeof(ULONG)];
+    PKEY_VALUE_PARTIAL_INFORMATION Value = (PKEY_VALUE_PARTIAL_INFORMATION)Buffer;
+    PKD_USB_SHARE Share = &Extension->DebugShareInfo;
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    ULONGLONG Dcbaap;
+    ULONG Length, Index;
+    HANDLE Key;
+    NTSTATUS Status;
+
+    Extension->DebugShare = FALSE;
+
+    InitializeObjectAttributes(&ObjectAttributes, &KeyName, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+    if (!NT_SUCCESS(ZwOpenKey(&Key, KEY_QUERY_VALUE, &ObjectAttributes)))
+        return;
+
+    Status = ZwQueryValueKey(Key, &ValueName, KeyValuePartialInformation, Value, sizeof(Buffer), &Length);
+    ZwClose(Key);
+    if (!NT_SUCCESS(Status) || Value->Type != REG_BINARY || Value->DataLength != sizeof(KD_USB_SHARE))
+        return;
+
+    RtlCopyMemory(Share, Value->Data, sizeof(*Share));
+    if (Share->Signature != KD_USB_SHARE_SIGNATURE || Share->Size != sizeof(*Share) ||
+        Share->Port == 0 || Share->Port > Extension->NumberOfPorts ||
+        Share->Interrupter == 0 || Share->SlotCount > KD_USB_SHARE_MAX_SLOTS)
+    {
+        return;
+    }
+
+    for (Index = 0; Index < Share->SlotCount; Index++)
+    {
+        if (Share->Slots[Index] == 0 || Share->Slots[Index] > Extension->MaxSlots)
+            return;
+    }
+
+    Dcbaap = ((ULONGLONG)XHCI_READ_REGISTER_ULONG(&Extension->OperationalRegisters->DcbaapHigh) << 32) |
+             XHCI_READ_REGISTER_ULONG(&Extension->OperationalRegisters->DcbaapLow);
+    if (!(XHCI_READ_REGISTER_ULONG(&Extension->OperationalRegisters->UsbCmd) & XHCI_USBCMD_RS) ||
+        (Dcbaap & ~0x3FULL) != Share->Dcbaa)
+    {
+        return;
+    }
+
+    Extension->DebugShare = TRUE;
+    DPRINT1("usbxhci: the kernel debugger keeps root port %lu and %lu slot(s), sharing the controller\n",
+            Share->Port, Share->SlotCount);
+}
+
+static
+VOID
+XHCI_ApplyDebugShare(
+    _Inout_ PXHCI_EXTENSION Extension)
+{
+    PKD_USB_SHARE Share = &Extension->DebugShareInfo;
+    ULONG Index;
+
+    if (!Extension->DebugShare)
+        return;
+
+    Extension->Dcbaa[0] = Share->ScratchpadArray;
+    for (Index = 0; Index < Share->SlotCount; Index++)
+        Extension->Dcbaa[Share->Slots[Index]] = Share->DeviceContexts[Index];
+}
+
+static
+VOID
+XHCI_RingDebugEndpoints(
+    _In_ PXHCI_EXTENSION Extension)
+{
+    PKD_USB_SHARE Share = &Extension->DebugShareInfo;
+    ULONG Index, Dci;
+
+    for (Index = 0; Index < Share->SlotCount; Index++)
+    {
+        for (Dci = 1; Dci < 32; Dci++)
+        {
+            if (Share->Endpoints[Index] & (1UL << Dci))
+                XHCI_RingEndpointDoorbell(Extension, Share->Slots[Index], (UCHAR)Dci, 0);
+        }
+    }
+}
+
+static
+VOID
+XHCI_ResumeDebugPort(
+    _Inout_ PXHCI_EXTENSION Extension)
+{
+    USHORT Port = (USHORT)Extension->DebugShareInfo.Port;
+    volatile ULONG *PortStatusReg = &Extension->OperationalRegisters->PortRegister[Port - 1].PortStatusAndControl;
+    LARGE_INTEGER Interval;
+
+    if ((XHCI_READ_REGISTER_ULONG(PortStatusReg) & XHCI_PORTSC_PLS_MASK) != XHCI_PORTSC_PLS(PORT_LINK_STATE_U3))
+    {
+        XHCI_RingDebugEndpoints(Extension);
+        return;
+    }
+
+    if (Extension->PortProtocol[Port] < 3)
+    {
+        XHCI_WritePortLinkState(PortStatusReg, Port, XHCI_PORT_LINK_STATE_RESUME);
+        Interval.QuadPart = -200000LL;
+        KeDelayExecutionThread(KernelMode, FALSE, &Interval);
+    }
+
+    XHCI_WritePortLinkState(PortStatusReg, Port, PORT_LINK_STATE_U0);
+}
+
 static MPSTATUS NTAPI
 XHCI_StartController(PVOID MiniPortExtension,
                      PUSBPORT_RESOURCES UsbPortResources)
@@ -13277,12 +13526,14 @@ XHCI_StartController(PVOID MiniPortExtension,
     if (!XHCI_ValidateContextLayout(Extension))
         return MP_STATUS_ERROR;
 
+    XHCI_ReadDebugShare(Extension);
+
     /*
      * Bring the controller into a clean state before programming operational
      * registers (PageSize/DCBAA/CRCR/ERST). Firmware may leave the controller in
      * a dirty state across warm boots.
      */
-    Status = XHCI_ResetController(Extension);
+    Status = Extension->DebugShare ? XHCI_TakeOverFromDebugger(Extension) : XHCI_ResetController(Extension);
     if (Status != MP_STATUS_SUCCESS)
         return Status;
 
@@ -13300,6 +13551,8 @@ XHCI_StartController(PVOID MiniPortExtension,
     Status = XHCI_InitializeScratchpads(Extension);
     if (Status != MP_STATUS_SUCCESS)
         return Status;
+
+    XHCI_ApplyDebugShare(Extension);
 
     Status = XHCI_ProgramDcbaaCrcrAndConfig(Extension);
     if (Status != MP_STATUS_SUCCESS)
@@ -13410,6 +13663,9 @@ XHCI_StartController(PVOID MiniPortExtension,
 
         return MP_STATUS_HW_ERROR;
     }
+
+    if (Extension->DebugShare)
+        XHCI_ResumeDebugPort(Extension);
 
     XHCI_PowerOnAllPorts(Extension);
     XHCI_ConfigureAllPortsLpm(Extension);
@@ -15083,7 +15339,8 @@ XHCI_SuspendController(
 
     XHCI_SuspendPorts(Extension);
     XHCI_DisableInterrupts(Extension);
-    XHCI_HaltController(Extension, XHCI_WAIT_HALT_US);
+    if (!Extension->DebugShare)
+        XHCI_HaltController(Extension, XHCI_WAIT_HALT_US);
 }
 
 static
@@ -15105,15 +15362,12 @@ XHCI_ReprogramControllerState(
      * with device contexts and the command ring.
      */
     Dcbaa = Extension->DcbaaPhysical.QuadPart;
-    Crcr = Extension->CommandRingPhysical.QuadPart & ~0x3FULL;
+    Crcr = XHCI_GetCommandRingPointer(Extension);
 
     DcbaaLow = (ULONG)(Dcbaa & 0xFFFFFFFF);
     DcbaaHigh = (ULONG)(Dcbaa >> 32);
     CrcrLow = (ULONG)(Crcr & 0xFFFFFFFF);
     CrcrHigh = (ULONG)(Crcr >> 32);
-
-    /* Include current cycle state in CRCR */
-    CrcrLow |= (Extension->CommandRingCycleState & 0x1);
 
     DPRINT1("usbxhci: resume reprogramming DCBAA=%08lx:%08lx CRCR=%08lx:%08lx\n",
             DcbaaHigh, DcbaaLow, CrcrHigh, CrcrLow);
@@ -15136,6 +15390,16 @@ XHCI_ResumeController(
 
     if (!Extension)
         return MP_STATUS_ERROR;
+
+    if (Extension->DebugShare && Extension->OperationalRegisters &&
+        (XHCI_READ_REGISTER_ULONG(&Extension->OperationalRegisters->UsbCmd) & XHCI_USBCMD_RS) &&
+        !(XHCI_READ_REGISTER_ULONG(&Extension->OperationalRegisters->UsbSts) & XHCI_USBSTS_HCH))
+    {
+        XHCI_EnableInterrupts(Extension);
+        XHCI_ServiceEventRing(Extension, TRUE, TRUE);
+        XHCI_ResumePorts(Extension);
+        return MP_STATUS_SUCCESS;
+    }
 
     /*
      * On resume from D3, the xHCI controller loses all register state.
@@ -15504,6 +15768,13 @@ XHCI_RH_GetPortStatus(
     if (!Extension || !PortStatus)
         return MP_STATUS_ERROR;
 
+    if (XHCI_IsDebuggerPort(Extension, Port))
+    {
+        RtlZeroMemory(PortStatus, sizeof(*PortStatus));
+        XHCI_RH_UpdatePortStatusFields(Extension, Port, XHCI_PORTSC_PP, PortStatus);
+        return MP_STATUS_SUCCESS;
+    }
+
     PortStatusReg = XHCI_GetPortStatusRegister(Extension, Port);
     if (!PortStatusReg)
         return MP_STATUS_ERROR;
@@ -15613,6 +15884,9 @@ XHCI_RH_SetFeaturePortReset(
 
     if (!Extension)
         return MP_STATUS_ERROR;
+
+    if (XHCI_IsDebuggerPort(Extension, Port))
+        return MP_STATUS_SUCCESS;
 
     PortStatusReg = XHCI_GetPortStatusRegister(Extension, Port);
     if (!PortStatusReg)
