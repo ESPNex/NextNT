@@ -1685,6 +1685,10 @@ DWORD WINAPI mciSendStringA(LPCSTR lpstrCommand, LPSTR lpstrRet,
     /* FIXME: is there something to do with lpstrReturnString ? */
     len = MultiByteToWideChar( CP_ACP, 0, lpstrCommand, -1, NULL, 0 );
     lpwstrCommand = malloc( len * sizeof(WCHAR) );
+#ifdef __REACTOS__
+    if (!lpwstrCommand)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     MultiByteToWideChar( CP_ACP, 0, lpstrCommand, -1, lpwstrCommand, len );
     if (lpstrRet)
     {
