@@ -109,6 +109,10 @@ static STRTABLEW *strtable_atow(const STRTABLEA *atable)
     DWORD j;
 
     wtable = malloc(sizeof(STRTABLEW));
+#ifdef __REACTOS__
+    if (!wtable)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     wtable->pse = malloc(atable->cEntries * sizeof(STRENTRYW));
     wtable->cEntries = atable->cEntries;
 
