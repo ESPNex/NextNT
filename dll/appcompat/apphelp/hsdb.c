@@ -402,6 +402,11 @@ HSDB WINAPI SdbInitDatabase(DWORD flags, LPCWSTR path)
         StringCchCatW(buffer, _countof(buffer), name);
         flags = HID_DOS_PATHS;
     }
+    else if (path == NULL)
+    {
+        SdbReleaseDatabase(hsdb);
+        return NULL;
+    }
 
     hsdb->pdb = SdbOpenDatabase(path ? path : buffer, (flags & 0xF) - 1);
 
