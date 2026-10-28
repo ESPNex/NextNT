@@ -2919,8 +2919,15 @@ SpiParseDeviceInfo(IN PSCSI_PORT_DEVICE_EXTENSION DeviceExtension,
             _wcsnicmp(KeyValueInformation->Name, L"Configuration Data",
                 KeyValueInformation->NameLength/2) == 0 )
         {
+            FullResource = (PCM_FULL_RESOURCE_DESCRIPTOR)(Buffer + KeyValueInformation->DataOffset);
+
             if (KeyValueInformation->Type != REG_FULL_RESOURCE_DESCRIPTOR ||
-                KeyValueInformation->DataLength < sizeof(REG_FULL_RESOURCE_DESCRIPTOR))
+                KeyValueInformation->DataLength <
+                    FIELD_OFFSET(CM_FULL_RESOURCE_DESCRIPTOR, PartialResourceList.PartialDescriptors) ||
+                FullResource->PartialResourceList.Count >
+                    (KeyValueInformation->DataLength -
+                     FIELD_OFFSET(CM_FULL_RESOURCE_DESCRIPTOR, PartialResourceList.PartialDescriptors)) /
+                    sizeof(CM_PARTIAL_RESOURCE_DESCRIPTOR))
             {
                 DPRINT("Bad data type for ResourceList\n");
                 continue;
@@ -2929,8 +2936,6 @@ SpiParseDeviceInfo(IN PSCSI_PORT_DEVICE_EXTENSION DeviceExtension,
             {
                 DPRINT("Found ResourceList\n");
             }
-
-            FullResource = (PCM_FULL_RESOURCE_DESCRIPTOR)(Buffer + KeyValueInformation->DataOffset);
 
             /* Copy some info from it */
             InternalConfigInfo->BusNumber = FullResource->BusNumber;
