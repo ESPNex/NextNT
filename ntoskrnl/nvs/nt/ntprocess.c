@@ -370,12 +370,13 @@ CloneDone:
     {
         PFILE_OBJECT FileObject = MmGetFileObjectForSection(Section);
         UNICODE_STRING FileName = FileObject->FileName;
-        PWCHAR Source = (PWCHAR)((PCHAR)FileName.Buffer + FileName.Length);
+        PWCHAR Source = FileName.Buffer;
         PCHAR Destination = (PCHAR)Process->ImageFileName;
         USHORT Length = 0;
 
         if (FileName.Buffer != NULL)
         {
+            Source = (PWCHAR)((PCHAR)FileName.Buffer + FileName.Length);
             while (Source > FileName.Buffer)
             {
                 if (*--Source == OBJ_NAME_PATH_SEPARATOR)
