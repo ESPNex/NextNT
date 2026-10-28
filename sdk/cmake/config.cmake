@@ -250,8 +250,11 @@ cmake_dependent_option(MESA_GALLIUM_FROM_SOURCE
 unset(ENABLE_MESA_SOFTPIPE CACHE)
 
 cmake_dependent_option(ENABLE_FFMPEG
-                       "Build the LGPL FFmpeg libraries behind the H.264 and AAC Media Foundation decoders" OFF
+                       "Build the H.264 and AAC Media Foundation decoders against the LGPL FFmpeg payload" ON
                        "ARCH STREQUAL i386 OR ARCH STREQUAL amd64 OR ARCH STREQUAL arm64;CMAKE_C_COMPILER_ID STREQUAL Clang;NOT MSVC" OFF)
+cmake_dependent_option(FFMPEG_FROM_SOURCE
+                       "Build the LGPL FFmpeg libraries from the ffmpeg feed instead of using the LiberNT release payload." OFF
+                       "ENABLE_FFMPEG" OFF)
 
 cmake_dependent_option(ENABLE_DXILCONV
                        "Build dxilconv.dll, the DXBC to DXIL converter of the Direct3D 12 runtime, from the dxc feed" OFF

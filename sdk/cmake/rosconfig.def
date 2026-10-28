@@ -447,14 +447,25 @@ menu "Submodules"
 config ENABLE_FFMPEG
     prompt "FFmpeg (H.264 and AAC decoding)"
     type bool
-    default n
+    default y
     depends TOOLCHAIN=clang
     depends ARCH=i386 || ARCH=amd64 || ARCH=arm64
     help
-      Build the LGPL FFmpeg libraries from the ffmpeg source feed and ship
-      them, so the Media Foundation H.264 and AAC decoders and the winedmo
-      demuxer work. When disabled, or when the feed is not checked out,
-      those modules are built without FFmpeg and decode nothing.
+      Build the Media Foundation H.264 and AAC decoders and the winedmo
+      demuxer against the LGPL FFmpeg release payload. They load the FFmpeg
+      libraries at run time; the image does not carry them, the second stage
+      installs them. When disabled, or when no payload exists for the
+      architecture, those modules are built without FFmpeg and decode nothing.
+
+config FFMPEG_FROM_SOURCE
+    prompt "Build FFmpeg from source"
+    type bool
+    default n
+    depends ENABLE_FFMPEG=y
+    help
+      Instead of the release payload, build the LGPL FFmpeg libraries from
+      the ffmpeg source feed. sdk/tools/ffmpeg_payload.py uses this to
+      produce the payload.
 
 endmenu
 

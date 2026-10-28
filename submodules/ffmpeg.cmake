@@ -1,14 +1,20 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Ahmed ARIF
 #
-# LGPL FFmpeg libraries for winedmo and msmpeg2vdec, built from the ffmpeg
-# source feed. Upstream sources retain their original licenses.
+# LGPL FFmpeg libraries for winedmo and msmpeg2vdec. By default the headers
+# come from the release payload; with FFMPEG_FROM_SOURCE they are built from the
+# ffmpeg source feed. Upstream sources retain their original licenses.
 #
-# Sets FFMPEG_ROOT to the installed package (bin, include, lib) when FFmpeg is
-# built; the modules that use it fall back to their FFmpeg-less build otherwise.
+# Sets FFMPEG_ROOT to the package (include, and bin when built) when FFmpeg is
+# available; the modules that use it fall back to their FFmpeg-less build otherwise.
 
 set(FFMPEG_ROOT)
 if(NOT ENABLE_FFMPEG)
+    return()
+endif()
+
+if(NOT FFMPEG_FROM_SOURCE)
+    include("${REACTOS_SOURCE_DIR}/submodules/ffmpeg-payload.cmake")
     return()
 endif()
 
@@ -139,9 +145,3 @@ ExternalProject_Add(ffmpeg
 # A feed update to another release reconfigures and rebuilds it.
 ExternalProject_Add_StepDependencies(ffmpeg configure "${FFMPEG_SOURCE_DIR}/RELEASE" ffmpeg_sdk_libs)
 
-foreach(_ffmpeg_dll IN LISTS FFMPEG_DLLS)
-    add_cd_file(FILE "${FFMPEG_ROOT}/bin/${_ffmpeg_dll}.dll" TARGET ffmpeg DESTINATION reactos/system32 FOR all)
-    # Processes restricted to OS-signed images load these through msmpeg2vdec.
-    set_property(GLOBAL APPEND PROPERTY CI_SYSTEM_FILES "${FFMPEG_ROOT}/bin/${_ffmpeg_dll}.dll")
-endforeach()
-add_cd_file(FILE "${FFMPEG_LICENSE}" TARGET ffmpeg DESTINATION reactos/3rdParty FOR all)
