@@ -540,6 +540,10 @@ static INT_PTR CALLBACK ps_dlg_proc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
     case WM_INITDIALOG:
     {
         ps_struct = malloc(sizeof(*ps_struct));
+#ifdef __REACTOS__
+        if (!ps_struct)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         ps_struct->ps = (OLEUIPASTESPECIALW*)lp;
         ps_struct->type_name = NULL;
         ps_struct->source_name = NULL;
