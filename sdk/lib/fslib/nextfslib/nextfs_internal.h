@@ -1,0 +1,92 @@
+/*
+ * PROJECT:     NextNT
+ * FILE:        sdk/lib/fslib/nextfslib/nextfs_internal.h
+ * PURPOSE:     Internal state shared by the nextfslib translation units
+ * LICENSE:     GPL-3.0-or-later
+ */
+
+#ifndef _NEXTFS_INTERNAL_H_
+#define _NEXTFS_INTERNAL_H_
+
+#include "nextfs_format.h"
+
+#define NFS_HASH_EMPTY  0xFFFFFFFFu
+#define NFS_HASH_TOMB   0xFFFFFFFEu
+
+/* Journal/PIFT area frames are 4 KiB: 32 byte header + payload. */
+#define NFS_FRAME_PAYLOAD_MAX (NFS_FRAME_SIZE - NFS_FRAME_HDR_SIZE)
+
+/* High-water mark: compact when the PIFT area is more than half full. */
+#define NFS_PIFT_HIGH_WATER(Super) \
+    (((nfs_u64)(Super).PiftClusters * (Super).ClusterSize) / 2)
+
+struct _NFS_VOLUME
+{
+    NFS_BDEV Device;                 /* callbacks, copied at mount       */
+
+    NFS_SUPER Super;
+
+    nfs_u8  *Bitmap;                 /* 1 bit per cluster                */
+    nfs_u32  BitmapBytes;
+
+    NFS_PIFT_RECORD *Records;        /* append-only array of records     */
+    nfs_u32  RecordCount;
+    nfs_u32  RecordCapacity;
+
+    nfs_u32 *Hash;                   /* fileid -> record index + 1       */
+    nfs_u32  HashSize;               /* power of two                     */
+    nfs_u32  HashUsed;
+
+    nfs_u64  JournalFrames;
+    nfs_u64  Transactions;           /* since the last checkpoint        */
+
+    nfs_u64  NextFileId;             /* fileid allocator                 */
+
+    NFS_STATS Stats;
+};
+
+/* Superblock + device helpers (nextfs_super.c) */
+int NfsDevRead(PNFS_VOLUME Volume, nfs_u64 Offset, void *Buffer, nfs_u32 Length);
+int NfsDevWrite(PNFS_VOLUME Volume, nfs_u64 Offset, const void *Buffer, nfs_u32 Length);
+int NfsDevFlush(PNFS_VOLUME Volume);
+int NfsReadSuper(PNFS_BDEV Device, PNFS_SUPER Super);
+int NfsWriteSuper(PNFS_VOLUME Volume);
+int NfsMountReplay(PNFS_VOLUME Volume);
+
+/* Bitmap allocator (nextfs_super.c) */
+int NfsClusterAlloc(PNFS_VOLUME Volume, nfs_u64 Count, nfs_u64 *FirstCluster);
+void NfsClusterFree(PNFS_VOLUME Volume, nfs_u64 FirstCluster, nfs_u64 Count);
+void NfsClusterMarkUsed(PNFS_VOLUME Volume, nfs_u64 FirstCluster, nfs_u64 Count);
+void NfsClusterMarkFree(PNFS_VOLUME Volume, nfs_u64 FirstCluster, nfs_u64 Count);
+int NfsBitmapLoad(PNFS_VOLUME Volume);
+int NfsBitmapFlush(PNFS_VOLUME Volume);
+
+/* PIFT records and the RAM index (nextfs_pift.c) */
+nfs_u32 NfsPiftSerialize(const NFS_PIFT_RECORD *Record, void *Buffer, nfs_u32 Capacity);
+int NfsPiftDeserialize(const void *Buffer, nfs_u32 Length, NFS_PIFT_RECORD *Record);
+nfs_u64 NfsPiftRecordSize(const NFS_PIFT_RECORD *Record);
+
+int NfsIndexInit(PNFS_VOLUME Volume);
+void NfsIndexDestroy(PNFS_VOLUME Volume);
+int NfsIndexInsert(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record);
+NFS_PIFT_RECORD *NfsIndexGet(PNFS_VOLUME Volume, nfs_fileid FileId);
+nfs_u32 NfsIndexHashFileId(nfs_fileid FileId);
+
+/* Journal (nextfs_journal.c) */
+nfs_u64 NfsJournalNextSeq(PNFS_VOLUME Volume);
+int NfsJournalWriteFrame(PNFS_VOLUME Volume, nfs_seq Seq, nfs_u32 Flags,
+                         const void *Payload, nfs_u32 PayloadLen);
+int NfsJournalCommit(PNFS_VOLUME Volume, nfs_seq Seq);
+int NfsJournalReplay(PNFS_VOLUME Volume);
+int NfsJournalScanCommitted(PNFS_VOLUME Volume, nfs_u64 *Seqs, nfs_u32 Max,
+                            nfs_u32 *Count);
+int NfsSeqIsCommitted(PNFS_VOLUME Volume, nfs_seq Seq);
+int NfsPiftAppend(PNFS_VOLUME Volume, const void *Frames, nfs_u32 Length);
+int NfsPiftScan(PNFS_VOLUME Volume);
+
+/* Checkpointing + transactions (nextfs_volume.c) */
+int NfsCheckpoint(PNFS_VOLUME Volume);
+int NfsCommitRecords(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Records, nfs_u32 Count);
+void NfsSetDirty(PNFS_VOLUME Volume, int Dirty);
+
+#endif /* _NEXTFS_INTERNAL_H_ */
