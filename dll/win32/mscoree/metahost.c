@@ -433,6 +433,15 @@ static HRESULT CLRRuntimeInfo_GetRuntimeHost(CLRRuntimeInfo *This, RuntimeHost *
         return hr;
     }
 
+#ifdef __REACTOS__
+    hr = load_mono(mono_path);
+
+    if (SUCCEEDED(hr))
+        hr = RuntimeHost_Construct(This, &This->loaded_runtime);
+
+    if (SUCCEEDED(hr) && GlobalCLRMetaHost.callback)
+        GlobalCLRMetaHost.callback(&This->ICLRRuntimeInfo_iface, thread_set_fn, thread_unset_fn);
+#else
     if (GlobalCLRMetaHost.callback)
     {
         GlobalCLRMetaHost.callback(&This->ICLRRuntimeInfo_iface, thread_set_fn, thread_unset_fn);
@@ -442,6 +451,7 @@ static HRESULT CLRRuntimeInfo_GetRuntimeHost(CLRRuntimeInfo *This, RuntimeHost *
 
     if (SUCCEEDED(hr))
         hr = RuntimeHost_Construct(This, &This->loaded_runtime);
+#endif
 
     LeaveCriticalSection(&runtime_list_cs);
 
