@@ -146,14 +146,29 @@ KdpLoggerThread(PVOID Context)
 {
     ULONG beg, end, num;
     IO_STATUS_BLOCK Iosb;
+    LARGE_INTEGER FlushDelay;
+    ULONGLONG LastFlush = 0;
+    BOOLEAN Dirty = FALSE;
+    NTSTATUS WaitStatus;
 
     ASSERT(ExGetPreviousMode() == KernelMode);
 
     KdpLoggingEnabled = TRUE;
+    FlushDelay.QuadPart = -10000000LL;
 
     while (TRUE)
     {
-        KeWaitForSingleObject(&KdpLoggerThreadEvent, Executive, KernelMode, FALSE, NULL);
+        WaitStatus = KeWaitForSingleObject(&KdpLoggerThreadEvent, Executive, KernelMode, FALSE,
+                                           Dirty ? &FlushDelay : NULL);
+        if (Dirty &&
+            (WaitStatus == STATUS_TIMEOUT || KeQueryInterruptTime() - LastFlush >= 10000000ULL))
+        {
+            NtFlushBuffersFile(KdpLogFileHandle, &Iosb);
+            LastFlush = KeQueryInterruptTime();
+            Dirty = FALSE;
+        }
+        if (WaitStatus == STATUS_TIMEOUT)
+            continue;
 
         /* Bug */
         /* Keep KdpCurrentPosition and KdpFreeBytes values in local
@@ -186,6 +201,7 @@ KdpLoggerThread(PVOID Context)
         }
 
         (VOID)InterlockedExchangeAddUL(&KdpFreeBytes, num);
+        Dirty = TRUE;
     }
 }
 
