@@ -176,7 +176,6 @@ acpi_button_add (
 	 * Ensure only one button of each type is used.
 	 */
 	switch (button->type) {
-	case ACPI_BUTTON_TYPE_POWER:
 	case ACPI_BUTTON_TYPE_POWERF:
 		if (!power_button)
 			power_button = device;
@@ -185,7 +184,6 @@ acpi_button_add (
 			goto end;
 		}
 		break;
-	case ACPI_BUTTON_TYPE_SLEEP:
 	case ACPI_BUTTON_TYPE_SLEEPF:
 		if (!sleep_button)
 			sleep_button = device;
