@@ -168,6 +168,10 @@ getnetpath(handlep)
 	if ((ncp = getnetconfigent(npp)) != NULL) {
 	    chainp = (struct netpath_chain *)	/* cobble alloc chain entry */
 		    malloc(sizeof (struct netpath_chain));
+#ifdef __REACTOS__
+	    if (!chainp)
+	    	abort();
+#endif
 	    chainp->ncp = ncp;
 	    chainp->nchain_next = NULL;
 	    if (np_sessionp->ncp_list == NULL) {

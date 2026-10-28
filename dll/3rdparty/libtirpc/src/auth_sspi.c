@@ -799,6 +799,10 @@ uint32_t sspi_wrap(void *dummy, u_int seq, sspi_buffer_desc *bufin,
 
     bufout->length = SecBuff[0].cbBuffer + SecBuff[1].cbBuffer + SecBuff[2].cbBuffer;
     p = bufout->value = malloc(bufout->length);
+#ifdef __REACTOS__
+    if (!p)
+        abort();
+#endif
     memcpy(p, SecBuff[0].pvBuffer, SecBuff[0].cbBuffer);
     p += SecBuff[0].cbBuffer;
     memcpy(p, SecBuff[1].pvBuffer, SecBuff[1].cbBuffer);

@@ -184,6 +184,10 @@ __nc_error()
 	}
 	if ((nc_addr = (int *)thr_getspecific(nc_key)) == NULL) {
 		nc_addr = (int *)malloc(sizeof (int *));
+#ifdef __REACTOS__
+		if (!nc_addr)
+			abort();
+#endif
 		if (thr_setspecific(nc_key, (void *) nc_addr) == 0) {
 			if (nc_addr)
 				free(nc_addr);
