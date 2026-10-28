@@ -128,6 +128,10 @@ static IndexItem *parse_index_sitemap_object(HHInfo *info, stream_t *stream)
     strbuf_init(&node_name);
 
     item = calloc(1, sizeof(IndexItem));
+#ifdef __REACTOS__
+    if (!item)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     item->nItems = 0;
     item->items = NULL;
     item->itemFlags = 0x11;
@@ -267,6 +271,10 @@ void InitIndex(HHInfo *info)
     IStream *stream;
 
     info->index = calloc(1, sizeof(IndexItem));
+#ifdef __REACTOS__
+    if (!info->index)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     info->index->nItems = 0;
     SetChmPath(&info->index->merge, info->pCHMInfo->szFile, info->WinType.pszIndex);
 

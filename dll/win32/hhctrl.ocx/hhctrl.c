@@ -342,6 +342,10 @@ HWND WINAPI HtmlHelpW(HWND caller, LPCWSTR filename, UINT command, DWORD_PTR dat
         if (!info)
         {
             info = calloc(1, sizeof(HHInfo));
+#ifdef __REACTOS__
+            if (!info)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             info->WinType.pszType = info->stringsW.pszType = window;
             list_add_tail(&window_list, &info->entry);
         }
@@ -566,6 +570,10 @@ int WINAPI doWinMain(HINSTANCE hInstance, LPSTR szCmdLine)
 
     buflen = MultiByteToWideChar(CP_ACP, 0, szCmdLine, len, NULL, 0) + 1;
     filename = malloc(buflen * sizeof(WCHAR));
+#ifdef __REACTOS__
+    if (!filename)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     MultiByteToWideChar(CP_ACP, 0, szCmdLine, len, filename, buflen);
     filename[buflen-1] = 0;
 

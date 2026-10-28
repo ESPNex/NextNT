@@ -183,6 +183,10 @@ static LPWSTR HH_LoadString(DWORD dwID)
     iSize = LoadStringW(hhctrl_hinstance, dwID, (LPWSTR)&stringresource, 0);
 
     string = malloc((iSize + 2) * sizeof(WCHAR)); /* some strings (tab text) needs double-null termination */
+#ifdef __REACTOS__
+    if (!string)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     memcpy(string, stringresource, iSize*sizeof(WCHAR));
     string[iSize] = 0;
 
@@ -395,6 +399,10 @@ static void hook_WebBrowserEvents2(HHInfo *info, BOOL init)
     if (init)
     {
         info->web_browser->WebBrowser_events_sink = malloc(sizeof(*(info->web_browser->WebBrowser_events_sink)));
+#ifdef __REACTOS__
+        if (!info->web_browser->WebBrowser_events_sink)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         info->web_browser->WebBrowser_events_sink->WebBrowserEvents2Impl_iface.lpVtbl = &WebBrowserEvents2Vtbl;
         info->web_browser->WebBrowser_events_sink->info = (struct HHInfo *)info;
         info->web_browser->WebBrowser_events_sink->ref = 1;
@@ -1982,6 +1990,10 @@ HHInfo *CreateHelpViewer(HHInfo *info, LPCWSTR filename, HWND caller)
     if(!info)
     {
         info = calloc(1, sizeof(HHInfo));
+#ifdef __REACTOS__
+        if (!info)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         list_add_tail(&window_list, &info->entry);
     }
 

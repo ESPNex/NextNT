@@ -33,6 +33,10 @@ static SearchItem *alloc_search_item(WCHAR *title, const WCHAR *filename)
     SearchItem *item;
 
     item = calloc(1, sizeof(SearchItem));
+#ifdef __REACTOS__
+    if (!item)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     if(filename)
     {
         item->filename = malloc(filename_len);
@@ -106,6 +110,10 @@ static WCHAR *SearchCHM_File(IStorage *pStorage, const WCHAR *file, const char *
             {
                 int wlen = MultiByteToWideChar(CP_ACP, 0, text, textlen, NULL, 0);
                 title = malloc((wlen + 1) * sizeof(WCHAR));
+#ifdef __REACTOS__
+                if (!title)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                 MultiByteToWideChar(CP_ACP, 0, text, textlen, title, wlen);
                 title[wlen] = 0;
             }

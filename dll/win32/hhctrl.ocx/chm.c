@@ -239,6 +239,10 @@ static WCHAR *FindHTMLHelpSetting(HHInfo *info, const WCHAR *extW)
 
     filename = malloc( (wcslen(info->pCHMInfo->compiledFile)
                         + wcslen(periodW) + wcslen(extW) + 1) * sizeof(WCHAR) );
+#ifdef __REACTOS__
+    if (!filename)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     lstrcpyW(filename, info->pCHMInfo->compiledFile);
     lstrcatW(filename, periodW);
     lstrcatW(filename, extW);

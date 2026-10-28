@@ -275,6 +275,10 @@ static inline LPWSTR strdupnAtoW(LPCSTR str, LONG lenA)
 
     len = MultiByteToWideChar(CP_ACP, 0, str, lenA, NULL, 0)+1; /* +1 for null pad */
     ret = malloc(len * sizeof(WCHAR));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     MultiByteToWideChar(CP_ACP, 0, str, lenA, ret, len);
     ret[len-1] = 0;
 
