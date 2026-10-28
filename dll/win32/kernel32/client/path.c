@@ -808,7 +808,7 @@ IsShortName_U(IN PWCHAR Name,
         }
 
         /* Check for illegal characters */
-        if ((c > 0x7F) || (IllegalMask[c / 32] & (1 << (c % 32))))
+        if ((c > 0x7F) || (IllegalMask[c / 32] & (1U << (c % 32))))
         {
             return FALSE;
         }
