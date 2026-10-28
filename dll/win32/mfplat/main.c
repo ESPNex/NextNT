@@ -1146,6 +1146,10 @@ static HRESULT mft_collect_machine_reg(struct list *mfts, const GUID *category, 
         }
 
         cur = malloc(sizeof(*cur));
+#ifdef __REACTOS__
+        if (!cur)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         /* Reuse allocated type arrays. */
         *cur = mft;
         list_add_tail(mfts, &cur->entry);
@@ -1218,6 +1222,10 @@ static HRESULT mft_enum(GUID category, UINT32 flags, const MFT_REGISTER_TYPE_INF
             if (mft_is_type_info_match(local, &category, flags, plugin_control, input_type, output_type))
             {
                 mft = calloc(1, sizeof(*mft));
+#ifdef __REACTOS__
+                if (!mft)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
                 mft->clsid = local->clsid;
                 mft->factory = local->factory;
