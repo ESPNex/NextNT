@@ -7,7 +7,7 @@
 
 #include "setupapi_private.h"
 
-static const WCHAR RepositoryPath[] = L"\\DriverStore\\FileRepository";
+static const WCHAR RepositoryPath[] = L"\\System32\\DriverStore\\FileRepository";
 static const WCHAR VersionSection[] = L"Version";
 static const WCHAR CatalogFile[] = L"CatalogFile";
 
@@ -35,7 +35,7 @@ GetRepositoryRoot(
     OUT PWSTR Buffer,
     IN DWORD BufferSize)
 {
-    UINT Length = GetSystemDirectoryW(Buffer, BufferSize);
+    UINT Length = GetWindowsDirectoryW(Buffer, BufferSize);
 
     if (Length == 0 || Length + ARRAY_SIZE(RepositoryPath) > BufferSize)
     {
