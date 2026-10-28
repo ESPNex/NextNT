@@ -301,6 +301,10 @@ UINT WINAPI WNetEnumCachedPasswords(
         /* read the value data */
         size = offsetof( PASSWORD_CACHE_ENTRY, abResource[val_sz + data_sz] );
         entry = malloc( size );
+#ifdef __REACTOS__
+        if (!entry)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         memcpy( entry->abResource, val, val_sz );
         entry->cbEntry = size;
         entry->cbResource = val_sz;
