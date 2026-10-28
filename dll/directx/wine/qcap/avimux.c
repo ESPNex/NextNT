@@ -1438,6 +1438,10 @@ static HRESULT avi_mux_sink_connect(struct strmbase_sink *iface, IPin *peer, con
 
         size = pmt->cbFormat - FIELD_OFFSET(VIDEOINFOHEADER, bmiHeader);
         avimuxin->strf = malloc(sizeof(RIFFCHUNK) + ALIGN(FIELD_OFFSET(BITMAPINFO, bmiColors[vih->bmiHeader.biClrUsed])));
+#ifdef __REACTOS__
+        if (!avimuxin->strf)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         avimuxin->strf->fcc = ckidSTREAMFORMAT;
         avimuxin->strf->cb = FIELD_OFFSET(BITMAPINFO, bmiColors[vih->bmiHeader.biClrUsed]);
         if(size > avimuxin->strf->cb)
