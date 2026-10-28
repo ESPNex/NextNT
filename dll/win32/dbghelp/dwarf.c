@@ -3776,6 +3776,13 @@ static ULONG_PTR eval_expression(const struct module* module, struct cpu_stack_w
     {
         unsigned char opcode = dwarf2_parse_byte(&ctx);
 
+#ifdef __REACTOS__
+        if (sp < -1 || sp >= (int)ARRAY_SIZE(stack) - 1)
+        {
+            ERR("DWARF expression stack out of range (%d)\n", sp);
+            return 0;
+        }
+#endif
         if (opcode >= DW_OP_lit0 && opcode <= DW_OP_lit31)
             stack[++sp] = opcode - DW_OP_lit0;
         else if (opcode >= DW_OP_reg0 && opcode <= DW_OP_reg31)
@@ -3884,6 +3891,10 @@ static ULONG_PTR eval_expression(const struct module* module, struct cpu_stack_w
             FIXME("unhandled opcode %02x\n", opcode);
         }
     }
+#ifdef __REACTOS__
+    if (sp < 0 || sp >= (int)ARRAY_SIZE(stack))
+        return 0;
+#endif
     return stack[sp];
 }
 

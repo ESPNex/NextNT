@@ -1262,6 +1262,10 @@ static symref_t symt_find_symref_at(struct module* module, DWORD_PTR addr)
                     symsize = 1;
             }
         }
+#ifdef __REACTOS__
+        else
+            symaddr = symsize = 0;
+#endif
         if (addr < symaddr || addr >= symaddr + symsize)
             nearest = 0;
     }

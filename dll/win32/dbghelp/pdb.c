@@ -2981,7 +2981,11 @@ static enum method_result pdb_reader_TPI_array_request(struct pdb_reader *pdb, c
         if (codeview_fetch_leaf_as_int(cv_type, cv_type->array_v3.data, &array_size)) return MR_FAILURE;
         if (!element_length || (array_size % element_length))
             WARN("Incorrect array %u %I64u\n", array_size, element_length);
+#ifdef __REACTOS__
+        *((DWORD*)data) = element_length ? array_size / element_length : 0;
+#else
         *((DWORD*)data) = array_size / element_length;
+#endif
         return MR_SUCCESS;
     case TI_GET_LENGTH:
         if (codeview_fetch_leaf_as_int(cv_type, cv_type->array_v3.data, &array_size)) return MR_FAILURE;
