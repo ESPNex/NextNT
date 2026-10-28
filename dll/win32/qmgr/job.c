@@ -264,6 +264,10 @@ static ULONG WINAPI BackgroundCopyJob_Release(IBackgroundCopyJob4 *iface)
             IBackgroundCopyCallback2_Release(job->callback);
         free(job->displayName);
         free(job->description);
+#ifdef __REACTOS__
+        free(job->proxy_list);
+        free(job->proxy_bypass_list);
+#endif
         free(job->http_options.headers);
         for (i = 0; i < BG_AUTH_TARGET_PROXY; i++)
         {
@@ -671,6 +675,43 @@ static HRESULT WINAPI BackgroundCopyJob_GetDescription(IBackgroundCopyJob4 *ifac
     return return_strval(job->description, desc);
 }
 
+#ifdef __REACTOS__
+static HRESULT WINAPI BackgroundCopyJob_SetPriority(IBackgroundCopyJob4 *iface, BG_JOB_PRIORITY priority)
+{
+    BackgroundCopyJobImpl *job = impl_from_IBackgroundCopyJob4(iface);
+    HRESULT hr = S_OK;
+
+    TRACE("%p, %d.\n", iface, priority);
+
+    if (priority < BG_JOB_PRIORITY_FOREGROUND || priority > BG_JOB_PRIORITY_LOW)
+        return E_NOTIMPL;
+
+    EnterCriticalSection(&job->cs);
+    if (is_job_done(job))
+        hr = BG_E_INVALID_STATE;
+    else
+        job->priority = priority;
+    LeaveCriticalSection(&job->cs);
+
+    return hr;
+}
+
+static HRESULT WINAPI BackgroundCopyJob_GetPriority(IBackgroundCopyJob4 *iface, BG_JOB_PRIORITY *priority)
+{
+    BackgroundCopyJobImpl *job = impl_from_IBackgroundCopyJob4(iface);
+
+    TRACE("%p, %p.\n", iface, priority);
+
+    if (!priority)
+        return E_INVALIDARG;
+
+    EnterCriticalSection(&job->cs);
+    *priority = job->priority;
+    LeaveCriticalSection(&job->cs);
+
+    return S_OK;
+}
+#else
 static HRESULT WINAPI BackgroundCopyJob_SetPriority(IBackgroundCopyJob4 *iface, BG_JOB_PRIORITY priority)
 {
     FIXME("%p, %d: stub\n", iface, priority);
@@ -682,6 +723,7 @@ static HRESULT WINAPI BackgroundCopyJob_GetPriority(IBackgroundCopyJob4 *iface, 
     FIXME("%p, %p: stub\n", iface, priority);
     return E_NOTIMPL;
 }
+#endif
 
 static HRESULT WINAPI BackgroundCopyJob_SetNotifyFlags(IBackgroundCopyJob4 *iface, ULONG flags)
 {
@@ -848,6 +890,91 @@ static HRESULT WINAPI BackgroundCopyJob_GetErrorCount(IBackgroundCopyJob4 *iface
 }
 #endif
 
+#ifdef __REACTOS__
+static HRESULT WINAPI BackgroundCopyJob_SetProxySettings(IBackgroundCopyJob4 *iface, BG_JOB_PROXY_USAGE proxy_usage,
+        const WCHAR *proxy_list, const WCHAR *proxy_bypass_list)
+{
+    BackgroundCopyJobImpl *job = impl_from_IBackgroundCopyJob4(iface);
+    WCHAR *list = NULL, *bypass = NULL;
+    HRESULT hr = S_OK;
+
+    TRACE("%p, %d, %s, %s.\n", iface, proxy_usage, debugstr_w(proxy_list), debugstr_w(proxy_bypass_list));
+
+    switch (proxy_usage)
+    {
+    case BG_JOB_PROXY_USAGE_PRECONFIG:
+    case BG_JOB_PROXY_USAGE_NO_PROXY:
+    case BG_JOB_PROXY_USAGE_AUTODETECT:
+        if (proxy_list || proxy_bypass_list)
+            return E_INVALIDARG;
+        break;
+    case BG_JOB_PROXY_USAGE_OVERRIDE:
+        if (!proxy_list)
+            return E_INVALIDARG;
+        if (lstrlenW(proxy_list) >= 32768 || (proxy_bypass_list && lstrlenW(proxy_bypass_list) >= 32768))
+            return E_INVALIDARG;
+        if (!(list = wcsdup(proxy_list)))
+            return E_OUTOFMEMORY;
+        if (proxy_bypass_list && !(bypass = wcsdup(proxy_bypass_list)))
+        {
+            free(list);
+            return E_OUTOFMEMORY;
+        }
+        break;
+    default:
+        return E_INVALIDARG;
+    }
+
+    EnterCriticalSection(&job->cs);
+    if (is_job_done(job))
+    {
+        hr = BG_E_INVALID_STATE;
+    }
+    else
+    {
+        free(job->proxy_list);
+        free(job->proxy_bypass_list);
+        job->proxy_usage = proxy_usage;
+        job->proxy_list = list;
+        job->proxy_bypass_list = bypass;
+        list = bypass = NULL;
+    }
+    LeaveCriticalSection(&job->cs);
+
+    free(list);
+    free(bypass);
+    return hr;
+}
+
+static HRESULT WINAPI BackgroundCopyJob_GetProxySettings(IBackgroundCopyJob4 *iface, BG_JOB_PROXY_USAGE *proxy_usage,
+        LPWSTR *proxy_list, LPWSTR *proxy_bypass_list)
+{
+    BackgroundCopyJobImpl *job = impl_from_IBackgroundCopyJob4(iface);
+    HRESULT hr = S_OK;
+
+    TRACE("%p, %p, %p, %p.\n", iface, proxy_usage, proxy_list, proxy_bypass_list);
+
+    if (!proxy_usage || !proxy_list || !proxy_bypass_list)
+        return E_INVALIDARG;
+
+    *proxy_list = *proxy_bypass_list = NULL;
+
+    EnterCriticalSection(&job->cs);
+    *proxy_usage = job->proxy_usage;
+    if (job->proxy_list)
+        hr = return_strval(job->proxy_list, proxy_list);
+    if (SUCCEEDED(hr) && job->proxy_bypass_list)
+        hr = return_strval(job->proxy_bypass_list, proxy_bypass_list);
+    LeaveCriticalSection(&job->cs);
+
+    if (FAILED(hr))
+    {
+        CoTaskMemFree(*proxy_list);
+        *proxy_list = NULL;
+    }
+    return hr;
+}
+#else
 static HRESULT WINAPI BackgroundCopyJob_SetProxySettings(IBackgroundCopyJob4 *iface, BG_JOB_PROXY_USAGE proxy_usage,
         const WCHAR *proxy_list, const WCHAR *proxy_bypass_list)
 {
@@ -861,6 +988,7 @@ static HRESULT WINAPI BackgroundCopyJob_GetProxySettings(IBackgroundCopyJob4 *if
     FIXME("%p, %p, %p, %p: stub\n", iface, proxy_usage, proxy_list, proxy_bypass_list);
     return E_NOTIMPL;
 }
+#endif
 
 static HRESULT WINAPI BackgroundCopyJob_TakeOwnership(IBackgroundCopyJob4 *iface)
 {
@@ -1332,6 +1460,10 @@ HRESULT BackgroundCopyJobConstructor(LPCWSTR displayName, BG_JOB_TYPE type, GUID
     This->error_count = 0;
     This->retry_time = 0;
     This->transient_since = 0;
+    This->proxy_usage = BG_JOB_PROXY_USAGE_PRECONFIG;
+    This->proxy_list = NULL;
+    This->proxy_bypass_list = NULL;
+    This->priority = BG_JOB_PRIORITY_NORMAL;
 #endif
 
     *job = This;

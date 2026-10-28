@@ -78,6 +78,10 @@ typedef struct
     ULONG error_count;
     ULONGLONG retry_time;
     ULONGLONG transient_since;
+    BG_JOB_PROXY_USAGE proxy_usage;
+    WCHAR *proxy_list;
+    WCHAR *proxy_bypass_list;
+    BG_JOB_PRIORITY priority;
 #endif
 } BackgroundCopyJobImpl;
 
