@@ -341,7 +341,7 @@ static ULONG64 interface_speed(UINT index)
 {
     ULONG count, i;
     IP6_TABLE_HEADER *header = ip6_query_table(Ip6TableInterfaces, &count);
-    const IP6_INTERFACE_ROW *rows = (const IP6_INTERFACE_ROW *)(header + 1);
+    const IP6_INTERFACE_ROW *rows = header ? (const IP6_INTERFACE_ROW *)(header + 1) : NULL;
     ULONG64 speed = 0;
 
     for (i = 0; header && i < count; i++)
