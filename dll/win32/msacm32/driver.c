@@ -681,7 +681,11 @@ MMRESULT WINAPI acmDriverPriority(HACMDRIVERID hadid, DWORD dwPriority, DWORD fd
                 if (dwPriority != 1 && dwPriority != (DWORD)-1) {
                     FIXME("unexpected priority %ld, using sign only\n", dwPriority);
                     if ((signed)dwPriority < 0) dwPriority = (DWORD)-1;
+#ifdef __REACTOS__
+                    else dwPriority = 1;
+#else
                     if (dwPriority > 0) dwPriority = 1;
+#endif
                 }
                 
                 if (dwPriority == 1 && (padid->pPrevACMDriverID == NULL || 
