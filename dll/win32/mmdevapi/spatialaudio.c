@@ -505,6 +505,10 @@ static HRESULT WINAPI SAORS_ActivateSpatialAudioObject(ISpatialAudioObjectRender
     }
 
     obj = calloc(1, sizeof(*obj));
+#ifdef __REACTOS__
+    if (!obj)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     obj->ISpatialAudioObject_iface.lpVtbl = &ISpatialAudioObject_vtbl;
     obj->ref = 1;
     obj->type = type;
@@ -673,6 +677,10 @@ static HRESULT WINAPI SAC_IsSpatialAudioStreamAvailable(ISpatialAudioClient *ifa
 static WAVEFORMATEX *clone_fmtex(const WAVEFORMATEX *src)
 {
     WAVEFORMATEX *r = malloc(sizeof(WAVEFORMATEX) + src->cbSize);
+#ifdef __REACTOS__
+    if (!r)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     memcpy(r, src, sizeof(WAVEFORMATEX) + src->cbSize);
     return r;
 }
@@ -812,6 +820,10 @@ static HRESULT WINAPI SAC_ActivateSpatialAudioStream(ISpatialAudioClient *iface,
         }
 
         obj = calloc(1, sizeof(SpatialAudioStreamImpl));
+#ifdef __REACTOS__
+        if (!obj)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
         obj->ISpatialAudioObjectRenderStream_iface.lpVtbl = &ISpatialAudioObjectRenderStream_vtbl;
         obj->ref = 1;
@@ -939,6 +951,10 @@ HRESULT SpatialAudioClient_Create(IMMDevice *mmdev, ISpatialAudioClient **out)
     SpatialAudioImpl *obj;
 
     obj = calloc(1, sizeof(*obj));
+#ifdef __REACTOS__
+    if (!obj)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     obj->ref = 1;
     obj->ISpatialAudioClient_iface.lpVtbl = &ISpatialAudioClient_vtbl;
