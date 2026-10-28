@@ -1008,6 +1008,10 @@ static struct shstream *shstream_create(const IStreamVtbl *vtbl, const BYTE *dat
         data_len = 0;
 
     stream = malloc(sizeof(*stream));
+#ifdef __REACTOS__
+    if (!stream)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     stream->IStream_iface.lpVtbl = vtbl;
     stream->refcount = 1;
     stream->u.mem.buffer = malloc(data_len);
@@ -1329,6 +1333,10 @@ HRESULT WINAPI SHCreateStreamOnFileEx(const WCHAR *path, DWORD mode, DWORD attri
         return HRESULT_FROM_WIN32(GetLastError());
 
     stream = malloc(sizeof(*stream));
+#ifdef __REACTOS__
+    if (!stream)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     stream->IStream_iface.lpVtbl = &filestreamvtbl;
     stream->refcount = 1;
     stream->u.file.handle = hFile;
@@ -2297,6 +2305,10 @@ DWORD WINAPI SHQueryValueExW(HKEY hkey, const WCHAR *name, DWORD *reserved, DWOR
         {
             length = (lstrlenW(buff) + 1) * sizeof(WCHAR);
             value = malloc(length);
+#ifdef __REACTOS__
+            if (!value)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             memcpy(value, buff, length);
             length = ExpandEnvironmentStringsW(value, buff, *buff_len / sizeof(WCHAR));
             if (length > *buff_len) ret = ERROR_MORE_DATA;
@@ -2345,6 +2357,10 @@ DWORD WINAPI SHQueryValueExA(HKEY hkey, const char *name, DWORD *reserved, DWORD
         {
             length = strlen(buff) + 1;
             value = malloc(length);
+#ifdef __REACTOS__
+            if (!value)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             memcpy(value, buff, length);
             length = ExpandEnvironmentStringsA(value, buff, *buff_len);
             if (length > *buff_len) ret = ERROR_MORE_DATA;
