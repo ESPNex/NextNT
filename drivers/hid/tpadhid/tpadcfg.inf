@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT HID Precision Touchpad Driver
+; PROJECT:     NextNT HID Precision Touchpad Driver
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
 
@@ -6,7 +6,7 @@
 Signature = "$Windows NT$"
 Class = Keyboard
 ClassGUID = {4D36E96B-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 10/07/2026,1.0.0.0
 
 [DestinationDirs]
@@ -45,7 +45,7 @@ ServiceBinary = %12%\kbdclass.sys
 LoadOrderGroup = Keyboard Class
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 StdMfg = "(Standard keyboards)"
 TpadCfg.DeviceDesc = "HID Touchpad Gesture Keys"
-TpadHid.ServiceDesc = "LiberNT HID Precision Touchpad Driver"
+TpadHid.ServiceDesc = "NextNT HID Precision Touchpad Driver"

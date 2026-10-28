@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT dui70.dll
+ * PROJECT:     NextNT dui70.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DirectUI runtime entry points
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

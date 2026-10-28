@@ -3,7 +3,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = SCSIAdapter
 ClassGUID  = {4D36E97B-E325-11CE-BFC1-08002BE10318}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 10/21/2026,1.00
 
 [DestinationDirs]
@@ -32,6 +32,6 @@ ServiceBinary  = %12%\storvsc.sys
 LoadOrderGroup = SCSI Miniport
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 MicrosoftMfg = "Microsoft"
 StorVsc.DeviceDesc = "Microsoft Hyper-V SCSI Controller"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SD Host Controller Miniport Driver
+ * PROJECT:     NextNT SD Host Controller Miniport Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Standard SDHCI miniport implementation
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

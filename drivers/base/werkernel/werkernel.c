@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WER kernel support
+ * PROJECT:     NextNT WER kernel support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Live kernel report exports for drivers linked with lkmdtel
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

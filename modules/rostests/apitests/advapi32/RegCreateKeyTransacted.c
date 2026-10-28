@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests for RegCreateKeyTransactedA/W
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -24,7 +24,7 @@ static FN_CreateTransaction pCreateTransaction;
 static FN_EndTransaction pCommitTransaction;
 static FN_EndTransaction pRollbackTransaction;
 
-#define TEST_ROOT L"Software\\LiberNTTxCreateTest"
+#define TEST_ROOT L"Software\\NextNTTxCreateTest"
 
 static LONG
 OpenPlain(PCWSTR SubKey)
@@ -145,7 +145,7 @@ Test_Commit(void)
 
     if (pRegCreateKeyTransactedA)
     {
-        Error = pRegCreateKeyTransactedA(HKEY_CURRENT_USER, "Software\\LiberNTTxCreateTest\\Ansi", 0, NULL, 0, KEY_READ, NULL,
+        Error = pRegCreateKeyTransactedA(HKEY_CURRENT_USER, "Software\\NextNTTxCreateTest\\Ansi", 0, NULL, 0, KEY_READ, NULL,
                                          &hKey, NULL, hTransaction, NULL);
         ok(Error == ERROR_SUCCESS, "ANSI create: error %ld\n", Error);
         if (Error == ERROR_SUCCESS)

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Win32k
+ * PROJECT:     NextNT Win32k
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     StickyKeys, FilterKeys, ToggleKeys and MouseKeys for hardware input
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

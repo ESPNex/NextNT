@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT FEX/ARM64EC profiler
+ * PROJECT:     NextNT FEX/ARM64EC profiler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Sample where an emulated x86-64 process spends its time
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * An x64 process under FEX pays for every exception the emulator takes to
  * implement x86 semantics -- unaligned atomics lowered to ARM64 exclusives,

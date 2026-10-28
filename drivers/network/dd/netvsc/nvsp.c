@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Hyper-V Network Adapter Driver
+ * PROJECT:     NextNT Hyper-V Network Adapter Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NVSP and RNDIS protocol over the VMBus channel
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

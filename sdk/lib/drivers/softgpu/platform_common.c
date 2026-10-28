@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WDDM software GPU miniport
+ * PROJECT:     NextNT WDDM software GPU miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Device-neutral firmware framebuffer validation helpers
  */
@@ -29,7 +29,7 @@ SoftGpuDecodeLoaderGop(
     }
 
     /*
-     * FreeLdr normalizes PixelFormat to bits per pixel and supplies the channel
+     * NextLdr normalizes PixelFormat to bits per pixel and supplies the channel
      * masks. The software present path copies X8R8G8B8 pixels without format
      * conversion, so accept only that exact memory layout.
      */

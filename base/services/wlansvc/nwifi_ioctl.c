@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WLAN Service
+ * PROJECT:     NextNT WLAN Service
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        base/services/wlansvc/nwifi_ioctl.c
  * PURPOSE:     IOCTL bridge to the nwifi.sys control device

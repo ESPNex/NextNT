@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native WiFi - RSNA (WPA2-PSK) supplicant
+ * PROJECT:     NextNT Native WiFi - RSNA (WPA2-PSK) supplicant
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Host unit-test harness for the RSNA supplicant library.
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -1065,8 +1065,8 @@ static void TestSaeH2eExchange(void)
     memset(&s, 0, sizeof(s));
     memset(&a, 0, sizeof(a));
     Check("SAE H2E PT without identifier",
-          RsnaSaeDerivePt(ptSta, (const rsna_u8 *)"LiberNT-WPA3", 12, (const rsna_u8 *)"correct horse", 13, NULL, 0) &&
-          RsnaSaeDerivePt(ptAp, (const rsna_u8 *)"LiberNT-WPA3", 12, (const rsna_u8 *)"correct horse", 13, NULL, 0),
+          RsnaSaeDerivePt(ptSta, (const rsna_u8 *)"NextNT-WPA3", 12, (const rsna_u8 *)"correct horse", 13, NULL, 0) &&
+          RsnaSaeDerivePt(ptAp, (const rsna_u8 *)"NextNT-WPA3", 12, (const rsna_u8 *)"correct horse", 13, NULL, 0),
           NULL, NULL, 0);
     CheckBytes("SAE H2E PT is deterministic", ptSta, ptAp, 64);
     Check("SAE H2E both PWEs", RsnaSaeDerivePweFromPt(&s, ptSta, sta, ap) && RsnaSaeDerivePweFromPt(&a, ptAp, ap, sta),
@@ -1081,7 +1081,7 @@ static void TestSaeH2eExchange(void)
     Check("SAE H2E AP verifies STA confirm", RsnaSaeVerifyConfirm(&a, 1, confirmSta), NULL, NULL, 0);
     Check("SAE H2E STA verifies AP confirm", RsnaSaeVerifyConfirm(&s, 1, confirmAp), NULL, NULL, 0);
     Check("SAE H2E wrong password fails",
-          RsnaSaeDerivePt(ptAp, (const rsna_u8 *)"LiberNT-WPA3", 12, (const rsna_u8 *)"wrong horse", 11, NULL, 0) &&
+          RsnaSaeDerivePt(ptAp, (const rsna_u8 *)"NextNT-WPA3", 12, (const rsna_u8 *)"wrong horse", 11, NULL, 0) &&
           RsnaSaeDerivePweFromPt(&a, ptAp, ap, sta) && RsnaSaeGenerateCommit(&a, TestSaeRandom, &seedAp) &&
           RsnaSaeProcessCommit(&a, s.Scalar, s.Element) && !RsnaSaeVerifyConfirm(&a, 1, confirmSta), NULL, NULL, 0);
     RsnaSaeClear(&s);

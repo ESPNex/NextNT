@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Storage
+ * PROJECT:     NextNT Windows Storage
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Shell storage objects served by windows.storage
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

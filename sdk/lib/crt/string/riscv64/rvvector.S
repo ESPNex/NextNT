@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT
+ * PROJECT:     NextNT CRT
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     RISC-V64 RVA23 vector string and memory routines
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

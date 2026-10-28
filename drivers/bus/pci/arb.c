@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT PCI Bus Driver
+ * PROJECT:         NextNT PCI Bus Driver
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            drivers/bus/pci/arb.c
  * PURPOSE:         PCI Resource Arbiter Infrastructure

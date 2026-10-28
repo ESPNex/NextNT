@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT KernelBase
+ * PROJECT:     NextNT KernelBase
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows Error Reporting runtime exception module registrations
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

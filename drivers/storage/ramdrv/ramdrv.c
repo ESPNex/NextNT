@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Storage
+ * PROJECT:     NextNT Storage
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Writable RAM drive formatted as FAT32 at load
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>
@@ -160,7 +160,7 @@ RamDrvFormat(
     Sector[0] = 0xEB;
     Sector[1] = 0x58;
     Sector[2] = 0x90;
-    RtlCopyMemory(&Sector[3], "LIBERNT ", 8);
+    RtlCopyMemory(&Sector[3], "NEXTNT ", 8);
     RamDrvPut16(&Sector[11], RAMDRV_SECTOR_SIZE);
     Sector[13] = (UCHAR)SectorsPerCluster;
     RamDrvPut16(&Sector[14], RAMDRV_RESERVED_SECTORS);

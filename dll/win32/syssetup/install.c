@@ -58,7 +58,7 @@ FatalError(char *pszFmt,...)
     strcat(szBuffer, "\nRebooting now!");
     MessageBoxA(NULL,
                 szBuffer,
-                "LiberNT Setup",
+                "NextNT Setup",
                 MB_OK);
 }
 
@@ -1326,7 +1326,7 @@ error:
     MessageBoxW(
         NULL,
         L"Failed to load LiveCD! You can shutdown your computer, or press ENTER to reboot.",
-        L"LiberNT LiveCD",
+        L"NextNT LiveCD",
         MB_OK);
     if (!pSetupEnablePrivilege(SE_SHUTDOWN_NAME, TRUE))
         DPRINT1("pSetupEnablePrivilege(SE_SHUTDOWN_NAME) failed (Error %lu)\n", GetLastError());

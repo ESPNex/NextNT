@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Intel Power Management Controller Driver
+ * PROJECT:     NextNT Intel Power Management Controller Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Alder Lake-N PMC ownership, S0ix diagnostics, and SMP suspend policy
  */

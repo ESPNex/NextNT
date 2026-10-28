@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Explorer Frame
+ * PROJECT:     NextNT Explorer Frame
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Folder verb handler that opens a folder window through the shell
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

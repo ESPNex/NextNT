@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT api tests
+ * PROJECT:         NextNT api tests
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Test that comctl32 requests the extended theme part/state
  *                  pairs (hover, selection, sort, disabled) from uxtheme

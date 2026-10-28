@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 3 VC4 WDDM miniport
+ * PROJECT:     NextNT Raspberry Pi 3 VC4 WDDM miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VC4 command-list capture, validation, and relocation adapter
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

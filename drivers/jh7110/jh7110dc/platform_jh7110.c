@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT StarFive JH7110 display miniport
+ * PROJECT:     NextNT StarFive JH7110 display miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     JH7110 DC8200 and HDMI platform provider for the software GPU engine
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

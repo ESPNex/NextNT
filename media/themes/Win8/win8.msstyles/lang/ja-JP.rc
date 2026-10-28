@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT win8.msstyles
+ * PROJECT:     NextNT win8.msstyles
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -9,12 +9,12 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 
 STRINGTABLE
 {
-1000, "LiberNT 既定"
+1000, "NextNT 既定"
 }
 
 STRINGTABLE
 {
-2000, "LiberNT 既定"
+2000, "NextNT 既定"
 }
 
 STRINGTABLE
@@ -33,12 +33,12 @@ STRINGTABLE
 
 STRINGTABLE
 {
-5000, "LiberNT 既定"
+5000, "NextNT 既定"
 5001, "ビジュアル スタイル"
 5002, "ReactOS Project"
 5003, "フラットな Windows 8 スタイルのテーマ"
 5004, "GNU/GPL 2.0 の下でリリース"
 5005, "https://reactos.org/"
 5006, "1.0"
-5007, "LiberNT 用のフラットな Windows 8 ビジュアル スタイル"
+5007, "NextNT 用のフラットな Windows 8 ビジュアル スタイル"
 }

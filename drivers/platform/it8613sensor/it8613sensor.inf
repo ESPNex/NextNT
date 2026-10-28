@@ -5,7 +5,7 @@
 Signature = "$Windows NT$"
 Class = System
 ClassGuid = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 08/08/2026,1.0.0.0
 
 [ControlFlags]
@@ -15,9 +15,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT,NTamd64
+%NextNT% = NextNT,NTamd64
 
-[LiberNT.NTamd64]
+[NextNT.NTamd64]
 %It8613Sensor.DeviceDesc% = It8613Sensor_Inst,DETECTED\it8613sensor
 
 [It8613Sensor_Inst.NT]
@@ -38,6 +38,6 @@ ServiceBinary = %12%\it8613sensor.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 It8613Sensor.DeviceDesc = "ITE IT8613E Hardware Monitor"
-It8613Sensor.ServiceDesc = "LiberNT ITE IT8613E Sensor Provider"
+It8613Sensor.ServiceDesc = "NextNT ITE IT8613E Sensor Provider"

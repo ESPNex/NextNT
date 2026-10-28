@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     IPv4, DHCP, TCP and HTTP download over the UEFI Simple Network Protocol
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -1436,7 +1436,7 @@ SnpHttpTransfer(
                                        sizeof(Request),
                                        "GET %s HTTP/1.1\r\n"
                                        "Host: %s\r\n"
-                                       "User-Agent: LiberNT\r\n"
+                                       "User-Agent: NextNT\r\n"
                                        "Accept: */*\r\n"
                                        "Connection: close\r\n"
                                        "%s\r\n",

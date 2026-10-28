@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Storport Driver
+ * PROJECT:     NextNT Storport Driver
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     SCSI port numbering and the HARDWARE\DEVICEMAP\Scsi tree
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

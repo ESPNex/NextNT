@@ -1,5 +1,5 @@
 ;
-; PROJECT:     LiberNT StorPort NVMe Miniport
+; PROJECT:     NextNT StorPort NVMe Miniport
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     Installs the StorPort NVMe miniport on NVM Express controllers
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -69,7 +69,7 @@ HKR,,EventMessageFile,%REG_EXPAND_SZ%,"%%SystemRoot%%\System32\IoLogMsg.dll"
 HKR,,TypesSupported,%REG_DWORD%,7
 
 [Strings]
-ROS                     = "LiberNT"
+ROS                     = "NextNT"
 DeviceDesc              = "NVM Express Driver"
 NVME.DeviceDesc         = "Standard NVM Express Controller"
 

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Win32k / Desktop Window Manager
+ * PROJECT:     NextNT Win32k / Desktop Window Manager
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Kernel-side composition engine (DWM) — public interface.
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

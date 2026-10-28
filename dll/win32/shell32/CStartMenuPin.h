@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT shell32
+ * PROJECT:     NextNT shell32
  * LICENSE:     GPL-3.0-or-later
  * PURPOSE:     Start-menu pin compatibility and taskbar pin context handler
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT RISC-V HAL
+ * PROJECT:     NextNT RISC-V HAL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Hardware event profile sources through the SBI PMU extension
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT bcp47langs.dll
+ * PROJECT:     NextNT bcp47langs.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     BCP-47 language tag services
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

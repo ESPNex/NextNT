@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  * PURPOSE:     Big-endian Open Firmware stage that starts the little-endian loader
@@ -152,7 +152,7 @@ void Stage0Main(u32 r3, u32 r4, void *r5)
     a[3] = 4;
     of_call("getprop", 4, 1, a);
 
-    puts_of("\r\nLiberNT PowerPC stage0\r\n");
+    puts_of("\r\nNextNT PowerPC stage0\r\n");
 
     if ((u32)(LoaderImageEnd - LoaderImage) < 0x200)
         halt("no loader image");

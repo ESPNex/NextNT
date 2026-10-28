@@ -13,7 +13,7 @@ list(APPEND C_SOURCE
     comctl32ex/uxthemesupp.c
     fileextractdialog.c
     fileutils.c
-    freeldrpage.c
+    nextldrpage.c
     generalpage.c
     msconfig.c
     regutils.c

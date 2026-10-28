@@ -1168,7 +1168,7 @@ KiInitializeSystem(_Inout_ PLOADER_PARAMETER_BLOCK LoaderBlock)
     if (IsBsp)
     {
         /*
-         * BSP path: set up bootstrap PCR and convert FreeLdr physical
+         * BSP path: set up bootstrap PCR and convert NextLdr physical
          * addresses to KSEG0 virtual addresses.
          */
         KiArm64PrepareBootPcr(LoaderBlock);
@@ -1189,7 +1189,7 @@ KiInitializeSystem(_Inout_ PLOADER_PARAMETER_BLOCK LoaderBlock)
     if (IsBsp)
     {
         /*
-         * BSP only: FreeLdr passes physical addresses that need KSEG0 conversion.
+         * BSP only: NextLdr passes physical addresses that need KSEG0 conversion.
          * AP addresses are already kernel VAs set by KeStartAllProcessors.
          */
 #define ARM64_LDR_TO_VIRT(Value) \
@@ -1216,7 +1216,7 @@ KiInitializeSystem(_Inout_ PLOADER_PARAMETER_BLOCK LoaderBlock)
 
     if (IsBsp && InitialThread != NULL)
     {
-        /* BSP only: Convert stack addresses from FreeLdr physical to KSEG0 */
+        /* BSP only: Convert stack addresses from NextLdr physical to KSEG0 */
         if ((ULONG_PTR)InitialThread->InitialStack < (ULONG_PTR)KSEG0_BASE)
         {
             InitialThread->InitialStack = (PVOID)((ULONG_PTR)InitialThread->InitialStack +

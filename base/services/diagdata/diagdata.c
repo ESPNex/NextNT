@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Diagnostic Data Service
+ * PROJECT:     NextNT Diagnostic Data Service
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Sends the required and the optional diagnostic data, spooled until delivered
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -20,9 +20,9 @@
 #define NDEBUG
 #include <debug.h>
 
-#define DIAGDATA_KEY L"SOFTWARE\\LiberNT\\DiagnosticData"
-#define DIAGDATA_ENDPOINT L"https://ci.libernt.com/api/diagnostic-data/v1/report"
-#define DIAGDATA_AGENT L"LiberNT-DiagnosticData/1"
+#define DIAGDATA_KEY L"SOFTWARE\\NextNT\\DiagnosticData"
+#define DIAGDATA_ENDPOINT L"https://ci.nextnt.vercel.app/api/diagnostic-data/v1/report"
+#define DIAGDATA_AGENT L"NextNT-DiagnosticData/1"
 #define DIAGDATA_SETTLE_MS 30000
 #define DIAGDATA_PNP_POLL_MS 500
 #define DIAGDATA_OFF_LEVEL 0

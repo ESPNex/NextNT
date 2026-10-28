@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Settings
+ * PROJECT:     NextNT Settings
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Boot loader pages and self-test over the system Boot Configuration Data store
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -11,7 +11,7 @@
 #include <commdlg.h>
 
 #define BCD_KEY            L"BCD00000000"
-#define BCD_IMPORT_KEY     L"LiberNTBcdImport"
+#define BCD_IMPORT_KEY     L"NextNTBcdImport"
 #define BCD_BOOTMGR        L"{9dea862c-5cdd-4e70-acc1-f32b344d4795}"
 #define BCD_TYPE_BOOTMGR   0x10100002
 #define BCD_TYPE_OSLOADER  0x10200003
@@ -26,7 +26,7 @@
 #define BCD_DEVICE_BOOT    5
 #define BCD_DEVICE_PARTITION 6
 #define BCD_STYLE_MBR      1
-#define SELFTEST_KEY       L"SOFTWARE\\LiberNT\\BootLoaderSelfTest"
+#define SELFTEST_KEY       L"SOFTWARE\\NextNT\\BootLoaderSelfTest"
 #define SELFTEST_TOKEN     L"BLSELFTEST"
 
 extern "C" LONG NTAPI NtDeleteKey(HANDLE KeyHandle);
@@ -367,7 +367,7 @@ Commit(HKEY root, DWORD error)
 static DWORD
 OpenStore(HKEY *root)
 {
-    static const LPCWSTR StorePaths[] = { L"\\EFI\\LiberNT\\Boot\\BCD", L"\\Boot\\BCD" };
+    static const LPCWSTR StorePaths[] = { L"\\EFI\\NextNT\\Boot\\BCD", L"\\Boot\\BCD" };
     std::wstring partition, file;
     LSTATUS error;
 

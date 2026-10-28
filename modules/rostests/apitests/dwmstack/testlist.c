@@ -1,6 +1,6 @@
 
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DWM stack API-test registration

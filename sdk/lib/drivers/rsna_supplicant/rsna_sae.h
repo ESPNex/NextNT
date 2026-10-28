@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native WiFi - RSNA supplicant
+ * PROJECT:     NextNT Native WiFi - RSNA supplicant
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Simultaneous Authentication of Equals over group 19 (IEEE 802.11-2020 12.4)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

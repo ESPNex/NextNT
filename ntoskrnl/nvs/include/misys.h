@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Virtual Memory Subsystem
+ * PROJECT:     NextNT NT Virtual Memory Subsystem
  * FILE:        ntoskrnl/nvs/include/misys.h
  * PURPOSE:     System virtual memory structures and interfaces
  *

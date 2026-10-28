@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Writable RAM disk built from the boot medium or an image file
  * COPYRIGHT:   Copyright 2025-2026 Ahmed ARIF <arif.ing@outlook.com>

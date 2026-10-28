@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Verify minidumps use captured process snapshot memory and metadata
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

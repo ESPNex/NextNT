@@ -48,7 +48,7 @@ HKR,,InstalledDisplayDrivers,0x00010000,framebuf
 
 [Strings]
 ; Non-localizable
-ReactOS = "LiberNT Project"
+ReactOS = "NextNT Project"
 
 nVidiaMfg = "nVidia"
 

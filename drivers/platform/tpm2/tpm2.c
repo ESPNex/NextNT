@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT TPM 2.0 Driver
+ * PROJECT:     NextNT TPM 2.0 Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ACPI MSFT0101 CRB and FIFO hardware transport
  */

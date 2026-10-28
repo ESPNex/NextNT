@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Ahmed ARIF <arif.ing@outlook.com>
 #
-# Builds the LGPL FFmpeg payload of a LiberNT release from a build directory
+# Builds the LGPL FFmpeg payload of a NextNT release from a build directory
 # configured with -DENABLE_FFMPEG=ON -DFFMPEG_FROM_SOURCE=ON:
-#   libernt-ffmpeg-<release>-<arch>.zip  headers for the build, system32 DLLs, licenses
-#   libernt-ffmpeg-<release>-<arch>.msi  the DLLs the second stage installs
+#   nextnt-ffmpeg-<release>-<arch>.zip  headers for the build, system32 DLLs, licenses
+#   nextnt-ffmpeg-<release>-<arch>.msi  the DLLs the second stage installs
 # The MSI is written by wixl and msibuild (msitools).
 
 import argparse
@@ -47,7 +47,7 @@ def write_zip(root, source_release, arch, release, output):
             archive.write(root / "bin" / dll, Path("system32") / dll)
         archive.write(root / LICENSE, Path("licenses") / LICENSE)
         archive.writestr("payload.json", json.dumps({
-            "name": "libernt-ffmpeg",
+            "name": "nextnt-ffmpeg",
             "release": release,
             "arch": arch,
             "ffmpeg": source_release,
@@ -67,10 +67,10 @@ def write_msi(root, arch, release, version, output, work):
     wxs = work / "ffmpeg.wxs"
     wxs.write_text(f'''<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="LiberNT FFmpeg {release}" Language="1033" Version="{version}"
-           Manufacturer="LiberNT" UpgradeCode="{upgrade}">
+  <Product Id="*" Name="NextNT FFmpeg {release}" Language="1033" Version="{version}"
+           Manufacturer="NextNT" UpgradeCode="{upgrade}">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine"/>
-    <MajorUpgrade DowngradeErrorMessage="A newer LiberNT FFmpeg is already installed."/>
+    <MajorUpgrade DowngradeErrorMessage="A newer NextNT FFmpeg is already installed."/>
     <Media Id="1" Cabinet="ffmpeg.cab" EmbedCab="yes"/>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="{folder}">
@@ -91,7 +91,7 @@ def write_msi(root, arch, release, version, output, work):
 ''')
     subprocess.run(["wixl", "-a", wixl_arch, "-o", str(output), str(wxs)], check=True)
     if arch == "arm64":
-        subprocess.run(["msibuild", str(output), "-s", f"LiberNT FFmpeg {release}", "LiberNT",
+        subprocess.run(["msibuild", str(output), "-s", f"NextNT FFmpeg {release}", "NextNT",
                         template, "{" + str(uuid.uuid4()).upper() + "}"], check=True)
 
 
@@ -124,7 +124,7 @@ def main():
     version = ".".join(str(n) for n in numbers + [int(args.release.rsplit("-", 1)[1])])
 
     args.out.mkdir(parents=True, exist_ok=True)
-    stem = f"libernt-ffmpeg-{args.release}-{args.arch}"
+    stem = f"nextnt-ffmpeg-{args.release}-{args.arch}"
     with tempfile.TemporaryDirectory() as work:
         write_zip(root, source_release, args.arch, args.release, args.out / f"{stem}.zip")
         write_msi(root, args.arch, args.release, version, args.out / f"{stem}.msi", Path(work))

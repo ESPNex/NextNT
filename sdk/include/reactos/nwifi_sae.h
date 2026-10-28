@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native WiFi
+ * PROJECT:     NextNT Native WiFi
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WDI SAE authentication message encoding shared by nwifi and soft-MAC miniports
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Certificates Snap-in
+ * PROJECT:     NextNT Certificates Snap-in
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Certificates snap-in for the user certificate stores
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -9,7 +9,7 @@
 #include <atlstr.h>
 
 #define CERTMGR_COLUMN_COUNT 5
-#define CERTMGR_PRIVATE_FORMAT L"LiberNT Certificates Snap-in Cookie"
+#define CERTMGR_PRIVATE_FORMAT L"NextNT Certificates Snap-in Cookie"
 
 static const BYTE CertMgrDefaultState[36] =
 {

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Shell Frame
+ * PROJECT:     NextNT Shell Frame
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Fluent UI System Icons rendered from their SVG path data
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

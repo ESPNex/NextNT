@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Compressed Symbol Table Library
+ * PROJECT:     NextNT Compressed Symbol Table Library
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Format and lookup interface of the .symz image section
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

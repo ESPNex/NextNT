@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HID Class Driver Support
+ * PROJECT:     NextNT HID Class Driver Support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     HID minidriver pass-through for KMDF HID transport drivers
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

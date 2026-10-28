@@ -1,10 +1,10 @@
 /*
- * PROJECT:     LiberNT WDDM Null/Software GPU Miniport
+ * PROJECT:     NextNT WDDM Null/Software GPU Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DMA command scheduling DDIs for softgpu.sys.
  *              Implements SubmitCommand, PreemptCommand, BuildPagingBuffer,
  *              QueryCurrentFence, Patch, and the fence-completion DPC.
- * COPYRIGHT:   Copyright 2024 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024 NextNT WDDM Team
  *
  * Architecture notes (amd64/x86)
  * ================================

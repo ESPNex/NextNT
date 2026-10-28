@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NTFS library
+ * PROJECT:     NextNT NTFS library
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Restart recovery from an LFS 2.0 $LogFile
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

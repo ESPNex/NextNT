@@ -581,7 +581,7 @@ AddReg = registry.inf,AddReg
 AddReg = comreg.inf,AddReg
 
 [Strings]
-cdname      = "LiberNT Installation Media"
-productname = "LiberNT"
+cdname      = "NextNT Installation Media"
+productname = "NextNT"
 
 ; EOF

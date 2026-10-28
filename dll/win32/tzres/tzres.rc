@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Time Zone Resources
+ * PROJECT:     NextNT Time Zone Resources
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Time zone display name strings referenced by the MUI time zone registry values
  * COPYRIGHT:   Strings from Wine dlls/tzres/tzres.rc

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT UEFI Support
+ * PROJECT:     NextNT UEFI Support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     RISC-V EFI Boot Protocol definitions
  */

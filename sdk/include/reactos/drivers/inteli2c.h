@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Intel Serial I/O I2C interface
+ * PROJECT:     NextNT Intel Serial I/O I2C interface
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  */
 

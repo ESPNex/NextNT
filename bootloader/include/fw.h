@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Firmware services used by the common code
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -116,7 +116,7 @@ FwDownloadFile(
     _In_opt_ PCSTR Address,
     _Out_ PULONG Size);
 
-struct _FREELDR_MEMORY_DESCRIPTOR*
+struct _NEXTLDR_MEMORY_DESCRIPTOR*
 FwGetMemoryMap(
     _Out_ PULONG Count);
 

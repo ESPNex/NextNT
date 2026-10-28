@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT volume resize library
+ * PROJECT:     NextNT volume resize library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Public definitions for shrinking and extending basic volumes
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

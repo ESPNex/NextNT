@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel
+ * PROJECT:         NextNT Kernel
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            ntoskrnl/rtl/arm64/rtlexcpt.c
  * PURPOSE:         Exception helper stubs for ARM64 stack walking

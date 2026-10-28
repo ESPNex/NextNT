@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Ralink RT2800 USB Native 802.11 Miniport
+ * PROJECT:     NextNT Ralink RT2800 USB Native 802.11 Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Driver definitions for the RT2870/RT2770 USB wireless adapters
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

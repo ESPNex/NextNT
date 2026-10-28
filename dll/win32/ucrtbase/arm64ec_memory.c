@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Universal C Runtime
+ * PROJECT:     NextNT Universal C Runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Native ARM64EC memory and string search export entry points
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

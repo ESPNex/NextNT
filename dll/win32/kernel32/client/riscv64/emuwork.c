@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT System Libraries
+ * PROJECT:     NextNT System Libraries
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Emulator work notifications for processes run by a WoW64 CPU backend
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

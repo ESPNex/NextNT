@@ -326,8 +326,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "LiberNT Explorer"
-    IDS_PARSE_ADDR_ERR_TEXT "LiberNT Explorer не намира '%1'. Проверете правописа и опитайте отново."
+    IDS_PARSE_ADDR_ERR_TITLE "NextNT Explorer"
+    IDS_PARSE_ADDR_ERR_TEXT "NextNT Explorer не намира '%1'. Проверете правописа и опитайте отново."
 END
 
 STRINGTABLE

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Linux terminal: the login shell of the Linux root on a pseudo-terminal
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -37,7 +37,7 @@ LxUsage(VOID)
              L"  -y             Install the Linux system without asking when the root holds none\n"
              L"  -u source      Install from this URL or file (.tar, .tar.gz or .tar.xz) instead of Ubuntu 26.04 LTS\n"
              L"  -r rootdir     Windows directory used as the Linux root\n"
-             L"                 (default: LiberNT\\Ubuntu in the local application data folder)\n");
+             L"                 (default: NextNT\\Ubuntu in the local application data folder)\n");
 }
 
 static
@@ -90,11 +90,11 @@ LxDefaultRoot(
     _Out_writes_(MAX_PATH) PWCHAR Root)
 {
     if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE, NULL, 0, Root)) ||
-        (wcslen(Root) + wcslen(L"\\LiberNT\\Ubuntu") >= MAX_PATH))
+        (wcslen(Root) + wcslen(L"\\NextNT\\Ubuntu") >= MAX_PATH))
     {
         return FALSE;
     }
-    wcscat(Root, L"\\LiberNT");
+    wcscat(Root, L"\\NextNT");
     CreateDirectoryW(Root, NULL);
     wcscat(Root, L"\\Ubuntu");
     return TRUE;
@@ -296,7 +296,7 @@ LxStartWindowHost(
     PWCHAR Slash;
 
     if (!LxNormalizeRoot(Root, Normalized, ARRAYSIZE(Normalized)) ||
-        !LxRootPath(Normalized, L"\\usr\\local\\lib\\libernt\\lxwayland\\lxwayland", Marker) ||
+        !LxRootPath(Normalized, L"\\usr\\local\\lib\\nextnt\\lxwayland\\lxwayland", Marker) ||
         (GetFileAttributesW(Marker) == INVALID_FILE_ATTRIBUTES) ||
         !GetModuleFileNameW(NULL, Program, ARRAYSIZE(Program)))
     {

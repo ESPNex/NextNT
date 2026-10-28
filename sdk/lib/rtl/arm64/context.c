@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Run-Time Library
+ * PROJECT:     NextNT Run-Time Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ARM64 context restoration support
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

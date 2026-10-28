@@ -1,5 +1,5 @@
 '''
-PROJECT:     LiberNT build tools
+PROJECT:     NextNT build tools
 LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 PURPOSE:     Emit a MASM byte image of a GAS-assembled code range for ML64
 COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Automatic Testing Utility
+ * PROJECT:     NextNT Automatic Testing Utility
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Test categories selected with the /g option
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

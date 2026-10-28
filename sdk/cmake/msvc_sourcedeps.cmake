@@ -1,4 +1,4 @@
-# PROJECT:     LiberNT build system
+# PROJECT:     NextNT build system
 # LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 # PURPOSE:     Turn MSVC /sourceDependencies output into a Ninja depfile
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

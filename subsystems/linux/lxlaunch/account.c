@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Linux accounts and login sessions of a Linux root
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -16,7 +16,7 @@
 #include "../include/lxlaunch.h"
 
 #define LX_ROOT_FILE_MAX        (1024 * 1024)
-#define LX_COMPOSITOR_PATH      L"\\usr\\local\\lib\\libernt\\lxwayland\\lxwayland"
+#define LX_COMPOSITOR_PATH      L"\\usr\\local\\lib\\nextnt\\lxwayland\\lxwayland"
 #define LX_WAYLAND_DISPLAY      "/run/lxwayland/wayland-0"
 
 static

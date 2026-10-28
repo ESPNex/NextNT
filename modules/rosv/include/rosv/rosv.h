@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VMX Hypervisor Driver
+ * PROJECT:     NextNT VMX Hypervisor Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Main public header - IOCTLs, config structs, debug macros
  * COPYRIGHT:   Copyright 2025 Ahmed Arif

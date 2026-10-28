@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Virtual Memory Subsystem
+ * PROJECT:     NextNT NT Virtual Memory Subsystem
  * FILE:        ntoskrnl/nvs/arch/amd64/archdef.h
  * PURPOSE:     AMD64 memory manager architecture definitions
  *

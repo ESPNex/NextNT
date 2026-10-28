@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT serial class extension
+ * PROJECT:     NextNT serial class extension
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Public SerCx2 client interface
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

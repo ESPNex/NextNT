@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT library
+ * PROJECT:     NextNT CRT library
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     _recalloc on the heap of the imported msvcrt.dll
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

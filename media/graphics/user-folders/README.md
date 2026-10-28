@@ -33,7 +33,7 @@ records the icon name, design size, file and SHA-256 of each one.
 | Command Prompt | `apps/utilities-terminal` | cmd.exe |
 | Task Manager | `devices/computer` with `apps/com.github.stsdc.monitor` centered on its screen | taskmgr.exe, taskmgr11.exe |
 | Device Manager | `devices/computer` with `emblems/emblem-system` over its bottom-right quarter | devmgmt.exe |
-| LiberNT Setup | `apps/yast-vm-install` | libernt.exe, oobe.exe |
+| NextNT Setup | `apps/yast-vm-install` | nextnt.exe, oobe.exe |
 | Linux applications | `apps/tux` | lxwinhost.exe |
 | Linux Terminal | `apps/utilities-terminal` with `apps/tux` over its bottom-right quarter | lxterm.exe |
 

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Hyper-V Network Adapter Driver
+ * PROJECT:     NextNT Hyper-V Network Adapter Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NDIS 6 miniport for the Hyper-V synthetic network adapter
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

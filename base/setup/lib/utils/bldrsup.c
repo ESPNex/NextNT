@@ -106,7 +106,7 @@ CloseIniBootLoaderStore(
     _In_ PVOID Handle);
 
 static NTSTATUS
-FreeLdrEnumerateBootEntries(
+NextLdrEnumerateBootEntries(
     IN PBOOT_STORE_INI_CONTEXT BootStore,
 //  IN ULONG Flags, // Determine which data to retrieve
     IN PENUM_BOOT_ENTRIES_ROUTINE EnumBootEntriesRoutine,
@@ -124,8 +124,8 @@ NtLdrEnumerateBootEntries(
 // Question 2: What if many config files are possible?
 NTOS_BOOT_LOADER_FILES NtosBootLoaders[] =
 {
-    {FreeLdr, L"freeldr.sys\0" L"rosload.exe\0", L"freeldr.ini",
-        OpenIniBootLoaderStore, CloseIniBootLoaderStore, (PENUM_BOOT_STORE_ENTRIES)FreeLdrEnumerateBootEntries},
+    {NextLdr, L"nextldr.sys\0" L"rosload.exe\0", L"nextldr.ini",
+        OpenIniBootLoaderStore, CloseIniBootLoaderStore, (PENUM_BOOT_STORE_ENTRIES)NextLdrEnumerateBootEntries},
     {NtLdr  , L"ntldr\0" L"osloader.exe\0", L"boot.ini",
         OpenIniBootLoaderStore, CloseIniBootLoaderStore, (PENUM_BOOT_STORE_ENTRIES)NtLdrEnumerateBootEntries  },
 //  {SetupLdr, L"setupldr\0" L"setupldr.bin\0" L"setupldr.exe\0", L"txtsetup.sif", UNIMPLEMENTED, UNIMPLEMENTED, UNIMPLEMENTED}
@@ -140,7 +140,7 @@ enum BOOT_OPTION
 };
 static const PCWSTR BootOptionNames[][2] =
 {
-    {L"TimeOut", L"DefaultOS"}, // FreeLdr
+    {L"TimeOut", L"DefaultOS"}, // NextLdr
     {L"timeout", L"default"  }  // NtLdr
 };
 
@@ -213,13 +213,13 @@ FindBootStore( // By handle
 
 //
 // TEMPORARY functions to migrate the DEPRECATED BootDrive and BootPartition
-// values of BootSector boot entries in FREELDR.INI to the newer BootPath value.
+// values of BootSector boot entries in NEXTLDR.INI to the newer BootPath value.
 //
 // REMOVE THEM once they won't be necessary anymore,
 // after the removal of their support in FreeLoader!
 //
 static VOID
-FreeLdrMigrateBootDrivePartWorker(
+NextLdrMigrateBootDrivePartWorker(
     _In_ PINI_SECTION OsIniSection)
 {
     PCWSTR KeyData;
@@ -320,7 +320,7 @@ FreeLdrMigrateBootDrivePartWorker(
 }
 
 static VOID
-FreeLdrMigrateBootDrivePart(
+NextLdrMigrateBootDrivePart(
     _In_ PBOOT_STORE_INI_CONTEXT BootStore)
 {
     PINICACHEITERATOR Iterator;
@@ -358,7 +358,7 @@ FreeLdrMigrateBootDrivePart(
         {
 migrate_drivepart:
             DPRINT("This is a '%S' boot entry\n", KeyData);
-            FreeLdrMigrateBootDrivePartWorker(OsIniSection);
+            NextLdrMigrateBootDrivePartWorker(OsIniSection);
         }
     }
     while (IniFindNextValue(Iterator, &SectionName, &KeyData));
@@ -369,7 +369,7 @@ migrate_drivepart:
 
 
 static VOID
-CreateCommonFreeLdrSections(
+CreateCommonNextLdrSections(
     IN OUT PBOOT_STORE_INI_CONTEXT BootStore)
 {
     PINI_SECTION IniSection;
@@ -381,7 +381,7 @@ CreateCommonFreeLdrSections(
     /* Create the "FREELOADER" section */
     IniSection = IniAddSection(BootStore->IniCache, L"FREELOADER");
     if (!IniSection)
-        DPRINT1("CreateCommonFreeLdrSections: Failed to create 'FREELOADER' section!\n");
+        DPRINT1("CreateCommonNextLdrSections: Failed to create 'FREELOADER' section!\n");
 
     BootStore->OptionsIniSection = IniSection;
 
@@ -392,7 +392,7 @@ CreateCommonFreeLdrSections(
     IniSection = IniAddSection(BootStore->IniCache, L"Display");
 
     /* TitleText and MinimalUI */
-    IniAddKey(IniSection, L"TitleText", L"LiberNT Boot Manager");
+    IniAddKey(IniSection, L"TitleText", L"NextNT Boot Manager");
     IniAddKey(IniSection, L"MinimalUI", L"Yes");
 
     /*
@@ -402,7 +402,7 @@ CreateCommonFreeLdrSections(
     /* Create the "Operating Systems" section */
     IniSection = IniAddSection(BootStore->IniCache, L"Operating Systems");
     if (!IniSection)
-        DPRINT1("CreateCommonFreeLdrSections: Failed to create 'Operating Systems' section!\n");
+        DPRINT1("CreateCommonNextLdrSections: Failed to create 'Operating Systems' section!\n");
 
     BootStore->OsIniSection = IniSection;
 }
@@ -424,7 +424,7 @@ OpenIniBootLoaderStore(
     ULONG CreateDisposition;
 
     //
-    // WARNING! We support the INI creation *ONLY* for FreeLdr, and not for NTLDR
+    // WARNING! We support the INI creation *ONLY* for NextLdr, and not for NTLDR
     //
     if ((Type == NtLdr) && (OpenMode == BS_CreateNew || OpenMode == BS_CreateAlways || OpenMode == BS_RecreateExisting))
     {
@@ -595,8 +595,8 @@ OpenIniBootLoaderStore(
             return STATUS_INSUFFICIENT_RESOURCES;
         }
 
-        if (Type == FreeLdr)
-            CreateCommonFreeLdrSections(BootStore);
+        if (Type == NextLdr)
+            CreateCommonNextLdrSections(BootStore);
     }
     else // if (IoStatusBlock.Information == FILE_OPENED) // with: FILE_OPEN, FILE_OPEN_IF
     {
@@ -648,7 +648,7 @@ OpenIniBootLoaderStore(
             return Status;
         }
 
-        if (Type == FreeLdr)
+        if (Type == NextLdr)
         {
             /*
              * Cache the "FREELOADER" section for our future usage.
@@ -676,7 +676,7 @@ OpenIniBootLoaderStore(
             // TEMPORARY: Migrate the DEPRECATED BootDrive and BootPartition
             // values of BootSector boot entries to the newer BootPath value.
             //
-            FreeLdrMigrateBootDrivePart(BootStore);
+            NextLdrMigrateBootDrivePart(BootStore);
         }
         else
         if (Type == NtLdr)
@@ -860,7 +860,7 @@ CloseIniBootLoaderStore(
 
     /* Re-protect the INI file */
     FileAttribs = ProtectAttribs;
-    if (BootStore->Header.Type == FreeLdr)
+    if (BootStore->Header.Type == NextLdr)
     {
         // NOTE: CORE-19575: For the time being, don't add READONLY for ease
         // of testing and modifying files, but it won't always stay this way.
@@ -903,7 +903,7 @@ OpenBootStoreByHandle(
 {
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -951,7 +951,7 @@ OpenBootStore_UStr(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1021,7 +1021,7 @@ CloseBootStore(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1065,7 +1065,7 @@ CreateNTOSEntry(
         IniAddKey(IniSection, L"BootType", L"Windows2003");
         IniAddKey(IniSection, L"SystemPath", Options->OsLoadPath);
         IniAddKey(IniSection, L"Options", Options->OsLoadOptions);
-        IniAddKey(IniSection, L"BootLogo", L"LiberNT");
+        IniAddKey(IniSection, L"BootLogo", L"NextNT");
     }
     else
     if (BootEntry->OsOptionsLength >= sizeof(BOOTSECTOR_OPTIONS) &&
@@ -1104,7 +1104,7 @@ AddBootStoreEntry(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1116,9 +1116,9 @@ AddBootStoreEntry(
 
     // if (BootStore->Type >= BldrTypeMax || NtosBootLoaders[BootStore->Type].Type >= BldrTypeMax)
 
-    if (BootStore->Type == FreeLdr)
+    if (BootStore->Type == NextLdr)
     {
-        if (BootEntry->Version != FreeLdr)
+        if (BootEntry->Version != NextLdr)
             return STATUS_INVALID_PARAMETER;
 
         return CreateNTOSEntry((PBOOT_STORE_INI_CONTEXT)BootStore,
@@ -1201,7 +1201,7 @@ DeleteBootStoreEntry(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1212,7 +1212,7 @@ DeleteBootStoreEntry(
     //
 
     // if (BootStore->Type >= BldrTypeMax || NtosBootLoaders[BootStore->Type].Type >= BldrTypeMax)
-    if (BootStore->Type != FreeLdr)
+    if (BootStore->Type != NextLdr)
     {
         DPRINT1("Loader type %d is currently unsupported!\n", NtosBootLoaders[BootStore->Type].Type);
         return STATUS_NOT_SUPPORTED;
@@ -1235,7 +1235,7 @@ ModifyBootStoreEntry(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1246,7 +1246,7 @@ ModifyBootStoreEntry(
     //
 
     // if (BootStore->Type >= BldrTypeMax || NtosBootLoaders[BootStore->Type].Type >= BldrTypeMax)
-    if (BootStore->Type != FreeLdr)
+    if (BootStore->Type != NextLdr)
     {
         DPRINT1("Loader type %d is currently unsupported!\n", NtosBootLoaders[BootStore->Type].Type);
         return STATUS_NOT_SUPPORTED;
@@ -1270,7 +1270,7 @@ QueryBootStoreEntry(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1281,7 +1281,7 @@ QueryBootStoreEntry(
     //
 
     // if (BootStore->Type >= BldrTypeMax || NtosBootLoaders[BootStore->Type].Type >= BldrTypeMax)
-    if (BootStore->Type != FreeLdr)
+    if (BootStore->Type != NextLdr)
     {
         DPRINT1("Loader type %d is currently unsupported!\n", NtosBootLoaders[BootStore->Type].Type);
         return STATUS_NOT_SUPPORTED;
@@ -1306,7 +1306,7 @@ QueryBootStoreOptions(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1317,7 +1317,7 @@ QueryBootStoreOptions(
     //
 
     // if (BootStore->Type >= BldrTypeMax || NtosBootLoaders[BootStore->Type].Type >= BldrTypeMax)
-    if (BootStore->Type != FreeLdr && BootStore->Type != NtLdr)
+    if (BootStore->Type != NextLdr && BootStore->Type != NtLdr)
     {
         DPRINT1("Loader type %d is currently unsupported!\n", BootStore->Type);
         return STATUS_NOT_SUPPORTED;
@@ -1366,7 +1366,7 @@ SetBootStoreOptions(
 
     /*
      * NOTE: Currently we open & map the loader configuration file without
-     * further tests. It's OK as long as we only deal with FreeLdr's freeldr.ini
+     * further tests. It's OK as long as we only deal with NextLdr's nextldr.ini
      * and NTLDR's boot.ini files. But as soon as we'll implement support for
      * BOOTMGR detection, the "configuration file" will be the BCD registry
      * hive and then, we'll have instead to mount the hive & open it.
@@ -1377,7 +1377,7 @@ SetBootStoreOptions(
     //
 
     // if (BootStore->Type >= BldrTypeMax || NtosBootLoaders[BootStore->Type].Type >= BldrTypeMax)
-    if (BootStore->Type != FreeLdr && BootStore->Type != NtLdr)
+    if (BootStore->Type != NextLdr && BootStore->Type != NtLdr)
     {
         DPRINT1("Loader type %d is currently unsupported!\n", NtosBootLoaders[BootStore->Type].Type);
         return STATUS_NOT_SUPPORTED;
@@ -1406,7 +1406,7 @@ SetBootStoreOptions(
 
 
 static NTSTATUS
-FreeLdrEnumerateBootEntries(
+NextLdrEnumerateBootEntries(
     IN PBOOT_STORE_INI_CONTEXT BootStore,
 //  IN ULONG Flags, // Determine which data to retrieve
     IN PENUM_BOOT_ENTRIES_ROUTINE EnumBootEntriesRoutine,
@@ -1470,7 +1470,7 @@ FreeLdrEnumerateBootEntries(
 
         DPRINT("Boot entry '%S' in OS section '%S'\n", InstallName, SectionName);
 
-        BootEntry->Version = FreeLdr;
+        BootEntry->Version = NextLdr;
         BootEntry->BootEntryKey = MAKESTRKEY(SectionName);
         BootEntry->FriendlyName = InstallName;
         BootEntry->BootFilePath = NULL;
@@ -1550,7 +1550,7 @@ FreeLdrEnumerateBootEntries(
 
 DoEnum:
         /* Call the user enumeration routine callback */
-        Status = EnumBootEntriesRoutine(FreeLdr, BootEntry, Parameter);
+        Status = EnumBootEntriesRoutine(NextLdr, BootEntry, Parameter);
 
         /* Free temporary buffers */
         if (Buffer)

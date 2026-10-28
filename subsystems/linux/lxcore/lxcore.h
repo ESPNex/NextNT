@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Linux subsystem driver internal definitions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -56,9 +56,9 @@
 
 #define LX_SYSCALL_NO_RESULT ((LONG64)0x7FFFFFFFFFFFFFFFLL)
 
-#define LX_KERNEL_RELEASE       "7.0.0-libernt"
-#define LX_KERNEL_UTS_VERSION   "#1 SMP PREEMPT_DYNAMIC LiberNT"
-#define LX_KERNEL_VERSION       "Linux version " LX_KERNEL_RELEASE " (lxcore@libernt) " LX_KERNEL_UTS_VERSION
+#define LX_KERNEL_RELEASE       "7.0.0-nextnt"
+#define LX_KERNEL_UTS_VERSION   "#1 SMP PREEMPT_DYNAMIC NextNT"
+#define LX_KERNEL_VERSION       "Linux version " LX_KERNEL_RELEASE " (lxcore@nextnt) " LX_KERNEL_UTS_VERSION
 
 #define LX_ALIGN_DOWN(v, a) ((v) & ~((ULONG64)(a) - 1))
 #define LX_ALIGN_UP(v, a)   (((v) + (ULONG64)(a) - 1) & ~((ULONG64)(a) - 1))

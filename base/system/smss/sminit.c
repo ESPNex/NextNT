@@ -872,7 +872,7 @@ VOID
 SmpLoadBootConfigurationStore(
     _In_ PUNICODE_STRING SystemPartition)
 {
-    static const PCWSTR StorePaths[] = { L"\\EFI\\LiberNT\\Boot\\BCD", L"\\Boot\\BCD" };
+    static const PCWSTR StorePaths[] = { L"\\EFI\\NextNT\\Boot\\BCD", L"\\Boot\\BCD" };
     static BOOLEAN Attempted;
     UNICODE_STRING KeyName = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\BCD00000000");
     OBJECT_ATTRIBUTES KeyAttributes, FileAttributes;

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Settings
+ * PROJECT:     NextNT Settings
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Resource identifiers
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -13,7 +13,7 @@
 #define IDS_FORWARD                    103
 #define IDS_SEARCH_RESULTS             104
 #define IDS_NO_RESULTS                 105
-#define IDS_LIBERNT                    106
+#define IDS_NEXTNT                    106
 #define IDS_OK                         107
 #define IDS_CANCEL                     108
 #define IDS_ERROR_HEADING              109

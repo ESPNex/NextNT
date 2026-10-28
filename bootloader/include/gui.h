@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Graphical boot menu interface and the firmware services it uses
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -68,7 +68,7 @@ typedef struct _UI_PROGRESS_BAR
 typedef enum
 {
     UiMenuIconNone,
-    UiMenuIconLiberNT,
+    UiMenuIconNextNT,
     UiMenuIconDesktop,
     UiMenuIconImage
 } UI_MENU_ICON;

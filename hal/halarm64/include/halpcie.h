@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HAL
+ * PROJECT:     NextNT HAL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     PCI Express device and port type decoding
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Intel Network Kernel Debugger Extension
+ * PROJECT:     NextNT Intel Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Polled Intel 8254x, 82574 and I218 Ethernet controller driver
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

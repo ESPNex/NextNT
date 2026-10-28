@@ -279,10 +279,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROGRESS_INFO_START "LiberNT usiłuje uruchomić następującą usługę"
-    IDS_PROGRESS_INFO_STOP "LiberNT usiłuje zatrzymać następującą usługę"
-    IDS_PROGRESS_INFO_PAUSE "LiberNT usiłuje wstrzymać następującą usługę"
-    IDS_PROGRESS_INFO_RESUME "LiberNT usiłuje wznowić następującą usługę"
+    IDS_PROGRESS_INFO_START "NextNT usiłuje uruchomić następującą usługę"
+    IDS_PROGRESS_INFO_STOP "NextNT usiłuje zatrzymać następującą usługę"
+    IDS_PROGRESS_INFO_PAUSE "NextNT usiłuje wstrzymać następującą usługę"
+    IDS_PROGRESS_INFO_RESUME "NextNT usiłuje wznowić następującą usługę"
     IDS_CREATE_SUCCESS "Usługa utworzona pomyślnie"
     IDS_DELETE_SUCCESS "Usługa skasowana pomyślnie"
     IDS_CREATE_REQ "Pola oznaczone gwiazdkami\nsą obowiązkowe"
@@ -329,7 +329,7 @@ END
 /* Application title */
 STRINGTABLE
 BEGIN
-    IDS_APPNAME "Menedżer usług LiberNT"
+    IDS_APPNAME "Menedżer usług NextNT"
     IDS_APPAUTHORS "Copyright (C) 2005-2007 by Ged Murphy (gedmurphy@reactos.org)"
 END
 

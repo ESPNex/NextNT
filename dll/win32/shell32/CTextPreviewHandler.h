@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT shell32
+ * PROJECT:     NextNT shell32
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Preview handler for plain text files
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

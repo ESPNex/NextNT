@@ -7,7 +7,7 @@ STRINGTABLE
 
 STRINGTABLE
 {
-2000, "LiberNT výchozí světlé"
+2000, "NextNT výchozí světlé"
 }
 
 STRINGTABLE
@@ -26,12 +26,12 @@ STRINGTABLE
 
 STRINGTABLE
 {
-5000, "LiberNT výchozí"
+5000, "NextNT výchozí"
 5001, "Motiv"
 5002, "Nadace ReactOS"
 5003, "Foxlet, založeno na Lautus"
 5004, "Uvolněno pod licencí GNU/GPL 2.0, 2019"
 5005, "https://reactos.org/"
 5006, "1.0"
-5007, "Motiv pro LiberNT"
+5007, "Motiv pro NextNT"
 }

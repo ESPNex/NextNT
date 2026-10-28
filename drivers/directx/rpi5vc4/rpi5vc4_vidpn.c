@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 5 WDDM display-only miniport
+ * PROJECT:     NextNT Raspberry Pi 5 WDDM display-only miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VidPN DDIs.  The scanout mode is fixed by the firmware
  *              (the HVS scans the GOP framebuffer at the raster the firmware

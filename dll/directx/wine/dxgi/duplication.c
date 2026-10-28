@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DXGI
+ * PROJECT:     NextNT DXGI
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Desktop duplication of an output
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

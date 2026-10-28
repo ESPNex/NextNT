@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT SDK
+ * PROJECT:     NextNT SDK
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Direct3D 10/11 user-mode driver adapter and allocation types
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Keep values and field order aligned with the public Windows 11 24H2 WDK
  * contract.

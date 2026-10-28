@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Helpers for the Windows Portable Devices API tests
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -340,7 +340,7 @@ WpdOpenTestDevice(WPD_TEST_DEVICE *Test)
     ok(hr == S_OK, "CoCreateInstance(PortableDeviceValues) hr 0x%08lX\n", hr);
     if (FAILED(hr))
         return hr;
-    IPortableDeviceValues_SetStringValue(ClientInfo, &WPD_CLIENT_NAME, L"LiberNT WPD test");
+    IPortableDeviceValues_SetStringValue(ClientInfo, &WPD_CLIENT_NAME, L"NextNT WPD test");
     IPortableDeviceValues_SetUnsignedIntegerValue(ClientInfo, &WPD_CLIENT_MAJOR_VERSION, 1);
     IPortableDeviceValues_SetUnsignedIntegerValue(ClientInfo, &WPD_CLIENT_MINOR_VERSION, 2);
     IPortableDeviceValues_SetUnsignedIntegerValue(ClientInfo, &WPD_CLIENT_REVISION, 3);

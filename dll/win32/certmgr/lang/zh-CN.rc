@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Certificates Snap-in
+ * PROJECT:     NextNT Certificates Snap-in
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Chinese (Simplified) resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -11,7 +11,7 @@ STRINGTABLE
 BEGIN
     IDS_SNAPIN_NAME          "证书"
     IDS_SNAPIN_DESCRIPTION   "浏览为你的用户帐户存储的证书。"
-    IDS_SNAPIN_PROVIDER      "LiberNT"
+    IDS_SNAPIN_PROVIDER      "NextNT"
     IDS_ROOT_CURRENT_USER    "证书 - 当前用户"
     IDS_COLUMN_ISSUED_TO     "颁发给"
     IDS_COLUMN_ISSUED_BY     "颁发者"

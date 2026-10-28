@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Sockets Helper for Bluetooth
+ * PROJECT:     NextNT Windows Sockets Helper for Bluetooth
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NS_BTH name space provider: device inquiry, SDP service lookup and WSASetService
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

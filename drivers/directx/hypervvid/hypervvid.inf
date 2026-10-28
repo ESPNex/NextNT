@@ -3,7 +3,7 @@ Signature="$Windows NT$"
 LayoutFile=layout.inf
 Class=Display
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=10/21/2026,1.0.0.0
 
 [DestinationDirs]
@@ -41,10 +41,10 @@ ServiceBinary=%12%\hypervvid.sys
 LoadOrderGroup=Video
 
 [Strings]
-LiberNT="LiberNT Project"
+NextNT="NextNT Project"
 MicrosoftMfg="Microsoft"
 HyperVVid.DeviceDesc="Microsoft Hyper-V Video"
-HyperVVid.ServiceDesc="LiberNT Hyper-V Video Driver"
+HyperVVid.ServiceDesc="NextNT Hyper-V Video Driver"
 REG_MULTI_SZ=0x00010000
 REG_DWORD=0x00010001
 REG_SZ=0x00000000

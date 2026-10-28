@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi graphics validation
+ * PROJECT:     NextNT Raspberry Pi graphics validation
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Relay the unmodified glmark2 Win32 benchmark to the debug log
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

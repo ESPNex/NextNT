@@ -81,7 +81,7 @@ BEGIN
     END
     POPUP "Pomo&c", FCIDM_MENU_HELP
     BEGIN
-        MENUITEM "&LiberNT - informacje", IDM_HELP_ABOUT
+        MENUITEM "&NextNT - informacje", IDM_HELP_ABOUT
     END
 END
 
@@ -335,8 +335,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "Eksplorator LiberNT"
-    IDS_PARSE_ADDR_ERR_TEXT "Eksplorator systemu LiberNT nie może znaleźć elementu '%1'. Sprawdź pisownię i ponów próbę."
+    IDS_PARSE_ADDR_ERR_TITLE "Eksplorator NextNT"
+    IDS_PARSE_ADDR_ERR_TEXT "Eksplorator systemu NextNT nie może znaleźć elementu '%1'. Sprawdź pisownię i ponów próbę."
 END
 
 STRINGTABLE

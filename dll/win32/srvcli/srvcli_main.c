@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT srvcli.dll
+ * PROJECT:     NextNT srvcli.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Server service client forwarders to netapi32
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

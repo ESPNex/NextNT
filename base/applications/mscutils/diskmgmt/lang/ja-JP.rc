@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Disk Management
+ * PROJECT:     NextNT Disk Management
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -108,7 +108,7 @@ BEGIN
     IDS_SCHEME_GPT "GUID パーティション テーブル"
     IDS_SCHEME_MBR "マスター ブート レコード"
     IDS_SCHEME_RAW "初期化されていません"
-    IDS_SYSTEM_VOLUME "LiberNT システム ボリューム"
+    IDS_SYSTEM_VOLUME "NextNT システム ボリューム"
     IDS_BOOT_PARTITION "ブート マネージャーで使用"
     IDS_CAPTION_PARTITIONS "%lu 個のパーティション"
     IDS_LOCATION "ディスク %lu、パーティション %lu"

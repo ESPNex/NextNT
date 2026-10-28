@@ -1,24 +1,24 @@
 # AGENTS.md
 
-This file introduces LiberNT and sets the working rules and engineering criteria for everyone who changes it: human contributors, AI agents and other automated tools. Start with the introduction; the rules follow it.
+This file introduces NextNT and sets the working rules and engineering criteria for everyone who changes it: human contributors, AI agents and other automated tools. Start with the introduction; the rules follow it.
 
-## About LiberNT
+## About NextNT
 
-LiberNT is a free NT operating system. It is a fork of ReactOS with extensive changes to kernel-space components and drivers, aimed at stability and modern hardware. It focuses on 64-bit platforms, amd64, arm64 and riscv64, and targets NT10/Windows 11 compatibility. LiberNT may collaborate with ReactOS occasionally, but the code written here is written for LiberNT first: never shape a change around sending it to ReactOS.
+NextNT is a free NT operating system. It is a fork of ReactOS with extensive changes to kernel-space components and drivers, aimed at stability and modern hardware. It focuses on 64-bit platforms, amd64, arm64 and riscv64, and targets NT10/Windows 11 compatibility. NextNT may collaborate with ReactOS occasionally, but the code written here is written for NextNT first: never shape a change around sending it to ReactOS.
 
 - Target architectures: amd64, i386 and arm64, with RISC-V64/PPC in progress.
 - Windows 11 is the compatibility reference.
 - A subdirectory can have its own `AGENTS.md`; its rules add to these for that subtree. The kernel has one for the memory manager.
 
-### How LiberNT differs from ReactOS
+### How NextNT differs from ReactOS
 
 Most of the tree is still shared with ReactOS, and the components synchronised with Wine are listed in `media/doc/WINESYNC.txt`. The main departures are:
 
-| Area | In LiberNT | Where |
+| Area | In NextNT | Where |
 |---|---|---|
 | Memory manager | NVS, the NT Virtual Memory Subsystem: a clean-room NT10 memory manager with its own kernel pool. The ReactOS ARM3 memory manager has been removed. | `ntoskrnl/nvs` |
 | Cache manager | A clean-room cache manager. | `ntoskrnl/cc` |
-| ARM64 | The ARM64 port: kernel, HAL and FreeLoader. | `ntoskrnl/ke/arm64`, `hal/halarm64`, `boot/freeldr/freeldr/arch/arm64` |
+| ARM64 | The ARM64 port: kernel, HAL and FreeLoader. | `ntoskrnl/ke/arm64`, `hal/halarm64`, `boot/nextldr/nextldr/arch/arm64` |
 | RISC-V64 | The HAL of the port in progress. | `hal/halriscv64` |
 | 32-bit applications | WoW64 on every 64-bit target. On ARM64, FEX runs the x86 code, and ARM64EC/CHPE is supported. | `dll/win32/wow64`, `dll/win32/wow64cpu`, `dll/win32/wow64win` |
 | Graphics | A WDDM graphics kernel and DWM desktop composition. | `drivers/directx/dxgkrnl`, `base/system/dwm` |
@@ -50,7 +50,7 @@ Most of the tree is still shared with ReactOS, and the components synchronised w
 
 - Leaked code is strictly forbidden. Never read, copy, transcribe or reference leaked Microsoft source code, or any other code that was not lawfully published, in any form. A change that uses it is rejected, and the developer who submitted it, including through an AI tool, can be banned from the project.
 - Say which source a definition came from.
-- LiberNT's own headers show what LiberNT declares today, not what is right. Check them against the sources above.
+- NextNT's own headers show what NextNT declares today, not what is right. Check them against the sources above.
 - Never transcribe disassembled or decompiled Windows code. Use Windows 11 as a black box. Inspect the Windows 11 binaries in the cleanroom store only when there is no way around it: no header, public symbol, documentation or Windows 11 run answers the question. Use what you read only to understand the behavior, never as the implementation: the Windows code itself is not necessarily correct. Record only the fact you needed (a layout, offset, constant or behavior), never the code.
 - Never copy GPL code from Linux. Study the technique and reimplement it.
 - Never use legacy ReactOS code (the ARM3 memory manager, NT4 and NT5-era designs) as a reference.
@@ -64,15 +64,15 @@ Most of the tree is still shared with ReactOS, and the components synchronised w
 ## Kernel structures and ABI
 
 - New kernel structure state goes in the field Windows 11 defines for it, at the offset its public symbols give. Fill in missing intermediate members from the symbols and add ARM64 `C_ASSERT(FIELD_OFFSET(...))` checks.
-- Never add LiberNT-private tail fields (`#if defined(__REACTOS__)`) to Windows structures. If Windows 11 has no field for the state, report `INFO_NEEDED`.
-- For every ARM64 layout decision (field, offset, size, constant, intrinsic, generated assembler offset), use the first evidence that exists: the public headers, Windows 11 public symbols, a Windows 11 runtime dump, or an existing LiberNT consumer. Reject a change that has none.
-- A field backed only by an existing LiberNT consumer is LiberNT-private scaffolding. Keep it stable until that code moves to the Windows field.
+- Never add NextNT-private tail fields (`#if defined(__REACTOS__)`) to Windows structures. If Windows 11 has no field for the state, report `INFO_NEEDED`.
+- For every ARM64 layout decision (field, offset, size, constant, intrinsic, generated assembler offset), use the first evidence that exists: the public headers, Windows 11 public symbols, a Windows 11 runtime dump, or an existing NextNT consumer. Reject a change that has none.
+- A field backed only by an existing NextNT consumer is NextNT-private scaffolding. Keep it stable until that code moves to the Windows field.
 - A field missing from the public SDK is private, not gone. Delete a field only after proving that nothing consumes it and Windows does not need it.
 - Each structure needs its own evidence. Verifying one field does not verify its neighbors.
 - Every generated assembler offset maps to a validated C field.
-- Layout test expectations come from the same evidence, never invented. When LiberNT lacks a field Windows has, keep the check visible as a logged note instead of deleting it.
-- When Windows 11 has something LiberNT lacks, record the gap. Do not silently rewrite Windows-mirrored headers.
-- Parity is not a clean build, a boot or a passing LiberNT test; those tests check their own constants.
+- Layout test expectations come from the same evidence, never invented. When NextNT lacks a field Windows has, keep the check visible as a logged note instead of deleting it.
+- When Windows 11 has something NextNT lacks, record the gap. Do not silently rewrite Windows-mirrored headers.
+- Parity is not a clean build, a boot or a passing NextNT test; those tests check their own constants.
 - Use the correct calling conventions and annotations, follow the existing error handling (`NTSTATUS`, `EFI_STATUS`), and respect IRQL, locking and paging constraints in kernel code.
 
 ## Architecture neutrality
@@ -103,7 +103,7 @@ Most of the tree is still shared with ReactOS, and the components synchronised w
 
 ## Testing against Windows 11
 
-- Before changing behavior to satisfy a LiberNT test, run the same test on Windows 11 and compare per-check results, not totals. Many LiberNT apitests are not Windows 11 clean.
+- Before changing behavior to satisfy a NextNT test, run the same test on Windows 11 and compare per-check results, not totals. Many NextNT apitests are not Windows 11 clean.
 - If Windows 11 fails a check too, the expectation is the bug.
 - Run the Windows 11 baseline once per test binary and reuse its results. Rerun it only when the test binary changes in a way that alters results, and batch those reruns.
 - Use Windows 11 as a black box only: observable status codes, outputs and sizes.
@@ -115,7 +115,7 @@ Most of the tree is still shared with ReactOS, and the components synchronised w
 
 - Reuse the existing build directories and artifacts. Do not duplicate build caches, executables or disk images, or create per-test, per-session, dated or prefixed output paths.
 - Run builds with `CCACHE_DISABLE=1`; compiler caching is disabled to avoid duplicate artifacts.
-- Keep one working log, overwritten in place. Use the existing build's `LiberNT.img` and one fixed test payload image. Pass the raw payload image to `--apps`; passing a directory creates additional cached images and overlays.
+- Keep one working log, overwritten in place. Use the existing build's `NextNT.img` and one fixed test payload image. Pass the raw payload image to `--apps`; passing a directory creates additional cached images and overlays.
 - Run `vm_monitor.py` with `--timeout 30 --stall 6`. Never use a timeout above 30 seconds or a stall timeout above 6 seconds.
 - Run without a display by setting `ROS_QEMU_DISPLAY=none`; omit screen arguments.
 - Never rebuild or repack a disk image while a VM is using it.
@@ -134,11 +134,11 @@ Most of the tree is still shared with ReactOS, and the components synchronised w
 ## Code style
 
 - No comments in code diffs. Leave existing comments where they are instead of moving or re-adding them.
-- New files start with this header. `PROJECT` names the component, for example "LiberNT API tests" or "LiberNT Kernel"; tests use GPL-3.0-or-later.
+- New files start with this header. `PROJECT` names the component, for example "NextNT API tests" or "NextNT Kernel"; tests use GPL-3.0-or-later.
 
 ```c
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     <one line>
  * COPYRIGHT:   Copyright <year> <name> <email>

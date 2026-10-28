@@ -54,7 +54,7 @@ Examples:
 /clsid={513D916F-2A8E-4F51-AEAB-0CBC76FB1AF8} /IShellExtInit=C:\RosBE\Uninstall.exe /IShellPropSheetExt
 /clsid=CompressedFolder /IShellExtInit=e:\test.zip /IContextMenu=extract /openwindows
 /clsid=CompressedFolder /IShellExtInit=e:\test.zip /IContextMenu=extract /openwindows /dll=R:\build\dev\devenv\dll\shellext\zipfldr\Debug\zipfldr.dll
-/shgfi=c:\freeldr.ini
+/shgfi=c:\nextldr.ini
 /assocq "" string 1 0 0 .txt
 /assocq "" string friendlytypename 0x400 0 .txt "" 10
 /openwindows /shellexec=c: /invoke properties

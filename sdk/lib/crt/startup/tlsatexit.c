@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT library
+ * PROJECT:     NextNT CRT library
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Destructors of C++ thread_local objects
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

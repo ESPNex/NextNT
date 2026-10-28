@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# PROJECT:     LiberNT Build Tools
+# PROJECT:     NextNT Build Tools
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Find build graph gaps on generated, included and embedded files
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

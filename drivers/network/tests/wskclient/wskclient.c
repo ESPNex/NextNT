@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WSK client test driver
+ * PROJECT:     NextNT WSK client test driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        drivers/network/tests/wskclient/wskclient.c
  * PURPOSE:     Minimal WSK client. Registers with netio.sys via WskRegister,

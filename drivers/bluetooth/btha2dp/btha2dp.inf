@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT Bluetooth A2DP audio driver
+; PROJECT:     NextNT Bluetooth A2DP audio driver
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     Bluetooth A2DP audio driver installation file
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,7 +7,7 @@
 Signature = "$Windows NT$"
 Class = MEDIA
 ClassGUID = {4d36e96c-e325-11ce-bfc1-08002be10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 10/16/2026,1.0.0.0
 
 [DestinationDirs]
@@ -69,7 +69,7 @@ ErrorControl = 1
 ServiceBinary = %12%\btha2dp.sys
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 StdMfg = "(Standard system devices)"
 BthA2dp.DeviceDesc = "Bluetooth A2DP Audio"
 BthA2dp.ServiceDesc = "Bluetooth A2DP Audio Driver"

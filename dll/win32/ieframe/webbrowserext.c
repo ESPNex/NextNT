@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT IE Frame
+ * PROJECT:     NextNT IE Frame
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     WebBrowser control persistence, safety and shell service interfaces
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

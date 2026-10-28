@@ -1,9 +1,9 @@
 /*
- * PROJECT:         LiberNT ACPI/PCI Interface
+ * PROJECT:         NextNT ACPI/PCI Interface
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            include/reactos/drivers/acpi/acpipci.h
  * PURPOSE:         ACPI-PCI device interface definitions
- * PROGRAMMERS:     LiberNT Development Team
+ * PROGRAMMERS:     NextNT Development Team
  *
  * This header defines the device interface that allows the PCI driver to
  * request ACPI method evaluation for PCI devices without directly importing

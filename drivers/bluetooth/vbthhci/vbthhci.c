@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Virtual Bluetooth Controller
+ * PROJECT:     NextNT Virtual Bluetooth Controller
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Software-only Bluetooth HCI controller with simulated peers for testing
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -110,8 +110,8 @@ typedef struct _VBTH_PEER
 
 static const VBTH_PEER VBthPeers[] =
 {
-    { { 0x01, 0x00, 0x5A, 0x42, 0x54, 0x02 }, 0x240404, HCI_IO_NO_INPUT_NO_OUTPUT, -45, "LiberNT Headphones" },
-    { { 0x02, 0x00, 0x5A, 0x42, 0x54, 0x02 }, 0x5A020C, HCI_IO_DISPLAY_YES_NO, -60, "LiberNT Phone" },
+    { { 0x01, 0x00, 0x5A, 0x42, 0x54, 0x02 }, 0x240404, HCI_IO_NO_INPUT_NO_OUTPUT, -45, "NextNT Headphones" },
+    { { 0x02, 0x00, 0x5A, 0x42, 0x54, 0x02 }, 0x5A020C, HCI_IO_DISPLAY_YES_NO, -60, "NextNT Phone" },
 };
 
 static const UCHAR VBthLocalAddress[6] = { 0x00, 0x00, 0x5A, 0x42, 0x54, 0x02 };

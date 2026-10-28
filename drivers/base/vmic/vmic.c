@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Hyper-V Integration Services Driver
+ * PROJECT:     NextNT Hyper-V Integration Services Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Guest shutdown, time synchronization, heartbeat and data exchange
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -977,7 +977,7 @@ VmicAutoPoolItem(
             return TRUE;
         case 5:
             *Key = L"OSName";
-            RtlStringCchCopyW(Value, Capacity, L"LiberNT");
+            RtlStringCchCopyW(Value, Capacity, L"NextNT");
             return TRUE;
         case 6:
             *Key = L"OSMajorVersion";

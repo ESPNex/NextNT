@@ -1,12 +1,12 @@
 ; USB RNDIS Network Driver Installation File
-; LiberNT USB RNDIS Driver
+; NextNT USB RNDIS Driver
 ; Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
 
 [Version]
 Signature   = "$Windows NT$"
 Class       = Net
 ClassGUID   = {4d36e972-e325-11ce-bfc1-08002be10318}
-Provider    = %LiberNT%
+Provider    = %NextNT%
 DriverVer   = 01/24/2026,1.0.0.0
 
 [DestinationDirs]
@@ -122,7 +122,7 @@ HKR, , TypesSupported,   0x00010001, 7
 usbrndis.sys = 1
 
 [Strings]
-LiberNT            = "LiberNT Team"
+NextNT            = "NextNT Team"
 Generic            = "Generic"
 VBox               = "Oracle VirtualBox"
 Realtek            = "Realtek"

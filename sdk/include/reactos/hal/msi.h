@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT HAL
+ * PROJECT:         NextNT HAL
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Kernel-private MSI / MSI-X vector routing interface used by
  *                  ntoskrnl and bus drivers to reach the HAL's APIC MSI

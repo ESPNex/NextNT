@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT LAN95xx USB Network Kernel Debugger Extension
+ * PROJECT:     NextNT LAN95xx USB Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Control transfers and enumeration of the adapter, directly or behind one hub
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

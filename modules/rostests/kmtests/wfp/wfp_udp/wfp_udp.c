@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT kernel-mode tests
+ * PROJECT:     NextNT kernel-mode tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows Filtering Platform datagram callout test
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -656,8 +656,8 @@ AddFilter(
     RtlZeroMemory(&Filter, sizeof(Filter));
     RtlZeroMemory(Conditions, sizeof(Conditions));
     Filter.layerKey = *LayerKey;
-    Filter.displayData.name = L"LiberNT WFP test filter";
-    Filter.displayData.description = L"LiberNT WFP test filter";
+    Filter.displayData.name = L"NextNT WFP test filter";
+    Filter.displayData.description = L"NextNT WFP test filter";
     Filter.action.type = FWP_ACTION_CALLOUT_TERMINATING;
     Filter.action.calloutKey = *CalloutKey;
     Filter.subLayerKey = *SubLayerKey;
@@ -694,8 +694,8 @@ AddManagementCallout(
 
     RtlZeroMemory(&Management, sizeof(Management));
     Management.calloutKey = *CalloutKey;
-    Management.displayData.name = L"LiberNT WFP test callout";
-    Management.displayData.description = L"LiberNT WFP test callout";
+    Management.displayData.name = L"NextNT WFP test callout";
+    Management.displayData.description = L"NextNT WFP test callout";
     Management.applicableLayer = *LayerKey;
     return FwpmCalloutAdd0(EngineHandle, &Management, NULL, Id);
 }
@@ -708,8 +708,8 @@ AddSubLayer(VOID)
 
     RtlZeroMemory(&SubLayer, sizeof(SubLayer));
     SubLayer.subLayerKey = TEST_SUBLAYER;
-    SubLayer.displayData.name = L"LiberNT WFP test sublayer";
-    SubLayer.displayData.description = L"LiberNT WFP test sublayer";
+    SubLayer.displayData.name = L"NextNT WFP test sublayer";
+    SubLayer.displayData.description = L"NextNT WFP test sublayer";
     SubLayer.weight = 0x100;
     return FwpmSubLayerAdd0(EngineHandle, &SubLayer, NULL);
 }

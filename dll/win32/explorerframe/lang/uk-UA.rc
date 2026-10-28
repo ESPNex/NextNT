@@ -81,7 +81,7 @@ BEGIN
     END
     POPUP "&Допомога", FCIDM_MENU_HELP
     BEGIN
-        MENUITEM "&Про LiberNT", IDM_HELP_ABOUT
+        MENUITEM "&Про NextNT", IDM_HELP_ABOUT
     END
 END
 
@@ -335,8 +335,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "LiberNT Explorer"
-    IDS_PARSE_ADDR_ERR_TEXT "LiberNT Explorer не може знайти '%1'. Перевірте правильність написання та спробуйте ще раз."
+    IDS_PARSE_ADDR_ERR_TITLE "NextNT Explorer"
+    IDS_PARSE_ADDR_ERR_TEXT "NextNT Explorer не може знайти '%1'. Перевірте правильність написання та спробуйте ще раз."
 END
 
 STRINGTABLE

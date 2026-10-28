@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Explorer
+ * PROJECT:     NextNT Explorer
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     File Explorer tab, address and search bands
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -310,7 +310,7 @@ CCabinetTabBand::Create(HWND parent, ICabinetBandHost *host, HFONT font)
 {
     m_Host = host;
     m_Font = font;
-    return CreateBand(parent, L"LiberNTExplorerTabBand");
+    return CreateBand(parent, L"NextNTExplorerTabBand");
 }
 
 void
@@ -830,7 +830,7 @@ CCabinetAddressBand::Create(HWND parent, ICabinetBandHost *host, HFONT font)
 {
     m_Host = host;
     m_Font = font;
-    if (!CreateBand(parent, L"LiberNTExplorerAddressBand"))
+    if (!CreateBand(parent, L"NextNTExplorerAddressBand"))
         return FALSE;
     RefreshGlyphs();
     m_Toolbar = CreateWindowExW(0, TOOLBARCLASSNAMEW, NULL,
@@ -1384,7 +1384,7 @@ CCabinetSearchBox::RefreshGlyphs()
 BOOL
 CCabinetSearchBox::Create(HWND parent, HFONT font)
 {
-    if (!CreateBand(parent, L"LiberNTExplorerSearchBox"))
+    if (!CreateBand(parent, L"NextNTExplorerSearchBox"))
         return FALSE;
     RefreshGlyphs();
     m_Edit = CreateWindowExW(0, WC_EDITW, L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL, 0, 0, 0, 0,

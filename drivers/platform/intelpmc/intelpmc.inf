@@ -2,7 +2,7 @@
 Signature = "$Windows NT$"
 Class = System
 ClassGUID = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 08/04/2026,1.0.0.0
 
 [ControlFlags]
@@ -12,9 +12,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT
+%NextNT% = NextNT
 
-[LiberNT]
+[NextNT]
 %IntelPmc.DeviceDesc% = IntelPmc_Inst,ACPI\INT33A1
 
 [IntelPmc_Inst.NT]
@@ -35,6 +35,6 @@ ServiceBinary = %12%\intelpmc.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 IntelPmc.DeviceDesc = "Intel Power Management Controller"
-IntelPmc.ServiceDesc = "LiberNT Intel Power Management Controller Driver"
+IntelPmc.ServiceDesc = "NextNT Intel Power Management Controller Driver"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Win32 Base API
+ * PROJECT:     NextNT Win32 Base API
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     User-mode scheduling entry points, unsupported as on Windows 11
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PROJECT:     LiberNT Build
+PROJECT:     NextNT Build
 LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 PURPOSE:     Build the LLVM runtimes of a configured Clang build tree against the SDK headers
 COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

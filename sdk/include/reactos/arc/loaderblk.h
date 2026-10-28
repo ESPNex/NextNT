@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel/Bootloader shared headers
+ * PROJECT:     NextNT Kernel/Bootloader shared headers
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        sdk/include/reactos/arc/loaderblk.h
  * PURPOSE:     Data structures shared between bootloader and kernel

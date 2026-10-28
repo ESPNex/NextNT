@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Virtual Memory Subsystem
+ * PROJECT:     NextNT NT Virtual Memory Subsystem
  * FILE:        ntoskrnl/nvs/section/section.c
  * PURPOSE:     Memory section and mapped-view management
  *

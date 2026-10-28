@@ -1,5 +1,5 @@
 ;
-; PROJECT:     LiberNT SD/SDIO/eMMC Driver Stack
+; PROJECT:     NextNT SD/SDIO/eMMC Driver Stack
 ; LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 ; PURPOSE:     SD Storage Function Protocol Driver INF
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -59,8 +59,8 @@ ErrorControl   = %SERVICE_ERROR_NORMAL%
 ServiceBinary  = %12%\sffp_sd.sys
 
 [Strings]
-ROS                      = "LiberNT"
-DiskName                 = "LiberNT SD Function Protocol Driver Installation Disk"
+ROS                      = "NextNT"
+DiskName                 = "NextNT SD Function Protocol Driver Installation Disk"
 SFProtocolClassName      = "SD Storage Function Protocol"
 GenManufacturer          = "(Standard SD Function Protocols)"
 ServiceDesc              = "SD Storage Function Protocol Driver"

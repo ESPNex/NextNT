@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Pool Allocator
+ * PROJECT:     NextNT Pool Allocator
  * FILE:        ntoskrnl/nvs/pool/include/poolvs.h
  * PURPOSE:     Variable-size pool heap definitions
  *

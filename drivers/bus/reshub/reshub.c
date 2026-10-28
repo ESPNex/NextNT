@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Resource Hub
+ * PROJECT:     NextNT Resource Hub
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Broker firmware connection properties by connection ID
  */

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT kernel-mode tests
+ * PROJECT:     NextNT kernel-mode tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DMA IOMMU interface parity tests without a hardware provider
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

@@ -3,7 +3,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = System
 ClassGUID  = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 10/21/2026,1.00
 
 [DestinationDirs]
@@ -41,7 +41,7 @@ ErrorControl  = 1
 ServiceBinary = %12%\vmic.sys
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 MicrosoftMfg = "Microsoft"
 Shutdown.DeviceDesc = "Microsoft Hyper-V Guest Shutdown"
 TimeSync.DeviceDesc = "Microsoft Hyper-V Time Synchronization"

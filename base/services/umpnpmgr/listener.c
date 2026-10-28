@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Plug and Play Manager
+ * PROJECT:     NextNT Plug and Play Manager
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Device event listeners behind CM_Register_Notification
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,12 +1,12 @@
 /*
- * PROJECT:     LiberNT FreeLoader
+ * PROJECT:     NextNT FreeLoader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Minimal ARM64 stubs for the UEFI FreeLoader link
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  */
 
 /*
- * Minimal ARM64 stubs to satisfy links in UEFI FreeLDR
+ * Minimal ARM64 stubs to satisfy links in UEFI NextLDR
  */
 
 #include <bl.h>
@@ -75,7 +75,7 @@ FrLdrBugCheckWithMessage(
 }
 
 /*
- * ARM64 FreeLDR uses a simple KSEG0 offset mapping for kernel addresses.
+ * ARM64 NextLDR uses a simple KSEG0 offset mapping for kernel addresses.
  *
  * Virtual Address Layout:
  *   - Physical addresses: 0x0000000000000000 - 0xFFFF7FFFFFFFFFFF

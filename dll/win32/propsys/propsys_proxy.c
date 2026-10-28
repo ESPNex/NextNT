@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Property System
+ * PROJECT:     NextNT Property System
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Marshalling shims for the property system call_as methods
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -163,7 +163,7 @@ Windows 10 BSP snapshot. Existing `rpi3` and `rpi5` selections migrate to this
 combined profile in both menuconfig and CMake. Hardware IDs retain each
 device's driver binding. AMD64 additionally provides `lattepandamu`.
 The Raspberry Pi and LattePanda Mu profiles expose the HTTP boot
-option. Enabling it from the `Boot options` menu builds the FreeLdr HTTP path,
+option. Enabling it from the `Boot options` menu builds the NextLdr HTTP path,
 makes it the zero-timeout default boot entry, and packages the board's external
 UEFI network stack. Generic builds keep the Pi-specific drivers and hardware
 bindings disabled.

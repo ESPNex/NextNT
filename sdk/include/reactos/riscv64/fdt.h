@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT RISC-V Platform Support
+ * PROJECT:     NextNT RISC-V Platform Support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     Bounded flattened-device-tree header validation

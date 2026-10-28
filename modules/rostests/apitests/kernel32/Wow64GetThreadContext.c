@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests Wow64GetThreadContext on a 32-bit x86 child process
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

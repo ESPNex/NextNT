@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WDDM mouse-path tests (software cursor vs the scan-out present)
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * A WDDM display-only adapter has no hardware pointer, so the cursor is a GDI
  * software sprite drawn into the canonical display driver's primary -- which IS

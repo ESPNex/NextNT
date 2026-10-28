@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 5 framebuffer miniport
+ * PROJECT:     NextNT Raspberry Pi 5 framebuffer miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     RPi5-owned videoport miniport for the firmware GOP framebuffer.
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

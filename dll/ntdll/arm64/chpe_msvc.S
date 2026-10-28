@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Layer DLL
+ * PROJECT:     NextNT NT Layer DLL
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ARM64EC call checker and x64 call helper for MSVC builds
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

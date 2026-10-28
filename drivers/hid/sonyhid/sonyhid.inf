@@ -9,7 +9,7 @@ LayoutFile = layout.inf
 ; installed device is intentionally a mouse-class function device.
 Class      = Mouse
 ClassGUID  = {4D36E96F-E325-11CE-BFC1-08002BE10318}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 05/20/2026,1.00
 
 [DestinationDirs]
@@ -62,7 +62,7 @@ ServiceBinary = %12%\mouclass.sys
 LoadOrderGroup = Pointer Class
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 SonyMfg = "Sony"
 
 HID\Vid_054C&Pid_0268.DeviceDesc = "Sony DualShock 3 Controller"

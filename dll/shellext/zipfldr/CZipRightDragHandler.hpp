@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Zip Shell Extension
+ * PROJECT:     NextNT Zip Shell Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Right-drag handler of compressed folders
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

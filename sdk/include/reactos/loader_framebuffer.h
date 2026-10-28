@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Loader/Display Handoff
+ * PROJECT:     NextNT Loader/Display Handoff
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared firmware framebuffer handoff ABI.
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

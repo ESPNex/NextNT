@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     The runtime's D3DDDI_DEVICECALLBACKS, driven as a driver drives them
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * `umdload` proves a user-mode driver can be found, loaded and handed its
  * function table.  It deliberately stops there, because a driver that has been

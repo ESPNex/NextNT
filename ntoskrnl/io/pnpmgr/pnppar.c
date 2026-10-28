@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT Kernel
+ * PROJECT:     NextNT Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Parallel PnP device-tree enumeration
- * COPYRIGHT:   Copyright LiberNT contributors
+ * COPYRIGHT:   Copyright NextNT contributors
  */
 
 #include <ntoskrnl.h>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Media Foundation decoders
+ * PROJECT:     NextNT Media Foundation decoders
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     FFmpeg functions used by the native winedmo demuxer
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

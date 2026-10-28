@@ -16,8 +16,8 @@ BEGIN
     IDS_PUMPKIN "Labu"
     IDS_RAIN "Hari Hujan"
     IDS_RWB "Merah, Putih, dan Biru"
-    IDS_CLASSIC "LiberNT Klasik"
-    IDS_STANDARD "LiberNT Standar"
+    IDS_CLASSIC "NextNT Klasik"
+    IDS_STANDARD "NextNT Standar"
     IDS_ROSE "Mawar"
     IDS_SAND "Pasir" //Desert
     IDS_SLATE "Batu Tulis"

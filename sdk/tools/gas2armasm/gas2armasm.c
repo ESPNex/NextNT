@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT host tools
+ * PROJECT:     NextNT host tools
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Translate C-preprocessed GNU-as AArch64 assembly to armasm64 syntax
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

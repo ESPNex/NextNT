@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel
+ * PROJECT:         NextNT Kernel
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Power framework registration and component transitions
  * COPYRIGHT:       Copyright 2026 Ahmed Arif <arif193@gmail.com>

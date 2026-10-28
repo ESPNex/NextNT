@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Hyper-V VMBus Driver
+ * PROJECT:     NextNT Hyper-V VMBus Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Executable page the hypervisor overlays with its hypercall code
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

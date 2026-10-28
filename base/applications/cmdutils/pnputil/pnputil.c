@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PnP Utility
+ * PROJECT:     NextNT PnP Utility
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Manage driver packages and devices from the command line
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -272,7 +272,7 @@ GetDriverKeyString(
 static VOID
 PrintHeader(VOID)
 {
-    ConPuts(StdOut, L"LiberNT PnP Utility\n\n");
+    ConPuts(StdOut, L"NextNT PnP Utility\n\n");
 }
 
 static BOOL

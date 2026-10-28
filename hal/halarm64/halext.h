@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HAL — ARM64 platform-extension contract
+ * PROJECT:     NextNT HAL — ARM64 platform-extension contract
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Registration interfaces between the generic ARM64 HAL and
  *              statically linked platform extensions (SoC support code).

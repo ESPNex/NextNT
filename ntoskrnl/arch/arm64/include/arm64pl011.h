@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel
+ * PROJECT:         NextNT Kernel
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            ntoskrnl/arch/arm64/include/arm64pl011.h
  * PURPOSE:         ARM64 PL011 UART definitions with runtime platform detection

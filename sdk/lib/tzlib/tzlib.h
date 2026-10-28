@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Time Zone Library
+ * PROJECT:     NextNT Time Zone Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Time zone registry helpers shared by setup and the control panel
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

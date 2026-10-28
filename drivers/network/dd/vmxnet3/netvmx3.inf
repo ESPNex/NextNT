@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT VMXNET3 Ethernet Driver
+; PROJECT:     NextNT VMXNET3 Ethernet Driver
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     Installation file for the VMXNET3 virtual Ethernet adapter
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -8,7 +8,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = Net
 ClassGUID  = {4D36E972-E325-11CE-BFC1-08002BE10318}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 01/01/2026,1.0.0.0
 
 [DestinationDirs]
@@ -48,6 +48,6 @@ ServiceBinary  = %12%\vmx3.sys
 LoadOrderGroup = NDIS
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 VMwareMfg = "VMware, Inc."
 VMXNET3.DeviceDesc = "VMXNET3 Ethernet Adapter"

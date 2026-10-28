@@ -1,5 +1,5 @@
 #
-# PROJECT:     LiberNT StarFive JH7110 drivers
+# PROJECT:     NextNT StarFive JH7110 drivers
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Build rules for the StarFive JH7110 board drivers
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT DirectX GPU Memory Manager and Scheduler
+ * PROJECT:     NextNT DirectX GPU Memory Manager and Scheduler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Static VidMmInterface and VidSchInterface dispatch tables
- * COPYRIGHT:   Copyright 2024-2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2024-2026 NextNT Team
  *
  * dxgmms1.sys exports two versioned dispatch tables as data symbols:
  *

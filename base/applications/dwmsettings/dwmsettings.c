@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DWM Settings
+ * PROJECT:     NextNT DWM Settings
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Native desktop panel for persistent, live GPU effect settings
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

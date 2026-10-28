@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Certificates Snap-in
+ * PROJECT:     NextNT Certificates Snap-in
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -11,7 +11,7 @@ STRINGTABLE
 BEGIN
     IDS_SNAPIN_NAME          "証明書"
     IDS_SNAPIN_DESCRIPTION   "ユーザー アカウント用に保存されている証明書を参照します。"
-    IDS_SNAPIN_PROVIDER      "LiberNT"
+    IDS_SNAPIN_PROVIDER      "NextNT"
     IDS_ROOT_CURRENT_USER    "証明書 - 現在のユーザー"
     IDS_COLUMN_ISSUED_TO     "発行先"
     IDS_COLUMN_ISSUED_BY     "発行者"

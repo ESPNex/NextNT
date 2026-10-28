@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NTFS library
+ * PROJECT:     NextNT NTFS library
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Volume consistency check
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

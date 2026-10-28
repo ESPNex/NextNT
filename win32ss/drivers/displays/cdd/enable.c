@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Canonical Display Driver (cdd.dll)
+ * PROJECT:     NextNT Canonical Display Driver (cdd.dll)
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Driver entry point, DDI dispatch table and PDEV lifetime.
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

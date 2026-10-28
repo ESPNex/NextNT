@@ -269,7 +269,7 @@ TARGETS = (
     ("mimetypes/application-x-executable", "base/system/rundll32/res/", ("main",)),
     ("mimetypes/application-x-executable", "base/system/runonce/res/", ("icon",)),
     ("legacy:legacy/dialog-password", "base/system/winlogon/res/", ("winlogon",)),
-    ("legacy:legacy/utilities-terminal", "boot/freeldr/fdebug/", ("fdebug",)),
+    ("legacy:legacy/utilities-terminal", "boot/nextldr/fdebug/", ("fdebug",)),
     ("mimetypes/application-x-executable", "dll/cpl/appwiz/resources/", (1501,)),
     ("legacy:legacy/system-software-install", "dll/cpl/appwiz/resources/", (1502,)),
     ("places/user-trash", "dll/cpl/appwiz/resources/", (1503,)),

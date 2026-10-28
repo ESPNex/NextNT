@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel
+ * PROJECT:     NextNT Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Red-black tree insertion and removal on RTL_BALANCED_NODE
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

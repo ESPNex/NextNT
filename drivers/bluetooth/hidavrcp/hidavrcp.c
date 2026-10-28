@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Bluetooth AVRCP HID miniport
+ * PROJECT:     NextNT Bluetooth AVRCP HID miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     AVRCP target for remote control PASS THROUGH commands, reported as media keys
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

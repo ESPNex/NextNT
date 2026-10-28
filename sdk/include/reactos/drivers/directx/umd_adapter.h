@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Direct3D runtime
+ * PROJECT:     NextNT Direct3D runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Adapter callbacks for modern user-mode display drivers
  */

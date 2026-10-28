@@ -2,7 +2,7 @@
 Signature = "$Windows NT$"
 Class = System
 ClassGUID = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 10/26/2026,1.0.0.0
 
 [ControlFlags]
@@ -12,9 +12,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT
+%NextNT% = NextNT
 
-[LiberNT]
+[NextNT]
 %PvPanic.DeviceDesc% = PvPanic_Inst,ACPI\QEMU0001
 %PvPanicPci.DeviceDesc% = PvPanic_Inst,PCI\VEN_1B36&DEV_0011
 
@@ -36,7 +36,7 @@ ServiceBinary = %12%\pvpanic.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 PvPanic.DeviceDesc = "QEMU PVPanic Device"
 PvPanicPci.DeviceDesc = "QEMU PVPanic PCI Device"
-PvPanic.ServiceDesc = "LiberNT QEMU pvpanic Driver"
+PvPanic.ServiceDesc = "NextNT QEMU pvpanic Driver"

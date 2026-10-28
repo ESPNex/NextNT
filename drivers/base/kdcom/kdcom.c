@@ -273,7 +273,7 @@ KdDebuggerInitialize0(IN PLOADER_PARAMETER_BLOCK LoaderBlock OPTIONAL)
 #ifdef KDDEBUG
     /*
      * Try to find a free COM port and use it as the KD debugging port.
-     * NOTE: Inspired by freeldr/comm/rs232.c, Rs232PortInitialize(...)
+     * NOTE: Inspired by nextldr/comm/rs232.c, Rs232PortInitialize(...)
      */
     {
     /*

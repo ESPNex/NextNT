@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Settings
+ * PROJECT:     NextNT Settings
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Gaming, accessibility, privacy and updates pages
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -323,7 +323,7 @@ AddMouseKeys(PageBuilder &page)
 }
 
 #define APPEARANCE_SCHEMES_KEY L"Control Panel\\Appearance\\New Schemes"
-#define LIBERNT_SETTINGS_KEY L"Software\\LiberNT\\Settings"
+#define NEXTNT_SETTINGS_KEY L"Software\\NextNT\\Settings"
 #define THEME_MANAGER_KEY L"Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager"
 
 static const UINT ContrastSchemes[] = { 4, 5, 6, 7 };
@@ -376,9 +376,9 @@ ApplyContrastScheme(int index)
         if (!on)
             return;
         SetHighContrast(contrast.dwFlags & ~HCF_HIGHCONTRASTON, NULL);
-        style = ReadString(HKEY_CURRENT_USER, LIBERNT_SETTINGS_KEY, L"VisualStyle");
-        color = ReadString(HKEY_CURRENT_USER, LIBERNT_SETTINGS_KEY, L"VisualStyleColor");
-        size = ReadString(HKEY_CURRENT_USER, LIBERNT_SETTINGS_KEY, L"VisualStyleSize");
+        style = ReadString(HKEY_CURRENT_USER, NEXTNT_SETTINGS_KEY, L"VisualStyle");
+        color = ReadString(HKEY_CURRENT_USER, NEXTNT_SETTINGS_KEY, L"VisualStyleColor");
+        size = ReadString(HKEY_CURRENT_USER, NEXTNT_SETTINGS_KEY, L"VisualStyleSize");
         if (style.empty() && GetWindowsDirectoryW(windows, _countof(windows)))
             style = std::wstring(windows) + L"\\Resources\\Themes\\Aero\\aero.msstyles";
         SetSystemVisualStyle(style.c_str(), color.c_str(), size.c_str(), 0);
@@ -389,11 +389,11 @@ ApplyContrastScheme(int index)
     {
         if (ReadString(HKEY_CURRENT_USER, THEME_MANAGER_KEY, L"ThemeActive") == L"1")
         {
-            WriteString(HKEY_CURRENT_USER, LIBERNT_SETTINGS_KEY, L"VisualStyle",
+            WriteString(HKEY_CURRENT_USER, NEXTNT_SETTINGS_KEY, L"VisualStyle",
                         ReadString(HKEY_CURRENT_USER, THEME_MANAGER_KEY, L"DllName"));
-            WriteString(HKEY_CURRENT_USER, LIBERNT_SETTINGS_KEY, L"VisualStyleColor",
+            WriteString(HKEY_CURRENT_USER, NEXTNT_SETTINGS_KEY, L"VisualStyleColor",
                         ReadString(HKEY_CURRENT_USER, THEME_MANAGER_KEY, L"ColorName"));
-            WriteString(HKEY_CURRENT_USER, LIBERNT_SETTINGS_KEY, L"VisualStyleSize",
+            WriteString(HKEY_CURRENT_USER, NEXTNT_SETTINGS_KEY, L"VisualStyleSize",
                         ReadString(HKEY_CURRENT_USER, THEME_MANAGER_KEY, L"SizeName"));
         }
         SetSystemVisualStyle(NULL, NULL, NULL, 0);

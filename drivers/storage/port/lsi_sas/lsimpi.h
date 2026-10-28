@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Storage Drivers
+ * PROJECT:     NextNT Storage Drivers
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     LSI Fusion-MPT MPI 1.5 message interface subset
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

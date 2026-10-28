@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT Realtek RTL8852BS Native 802.11 Miniport
+; PROJECT:     NextNT Realtek RTL8852BS Native 802.11 Miniport
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     RTL8852BS SDIO Native Wi-Fi miniport installation file
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,7 +7,7 @@
 Signature   = "$Windows NT$"
 Class       = Net
 ClassGUID   = {4d36e972-e325-11ce-bfc1-08002be10318}
-Provider    = %LiberNT%
+Provider    = %NextNT%
 DriverVer   = 10/15/2026,1.0.0.0
 CatalogFile = netrtw8852bs.cat
 
@@ -15,7 +15,7 @@ CatalogFile = netrtw8852bs.cat
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = Models,NTx86,NTamd64,NTarm64,NTRISCV64
+%NextNT% = Models,NTx86,NTamd64,NTarm64,NTRISCV64
 
 [Models.NTx86]
 %rtw.DeviceDesc% = rtw.ndi, SD\VID_024C&PID_B852&FN_1
@@ -74,7 +74,7 @@ HKR, , TypesSupported,   0x00010001, 7
 rtw8852bs.sys = 1
 
 [Strings]
-LiberNT         = "LiberNT Team"
+NextNT         = "NextNT Team"
 rtw.DeviceDesc  = "Realtek RTL8852BS 802.11ax SDIO WiFi Adapter"
-rtw.ServiceDesc = "LiberNT Realtek RTL8852BS SDIO WiFi Driver"
-DiskName        = "LiberNT Realtek RTL8852BS SDIO WiFi Driver Installation Disk"
+rtw.ServiceDesc = "NextNT Realtek RTL8852BS SDIO WiFi Driver"
+DiskName        = "NextNT Realtek RTL8852BS SDIO WiFi Driver Installation Disk"

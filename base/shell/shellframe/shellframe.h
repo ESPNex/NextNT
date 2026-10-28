@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Shell Frame
+ * PROJECT:     NextNT Shell Frame
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Window frame, theme and drawing shared by Explorer and Settings
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

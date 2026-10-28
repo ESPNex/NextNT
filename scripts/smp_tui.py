@@ -2,7 +2,7 @@
 """
 SMP boot analyzer / TUI for ReactOS ARM64.
 
-Parses the kernel serial log (default /tmp/freeldr_arm64.log) produced by an
+Parses the kernel serial log (default /tmp/nextldr_arm64.log) produced by an
 instrumented SMP boot and surfaces the KPIs needed to understand SMP stalls:
 
   * per-CPU heartbeats from the timer ISR:
@@ -26,7 +26,7 @@ import re
 import sys
 import time
 
-DEFAULT_LOG = "/tmp/freeldr_arm64.log"
+DEFAULT_LOG = "/tmp/nextldr_arm64.log"
 
 # ---- line patterns -------------------------------------------------------
 RE_TS      = re.compile(r"^\[\s*(\d+\.\d+)\]")

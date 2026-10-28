@@ -1,5 +1,5 @@
 ;
-; PROJECT:     LiberNT Storage Drivers
+; PROJECT:     NextNT Storage Drivers
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     Installs the StorPort miniport for LSI Fusion-MPT SAS controllers
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>
@@ -71,7 +71,7 @@ HKR,,EventMessageFile,%REG_EXPAND_SZ%,"%%SystemRoot%%\System32\IoLogMsg.dll"
 HKR,,TypesSupported,%REG_DWORD%,7
 
 [Strings]
-ROS          = "LiberNT"
+ROS          = "NextNT"
 LSI          = "LSI"
 DevDesc1064  = "LSI Adapter, SAS 3000 series, 4-port with 1064"
 DevDesc1068  = "LSI Adapter, SAS 3000 series, 8-port with 1068"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux kernel compatibility library
+ * PROJECT:     NextNT Linux kernel compatibility library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Linux lists, atomics, locks and wait queues over NT primitives
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Ahmed ARIF <arif.ing@outlook.com>
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * wimcore.c - freestanding WIM reader core shared by host tools and freeldr
+ * wimcore.c - freestanding WIM reader core shared by host tools and nextldr
  *
  */
 

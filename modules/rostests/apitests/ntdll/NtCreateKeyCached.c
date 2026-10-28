@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NtCreateKey below a cached key that is waiting for delayed close
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>
@@ -7,7 +7,7 @@
 
 #include "precomp.h"
 
-#define CACHED_ROOT L"Software\\LiberNTCmCacheTest"
+#define CACHED_ROOT L"Software\\NextNTCmCacheTest"
 #define CACHED_ITERATIONS 64
 
 static NTSTATUS
@@ -136,7 +136,7 @@ START_TEST(NtCreateKeyCached)
         ok(Status == STATUS_SUCCESS, "Create A\\B\\C\\D returned 0x%lx\n", Status);
         if (!NT_SUCCESS(Status))
             break;
-        ok(CachedNameEndsWith(KeyHandle, L"\\LiberNTCmCacheTest\\A\\B\\C\\D"),
+        ok(CachedNameEndsWith(KeyHandle, L"\\NextNTCmCacheTest\\A\\B\\C\\D"),
            "Iteration %lu created the key at the wrong path\n", Iteration);
         NtClose(KeyHandle);
 
@@ -149,7 +149,7 @@ START_TEST(NtCreateKeyCached)
         ok(Status == STATUS_SUCCESS, "Open A\\B\\C\\D returned 0x%lx\n", Status);
         if (NT_SUCCESS(Status))
         {
-            ok(CachedNameEndsWith(KeyHandle, L"\\LiberNTCmCacheTest\\A\\B\\C\\D"),
+            ok(CachedNameEndsWith(KeyHandle, L"\\NextNTCmCacheTest\\A\\B\\C\\D"),
                "Iteration %lu opened the wrong key\n", Iteration);
             NtClose(KeyHandle);
         }

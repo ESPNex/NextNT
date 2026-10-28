@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT DirectX GPU Memory Manager and Scheduler
+ * PROJECT:     NextNT DirectX GPU Memory Manager and Scheduler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Video memory manager (segment allocator) — internal header
- * COPYRIGHT:   Copyright 2024 LiberNT Team
+ * COPYRIGHT:   Copyright 2024 NextNT Team
  *
  * This header is included by vidmm.c and by any other source that needs
  * to manipulate DXGMMS_ALLOCATION_ENTRY objects directly.  It must be

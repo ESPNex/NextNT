@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VHDX Tool (vhdxtool.exe)
+ * PROJECT:     NextNT VHDX Tool (vhdxtool.exe)
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     User-mode VHDX creation, conversion, and inspection utility
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Ahmed ARIF <arif.ing@outlook.com>
-# Prebuilt LLVMpipe OpenGL and Lavapipe Vulkan ICDs from the LiberNT release payload.
+# Prebuilt LLVMpipe OpenGL and Lavapipe Vulkan ICDs from the NextNT release payload.
 
 if(NOT ARCH MATCHES "^(amd64|arm64)$")
     message(FATAL_ERROR "The LLVMpipe payload exists for amd64 and arm64 only.")
@@ -14,7 +14,7 @@ set(MESA_LLVMPIPE_PAYLOAD_SHA256_amd64 "17f354520ebbe3c67ea62432e9c456964a915e15
 set(MESA_LLVMPIPE_PAYLOAD_SHA256_arm64 "552b71226dc9fbe21ccc4f8eb1e3ff36b3af554e35c09a68af61d3de003f90c0")
 set(MESA_LLVMPIPE_PAYLOAD "" CACHE FILEPATH "Local LLVMpipe payload .zip used instead of downloading the release asset")
 
-set(_payload_name "libernt-mesa-llvmpipe-${MESA_LLVMPIPE_PAYLOAD_RELEASE}-${ARCH}.zip")
+set(_payload_name "nextnt-mesa-llvmpipe-${MESA_LLVMPIPE_PAYLOAD_RELEASE}-${ARCH}.zip")
 set(_payload_dir "${CMAKE_CURRENT_BINARY_DIR}/mesa-llvmpipe-payload")
 set(_payload_extract "${_payload_dir}/${MESA_LLVMPIPE_PAYLOAD_RELEASE}")
 file(MAKE_DIRECTORY "${_payload_dir}")
@@ -35,7 +35,7 @@ else()
         file(SHA256 "${_payload_zip}" _payload_have_hash)
     endif()
     if(NOT _payload_have_hash STREQUAL _payload_hash)
-        set(_payload_url "https://github.com/LiberNT/LiberNT/releases/download/mesa-llvmpipe-${MESA_LLVMPIPE_PAYLOAD_RELEASE}/${_payload_name}")
+        set(_payload_url "https://github.com/espnex/nextnt/releases/download/mesa-llvmpipe-${MESA_LLVMPIPE_PAYLOAD_RELEASE}/${_payload_name}")
         message(STATUS "Downloading ${_payload_url}")
         file(DOWNLOAD "${_payload_url}" "${_payload_zip}"
             EXPECTED_HASH SHA256=${_payload_hash}

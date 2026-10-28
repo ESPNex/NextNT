@@ -22,11 +22,11 @@ typedef struct _BOOTRECORD
 
 typedef struct _STARTINFO
 {
-    WCHAR szFreeldrIni[MAX_PATH + 15];
+    WCHAR szNextldrIni[MAX_PATH + 15];
     WCHAR szDumpFile[MAX_PATH];
     WCHAR szMinidumpDir[MAX_PATH];
     DWORD dwCrashDumpEnabled;
-    INT iFreeLdrIni;
+    INT iNextLdrIni;
 } STARTINFO, *PSTARTINFO;
 
 BOOL SaveRecoveryOptions;
@@ -71,7 +71,7 @@ GetSystemDrive(WCHAR **szSystemDrive)
 {
     DWORD dwBufSize;
 
-    /* Get Path to freeldr.ini or boot.ini */
+    /* Get Path to nextldr.ini or boot.ini */
     *szSystemDrive = HeapAlloc(GetProcessHeap(), 0, MAX_PATH * sizeof(WCHAR));
     if (*szSystemDrive != NULL)
     {
@@ -106,7 +106,7 @@ FailGetSysDrive:
 }
 
 static PBOOTRECORD
-ReadFreeldrSection(HINF hInf, WCHAR *szSectionName)
+ReadNextldrSection(HINF hInf, WCHAR *szSectionName)
 {
     PBOOTRECORD pRecord;
     INFCONTEXT InfContext;
@@ -181,7 +181,7 @@ ReadFreeldrSection(HINF hInf, WCHAR *szSectionName)
 
 
 static INT
-LoadFreeldrSettings(HINF hInf, HWND hwndDlg)
+LoadNextldrSettings(HINF hInf, HWND hwndDlg)
 {
     INFCONTEXT InfContext;
     PBOOTRECORD pRecord;
@@ -260,7 +260,7 @@ LoadFreeldrSettings(HINF hInf, HWND hwndDlg)
             return FALSE;
         }
 
-        pRecord = ReadFreeldrSection(hInf, szName);
+        pRecord = ReadNextldrSection(hInf, szName);
         if (pRecord)
         {
             lResult = SendDlgItemMessageW(hwndDlg, IDC_STRECOSCOMBO, CB_ADDSTRING, (WPARAM)0, (LPARAM)szValue);
@@ -468,40 +468,40 @@ LoadOSList(HWND hwndDlg, PSTARTINFO pStartInfo)
     if (dwBufSize == 0)
         return FALSE;
 
-    wcscpy(pStartInfo->szFreeldrIni, szSystemDrive);
-    wcscat(pStartInfo->szFreeldrIni, L"\\freeldr.ini");
+    wcscpy(pStartInfo->szNextldrIni, szSystemDrive);
+    wcscat(pStartInfo->szNextldrIni, L"\\nextldr.ini");
 
-    if (PathFileExistsW(pStartInfo->szFreeldrIni))
+    if (PathFileExistsW(pStartInfo->szNextldrIni))
     {
         /* Free resource previously allocated by GetSystemDrive() */
         HeapFree(GetProcessHeap(), 0, szSystemDrive);
-        /* freeldr.ini exists */
-        hInf = SetupOpenInfFileW(pStartInfo->szFreeldrIni,
+        /* nextldr.ini exists */
+        hInf = SetupOpenInfFileW(pStartInfo->szNextldrIni,
                                 NULL,
                                 INF_STYLE_OLDNT,
                                 NULL);
 
         if (hInf != INVALID_HANDLE_VALUE)
         {
-            LoadFreeldrSettings(hInf, hwndDlg);
+            LoadNextldrSettings(hInf, hwndDlg);
             SetupCloseInfFile(hInf);
-            pStartInfo->iFreeLdrIni = 1;
+            pStartInfo->iNextLdrIni = 1;
             return TRUE;
         }
         return FALSE;
     }
 
     /* Try loading boot.ini settings */
-    wcscpy(pStartInfo->szFreeldrIni, szSystemDrive);
-    wcscat(pStartInfo->szFreeldrIni, L"\\boot.ini");
+    wcscpy(pStartInfo->szNextldrIni, szSystemDrive);
+    wcscat(pStartInfo->szNextldrIni, L"\\boot.ini");
 
     /* Free resource previously allocated by GetSystemDrive() */
     HeapFree(GetProcessHeap(), 0, szSystemDrive);
 
-    if (PathFileExistsW(pStartInfo->szFreeldrIni))
+    if (PathFileExistsW(pStartInfo->szNextldrIni))
     {
         /* Load boot.ini settings */
-        hInf = SetupOpenInfFileW(pStartInfo->szFreeldrIni,
+        hInf = SetupOpenInfFileW(pStartInfo->szNextldrIni,
                                 NULL,
                                 INF_STYLE_OLDNT,
                                 NULL);
@@ -510,7 +510,7 @@ LoadOSList(HWND hwndDlg, PSTARTINFO pStartInfo)
         {
             LoadBootSettings(hInf, hwndDlg);
             SetupCloseInfFile(hInf);
-            pStartInfo->iFreeLdrIni = 2;
+            pStartInfo->iNextLdrIni = 2;
             return TRUE;
         }
 
@@ -726,7 +726,7 @@ StartRecDlgProc(HWND hwndDlg,
             switch(LOWORD(wParam))
             {
                 case IDC_STRRECEDIT:
-                    ShellExecuteW(0, L"open", L"notepad", pStartInfo->szFreeldrIni, NULL, SW_SHOWNORMAL);
+                    ShellExecuteW(0, L"open", L"notepad", pStartInfo->szNextldrIni, NULL, SW_SHOWNORMAL);
                     // FIXME: Use CreateProcess and wait untill finished
                     //  DeleteBootRecords(hwndDlg);
                     //  LoadOSList(hwndDlg);
@@ -752,32 +752,32 @@ StartRecDlgProc(HWND hwndDlg,
 
                     if ((INT_PTR)pRecord != CB_ERR)
                     {
-                        if (pStartInfo->iFreeLdrIni == 1) // FreeLdrIni style
+                        if (pStartInfo->iNextLdrIni == 1) // NextLdrIni style
                         {
                             /* Set default timeout */
                             WritePrivateProfileStringW(L"FREELOADER",
                                                       L"TimeOut",
                                                       szTimeout,
-                                                      pStartInfo->szFreeldrIni);
+                                                      pStartInfo->szNextldrIni);
                             /* Set default OS */
                             WritePrivateProfileStringW(L"FREELOADER",
                                                       L"DefaultOS",
                                                       pRecord->szSectionName,
-                                                      pStartInfo->szFreeldrIni);
+                                                      pStartInfo->szNextldrIni);
 
                         }
-                        else if (pStartInfo->iFreeLdrIni == 2) // BootIni style
+                        else if (pStartInfo->iNextLdrIni == 2) // BootIni style
                         {
                             /* Set default timeout */
                             WritePrivateProfileStringW(L"boot loader",
                                                       L"timeout",
                                                       szTimeout,
-                                                      pStartInfo->szFreeldrIni);
+                                                      pStartInfo->szNextldrIni);
                             /* Set default OS */
                             WritePrivateProfileStringW(L"boot loader",
                                                       L"default",
                                                       pRecord->szBootPath,
-                                                      pStartInfo->szFreeldrIni);
+                                                      pStartInfo->szNextldrIni);
 
                         }
                     }

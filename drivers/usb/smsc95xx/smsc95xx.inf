@@ -4,7 +4,7 @@
 Signature   = "$Windows NT$"
 Class       = Net
 ClassGUID   = {4d36e972-e325-11ce-bfc1-08002be10318}
-Provider    = %LiberNT%
+Provider    = %NextNT%
 DriverVer   = 08/02/2026,1.0.0.0
 
 [DestinationDirs]
@@ -115,7 +115,7 @@ HKR, , TypesSupported,   0x00010001, 7
 smsc95xx.sys = 1
 
 [Strings]
-LiberNT                = "LiberNT Team"
+NextNT                = "NextNT Team"
 SMSC                   = "SMSC/Microchip"
 LAN95xx.DeviceDesc     = "SMSC LAN95xx USB 2.0 Ethernet Adapter"
 LAN95xx.ServiceDesc    = "SMSC LAN95xx USB Ethernet Driver"

@@ -1479,10 +1479,10 @@ CmpLoadHiveThread(IN PVOID StartContext)
                 //ASSERT(FALSE);
             //}
 
-            /* FreeLdr has recovered the hive with a log, we must do a flush */
+            /* NextLdr has recovered the hive with a log, we must do a flush */
             if (CmHive->Hive.BaseBlock->BootRecover == HBOOT_BOOT_RECOVERED_BY_HIVE_LOG)
             {
-                DPRINT1("FreeLdr recovered the hive (hive 0x%p)\n", CmHive);
+                DPRINT1("NextLdr recovered the hive (hive 0x%p)\n", CmHive);
                 RtlSetAllBits(&CmHive->Hive.DirtyVector);
                 CmHive->Hive.DirtyCount = CmHive->Hive.DirtyVector.SizeOfBitMap;
                 if (HvSyncHiveFromRecover((PHHIVE)CmHive))

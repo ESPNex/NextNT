@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Settings
+ * PROJECT:     NextNT Settings
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Mouse pointer style, color and size
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -432,7 +432,7 @@ CurrentPointerSize()
 bool
 ApplyPointer(PointerStyle style, COLORREF color, int size)
 {
-    static const LPCWSTR Schemes[] = { L"LiberNT Default", L"LiberNT Black", L"LiberNT Inverted", L"LiberNT Default" };
+    static const LPCWSTR Schemes[] = { L"NextNT Default", L"NextNT Black", L"NextNT Inverted", L"NextNT Default" };
     bool generate, ok = true;
     std::wstring directory;
     HMODULE user32 = GetModuleHandleW(L"user32.dll");

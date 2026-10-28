@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Printers Folder
+ * PROJECT:     NextNT Printers Folder
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Printers shell folder
  * COPYRIGHT:   Copyright 1997 Marcus Meissner

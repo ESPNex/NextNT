@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT INF Default Install
+ * PROJECT:     NextNT INF Default Install
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Install an INF from its shell context menu
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

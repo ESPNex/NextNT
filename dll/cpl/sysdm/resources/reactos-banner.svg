@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="320" height="159" viewBox="0 0 320 159" role="img">
-  <title>LiberNT logo</title>
+  <title>NextNT logo</title>
   <defs>
     <filter id="glow" x="-10%" y="-25%" width="120%" height="150%" color-interpolation-filters="sRGB">
       <feMorphology in="SourceAlpha" operator="dilate" radius="1"/>

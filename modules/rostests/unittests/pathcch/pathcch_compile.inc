@@ -17,12 +17,12 @@ void test_CPP_PathCch(void)
 void test_C_PathCch(void)
 #endif
 {
-    const WCHAR szTestPath[] = L"C:\\ReactOS\\System32\\dllcache\\..\\..\\..\\freeldr.ini";
-    const WCHAR szCanonPath[] = L"C:\\freeldr.ini";
+    const WCHAR szTestPath[] = L"C:\\ReactOS\\System32\\dllcache\\..\\..\\..\\nextldr.ini";
+    const WCHAR szCanonPath[] = L"C:\\nextldr.ini";
     const WCHAR szExtraPath0[] = L"C:\\ReactOS\\System32";
     const WCHAR szExtraPath1[] = L"C:\\ReactOS\\System32\\";
-    const WCHAR szExtraPath2[] = L"\\dllcache\\..\\..\\..\\freeldr.ini";
-    const WCHAR szUNCPath[] = L"\\\\?\\UNC\\ReactOS_Server\\Root\\freeldr.ini";
+    const WCHAR szExtraPath2[] = L"\\dllcache\\..\\..\\..\\nextldr.ini";
+    const WCHAR szUNCPath[] = L"\\\\?\\UNC\\ReactOS_Server\\Root\\nextldr.ini";
 
     HRESULT hr;
     BOOL res;
@@ -81,7 +81,7 @@ void test_C_PathCch(void)
     ok_hr(hr, S_OK);
     ok_wstr(szPathOut, szExtraPath1);
 
-    hr = StringCchCopyW(szPathOut, _countof(szPathOut), L"C:\\freeldr");
+    hr = StringCchCopyW(szPathOut, _countof(szPathOut), L"C:\\nextldr");
     ok_hr(hr, S_OK);
     hr = PathCchAddExtension(szPathOut, _countof(szPathOut), L"ini"); // The extension period is added if needed.
     ok_hr(hr, S_OK);
@@ -131,7 +131,7 @@ void test_C_PathCch(void)
     ok_hr(hr, S_OK);
     hr = PathCchRemoveExtension(szPathOut, _countof(szPathOut));
     ok_hr(hr, S_OK);
-    ok_wstr(szPathOut, L"C:\\freeldr");
+    ok_wstr(szPathOut, L"C:\\nextldr");
 
     hr = StringCchCopyW(szPathOut, _countof(szPathOut), szCanonPath);
     ok_hr(hr, S_OK);
@@ -143,7 +143,7 @@ void test_C_PathCch(void)
     ok_hr(hr, S_OK);
     hr = PathCchRenameExtension(szPathOut, _countof(szPathOut), L"txt"); // The extension period is added if needed.
     ok_hr(hr, S_OK);
-    ok_wstr(szPathOut, L"C:\\freeldr.txt");
+    ok_wstr(szPathOut, L"C:\\nextldr.txt");
 
 #ifdef __cplusplus // Won't compile in C; is OK in C++
     psz = NULL;

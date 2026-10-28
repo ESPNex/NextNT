@@ -1,5 +1,5 @@
 #
-# LiberNT USB RNDIS Network Driver
+# NextNT USB RNDIS Network Driver
 #
 # Using NDIS 6.20 with NET_BUFFER_LIST send/receive.
 #

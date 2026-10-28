@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SMSC LAN95xx USB Ethernet Driver
+ * PROJECT:     NextNT SMSC LAN95xx USB Ethernet Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NDIS 6 miniport for SMSC/Microchip LAN95xx USB Ethernet
  *

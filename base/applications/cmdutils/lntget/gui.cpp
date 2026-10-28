@@ -2068,7 +2068,7 @@ LRESULT CALLBACK SearchProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
 void ShowAbout(HWND owner)
 {
     const std::wstring text = L"lntget " + WideFromUtf8(Version) +
-                              L"\nLiberNT package manager for the WinGet community repository\n\n"
+                              L"\nNextNT package manager for the WinGet community repository\n\n"
                               L"Copyright (C) 2026 Ahmed Arif\n"
                               L"Licensed under the GNU General Public License, version 3 or later.\n\n"
                               L"WinGet community repository and source index:\n"
@@ -2657,7 +2657,7 @@ Status RunCatalogGui(SourceManager &source, const std::string &initialQuery)
     UpdateStatusBar(state);
 
     MessageBoxW(window,
-                L"The winget catalog contains applications published for Windows. Some packages may not install or run correctly on LiberNT yet.",
+                L"The winget catalog contains applications published for Windows. Some packages may not install or run correctly on NextNT yet.",
                 L"lntget compatibility notice", MB_OK | MB_ICONWARNING);
 
     if (!state.worker.Start(window, &source))

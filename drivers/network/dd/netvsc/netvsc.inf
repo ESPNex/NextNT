@@ -43,6 +43,6 @@ ServiceBinary = %12%\netvsc.sys
 LoadOrderGroup = NDIS
 
 [Strings]
-ReactOS = "LiberNT Project"
+ReactOS = "NextNT Project"
 MicrosoftMfg = "Microsoft"
 NetVsc.DeviceDesc = "Microsoft Hyper-V Network Adapter"

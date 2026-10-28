@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests the software key storage provider and persisted keys
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -15,8 +15,8 @@
 #include <bcrypt.h>
 #include <ncrypt.h>
 
-static const WCHAR ChildKeyVariable[] = L"LIBERNT_NCRYPT_KEY";
-static const WCHAR ChildModeVariable[] = L"LIBERNT_NCRYPT_MODE";
+static const WCHAR ChildKeyVariable[] = L"NEXTNT_NCRYPT_KEY";
+static const WCHAR ChildModeVariable[] = L"NEXTNT_NCRYPT_MODE";
 
 static SECURITY_STATUS
 OpenProvider(
@@ -103,7 +103,7 @@ TestProviders(void)
         NCryptFreeObject(Provider);
     }
 
-    Status = OpenProvider(L"LiberNT Missing Provider", &Provider);
+    Status = OpenProvider(L"NextNT Missing Provider", &Provider);
     ok(Status == (SECURITY_STATUS)STATUS_NOT_FOUND, "missing provider: %#lx\n", Status);
     ok(Provider == 0, "missing provider handle %#Ix\n", Provider);
 }
@@ -202,7 +202,7 @@ TestPersistedKey(
     _In_ DWORD Flags)
 {
     BCRYPT_PKCS1_PADDING_INFO Padding = { BCRYPT_SHA256_ALGORITHM };
-    BYTE Hash[32], Signature[512], Plain[16] = "LiberNT secret", Cipher[512], Decrypted[512];
+    BYTE Hash[32], Signature[512], Plain[16] = "NextNT secret", Cipher[512], Decrypted[512];
     WCHAR KeyName[96], Value[128], Found[32];
     NCRYPT_KEY_HANDLE Key = 0, Other = 0;
     SECURITY_STATUS Status;
@@ -213,7 +213,7 @@ TestPersistedKey(
 
     for (i = 0; i < sizeof(Hash); i++)
         Hash[i] = (BYTE)(i * 7 + 1);
-    swprintf(KeyName, ARRAYSIZE(KeyName), L"LiberNT.ApiTest.%ls.%lx.%lu", Algorithm, Flags, GetCurrentProcessId());
+    swprintf(KeyName, ARRAYSIZE(KeyName), L"NextNT.ApiTest.%ls.%lx.%lu", Algorithm, Flags, GetCurrentProcessId());
 
     Status = NCryptOpenKey(Provider, &Key, KeyName, 0, Flags);
     ok(Status == NTE_BAD_KEYSET, "%ls: open before creation: %#lx\n", KeyName, Status);
@@ -452,7 +452,7 @@ TestSymmetricKey(
     ok(Status == NTE_NOT_SUPPORTED, "AES cipher key blob export: %#lx\n", Status);
     NCryptFreeObject(Key);
 
-    swprintf(KeyName, ARRAYSIZE(KeyName), L"LiberNT.ApiTest.AES.%lu", GetCurrentProcessId());
+    swprintf(KeyName, ARRAYSIZE(KeyName), L"NextNT.ApiTest.AES.%lu", GetCurrentProcessId());
     Status = NCryptCreatePersistedKey(Provider, &Key, NCRYPT_AES_ALGORITHM, KeyName, 0, 0);
     ok(Status == ERROR_SUCCESS, "persisted AES create: %#lx\n", Status);
     if (Status != ERROR_SUCCESS)
@@ -528,7 +528,7 @@ TestLegacySymmetricKey(
        Algorithm, Status, PlainSize);
     NCryptFreeObject(Key);
 
-    swprintf(KeyName, ARRAYSIZE(KeyName), L"LiberNT.ApiTest.%ls.%lu", Algorithm, GetCurrentProcessId());
+    swprintf(KeyName, ARRAYSIZE(KeyName), L"NextNT.ApiTest.%ls.%lu", Algorithm, GetCurrentProcessId());
     Status = NCryptCreatePersistedKey(Provider, &Key, Algorithm, KeyName, 0, 0);
     ok(Status == ERROR_SUCCESS, "persisted %ls create: %#lx\n", Algorithm, Status);
     if (Status != ERROR_SUCCESS)

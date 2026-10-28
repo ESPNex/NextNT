@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DRM core library
+ * PROJECT:     NextNT DRM core library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DRM device lifetime, files, ioctl dispatch, managed resources and printing
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

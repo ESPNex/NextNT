@@ -167,9 +167,9 @@ BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10, SS_NOPREFIX
-    LTEXT "版权所有 2026 LiberNT Team", IDC_STATIC, 35, 75, 200, 10
+    LTEXT "版权所有 2026 NextNT Team", IDC_STATIC, 35, 75, 200, 10
     LTEXT "", IDC_ABOUT_OTHERSTUFF, 35, 90, 180, 20, SS_NOPREFIX
-    LTEXT "这个 LiberNT 版本授权给：", IDC_ABOUT_REG_TO, 35, 115, 180, 10
+    LTEXT "这个 NextNT 版本授权给：", IDC_ABOUT_REG_TO, 35, 115, 180, 10
     LTEXT "", IDC_ABOUT_REG_USERNAME, 45, 125, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_REG_ORGNAME, 45, 135, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_STATIC, 35, 147, 235, 1, SS_ETCHEDHORZ
@@ -183,7 +183,7 @@ IDD_ABOUT_AUTHORS DIALOGEX 35, 90, 235, 85
 STYLE DS_SHELLFONT | WS_CHILD
 FONT 9, "宋体"
 BEGIN
-    LTEXT "给您带来 LiberNT 的是：", IDC_STATIC, 0, 0, 180, 10
+    LTEXT "给您带来 NextNT 的是：", IDC_STATIC, 0, 0, 180, 10
     LISTBOX IDC_ABOUT_AUTHORS_LISTBOX, 0, 10, 165, 75
 END
 
@@ -193,7 +193,7 @@ CAPTION "运行"
 FONT 9, "宋体"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "请输入程序、目录、文件或 Internet 资源名，LiberNT 将为您打开它。", 12289, 36, 11, 185, 18
+    LTEXT "请输入程序、目录、文件或 Internet 资源名，NextNT 将为您打开它。", 12289, 36, 11, 185, 18
     LTEXT "打开(&O)：", 12305, 7, 39, 32, 10
     CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 42, 37, 178, 100
     DEFPUSHBUTTON "确定", IDOK, 62, 70, 50, 14
@@ -442,7 +442,7 @@ BEGIN
     GROUPBOX "任务", -1, 7, 10, 249, 40
     CONTROL "", IDC_FOLDER_OPTIONS_TASKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 20, 21, 20
     AUTORADIOBUTTON "在文件夹中显示常见任务(&F)", IDC_FOLDER_OPTIONS_COMMONTASKS, 40, 20, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "使用 LiberNT 经典文件夹(&I)", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
+    AUTORADIOBUTTON "使用 NextNT 经典文件夹(&I)", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
     GROUPBOX "浏览文件夹", -1, 7, 60, 249, 40, WS_TABSTOP
     CONTROL "", IDC_FOLDER_OPTIONS_FOLDERICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 70, 21, 20
     AUTORADIOBUTTON "在相同窗口中打开每一个文件夹(&M)", IDC_FOLDER_OPTIONS_SAMEWINDOW, 40, 70, 210, 10, WS_TABSTOP | WS_GROUP
@@ -515,7 +515,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_VISIBLE | WS_CLIPSIBLIN
 CAPTION "自动播放"
 FONT 9, "宋体"
 BEGIN
-    LTEXT "选择内容类型，然后选择 LiberNT 在此设备中使用该类型时自动执行的操作(&S)：", 1000, 7, 7, 215, 20
+    LTEXT "选择内容类型，然后选择 NextNT 在此设备中使用该类型时自动执行的操作(&S)：", 1000, 7, 7, 215, 20
     CONTROL "", 1001, "COMBOBOXEX32", WS_TABSTOP | 0x00000043, 7, 27, 212, 200
     GROUPBOX "行动", -1, 7, 45, 212, 146
     AUTORADIOBUTTON "选择要执行的操作(&P)：", 1005, 14, 54, 202, 10, WS_GROUP
@@ -531,7 +531,7 @@ FONT 9, "宋体"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "此磁盘或设备包含多个类型的内容。", 1001, 32, 7, 191, 20
-    LTEXT "您想要 LiberNT 做什么？", 1002, 32, 31, 188, 8
+    LTEXT "您想要 NextNT 做什么？", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "确定", IDOK, 96, 186, 60, 14
     PUSHBUTTON "取消", IDCANCEL, 160, 186, 60, 14
@@ -543,10 +543,10 @@ CAPTION "混合内容"
 FONT 9, "宋体"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "每次您插入盘或连接的设备与此类型的文件，LiberNT 可以执行相同的操作：", 1001, 30, 7, 193, 20
+    LTEXT "每次您插入盘或连接的设备与此类型的文件，NextNT 可以执行相同的操作：", 1001, 30, 7, 193, 20
     ICON "", 1005, 32, 27, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 28, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
-    LTEXT "您想要 LiberNT 做什么？", 1002, 32, 41, 190, 8
+    LTEXT "您想要 NextNT 做什么？", 1002, 32, 41, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 55, 188, 112
     AUTOCHECKBOX "始终执行选择的操作。", 1004, 32, 171, 190, 10
     DEFPUSHBUTTON "确定", IDOK, 96, 185, 60, 14
@@ -559,8 +559,8 @@ CAPTION "自动播放"
 FONT 9, "宋体"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "每次您连接此设备，LiberNT 可以执行相同的操作。", 1001, 32, 7, 190, 22
-    LTEXT "您想要 LiberNT 做什么？(&W)", 1002, 32, 31, 190, 8
+    LTEXT "每次您连接此设备，NextNT 可以执行相同的操作。", 1001, 32, 7, 190, 22
+    LTEXT "您想要 NextNT 做什么？(&W)", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "总是执行选定的操作(&A)", 1004, 32, 143, 190, 8
     DEFPUSHBUTTON "确定", IDOK, 94, 160, 60, 14
@@ -826,7 +826,7 @@ BEGIN
 
     /* Warning format system drive dialog strings */
     IDS_NO_FORMAT_TITLE "无法格式化该卷"
-    IDS_NO_FORMAT "无法格式化该卷！因为它包含 LiberNT 正常工作所需的系统文件。"
+    IDS_NO_FORMAT "无法格式化该卷！因为它包含 NextNT 正常工作所需的系统文件。"
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "无法显示运行文件对话框（内部错误）"
@@ -914,8 +914,8 @@ BEGIN
 
     /* Friendly File Type Names */
     IDS_DIRECTORY "文件夹"
-    IDS_BAT_FILE "LiberNT 批处理文件"
-    IDS_CMD_FILE "LiberNT 命令脚本"
+    IDS_BAT_FILE "NextNT 批处理文件"
+    IDS_CMD_FILE "NextNT 命令脚本"
     IDS_COM_FILE "DOS 应用程序"
     IDS_CPL_FILE "控制面板项"
     IDS_CUR_FILE "光标"
@@ -960,7 +960,7 @@ BEGIN
     IDS_DEFAULT_CLUSTER_SIZE "默认分配大小"
     IDS_COPY_OF "副本"
 
-    IDS_SHLEXEC_NOASSOC "没有为 LiberNT 配置关联的程序以打开这种类型的文件。"
+    IDS_SHLEXEC_NOASSOC "没有为 NextNT 配置关联的程序以打开这种类型的文件。"
 
     IDS_FILE_DETAILS "“%s”扩展名的详细信息"
     IDS_FILE_DETAILSADV "文件扩展名为“%s”的类型“%s”。若要更改会影响所有的“%s”文件的设置，请单击高级。"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WoW64 layer
+ * PROJECT:     NextNT WoW64 layer
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     x64 asm code for cpu.c
  * COPYRIGHT:   Copyright 2021 Alexandre Julliard

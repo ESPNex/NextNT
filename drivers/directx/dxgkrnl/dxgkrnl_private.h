@@ -1,10 +1,10 @@
 /*
- * PROJECT:     LiberNT WDDM DirectX Graphics Kernel
+ * PROJECT:     NextNT WDDM DirectX Graphics Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Master internal header for dxgkrnl.sys — defines all private
  *              data structures, global state, and function prototypes shared
  *              across all translation units in the dxgkrnl module.
- * COPYRIGHT:   Copyright 2024 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024 NextNT WDDM Team
  *
  * Design notes
  * ============

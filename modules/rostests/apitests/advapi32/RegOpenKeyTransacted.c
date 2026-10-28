@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests for RegOpenKeyTransactedA/W
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -41,7 +41,7 @@ Test_Parameters(HANDLE hTransaction)
     }
 
     hKey = (HKEY)1;
-    Error = pRegOpenKeyTransactedW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\LiberNTNoSuchKeyVx", 0, KEY_READ, &hKey, hTransaction, NULL);
+    Error = pRegOpenKeyTransactedW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\NextNTNoSuchKeyVx", 0, KEY_READ, &hKey, hTransaction, NULL);
     ok(Error == ERROR_FILE_NOT_FOUND, "missing key: error %ld\n", Error);
     ok(hKey == NULL, "missing key: key %p\n", hKey);
 
@@ -98,7 +98,7 @@ Test_Parameters(HANDLE hTransaction)
             RegCloseKey(hKey);
 
         hKey = (HKEY)1;
-        Error = pRegOpenKeyTransactedA(HKEY_LOCAL_MACHINE, "SOFTWARE\\LiberNTNoSuchKeyVx", 0, KEY_READ, &hKey, hTransaction, NULL);
+        Error = pRegOpenKeyTransactedA(HKEY_LOCAL_MACHINE, "SOFTWARE\\NextNTNoSuchKeyVx", 0, KEY_READ, &hKey, hTransaction, NULL);
         ok(Error == ERROR_FILE_NOT_FOUND, "ANSI missing key: error %ld\n", Error);
         ok(hKey == NULL, "ANSI missing key: key %p\n", hKey);
     }
@@ -137,12 +137,12 @@ Test_Isolation(HANDLE hTransaction)
     HKEY hParent, hTxParent, hChild;
     LONG Error;
 
-    Error = RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\LiberNTTxOpenTest", 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hParent, NULL);
+    Error = RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\NextNTTxOpenTest", 0, NULL, 0, KEY_ALL_ACCESS, NULL, &hParent, NULL);
     ok(Error == ERROR_SUCCESS, "RegCreateKeyExW: error %ld\n", Error);
     if (Error != ERROR_SUCCESS)
         return;
 
-    Error = pRegOpenKeyTransactedW(HKEY_CURRENT_USER, L"Software\\LiberNTTxOpenTest", 0, KEY_ALL_ACCESS, &hTxParent, hTransaction, NULL);
+    Error = pRegOpenKeyTransactedW(HKEY_CURRENT_USER, L"Software\\NextNTTxOpenTest", 0, KEY_ALL_ACCESS, &hTxParent, hTransaction, NULL);
     ok(Error == ERROR_SUCCESS, "transacted open: error %ld\n", Error);
     if (Error == ERROR_SUCCESS)
     {
@@ -175,7 +175,7 @@ Test_Isolation(HANDLE hTransaction)
     }
 
     RegCloseKey(hParent);
-    RegDeleteKeyW(HKEY_CURRENT_USER, L"Software\\LiberNTTxOpenTest");
+    RegDeleteKeyW(HKEY_CURRENT_USER, L"Software\\NextNTTxOpenTest");
 }
 
 START_TEST(RegOpenKeyTransacted)

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT build tools
+ * PROJECT:     NextNT build tools
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Cross-platform terminal UI for rosconfig
  */

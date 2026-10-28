@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NTFS library
+ * PROJECT:     NextNT NTFS library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NTFS volume formatter internals
  */

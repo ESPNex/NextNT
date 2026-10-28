@@ -1,13 +1,13 @@
-# PROJECT:     LiberNT RDP console server
+# PROJECT:     NextNT RDP console server
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Standalone MinGW build of rdpserver.exe against the FreeRDP SDK
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>
 
 # Configure this project with an x86_64 MinGW toolchain against an installed
-# FreeRDP 3 SDK; the LiberNT build stages its install directory through
+# FreeRDP 3 SDK; the NextNT build stages its install directory through
 # RDPSERVER_DIR (see ../README.md).
 cmake_minimum_required(VERSION 3.22)
-project(LiberNTRDPServer C)
+project(NextNTRDPServer C)
 find_package(WinPR 3 CONFIG REQUIRED)
 find_package(FreeRDP 3 CONFIG REQUIRED)
 find_package(FreeRDP-Server 3 CONFIG REQUIRED)

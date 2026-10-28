@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native API DLL
+ * PROJECT:     NextNT Native API DLL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Event Tracing for Windows user-mode provider registration
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

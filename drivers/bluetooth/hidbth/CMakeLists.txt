@@ -1,5 +1,5 @@
 #
-# PROJECT:     LiberNT Bluetooth HID miniport
+# PROJECT:     NextNT Bluetooth HID miniport
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Bluetooth HID miniport build rules
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

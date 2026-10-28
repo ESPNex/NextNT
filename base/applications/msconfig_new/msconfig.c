@@ -12,7 +12,7 @@
 
 #include "generalpage.h"
 #include "systempage.h"
-#include "freeldrpage.h"
+#include "nextldrpage.h"
 #include "srvpage.h"
 // #include "startuppage.h"
 #include "toolspage.h"
@@ -265,7 +265,7 @@ HWND CreatePropSheet(HINSTANCE hInstance, HWND hwndOwner, LPCTSTR lpszTitle)
         }
     }
 
-    /* FreeLdr page */
+    /* NextLdr page */
     // TODO: Program the interface for Vista: "light" BCD editor...
     if (!bIsWindows || (bIsWindows && bIsPreVistaOSVersion))
     {
@@ -278,8 +278,8 @@ HWND CreatePropSheet(HINSTANCE hInstance, HWND hwndOwner, LPCTSTR lpszTitle)
         }
         else
         {
-            lpszLoaderIniFile = lpszFreeLdrIni;
-            dwTabNameId       = IDS_TAB_FREELDR;
+            lpszLoaderIniFile = lpszNextLdrIni;
+            dwTabNameId       = IDS_TAB_NEXTLDR;
         }
 
         if (MyFileExists(lpszLoaderIniFile, NULL))
@@ -288,8 +288,8 @@ HWND CreatePropSheet(HINSTANCE hInstance, HWND hwndOwner, LPCTSTR lpszTitle)
             psp[nPages].dwFlags     = PSP_HASHELP | PSP_USETITLE;
             psp[nPages].hInstance   = hInstance;
             psp[nPages].pszTitle    = MAKEINTRESOURCEW(dwTabNameId);
-            psp[nPages].pszTemplate = MAKEINTRESOURCEW(IDD_FREELDR_PAGE);
-            psp[nPages].pfnDlgProc  = FreeLdrPageWndProc;
+            psp[nPages].pszTemplate = MAKEINTRESOURCEW(IDD_NEXTLDR_PAGE);
+            psp[nPages].pfnDlgProc  = NextLdrPageWndProc;
             psp[nPages].lParam      = (LPARAM)lpszLoaderIniFile;
             ++nPages;
 

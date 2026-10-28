@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HAL — ARM64 BCM2711 VideoCore property mailbox
+ * PROJECT:     NextNT HAL — ARM64 BCM2711 VideoCore property mailbox
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Header for the Broadcom BCM2711 (Raspberry Pi 4 / CM4)
  *              VideoCore firmware property-channel mailbox, used to drive

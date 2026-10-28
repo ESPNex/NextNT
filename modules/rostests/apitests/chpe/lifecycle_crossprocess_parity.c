@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Portable AMD64-on-ARM64 thread, process, and remote-JIT parity probe
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

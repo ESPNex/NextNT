@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     In-depth D3DKMT display / VidPN parity tests (Win11 ARM64 green)
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Deep coverage of the user-mode display / VidPN surface, complementing the
  * existing NULL-contract suite (D3dkmtDisplay) and the integration suite

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT vcruntime library
+ * PROJECT:     NextNT vcruntime library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     Implementation of longjmp for Windows NT PowerPC

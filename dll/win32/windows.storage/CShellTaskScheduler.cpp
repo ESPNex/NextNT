@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Storage
+ * PROJECT:     NextNT Windows Storage
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     IShellTaskScheduler implementation
  * COPYRIGHT:   Copyright 2020 Oleg Dubinskiy (oleg.dubinskij30@gmail.com)

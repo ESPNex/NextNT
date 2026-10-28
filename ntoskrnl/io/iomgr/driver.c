@@ -1355,7 +1355,7 @@ IopInitializeBuiltinDriver(IN PLDR_DATA_TABLE_ENTRY BootLdrEntry)
     Buffer[ModuleName->Length / sizeof(WCHAR)] = UNICODE_NULL;
 
     /*
-     * Generate filename without path (not needed by freeldr)
+     * Generate filename without path (not needed by nextldr)
      */
     FileNameWithoutPath = wcsrchr(Buffer, L'\\');
     if (FileNameWithoutPath == NULL)

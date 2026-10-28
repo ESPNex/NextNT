@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT library
+ * PROJECT:     NextNT CRT library
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Implementation of _wsplitpath_s, from Wine dlls/msvcrt/dir.c
  * COPYRIGHT:   Copyright the Wine project authors

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Library
+ * PROJECT:     NextNT NT Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     RISC-V64 hooks for processes that run under an emulation host
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

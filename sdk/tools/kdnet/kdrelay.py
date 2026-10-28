@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-PROJECT:     LiberNT Network Kernel Debugger Transport
+PROJECT:     NextNT Network Kernel Debugger Transport
 LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 PURPOSE:     Rendezvous relay: forwards the encrypted datagrams between targets and debugger clients
 COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -282,7 +282,7 @@ class Relay:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Relay between LiberNT debug targets and debugger clients.')
+    parser = argparse.ArgumentParser(description='Relay between NextNT debug targets and debugger clients.')
     parser.add_argument('--bind', default='0.0.0.0', help='address to listen on')
     parser.add_argument('--port', type=int, default=50000, help='UDP port to listen on')
     parser.add_argument('--status', help='file that receives the list of targets as JSON')

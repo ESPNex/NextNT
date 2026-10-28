@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT kernel-mode tests
+ * PROJECT:         NextNT kernel-mode tests
  * SPDX-FileCopyrightText: 2026 Ahmed ARIF
  * SPDX-License-Identifier: GPL-3.0-only
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)

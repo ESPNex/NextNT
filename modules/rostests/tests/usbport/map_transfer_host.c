@@ -1,5 +1,5 @@
 /*
- * PROJECT: LiberNT host-side USBPORT tests
+ * PROJECT: NextNT host-side USBPORT tests
  * LICENSE: GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE: Test the real DMA mapper, including repeated physical pages.
  */

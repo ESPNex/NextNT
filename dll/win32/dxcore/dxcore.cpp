@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DXCore
+ * PROJECT:     NextNT DXCore
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DXCore adapter enumeration over D3DKMT
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

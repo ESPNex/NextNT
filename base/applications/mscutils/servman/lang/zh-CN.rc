@@ -271,10 +271,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROGRESS_INFO_START "LiberNT 正在尝试启动以下服务"
-    IDS_PROGRESS_INFO_STOP "LiberNT 正在尝试停止以下服务"
-    IDS_PROGRESS_INFO_PAUSE "LiberNT 正在尝试暂停以下服务"
-    IDS_PROGRESS_INFO_RESUME "LiberNT 正在尝试恢复以下服务"
+    IDS_PROGRESS_INFO_START "NextNT 正在尝试启动以下服务"
+    IDS_PROGRESS_INFO_STOP "NextNT 正在尝试停止以下服务"
+    IDS_PROGRESS_INFO_PAUSE "NextNT 正在尝试暂停以下服务"
+    IDS_PROGRESS_INFO_RESUME "NextNT 正在尝试恢复以下服务"
     IDS_CREATE_SUCCESS "成功创建服务"
     IDS_DELETE_SUCCESS "成功删除服务"
     IDS_CREATE_REQ "标记有\n星号（*）的字段是必填的"
@@ -309,7 +309,7 @@ BEGIN
     IDS_HINT_DETAILS " 在窗口中显示每个条目的信息。"
     IDS_HINT_CUST " 自定义视图。"
     IDS_HINT_HELP " 显示帮助窗口。"
-    IDS_HINT_ABOUT " 关于 LiberNT 服务管理器。"
+    IDS_HINT_ABOUT " 关于 NextNT 服务管理器。"
     IDS_HINT_SYS_RESTORE " 将这个窗口恢复到普通大小。"
     IDS_HINT_SYS_MOVE " 移动这个窗口。"
     IDS_HINT_SYS_SIZE " 调整这个窗口的大小。"
@@ -321,7 +321,7 @@ END
 /* Application title */
 STRINGTABLE
 BEGIN
-    IDS_APPNAME "LiberNT 服务管理器"
+    IDS_APPNAME "NextNT 服务管理器"
     IDS_APPAUTHORS "Copyright (C) 2005-2007 by Ged Murphy (gedmurphy@reactos.org)"
 END
 

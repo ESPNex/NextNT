@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Run-Time Library
+ * PROJECT:     NextNT Run-Time Library
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     ARM64 AUTIB1716 helper for compilers without inline assembly
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

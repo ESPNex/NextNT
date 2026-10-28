@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT host-native tests
+ * PROJECT:     NextNT host-native tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     lxcore memory tests: library loading, copy-on-write file views and fork
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,9 +1,9 @@
 /*
- * PROJECT:     LiberNT WDDM Null/Software GPU Miniport
+ * PROJECT:     NextNT WDDM Null/Software GPU Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VidPN DDI callbacks for softgpu.sys.
  *              Implements the Video Present Network miniport interface.
- * COPYRIGHT:   Copyright 2024 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024 NextNT WDDM Team
  *
  * VidPN (Video Present Network) overview
  * =======================================

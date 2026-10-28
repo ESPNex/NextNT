@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VirtIO GPU Miniport
+ * PROJECT:     NextNT VirtIO GPU Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private interface shared by the VirtIO GPU display driver and miniport
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

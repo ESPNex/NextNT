@@ -3,7 +3,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = Mouse
 ClassGUID  = {4D36E96F-E325-11CE-BFC1-08002BE10318}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 10/21/2026,1.00
 
 [DestinationDirs]
@@ -32,6 +32,6 @@ ServiceBinary  = %12%\hypermou.sys
 LoadOrderGroup = Pointer Port
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 MicrosoftMfg = "Microsoft"
 HyperMou.DeviceDesc = "Microsoft Hyper-V Mouse"

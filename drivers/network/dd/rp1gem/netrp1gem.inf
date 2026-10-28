@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT Project - RP1 (Cadence GEM) Ethernet Driver
+; PROJECT:     NextNT Project - RP1 (Cadence GEM) Ethernet Driver
 ; LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 ; FILE:        drivers/network/dd/rp1gem/netrp1gem.inf
 ; PURPOSE:     RP1 (Cadence GEM) Ethernet miniport installation file

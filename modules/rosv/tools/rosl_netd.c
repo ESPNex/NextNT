@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VMX Hypervisor Launcher (rosl_netd.exe)
+ * PROJECT:     NextNT VMX Hypervisor Launcher (rosl_netd.exe)
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     User-mode network backend with full NAT (TCP/UDP/DNS forwarding)
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Start-Up Application
+ * PROJECT:     NextNT Windows Start-Up Application
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Session 0 start-up: window station, LSA and service control manager
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

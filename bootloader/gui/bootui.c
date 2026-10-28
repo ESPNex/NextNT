@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Manager
+ * PROJECT:     NextNT Boot Manager
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Centered graphical boot menus and dialogs
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -356,12 +356,12 @@ BootUiBrand(VOID)
     ULONG Scale = BootUiHeight < 600 ? 2 : 1;
     ULONG Width = 48 / Scale, Height = 42 / Scale;
     ULONG Size = BootUiHeight < 600 ? 20 : 26;
-    ULONG TextWidth = BootUiTextWidth("LiberNT", Size, MAXULONG);
+    ULONG TextWidth = BootUiTextWidth("NextNT", Size, MAXULONG);
     ULONG Left = (BootUiWidth - Width - 14 - TextWidth) / 2;
     ULONG Top = BootUiHeight < 600 ? 12 : 28;
     BootUiLogo(Left, Top, Scale);
     BootUiText(Left + Width + 14, Top + (Height - min(Height, Size)) / 2 - 1,
-               "LiberNT", Size, BOOTUI_TEXT, TextWidth, MAXULONG);
+               "NextNT", Size, BOOTUI_TEXT, TextWidth, MAXULONG);
 }
 
 static VOID
@@ -977,7 +977,7 @@ BootUiRenderMenu(PUI_MENU_INFO Menu, LONG TimeOut, BOOLEAN CanEscape, BOOTUI_MEN
             Icon = 1;
         if (!strncmp(Item, "Back", 4))
             Icon = 2;
-        if (Menu->MenuItemIcons && Menu->MenuItemIcons[I] == UiMenuIconLiberNT)
+        if (Menu->MenuItemIcons && Menu->MenuItemIcons[I] == UiMenuIconNextNT)
         {
             BootUiLogo(Left + 20, Y + (RowHeight - 21) / 2, 2);
             TextInset = 64;

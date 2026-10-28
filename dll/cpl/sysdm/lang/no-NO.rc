@@ -21,7 +21,7 @@ BEGIN
     LTEXT "", IDC_MACHINELINE4, 130, 155, 118, 9
     LTEXT "", IDC_MACHINELINE5, 130, 164, 118, 9
     LTEXT "", IDC_MACHINELINE6, 130, 173, 118, 9
-    CONTROL "Besøk <A HREF=""https://libernt.com/"">LiberNT Hjemmesiden</A>", IDC_ROSHOMEPAGE_LINK, "SysLink", WS_CHILD | WS_VISIBLE | WS_TABSTOP, 10, 200, 140, 10
+    CONTROL "Besøk <A HREF=""https://nextnt.vercel.app/"">NextNT Hjemmesiden</A>", IDC_ROSHOMEPAGE_LINK, "SysLink", WS_CHILD | WS_VISIBLE | WS_TABSTOP, 10, 200, 140, 10
     PUSHBUTTON "Vis &lisensen...", IDC_LICENCE, 170, 198, 78, 15
 END
 
@@ -70,7 +70,7 @@ CAPTION "System Settings"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX "Version Info", IDC_STATIC, 6, 3, 210, 73
-    LTEXT "LiberNT is built as a server OS and reports as such. Check this box to change this for applications only.", IDC_STATIC, 15, 15, 183, 41
+    LTEXT "NextNT is built as a server OS and reports as such. Check this box to change this for applications only.", IDC_STATIC, 15, 15, 183, 41
     CONTROL "Report as Workstation", IDC_REPORTASWORKSTATION, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 16, 57, 190, 10
     PUSHBUTTON "OK", IDOK, 166, 83, 50, 14
 END
@@ -80,9 +80,9 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Diagnostic Data"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    LTEXT "LiberNT always sends required diagnostic data to the project: the build, the boot result and time, the hardware and crash summaries. This cannot be turned off.", IDC_STATIC, 7, 7, 226, 33
+    LTEXT "NextNT always sends required diagnostic data to the project: the build, the boot result and time, the hardware and crash summaries. This cannot be turned off.", IDC_STATIC, 7, 7, 226, 33
     AUTOCHECKBOX "Also send &optional diagnostic data (error entries of the system event log)", IDC_SENDOPTIONAL, 7, 46, 226, 20, BS_MULTILINE | BS_TOP | WS_TABSTOP
-    LTEXT "Optional data is off unless you turn it on. It contains no files, documents or network addresses. See libernt.com/legal.", IDC_OPTIONALINFO, 7, 72, 226, 33
+    LTEXT "Optional data is off unless you turn it on. It contains no files, documents or network addresses. See nextnt.vercel.app/legal.", IDC_OPTIONALINFO, 7, 72, 226, 33
     DEFPUSHBUTTON "OK", IDOK, 129, 128, 50, 14
     PUSHBUTTON "Cancel", IDCANCEL, 183, 128, 50, 14
 END
@@ -103,7 +103,7 @@ BEGIN
     PUSHBUTTON "&Endre navn", IDC_HRDPROFRENAME, 118, 106, 50, 14, WS_DISABLED
     PUSHBUTTON "&Slett", IDC_HRDPROFDEL, 173, 106, 50, 14, WS_DISABLED
     GROUPBOX "Valg av maskinvareprofil", IDC_STATIC, 7, 130, 240, 75
-    LTEXT "Når LiberNT starter:", IDC_STATIC, 14, 142, 210, 8
+    LTEXT "Når NextNT starter:", IDC_STATIC, 14, 142, 210, 8
     AUTORADIOBUTTON "&Vent til jeg velger en maskinvareprofil", IDC_HRDPROFWAIT, 14, 158, 133, 8, WS_GROUP
     AUTORADIOBUTTON "&Velg første profil i listen ovenfor hvis jeg ikke velger profil innen", IDC_HRDPROFSELECT, 14, 173, 220, 8
     LTEXT "Sekunder", IDC_STATIC, 65, 187, 35, 8
@@ -131,7 +131,7 @@ BEGIN
     AUTORADIOBUTTON "The computer is &docked", IDC_HWPPROP_DOCKED, 22, 97, 160, 10
     AUTORADIOBUTTON "The computer is &undocked", IDC_HWPPROP_UNDOCKED, 22, 109, 160, 10
     GROUPBOX "Hardware profiles selection", IDC_STATIC, 10, 138, 192, 42
-    AUTOCHECKBOX "Always &include this profile as an option when LiberNT starts", IDC_HWPPROP_INCLUDE, 17, 150, 164, 20, WS_GROUP | WS_TABSTOP | BS_MULTILINE
+    AUTOCHECKBOX "Always &include this profile as an option when NextNT starts", IDC_HWPPROP_INCLUDE, 17, 150, 164, 20, WS_GROUP | WS_TABSTOP | BS_MULTILINE
 END
 
 IDD_COPYPROFILE DIALOGEX 12, 26, 256, 52
@@ -342,7 +342,7 @@ CAPTION "Visual Effects"
 FONT 8, "MS Shell Dlg"
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 BEGIN
-   LTEXT "Select the settings you want to use for the appearance and performance of LiberNT on this computer.", IDC_STATIC, 7, 6, 208, 18
+   LTEXT "Select the settings you want to use for the appearance and performance of NextNT on this computer.", IDC_STATIC, 7, 6, 208, 18
    CONTROL "", IDC_TREE, "SysTreeView32", TVS_LINESATROOT | TVS_DISABLEDRAGDROP | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 7, 32, 213, 168
 END
 
@@ -356,7 +356,7 @@ BEGIN
    AUTORADIOBUTTON "&Programs", IDC_CPUCLIENT, 14, 36, 75, 12
    AUTORADIOBUTTON "Background &services", IDC_CPUSERVER, 96, 36, 85, 12
    GROUPBOX "Virtual memory", IDC_STATIC, 7, 60, 213, 57
-   LTEXT "A paging file is an area on the hard disk that LiberNT uses as if it were RAM.", IDC_STATIC, 14, 74, 199, 16
+   LTEXT "A paging file is an area on the hard disk that NextNT uses as if it were RAM.", IDC_STATIC, 14, 74, 199, 16
    PUSHBUTTON "&Change...", IDC_CHANGESWAP, 163, 97, 50, 14
 END
 

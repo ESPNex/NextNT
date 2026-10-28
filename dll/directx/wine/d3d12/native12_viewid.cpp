@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Direct3D 12 runtime
+ * PROJECT:     NextNT Direct3D 12 runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     View instancing interstage storage validation with the DXC view ID validator
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

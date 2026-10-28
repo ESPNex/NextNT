@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT MSXML 6.0
+ * PROJECT:     NextNT MSXML 6.0
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     String and value conversions for the Windows.Data.Xml.Dom classes
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

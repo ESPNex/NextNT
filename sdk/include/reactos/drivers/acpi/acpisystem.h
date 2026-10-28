@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT ACPI system services interface
+ * PROJECT:         NextNT ACPI system services interface
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Kernel access to ACPI system description tables
  */

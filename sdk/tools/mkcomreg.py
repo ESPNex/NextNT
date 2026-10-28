@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PROJECT:     LiberNT build tools
+PROJECT:     NextNT build tools
 LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 PURPOSE:     Build the script registrations of the system DLLs into a hive INF file
 COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

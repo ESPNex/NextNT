@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT api tests
+ * PROJECT:     NextNT api tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Z-order topmost band invariants (SetWindowPos/IntLinkHwnd)
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

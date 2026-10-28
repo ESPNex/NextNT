@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Task Manager
+ * PROJECT:     NextNT Task Manager
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared application header (types, theme, data engine, controls)
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

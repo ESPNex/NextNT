@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VidMm allocation lifecycle tests via D3DKMT user-mode API
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Tests the D3DKMT allocation create/lock/unlock/destroy path through
  * gdi32.dll exports. These tests require a WDDM adapter to be present.

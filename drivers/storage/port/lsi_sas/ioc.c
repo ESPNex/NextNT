@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Storage Drivers
+ * PROJECT:     NextNT Storage Drivers
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     LSI Fusion-MPT IOC doorbell handshake, reset and bring-up
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

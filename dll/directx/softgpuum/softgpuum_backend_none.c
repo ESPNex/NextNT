@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT softgpu user-mode display driver
+ * PROJECT:     NextNT softgpu user-mode display driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Empty optional backend for the generic linear WDDM UMD
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

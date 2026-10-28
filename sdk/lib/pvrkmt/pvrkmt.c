@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PowerVR user-mode transport
+ * PROJECT:     NextNT PowerVR user-mode transport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DRM render node emulation for Mesa's PowerVR driver over D3DKMT escapes
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

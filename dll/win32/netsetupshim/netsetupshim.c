@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Network Setup Shim
+ * PROJECT:     NextNT Network Setup Shim
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Hosts CLSID_CNetCfg in front of the network setup engine
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

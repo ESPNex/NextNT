@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ASIX AX88772B USB Ethernet Driver
+ * PROJECT:     NextNT ASIX AX88772B USB Ethernet Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Clean-room NDIS miniport for ASIX AX88772B USB 2.0 Ethernet
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

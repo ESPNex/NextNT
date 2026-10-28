@@ -1,4 +1,4 @@
-; LiberNT Native WiFi (802.11) Intermediate Driver - nwifi.sys
+; NextNT Native WiFi (802.11) Intermediate Driver - nwifi.sys
 ; Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
 ;
 ; NDIS 6.x intermediate driver installed as a network service (NetService)
@@ -9,22 +9,22 @@
 Signature   = "$Windows NT$"
 Class       = NetService
 ClassGUID   = {4D36E974-E325-11CE-BFC1-08002BE10318}
-Provider    = %LiberNT%
+Provider    = %NextNT%
 DriverVer   = 06/02/2026,1.0.0.0
 
 [DestinationDirs]
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNTDevices,NTx86,NTamd64,NTARM64
+%NextNT% = NextNTDevices,NTx86,NTamd64,NTARM64
 
-[LiberNTDevices.NTx86]
+[NextNTDevices.NTx86]
 %Nwifi.DeviceDesc% = Nwifi.Install, nwifi
 
-[LiberNTDevices.NTamd64]
+[NextNTDevices.NTamd64]
 %Nwifi.DeviceDesc% = Nwifi.Install, nwifi
 
-[LiberNTDevices.NTARM64]
+[NextNTDevices.NTARM64]
 %Nwifi.DeviceDesc% = Nwifi.Install, nwifi
 
 [Nwifi.Install]
@@ -63,7 +63,7 @@ HKR, , EventMessageFile, 0x00020000, "%%SystemRoot%%\System32\netevent.dll"
 HKR, , TypesSupported,   0x00010001, 7
 
 [Strings]
-LiberNT            = "LiberNT Project"
-Nwifi.DeviceDesc   = "LiberNT Native WiFi Intermediate Driver"
-Nwifi.ServiceDesc  = "LiberNT Native WiFi Service"
+NextNT            = "NextNT Project"
+Nwifi.DeviceDesc   = "NextNT Native WiFi Intermediate Driver"
+Nwifi.ServiceDesc  = "NextNT Native WiFi Service"
 Nwifi.HelpText     = "Translates 802.11 to 802.3 for the TCP/IP stack"

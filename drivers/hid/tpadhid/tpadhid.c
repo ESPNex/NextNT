@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HID Precision Touchpad Driver
+ * PROJECT:     NextNT HID Precision Touchpad Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Turns the contacts of a HID precision touchpad into pointer input
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

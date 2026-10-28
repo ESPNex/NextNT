@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DirectX video support
+ * PROJECT:     NextNT DirectX video support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private D3D9 surface contract for asynchronous DXVA output
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT ACPI Time and Alarm driver interface
+ * PROJECT:         NextNT ACPI Time and Alarm driver interface
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  */
 

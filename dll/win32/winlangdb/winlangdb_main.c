@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT winlangdb.dll
+ * PROJECT:     NextNT winlangdb.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Language profile database
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

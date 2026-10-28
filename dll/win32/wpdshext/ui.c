@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Portable Devices shell extension
+ * PROJECT:     NextNT Portable Devices shell extension
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Icons, context menus, copy out, copy in and delete
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

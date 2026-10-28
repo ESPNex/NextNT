@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PowerVR user-mode transport
+ * PROJECT:     NextNT PowerVR user-mode transport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Memory mapping of transport buffer objects and anonymous reservations
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

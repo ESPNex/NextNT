@@ -5,7 +5,7 @@ Signature="$Windows NT$"
 LayoutFile=layout.inf
 Class=Display
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=05/26/2026,1.0.0.0
 
 [DestinationDirs]
@@ -14,19 +14,19 @@ UefiFb.Miniport_CopyFiles=12
 UefiFb.Display_CopyFiles=11
 
 [Manufacturer]
-%LiberNT%=LiberNT,NTx86,NTamd64,NTarm64
+%NextNT%=NextNT,NTx86,NTamd64,NTarm64
 
-[LiberNT.NTx86]
+[NextNT.NTx86]
 %UefiFb.DeviceDesc%=UefiFb_Install,ROOT\UEFIFB
 %UefiFb.DeviceDesc%=UefiFb_Install,DETECTEDInternal\uefifb
 %UefiFb.DeviceDesc%=UefiFb_Install,DETECTED\uefifb
 
-[LiberNT.NTamd64]
+[NextNT.NTamd64]
 %UefiFb.DeviceDesc%=UefiFb_Install,ROOT\UEFIFB
 %UefiFb.DeviceDesc%=UefiFb_Install,DETECTEDInternal\uefifb
 %UefiFb.DeviceDesc%=UefiFb_Install,DETECTED\uefifb
 
-[LiberNT.NTarm64]
+[NextNT.NTarm64]
 %UefiFb.DeviceDesc%=UefiFb_Install,ROOT\UEFIFB
 %UefiFb.DeviceDesc%=UefiFb_Install,DETECTEDInternal\uefifb
 %UefiFb.DeviceDesc%=UefiFb_Install,DETECTED\uefifb
@@ -62,9 +62,9 @@ ServiceBinary=%12%\uefifb.sys
 LoadOrderGroup=Video Save
 
 [Strings]
-LiberNT="LiberNT"
+NextNT="NextNT"
 UefiFb.DeviceDesc="UEFI GOP Framebuffer"
-UefiFb.ServiceDesc="LiberNT UEFI GOP Framebuffer Miniport"
+UefiFb.ServiceDesc="NextNT UEFI GOP Framebuffer Miniport"
 REG_MULTI_SZ=0x00010000
 REG_DWORD=0x00010001
 REG_SZ=0x00000000

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT AF_UNIX local stream transport
+ * PROJECT:     NextNT AF_UNIX local stream transport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Internal definitions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

@@ -2,7 +2,7 @@
  * PROJECT:     GCC C++ support library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     _ftelli64 shim for GCC 15 libstdc++
- * COPYRIGHT:   Copyright 2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2026 NextNT Team
  *
  * GCC 15's libstdc++ ext11-inst.o references _ftelli64 as a DLL import.
  * msvcrt does not export _ftelli64 at any version, so we provide it here.

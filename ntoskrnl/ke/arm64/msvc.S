@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel
+ * PROJECT:     NextNT Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ARM64 register and runtime helpers for MSVC builds
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

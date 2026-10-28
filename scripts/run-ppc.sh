@@ -58,8 +58,8 @@ if [ -z "${QEMU_MODULE_DIR:-}" ]; then
     done
 fi
 
-target=liberntimg
-image=${disk_image:-"$build_dir/LiberNT.img"}
+target=nextntimg
+image=${disk_image:-"$build_dir/NextNT.img"}
 if [ "$media" = iso ]; then
     target=bootcd
     image="$build_dir/bootcd.iso"
@@ -82,7 +82,7 @@ fi
 echo "PowerPC 40p / 604, 192 MiB. Serial log: $build_dir/ppc-serial.log"
 exec "$qemu_binary" -L "${ROS_QEMU_PPC_FIRMWARE_DIR:-/usr/share/qemu}" \
     -machine 40p -cpu 604 -m 192 \
-    -kernel "$build_dir/boot/freeldr/freeldr/ppcboot.bin" \
+    -kernel "$build_dir/boot/nextldr/nextldr/ppcboot.bin" \
     -device ich9-ahci,id=ahci \
     -nographic -display "${ROS_QEMU_DISPLAY:-gtk}" \
     -serial "file:$build_dir/ppc-serial.log" -monitor none -no-reboot "$@"

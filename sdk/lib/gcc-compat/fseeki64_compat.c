@@ -2,7 +2,7 @@
  * PROJECT:     GCC C++ support library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     _fseeki64 shim for GCC 15 libstdc++
- * COPYRIGHT:   Copyright 2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2026 NextNT Team
  *
  * GCC 15's libstdc++ ext11-inst.o references _fseeki64 as a DLL import.
  * _fseeki64 is version-gated to >= 0x600 in msvcrt. For older versions,

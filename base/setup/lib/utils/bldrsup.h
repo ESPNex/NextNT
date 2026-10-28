@@ -12,7 +12,7 @@
 
 typedef enum _BOOT_STORE_TYPE
 {
-    FreeLdr,    // ReactOS' FreeLoader
+    NextLdr,    // ReactOS' FreeLoader
     NtLdr,      // Windows <= 2k3 NT "FlexBoot" OS Loader NTLDR
 //  BootMgr,    // Vista+ BCD-oriented BOOTMGR
     BldrTypeMax
@@ -49,7 +49,7 @@ typedef struct _BOOT_STORE_OPTIONS
  *
  * A key consists of either a boot ID number, comprised between 0 and
  * MAXUSHORT == 0xFFFF == 65535, or can be a pointer to a human-readable
- * string (section name), as in the case of FreeLDR, or to a GUID, as in the
+ * string (section name), as in the case of NextLDR, or to a GUID, as in the
  * case of BOOTMGR.
  *
  * If IS_INTKEY(BootEntryKey) == TRUE, i.e. the key is <= 65535, this means

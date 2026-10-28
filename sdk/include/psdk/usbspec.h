@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PSDK
+ * PROJECT:     NextNT PSDK
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     USB specification definitions
  * COPYRIGHT:   2020 Victor Perevertkin (victor.perevertkin@reactos.org)

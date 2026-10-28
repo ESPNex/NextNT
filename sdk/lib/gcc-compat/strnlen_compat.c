@@ -2,7 +2,7 @@
  * PROJECT:     GCC C++ support library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     strnlen/wcsnlen shims for GCC 15 libmingwex
- * COPYRIGHT:   Copyright 2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2026 NextNT Team
  *
  * GCC 15's libmingwex references strnlen and wcsnlen, which ReactOS msvcrt
  * only exports for DLL_EXPORT_VERSION >= 0x600.

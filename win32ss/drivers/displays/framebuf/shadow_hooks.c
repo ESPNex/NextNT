@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Generic Framebuffer display driver
+ * PROJECT:     NextNT Generic Framebuffer display driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Platform-neutral XPDM shadow-surface hooks
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

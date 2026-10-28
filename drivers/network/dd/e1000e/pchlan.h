@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Intel Gigabit Ethernet Driver
+ * PROJECT:     NextNT Intel Gigabit Ethernet Driver
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Registers of the Intel I218 and I219 chipset LAN controllers and their PHY
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT USB xHCI Driver
+ * PROJECT:     NextNT USB xHCI Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GUID definitions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

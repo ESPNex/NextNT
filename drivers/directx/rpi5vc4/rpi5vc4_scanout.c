@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 5 WDDM display-only miniport
+ * PROJECT:     NextNT Raspberry Pi 5 WDDM display-only miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Standard ACPI display-output discovery and scanout geometry.
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

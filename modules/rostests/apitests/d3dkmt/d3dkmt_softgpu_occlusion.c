@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Window present occlusion must not fault the rendering device.
  *

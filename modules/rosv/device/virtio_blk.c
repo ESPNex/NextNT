@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VMX Hypervisor Driver
+ * PROJECT:     NextNT VMX Hypervisor Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Virtio-blk MMIO device emulation
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

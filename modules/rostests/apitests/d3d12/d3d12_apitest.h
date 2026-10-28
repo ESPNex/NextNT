@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared helpers for the Direct3D 12 tests
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

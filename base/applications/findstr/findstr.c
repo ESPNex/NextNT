@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Applications
+ * PROJECT:     NextNT Applications
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Search for strings in files
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

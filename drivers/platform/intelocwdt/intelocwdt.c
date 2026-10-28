@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Intel Overclocking Watchdog Driver
+ * PROJECT:     NextNT Intel Overclocking Watchdog Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Safe ownership of the Alder Lake INTC1099 watchdog
  */

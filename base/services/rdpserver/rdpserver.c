@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT RDP console server
+ * PROJECT:     NextNT RDP console server
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Console desktop RDP server for an explicitly configured test LAN
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>
@@ -534,7 +534,7 @@ int main(int argc, char **argv)
         inet_addr(BindAddress) == INADDR_ANY || inet_addr(AllowedPeer) == INADDR_NONE ||
         inet_addr(AllowedPeer) == INADDR_ANY || !Certificate[0] || !PrivateKey[0])
     { Log("Invalid configuration: explicit bind/peer IPv4, credentials and TLS files required"); return 2; }
-    singleton = CreateMutexA(NULL, FALSE, "Local\\LiberNT-RDPServer-Console");
+    singleton = CreateMutexA(NULL, FALSE, "Local\\NextNT-RDPServer-Console");
     if (!singleton || GetLastError() == ERROR_ALREADY_EXISTS) { if (singleton) CloseHandle(singleton); return 1; }
     if (WSAStartup(MAKEWORD(2, 2), &winsock)) return 1;
     if (!GetModuleFileNameA(NULL, modules, sizeof(modules))) return 1;

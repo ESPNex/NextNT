@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WDDM UI presentation diagnostics
+ * PROJECT:     NextNT WDDM UI presentation diagnostics
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Exercise overlapping windows that repaint text on several UI threads at once
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Pool Allocator
+ * PROJECT:     NextNT Pool Allocator
  * FILE:        ntoskrnl/nvs/pool/ex/exquery.c
  * PURPOSE:     Executive pool query interfaces
  *

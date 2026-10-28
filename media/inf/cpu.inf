@@ -4,7 +4,7 @@
 Signature  = "$Windows NT$"
 Class      = Processor
 ClassGuid  = {50127DC3-0F36-415E-A6CC-4CB3BE910B65}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 10/05/2026,1.0.0.0
 
 [ControlFlags]
@@ -47,7 +47,7 @@ ServiceBinary  = %12%\pnpcpu.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Team"
+NextNT = "NextNT Team"
 ProcessorClassName = "Processors"
 StdMfg = "(Standard processor types)"
 processor.DeviceDesc = "Processor"

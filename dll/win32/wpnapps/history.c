@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Runtime
+ * PROJECT:     NextNT Windows Runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Toast notification history shared by every process of the user
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

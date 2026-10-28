@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Printers Folder
+ * PROJECT:     NextNT Printers Folder
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Precompiled header
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Win32 Base API
+ * PROJECT:     NextNT Win32 Base API
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     RaiseException for architectures without an assembly version
  * COPYRIGHT:   Copyright 1998 Ariadne (ariadne@xs4all.nl)

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi RP1 Network Kernel Debugger Extension
+ * PROJECT:     NextNT Raspberry Pi RP1 Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Cadence GEM register layout of the RP1 Ethernet and module interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

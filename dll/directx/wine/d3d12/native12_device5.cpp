@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Direct3D 12 runtime
+ * PROJECT:     NextNT Direct3D 12 runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ID3D12Device1 to ID3D12Device5 methods
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

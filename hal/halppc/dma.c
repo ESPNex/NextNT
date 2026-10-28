@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PowerPC HAL
+ * PROJECT:     NextNT PowerPC HAL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     Coherent bus-master DMA through the PReP PCI window

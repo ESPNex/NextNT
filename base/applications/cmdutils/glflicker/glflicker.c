@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT GL presentation tests
+ * PROJECT:     NextNT GL presentation tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Drive window changes over a running GL client to expose presentation flicker
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Console Host
+ * PROJECT:     NextNT Console Host
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Cell width of characters in the console screen buffer
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

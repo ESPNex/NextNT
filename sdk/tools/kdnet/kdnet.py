@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-PROJECT:     LiberNT Network Kernel Debugger Transport
+PROJECT:     NextNT Network Kernel Debugger Transport
 LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 PURPOSE:     Host side of the network debugger: attaches to a target and relays its terminal
 COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -31,7 +31,7 @@ TAG_SIZE = 16
 STREAM_HEADER = 24
 SEGMENT = 1100
 PROTOCOL_NAME = b'Noise_NNpsk0_25519_ChaChaPoly_SHA256'
-PROLOGUE_LABEL = b'LiberNT KDNET 1'
+PROLOGUE_LABEL = b'NextNT KDNET 1'
 NO_OFFSET = 0xFFFFFFFFFFFFFFFF
 CONTROL_GAP = 1
 CONTROL_INFO = 2
@@ -77,9 +77,9 @@ def normalize_key(text):
 
 class Target:
     def __init__(self, key_text):
-        self.psk = sha256(b'LiberNT KDNET v1 key', normalize_key(key_text))
-        self.hello_key = sha256(b'LiberNT KDNET v1 hello', self.psk)
-        self.rendezvous = sha256(b'LiberNT KDNET v1 rendezvous', self.psk)[:8]
+        self.psk = sha256(b'NextNT KDNET v1 key', normalize_key(key_text))
+        self.hello_key = sha256(b'NextNT KDNET v1 hello', self.psk)
+        self.rendezvous = sha256(b'NextNT KDNET v1 rendezvous', self.psk)[:8]
         self.attached = False
         self.session = 0
         self.send_key = None
@@ -233,7 +233,7 @@ class Target:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Attach to a LiberNT target over the network debugger transport.')
+    parser = argparse.ArgumentParser(description='Attach to a NextNT target over the network debugger transport.')
     parser.add_argument('--key', required=True, help='key shown by the target or set with /ENCRYPTION_KEY')
     parser.add_argument('--port', type=int, default=50000, help='UDP port to listen on')
     parser.add_argument('--bind', default='0.0.0.0', help='local address to listen on')

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SpacemiT K1 GPIO driver
+ * PROJECT:     NextNT SpacemiT K1 GPIO driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GpioClx client for the SpacemiT K1 GPIO controller
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

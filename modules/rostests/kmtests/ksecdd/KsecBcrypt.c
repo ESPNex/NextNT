@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel-Mode Test Suite
+ * PROJECT:     NextNT Kernel-Mode Test Suite
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Validate the kernel BCrypt primitive surface with known answers
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

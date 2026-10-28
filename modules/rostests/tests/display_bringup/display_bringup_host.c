@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT host-side display tests
+ * PROJECT:     NextNT host-side display tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Drive the production display bring-up path on a simulated boot
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -1102,7 +1102,7 @@ IoGetDeviceObjectPointer(PUNICODE_STRING Name, ACCESS_MASK Access, PFILE_OBJECT 
     return STATUS_OBJECT_NAME_NOT_FOUND;
 }
 
-static WCHAR g_AdapterDescription[64] = L"LiberNT Basic Display Adapter";
+static WCHAR g_AdapterDescription[64] = L"NextNT Basic Display Adapter";
 
 static NTSTATUS
 IoGetDeviceProperty(PDEVICE_OBJECT Device, DEVICE_REGISTRY_PROPERTY Property, ULONG Length, PVOID Buffer, PULONG Result)

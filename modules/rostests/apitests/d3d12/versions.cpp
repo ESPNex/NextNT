@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ID3D12Device6 to ID3D12Device14, command lists 5 to 10, fences 1 and shader cache sessions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

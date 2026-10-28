@@ -139,7 +139,7 @@ INT cmd_ver (LPTSTR param)
      * Application compatibility: installers and batch scripts parse this line
      * by token position (e.g. "for /f "tokens=6 delims=[]. " %%G in ('ver')"),
      * so it must keep the exact Windows 11 shape and wording. The name is an
-     * interoperability string only, not a product claim; this is LiberNT.
+     * interoperability string only, not a product claim; this is NextNT.
      */
     ConOutPrintf(_T("\nMicrosoft Windows [Version %lu.%lu.%lu.%lu]"),
                  osvi.dwMajorVersion, osvi.dwMinorVersion,

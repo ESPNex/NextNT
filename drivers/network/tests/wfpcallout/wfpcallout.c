@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WFP callout test driver
+ * PROJECT:     NextNT WFP callout test driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        drivers/network/tests/wfpcallout/wfpcallout.c
  * PURPOSE:     Minimal WFP callout driver. Registers a classify callback

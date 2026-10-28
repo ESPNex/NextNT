@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WDDM Null/Software GPU Miniport
+ * PROJECT:     NextNT WDDM Null/Software GPU Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Software-emulated WDDM color-pointer plane
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows host for the windows of Linux Wayland programs
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -35,8 +35,8 @@
 #define WM_LX_MESSAGE   (WM_APP + 1)
 #define WM_LX_GONE      (WM_APP + 2)
 
-#define LX_HOST_CLASS   L"LiberNT.LinuxWindow"
-#define LX_HOST_MESSAGE L"LiberNT.LinuxWindowHost"
+#define LX_HOST_CLASS   L"NextNT.LinuxWindow"
+#define LX_HOST_MESSAGE L"NextNT.LinuxWindowHost"
 
 #define LX_BTN_LEFT     0x110
 #define LX_BTN_RIGHT    0x111
@@ -822,13 +822,13 @@ LxStartCompositor(
 {
     LX_LAUNCH Launch;
 
-    if (!LxRootHasFile(Root, L"\\usr\\local\\lib\\libernt\\lxwayland\\lxwayland"))
+    if (!LxRootHasFile(Root, L"\\usr\\local\\lib\\nextnt\\lxwayland\\lxwayland"))
         return;
     ZeroMemory(&Launch, sizeof(Launch));
     Launch.Name = L"lxwinhost";
     Launch.Root = Root;
     Launch.Cwd = "/";
-    Launch.FileName = "/usr/local/lib/libernt/lxwayland/lxwayland";
+    Launch.FileName = "/usr/local/lib/nextnt/lxwayland/lxwayland";
     Launch.Detached = TRUE;
     if (LxStringsAdd(&Launch.Args, "lxwayland") &&
         LxEnvSet(&Launch.Env, "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"))

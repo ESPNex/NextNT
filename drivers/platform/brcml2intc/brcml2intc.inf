@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT Broadcom L2 Interrupt Controller Driver
+; PROJECT:     NextNT Broadcom L2 Interrupt Controller Driver
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>
 
@@ -6,7 +6,7 @@
 Signature="$Windows NT$"
 Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=09/17/2026,1.0.0.0
 
 [ControlFlags]
@@ -16,7 +16,7 @@ ExcludeFromSelect=*
 DefaultDestDir=12
 
 [Manufacturer]
-%LiberNT%=BrcmL2Models,NTARM64
+%NextNT%=BrcmL2Models,NTARM64
 
 [BrcmL2Models.NTARM64]
 %BrcmL2.DeviceDesc%=BrcmL2_Install,ACPI\BRCM0A01
@@ -45,7 +45,7 @@ LoadOrderGroup=Extended Base
 brcml2intc.sys=1
 
 [Strings]
-LiberNT="LiberNT Project"
+NextNT="NextNT Project"
 BrcmL2.DeviceDesc="Broadcom Always-On L2 Interrupt Controller"
-BrcmL2.ServiceDesc="LiberNT Broadcom L2 Interrupt Controller Driver"
-DiskName="LiberNT Installation Media"
+BrcmL2.ServiceDesc="NextNT Broadcom L2 Interrupt Controller Driver"
+DiskName="NextNT Installation Media"

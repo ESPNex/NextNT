@@ -22,7 +22,7 @@
 WINE_DEFAULT_DEBUG_CHANNEL(urlmon);
 
 #ifdef __REACTOS__
-const GUID SID_LiberNTStartNotImplemented = {0x6e1b3ab5, 0x1b7c, 0x4f1e, {0x9a, 0x3d, 0x2c, 0x5e, 0x7f, 0x41, 0xd0, 0x9b}};
+const GUID SID_NextNTStartNotImplemented = {0x6e1b3ab5, 0x1b7c, 0x4f1e, {0x9a, 0x3d, 0x2c, 0x5e, 0x7f, 0x41, 0xd0, 0x9b}};
 #endif
 
 typedef struct {
@@ -317,7 +317,7 @@ static HRESULT WINAPI DwlServiceProvider_QueryService(IServiceProvider *iface,
     TRACE("(%p)->(%s %s %p)\n", This, debugstr_guid(guidService), debugstr_guid(riid), ppv);
 
 #ifdef __REACTOS__
-    if(IsEqualGUID(guidService, &SID_LiberNTStartNotImplemented)) {
+    if(IsEqualGUID(guidService, &SID_NextNTStartNotImplemented)) {
         if(!This->start_not_impl)
             return E_NOINTERFACE;
         IServiceProvider_AddRef(iface);

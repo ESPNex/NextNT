@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Hyper-V Storage Miniport
+ * PROJECT:     NextNT Hyper-V Storage Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     StorPort miniport for the Hyper-V synthetic SCSI controller
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

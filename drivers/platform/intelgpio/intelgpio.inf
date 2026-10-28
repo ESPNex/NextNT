@@ -2,7 +2,7 @@
 Signature = "$Windows NT$"
 Class = System
 ClassGUID = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 08/04/2026,1.0.0.0
 
 [ControlFlags]
@@ -12,9 +12,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT
+%NextNT% = NextNT
 
-[LiberNT]
+[NextNT]
 %IntelGpio.DeviceDesc% = IntelGpio_Inst,ACPI\INT344B
 %IntelGpio.DeviceDesc% = IntelGpio_Inst,ACPI\INT3451
 %IntelGpio.DeviceDesc% = IntelGpio_Inst,ACPI\INT345D
@@ -54,6 +54,6 @@ ServiceBinary = %12%\intelgpio.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 IntelGpio.DeviceDesc = "Intel Serial I/O GPIO Host Controller"
-IntelGpio.ServiceDesc = "LiberNT Intel GPIO Controller Driver"
+IntelGpio.ServiceDesc = "NextNT Intel GPIO Controller Driver"

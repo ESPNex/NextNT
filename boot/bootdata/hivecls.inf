@@ -110,7 +110,7 @@ HKCR,"anifile\DefaultIcon","",0x00000000,"%1"
 
 ; ReactOS Batch Files
 HKCR,".bat","",0x00000000,"batfile"
-HKCR,"batfile","",0x00000000,"LiberNT Batch File"
+HKCR,"batfile","",0x00000000,"NextNT Batch File"
 HKCR,"batfile","EditFlags",0x00010001,0x00000010
 HKCR,"batfile","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\shell32.dll,-201"
 HKCR,"batfile\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shell32.dll,-153"
@@ -128,7 +128,7 @@ HKCR,"cerfile\shell\open\command","",0x00020000,"%SystemRoot%\system32\rundll32.
 
 ; ReactOS Command Script Files
 HKCR,".cmd","",0x00000000,"cmdfile"
-HKCR,"cmdfile","",0x00000000,"LiberNT Command Script"
+HKCR,"cmdfile","",0x00000000,"NextNT Command Script"
 HKCR,"cmdfile","EditFlags",0x00010001,0x00000010
 HKCR,"cmdfile","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\shell32.dll,-202"
 HKCR,"cmdfile\DefaultIcon","",0x00020000,"%SystemRoot%\system32\shell32.dll,-153"
@@ -465,7 +465,7 @@ HKCR,"mscfile\shell\open\command","",0x00020000,"%SystemRoot%\system32\mmc.exe "
 
 ; MSI files
 HKCR,".msi","",0x00000000,"Msi.Package"
-HKCR,"Msi.Package","",0x00000000,"LiberNT Installer Package"
+HKCR,"Msi.Package","",0x00000000,"NextNT Installer Package"
 HKCR,"Msi.Package","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\msi.dll,-34"
 HKCR,"Msi.Package\DefaultIcon","",0x00000000,"msiexec.exe"
 HKCR,"Msi.Package\shell\Open","",0x00000000,"&Install"
@@ -480,7 +480,7 @@ HKCR,"Msi.Package\shell\Uninstall\command","",0x00020000,"""%SystemRoot%\system3
 
 ; MSP files
 HKCR,".msp","",0x00000000,"Msi.Patch"
-HKCR,"Msi.Patch","",0x00000000,"LiberNT Installer Patch"
+HKCR,"Msi.Patch","",0x00000000,"NextNT Installer Patch"
 HKCR,"Msi.Patch","FriendlyTypeName",0x00020000,"@%SystemRoot%\system32\msi.dll,-35"
 HKCR,"Msi.Patch\DefaultIcon","",0x00000000,"msiexec.exe"
 HKCR,"Msi.Patch\shell\Open","",0x00000000,"&Apply Patch"
@@ -906,7 +906,7 @@ MP4FILE="MP4 Video"
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Cascading Style Sheet"
 MSCFILE="Management Console Document"
-SCFFILE="LiberNT Explorer Command"
+SCFFILE="NextNT Explorer Command"
 WMZFILE="Compressed Enhanced Metafile"
 WSFFILE="Windows Script File"
 
@@ -985,7 +985,7 @@ MP4FILE="Vídeo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Hoja de estilos en cascada"
-SCFFILE="Órden del explorador de LiberNT"
+SCFFILE="Órden del explorador de NextNT"
 WMZFILE="Metarchivo mejorado comprimido"
 
 ;; For .reg files, right-click menu
@@ -1024,7 +1024,7 @@ MP4FILE="Vidéo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Fichier CSS"
-SCFFILE="Commande de l'explorateur LiberNT"
+SCFFILE="Commande de l'explorateur NextNT"
 ;WMZFILE="Compressed Enhanced Metafile"
 
 ;; For .reg files, right-click menu
@@ -1102,7 +1102,7 @@ MP4FILE="Wideo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 ;CSSFILE="Cascading Style Sheet"
-SCFFILE="Polecenie Eksploratora LiberNT"
+SCFFILE="Polecenie Eksploratora NextNT"
 WMZFILE="Skompresowany metaplik"
 
 ;; For .reg files, right-click menu
@@ -1142,7 +1142,7 @@ MP4FILE="Vídeo MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Folha de estilos em cascada"
-SCFFILE="Comando do Explorador LiberNT"
+SCFFILE="Comando do Explorador NextNT"
 WMZFILE="Metarquivo aprimorado compactado"
 
 ;; For .reg files, right-click menu
@@ -1182,7 +1182,7 @@ MP4FILE="Video MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Foaie de stiluri în cascadă"
-SCFFILE="Comandă de Explorator LiberNT"
+SCFFILE="Comandă de Explorator NextNT"
 WMZFILE="Metafișier îmbunătățit comprimat"
 
 ;; For .reg files, right-click menu
@@ -1221,7 +1221,7 @@ MP4FILE="Видео MP4"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="Каскадная таблица стилей"
-SCFFILE="Команда проводника LiberNT"
+SCFFILE="Команда проводника NextNT"
 WMZFILE="Сжатый расширенный метафайл"
 
 ;; For .reg files, right-click menu
@@ -1260,7 +1260,7 @@ MP4FILE="MP4 視訊"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="階層式樣式表"
-SCFFILE="LiberNT Explorer 命令"
+SCFFILE="NextNT Explorer 命令"
 ;WMZFILE="Compressed Enhanced Metafile"
 
 ;; For .reg files, right-click menu
@@ -1338,7 +1338,7 @@ MP4FILE="MP4 視訊"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="階層式樣式表"
-SCFFILE="LiberNT Explorer 命令"
+SCFFILE="NextNT Explorer 命令"
 ;WMZFILE="Compressed Enhanced Metafile"
 
 ;; For .reg files, right-click menu
@@ -1378,7 +1378,7 @@ MP4FILE="MP4 ビデオ"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="カスケード スタイル シート"
-SCFFILE="LiberNT エクスプローラ コマンド"
+SCFFILE="NextNT エクスプローラ コマンド"
 WMZFILE="圧縮済み拡張メタファイル"
 
 ;; For .reg files, right-click menu
@@ -1417,7 +1417,7 @@ MP4FILE="MP4 视频"
 
 ;; Misc file types without friendly (localized in .dll resources) name
 CSSFILE="层叠样式表文档"
-SCFFILE="LiberNT Explorer Command"
+SCFFILE="NextNT Explorer Command"
 ;WMZFILE="Compressed Enhanced Metafile"
 
 ;; For .reg files, right-click menu

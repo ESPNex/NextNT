@@ -1,5 +1,5 @@
 ;
-; PROJECT:     LiberNT SD/SDIO/eMMC Driver Stack
+; PROJECT:     NextNT SD/SDIO/eMMC Driver Stack
 ; LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 ; PURPOSE:     SD Flash Disk Class Driver INF
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -65,8 +65,8 @@ HKR, , EventMessageFile, %REG_EXPAND_SZ%, "%%SystemRoot%%\System32\IoLogMsg.dll"
 HKR, , TypesSupported, %REG_DWORD%, 7
 
 [Strings]
-ROS                     = "LiberNT"
-DiskName                = "LiberNT SD Flash Disk Driver Installation Disk"
+ROS                     = "NextNT"
+DiskName                = "NextNT SD Flash Disk Driver Installation Disk"
 GenManufacturer         = "(Standard SD Storage Devices)"
 ServiceDesc             = "SD Flash Disk Driver"
 SD_Memory.DeviceDesc    = "SD Memory Card"

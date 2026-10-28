@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests for D3DKMT device and context lifecycle
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Tests: D3DKMTCreateDevice, D3DKMTDestroyDevice, D3DKMTGetDeviceState,
  *        D3DKMTCreateContext, D3DKMTDestroyContext

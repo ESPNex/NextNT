@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ARM64 Kernel/Bootloader
+ * PROJECT:     NextNT ARM64 Kernel/Bootloader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        sdk/include/reactos/arm64/early_uart.h
  * PURPOSE:     ARM64 early UART with runtime ACPI-based detection
@@ -168,7 +168,7 @@ typedef enum _ARM64_UART_INTERFACE
  *
  * Declaration: Always declare these as extern here.
  * The actual definitions are in:
- *   - Bootloader: boot/freeldr/freeldr/arch/uefi/arm64/early_uart.c
+ *   - Bootloader: boot/nextldr/nextldr/arch/uefi/arm64/early_uart.c
  *   - Kernel: ntoskrnl/arch/arm64/ke/early_uart.c
  */
 extern volatile UINT64 EarlyUartBaseAddress;
@@ -765,7 +765,7 @@ EarlyUartPutDec(UINT32 Value)
 /*
  * EarlyUartDetectPlatform - Walk ACPI SPCR then DBG2 (in that order). Sets
  * the globals on success. Must be called while UEFI tables are still mapped
- * (i.e. before ExitBootServices). Kernel doesn't re-detect; FreeLDR passes
+ * (i.e. before ExitBootServices). Kernel doesn't re-detect; NextLDR passes
  * the result through the loader block.
  *
  * Returns Arm64PlatformGenericAcpi on success, Arm64PlatformUnknown if no

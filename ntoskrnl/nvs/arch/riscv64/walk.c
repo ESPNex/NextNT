@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Virtual Memory Subsystem
+ * PROJECT:     NextNT NT Virtual Memory Subsystem
  * FILE:        ntoskrnl/nvs/arch/riscv64/walk.c
  * PURPOSE:     Read-only walk of the live Sv39 page tables
  *

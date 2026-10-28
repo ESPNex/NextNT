@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-only (https://spdx.org/licenses/GPL-3.0-only)
  * PURPOSE:     Torture the whole Windows 8.1 export surface added for explorer
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

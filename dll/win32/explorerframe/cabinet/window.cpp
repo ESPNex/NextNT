@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Explorer
+ * PROJECT:     NextNT Explorer
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     File Explorer window: tabs, bands, panes and status
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -1486,7 +1486,7 @@ CCabinetWindow::SavePlacement()
 
     if (!GetWindowPlacement(m_hwnd, &placement))
         return;
-    if (RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\LiberNT\\Explorer", 0, NULL, 0, KEY_SET_VALUE, NULL, &key,
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\NextNT\\Explorer", 0, NULL, 0, KEY_SET_VALUE, NULL, &key,
                         NULL) == ERROR_SUCCESS)
     {
         DWORD pane = m_PreviewPane ? 2 : m_DetailsPane ? 1 : 0;
@@ -1652,7 +1652,7 @@ CCabinetWindow::Open(PCIDLIST_ABSOLUTE pidl, PCUITEMID_CHILD select, int showCmd
     if (!CreateWindowExW(WS_EX_WINDOWEDGE, CABINET_CLASS, L"File Explorer", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
                          CW_USEDEFAULT, CW_USEDEFAULT, 1000, 680, NULL, NULL, g_hInstance, this))
         return HRESULT_FROM_WIN32(GetLastError());
-    if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\LiberNT\\Explorer", L"Placement", RRF_RT_REG_BINARY, NULL,
+    if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\NextNT\\Explorer", L"Placement", RRF_RT_REG_BINARY, NULL,
                      &placement, &size) == ERROR_SUCCESS && size == sizeof(placement) &&
         placement.length == sizeof(placement))
     {
@@ -1670,7 +1670,7 @@ CCabinetWindow::Open(PCIDLIST_ABSOLUTE pidl, PCUITEMID_CHILD select, int showCmd
     {
         DWORD pane = 0;
         size = sizeof(pane);
-        if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\LiberNT\\Explorer", L"Pane", RRF_RT_REG_DWORD, NULL, &pane,
+        if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\NextNT\\Explorer", L"Pane", RRF_RT_REG_DWORD, NULL, &pane,
                          &size) == ERROR_SUCCESS)
             SetPane(pane == 1, pane == 2);
     }

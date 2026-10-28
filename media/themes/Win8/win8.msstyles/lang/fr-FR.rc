@@ -7,7 +7,7 @@ STRINGTABLE
 
 STRINGTABLE
 {
-2000, "LiberNT par défaut Light"
+2000, "NextNT par défaut Light"
 }
 
 STRINGTABLE
@@ -26,12 +26,12 @@ STRINGTABLE
 
 STRINGTABLE
 {
-5000, "LiberNT par défaut"
+5000, "NextNT par défaut"
 5001, "Style Visuel"
 5002, "Projet ReactOS"
 5003, "Foxlet, basé sur Lautus"
 5004, "Distribué sous GNU/GPL 2.0, 2019"
 5005, "https://reactos.org/"
 5006, "1.0"
-5007, "Style Visuel pour LiberNT"
+5007, "Style Visuel pour NextNT"
 }

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ACPI Generic Button Driver
+ * PROJECT:     NextNT ACPI Generic Button Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ACPI0011 generic button device reported through the system button interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

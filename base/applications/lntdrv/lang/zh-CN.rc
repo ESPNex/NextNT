@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Driver Installer
+ * PROJECT:     NextNT Driver Installer
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Chinese (Simplified) resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -9,7 +9,7 @@ LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
 
 IDD_FRAME DIALOGEX 0, 0, 420, 240
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "LiberNT 驱动程序安装程序"
+CAPTION "NextNT 驱动程序安装程序"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "", IDC_FRAME_TITLE, 120, 10, 290, 14, SS_NOPREFIX
@@ -71,7 +71,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_CAPTION "LiberNT 驱动程序安装程序"
+    IDS_CAPTION "NextNT 驱动程序安装程序"
     IDS_BACK "上一步(&B)"
     IDS_NEXT "下一步(&N)"
     IDS_CANCEL "取消"
@@ -84,7 +84,7 @@ BEGIN
     IDS_DONE_TITLE "已完成"
     IDS_DONE_SUBTITLE "每个设备的结果。"
     IDS_HISTORY_TITLE "从目录安装的驱动程序"
-    IDS_HISTORY_SUBTITLE "LiberNT 驱动程序安装程序在此电脑上所做的每项更改，最新的在前。"
+    IDS_HISTORY_SUBTITLE "NextNT 驱动程序安装程序在此电脑上所做的每项更改，最新的在前。"
     IDS_COL_DEVICE "设备"
     IDS_COL_VERSION "版本"
     IDS_COL_DRIVER "驱动程序"
@@ -113,20 +113,20 @@ BEGIN
     IDS_ACTION_ROLLBACK "回滚"
     IDS_ACTION_REMOVE "删除"
     IDS_ROLLBACK_CONFIRM "要恢复 %1 之前使用的驱动程序(版本 %2)吗?"
-    IDS_REMOVE_CONFIRM "要从 %1 删除目录驱动程序吗? 之后 LiberNT 将为该设备安装它现有的最佳驱动程序。"
+    IDS_REMOVE_CONFIRM "要从 %1 删除目录驱动程序吗? 之后 NextNT 将为该设备安装它现有的最佳驱动程序。"
     IDS_ACTION_DONE "完成。"
     IDS_ACTION_DONE_REBOOT "完成。请重新启动电脑以完成操作。"
     IDS_ACTION_FAILED "更改失败: %1"
     IDS_HISTORY_WORKING "正在处理..."
     IDS_ADMIN_REQUIRED "安装和删除驱动程序需要管理员权限。"
-    IDS_ADMIN_RESTART "要以管理员身份重新启动 LiberNT 驱动程序安装程序吗?"
+    IDS_ADMIN_RESTART "要以管理员身份重新启动 NextNT 驱动程序安装程序吗?"
     IDS_WORKER_FAILED "无法启动工作线程: %1"
     IDS_ERROR_CHECKSUM "下载的内容与目录发布的校验和不匹配。"
     IDS_ERROR_SERVER "Microsoft 更新目录返回了意外的应答。"
     IDS_ERROR_CANCELLED "已取消。"
     IDS_ERROR_NOT_BETTER "已安装的驱动程序与此设备更匹配。"
     IDS_ERROR_NO_COMPAT "此程序包中没有适用于此电脑上该设备的驱动程序。"
-    IDS_ERROR_FORMAT "Microsoft 更新目录页面已更改，无法读取。LiberNT 驱动程序安装程序需要更新。"
+    IDS_ERROR_FORMAT "Microsoft 更新目录页面已更改，无法读取。NextNT 驱动程序安装程序需要更新。"
     IDS_ERROR_PROGRAM "此目录程序包是一个程序，而不是驱动程序包。如果你信任它，请自行运行。"
     IDS_ERROR_ALREADY "此驱动程序已安装。"
     IDS_ERROR_NOT_NEWER "已安装的驱动程序比此驱动程序更新。"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ole32.dll
+ * PROJECT:     NextNT ole32.dll
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     x86 thiscall wrappers for MSVC builds
  * COPYRIGHT:   Copyright 2019 Alexandre Julliard

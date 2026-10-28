@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     UEFI memory map and boot services exit
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -22,7 +22,7 @@ typedef struct _UEFI_RUNTIME_RANGE
 static EFI_MEMORY_DESCRIPTOR* UefiMap;
 static UINTN UefiMapCapacity;
 static UINT32 UefiMapDescriptorVersion;
-static PFREELDR_MEMORY_DESCRIPTOR UefiLoaderMap;
+static PNEXTLDR_MEMORY_DESCRIPTOR UefiLoaderMap;
 static UINTN UefiLoaderMapCapacity;
 static UEFI_RUNTIME_RANGE UefiRuntimeRanges[UEFI_MAX_RUNTIME_RANGES];
 static ULONG UefiRuntimeRangeCount;
@@ -107,7 +107,7 @@ UefiReadMemoryMap(
     return FALSE;
 }
 
-FREELDR_MEMORY_DESCRIPTOR*
+NEXTLDR_MEMORY_DESCRIPTOR*
 UefiMemGetMemoryMap(
     PULONG MaxMemoryMapSize)
 {
@@ -162,7 +162,7 @@ UefiMemGetMemoryMap(
     return UefiLoaderMap;
 }
 
-FREELDR_MEMORY_DESCRIPTOR*
+NEXTLDR_MEMORY_DESCRIPTOR*
 FwGetMemoryMap(
     _Out_ PULONG Count)
 {

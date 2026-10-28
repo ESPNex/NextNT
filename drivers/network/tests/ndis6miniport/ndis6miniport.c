@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NDIS 6.20 miniport test driver
+ * PROJECT:     NextNT NDIS 6.20 miniport test driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        drivers/network/tests/ndis6miniport/ndis6miniport.c
  * PURPOSE:     Minimal synthetic NDIS 6.20 miniport. Pretends to be an

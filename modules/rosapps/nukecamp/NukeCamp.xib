@@ -739,7 +739,7 @@
 												<object class="NSButtonCell" key="NSCell" id="402221401">
 													<int key="NSCellFlags">67239424</int>
 													<int key="NSCellFlags2">134217728</int>
-													<string key="NSContents" id="330069921">FreeLDR Option</string>
+													<string key="NSContents" id="330069921">NextLDR Option</string>
 													<reference key="NSSupport" ref="754270577"/>
 													<reference key="NSControlView" ref="898570947"/>
 													<int key="NSButtonFlags">-2038284033</int>
@@ -819,7 +819,7 @@
 												<object class="NSTextFieldCell" key="NSCell" id="1004037041">
 													<int key="NSCellFlags">67239488</int>
 													<int key="NSCellFlags2">272630784</int>
-													<string key="NSContents">You will be able to customize your FreeLDR startup options on this Tab</string>
+													<string key="NSContents">You will be able to customize your NextLDR startup options on this Tab</string>
 													<reference key="NSSupport" ref="754270577"/>
 													<reference key="NSControlView" ref="499985034"/>
 													<reference key="NSBackgroundColor" ref="619702877"/>

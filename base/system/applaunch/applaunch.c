@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Application Disk Launcher
+ * PROJECT:     NextNT Application Disk Launcher
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Runs the launcher of an attached application disk at logon
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -15,7 +15,7 @@
 #define SMBIOS_OEM_STRINGS 11
 #define SMBIOS_END_OF_TABLE 127
 
-static const CHAR TestRunString[] = "libernt.applaunch";
+static const CHAR TestRunString[] = "nextnt.applaunch";
 
 static BOOL
 IsTestRun(VOID)

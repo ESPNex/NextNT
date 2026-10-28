@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Boot manager main routine
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -20,7 +20,7 @@
 
 static const PCWSTR BmStorePaths[] =
 {
-    L"\\EFI\\LiberNT\\Boot\\BCD",
+    L"\\EFI\\NextNT\\Boot\\BCD",
     L"\\Boot\\BCD",
 };
 
@@ -171,7 +171,7 @@ BmBuildMenu(VOID)
 
         BmNames[i][j] = ANSI_NULL;
         BmMenuNames[i] = BmNames[i];
-        BmMenuIcons[i] = !BmEntries[i].FirmwareDevice ? UiMenuIconLiberNT :
+        BmMenuIcons[i] = !BmEntries[i].FirmwareDevice ? UiMenuIconNextNT :
                          BmLogos[i].Pixels ? UiMenuIconImage : UiMenuIconDesktop;
         BmMenuImages[i] = BmLogos[i].Pixels ? &BmLogos[i] : NULL;
     }

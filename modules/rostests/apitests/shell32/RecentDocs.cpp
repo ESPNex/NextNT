@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests recent documents and application document lists
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -11,7 +11,7 @@
 #include <knownfolders.h>
 #include <stdio.h>
 
-static const WCHAR g_AppId[] = L"LiberNT.ApiTest.RecentDocs";
+static const WCHAR g_AppId[] = L"NextNT.ApiTest.RecentDocs";
 static WCHAR g_File[MAX_PATH];
 static WCHAR g_Name[MAX_PATH];
 
@@ -148,7 +148,7 @@ TestDocumentLists(void)
 }
 
 static const WCHAR g_Ext[] = L".lntrecentdoc";
-static const WCHAR g_ProgId[] = L"LiberNT.ApiTest.RecentDocs.Document";
+static const WCHAR g_ProgId[] = L"NextNT.ApiTest.RecentDocs.Document";
 
 static BOOL
 WaitForListed(IApplicationDocumentLists *Lists, LPCWSTR Path, BOOL Expected, DWORD Milliseconds)

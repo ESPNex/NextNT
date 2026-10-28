@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Runtime
+ * PROJECT:     NextNT Windows Runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Per-session notification host that shows popups and delivers scheduled toasts
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -22,7 +22,7 @@ static BOOL host_mutex_name(WCHAR *name, DWORD size)
     if (GetTokenInformation(token, TokenUser, user, sizeof(buffer), &length) &&
         ConvertSidToStringSidW(user->User.Sid, &sid))
     {
-        swprintf(name, size, L"Local\\LiberNT.NotificationHost.%ls", sid);
+        swprintf(name, size, L"Local\\NextNT.NotificationHost.%ls", sid);
         LocalFree(sid);
         result = TRUE;
     }

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT volume resize library
+ * PROJECT:     NextNT volume resize library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shrink and extend basic NTFS volumes through the documented FSCTLs
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

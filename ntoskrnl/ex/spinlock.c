@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Operating System
+ * PROJECT:         NextNT Operating System
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Executive shared/exclusive spin locks
  * COPYRIGHT:       Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

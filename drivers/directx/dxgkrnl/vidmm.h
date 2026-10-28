@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT WDDM DirectX Graphics Kernel
+ * PROJECT:     NextNT WDDM DirectX Graphics Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Video Memory Manager (VidMm) private types and prototypes
- * COPYRIGHT:   Copyright 2024 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024 NextNT WDDM Team
  *
  * This header is included only by vidmm.c and adapter.c (which calls
  * DxgkVidMmInitializeAdapter / DxgkVidMmTeardownAdapter at adapter lifecycle

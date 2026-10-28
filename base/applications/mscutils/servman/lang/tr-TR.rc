@@ -271,10 +271,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROGRESS_INFO_START "LiberNT, aşağıdaki hizmeti başlatmaya çalışıyor:"
-    IDS_PROGRESS_INFO_STOP "LiberNT, aşağıdaki hizmeti durdurmaya çalışıyor:"
-    IDS_PROGRESS_INFO_PAUSE "LiberNT, aşağıdaki hizmeti duraklatmaya çalışıyor:"
-    IDS_PROGRESS_INFO_RESUME "LiberNT, aşağıdaki hizmeti devam ettirmeye çalışıyor:"
+    IDS_PROGRESS_INFO_START "NextNT, aşağıdaki hizmeti başlatmaya çalışıyor:"
+    IDS_PROGRESS_INFO_STOP "NextNT, aşağıdaki hizmeti durdurmaya çalışıyor:"
+    IDS_PROGRESS_INFO_PAUSE "NextNT, aşağıdaki hizmeti duraklatmaya çalışıyor:"
+    IDS_PROGRESS_INFO_RESUME "NextNT, aşağıdaki hizmeti devam ettirmeye çalışıyor:"
     IDS_CREATE_SUCCESS "Hizmet, başarıyla oluşturuldu."
     IDS_DELETE_SUCCESS "Hizmet, başarıyla silindi."
     IDS_CREATE_REQ "Yıldızla belirtilen\nyerler zorunludur."

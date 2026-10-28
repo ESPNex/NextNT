@@ -90,7 +90,7 @@ BEGIN
     END
     POPUP "&Aide", FCIDM_MENU_HELP
     BEGIN
-        MENUITEM "À &propos de LiberNT", IDM_HELP_ABOUT
+        MENUITEM "À &propos de NextNT", IDM_HELP_ABOUT
     END
 END
 
@@ -344,8 +344,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "Explorateur LiberNT"
-    IDS_PARSE_ADDR_ERR_TEXT "LiberNT ne parvient pas à trouver '%1'. Vérifiez l'orthographe et réessayer."
+    IDS_PARSE_ADDR_ERR_TITLE "Explorateur NextNT"
+    IDS_PARSE_ADDR_ERR_TEXT "NextNT ne parvient pas à trouver '%1'. Vérifiez l'orthographe et réessayer."
 END
 
 STRINGTABLE

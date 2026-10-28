@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Configuration Data boot file creation tool
+ * PROJECT:     NextNT Boot Configuration Data boot file creation tool
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Provides the BCDBoot command and system image contract
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

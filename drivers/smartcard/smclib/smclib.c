@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Smart Card Driver Library
+ * PROJECT:     NextNT Smart Card Driver Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Initialization, remove lock and device control dispatch
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

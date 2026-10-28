@@ -11,7 +11,7 @@
     .balign 4
     .global KiSystemStartup
 KiSystemStartup:
-    /* FreeLdr supplies a0 and the aligned resident boot stack. Keep every
+    /* NextLdr supplies a0 and the aligned resident boot stack. Keep every
      * supervisor interrupt source masked until the C consumer validates and
      * publishes the PCR and trap-vector contract. */
     csrci sstatus, 2

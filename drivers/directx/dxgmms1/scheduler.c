@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT DirectX GPU Memory Manager and Scheduler
+ * PROJECT:     NextNT DirectX GPU Memory Manager and Scheduler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GPU command scheduler for dxgmms1.sys
- * COPYRIGHT:   Copyright 2024-2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2024-2026 NextNT Team
  *
  * This file implements the GPU command scheduling callbacks:
  *   DxgkMmsScheduleCommand()   — enqueue a DMA command buffer

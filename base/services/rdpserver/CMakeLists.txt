@@ -1,4 +1,4 @@
-# PROJECT:     LiberNT RDP console server
+# PROJECT:     NextNT RDP console server
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Stage a MinGW build of the RDP console server into the images
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

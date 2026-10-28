@@ -1,10 +1,10 @@
 /*
- * PROJECT:     LiberNT DirectX GPU Memory Manager and Scheduler
+ * PROJECT:     NextNT DirectX GPU Memory Manager and Scheduler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WDDM GPU paging engine
  *              Moves allocations between VRAM and system RAM by constructing
  *              and submitting paging DMA buffers to the GPU copy engine.
- * COPYRIGHT:   Copyright 2024 LiberNT Team
+ * COPYRIGHT:   Copyright 2024 NextNT Team
  *
  * ARCHITECTURE NOTES (amd64/x86)
  * --------------------------------

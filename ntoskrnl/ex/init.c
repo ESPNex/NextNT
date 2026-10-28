@@ -293,7 +293,7 @@ ExpInitNls(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
                 /* Increase the table size */
                 ExpNlsTableSize += MdBlock->PageCount * PAGE_SIZE;
 
-                /* FreeLdr-specific */
+                /* NextLdr-specific */
                 NlsTableSizes[NlsTablesEncountered] = MdBlock->PageCount * PAGE_SIZE;
                 NlsTablesEncountered++;
                 ASSERT(NlsTablesEncountered < 4);
@@ -321,7 +321,7 @@ ExpInitNls(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
         {
             /*
             * In NT, the memory blocks are contiguous, but in ReactOS they aren't,
-            * so unless someone fixes FreeLdr, we'll have to use this icky hack.
+            * so unless someone fixes NextLdr, we'll have to use this icky hack.
             */
             RtlCopyMemory(ExpNlsTableBase,
                           LoaderBlock->NlsData->AnsiCodePageData,

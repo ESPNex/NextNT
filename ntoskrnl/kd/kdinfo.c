@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel
+ * PROJECT:     NextNT Kernel
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Machine description the network debugger serves while the system keeps running
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -409,7 +409,7 @@ KdpInfoBuildSystem(VOID)
     ULONG Length = 0;
 
     KdpInfoAppend(KdpInfoText, sizeof(KdpInfoText), &Length,
-                  "os=LiberNT %s\nbuild=%s\nrevision=%s\nnt=%lu.%lu.%lu\narchitecture=%u\n"
+                  "os=NextNT %s\nbuild=%s\nrevision=%s\nnt=%lu.%lu.%lu\narchitecture=%u\n"
                   "processors=%lu\nmemory_mb=%lu\nuptime=%lu\n",
                   KERNEL_VERSION_STR, NtBuildLab, KERNEL_VERSION_COMMIT_HASH,
                   SharedUserData->NtMajorVersion, SharedUserData->NtMinorVersion, NtBuildNumber & 0xFFFF,

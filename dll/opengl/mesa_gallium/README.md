@@ -54,7 +54,7 @@ The FEX runtime builds a separate ARM64EC copy of the shared ICD. The nested
 KMT support build disables the shared ICD to prevent recursive builds.
 There is no separate Softpipe build option. `ENABLE_MESA_LLVMPIPE` alone
 keeps this DLL unchanged and packages the prebuilt `mesa_llvmpipe.dll` and
-Lavapipe Vulkan ICD from the LiberNT release payload, with `mesa_llvmpipe.dll`
+Lavapipe Vulkan ICD from the NextNT release payload, with `mesa_llvmpipe.dll`
 as the `MSOGL` fallback. Adding `MESA_LLVMPIPE_FROM_SOURCE` selects LLVMpipe
 inside the same ICD and also packages the separate Lavapipe Vulkan ICD and
 Khronos loader.

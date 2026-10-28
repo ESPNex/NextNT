@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT Kernel32.dll
+ * PROJECT:     NextNT Kernel32.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GetLogicalProcessorInformationEx
- * COPYRIGHT:   Copyright 2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2026 NextNT Team
  */
 
 #include "k32_vista.h"

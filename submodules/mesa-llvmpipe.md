@@ -27,8 +27,8 @@ consume it. Current build support is llvm-mingw Clang, AMD64 or native ARM64.
 ### Release payload (default)
 
 `ENABLE_MESA_LLVMPIPE=ON` alone builds nothing from LLVM or Mesa. Configure
-downloads `libernt-mesa-llvmpipe-<release>-<arch>.zip` from the
-`mesa-llvmpipe-<release>` LiberNT GitHub release, verifies the SHA-256 pinned in
+downloads `nextnt-mesa-llvmpipe-<release>-<arch>.zip` from the
+`mesa-llvmpipe-<release>` NextNT GitHub release, verifies the SHA-256 pinned in
 `submodules/mesa-llvmpipe-payload.cmake`, and packages:
 
 - `mesa_llvmpipe.dll`: an LLVMpipe-only WGL ICD registered as the `MSOGL`

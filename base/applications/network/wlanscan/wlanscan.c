@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native WiFi
+ * PROJECT:     NextNT Native WiFi
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Command-line scan of available 802.11 networks
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -203,7 +203,7 @@ wmain(int argc, WCHAR *argv[])
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);
 
-    wprintf(L"LiberNT Native WiFi scan\n\n");
+    wprintf(L"NextNT Native WiFi scan\n\n");
 
     dwResult = WlanOpenHandle(WLAN_API_VERSION_2_0, NULL, &dwVersion, &hClient);
     if (dwResult != ERROR_SUCCESS)

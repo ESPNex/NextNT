@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Media Foundation decoders
+ * PROJECT:     NextNT Media Foundation decoders
  * FILE:        dll/win32/msmpeg2vdec/ffmpeg.c
  * PURPOSE:     Wine's decoder transform interface implemented with libavcodec
  *

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests the Direct3D 8 line pattern capability and its effect on drawing
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

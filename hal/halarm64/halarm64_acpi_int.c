@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT HAL (ARM64)
+ * PROJECT:         NextNT HAL (ARM64)
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            hal/halarm64/halarm64_acpi_int.c
  * PURPOSE:         ACPI interrupt routing for ARM64 GIC

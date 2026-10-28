@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT GPIO consumer interface
+ * PROJECT:     NextNT GPIO consumer interface
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows-compatible GPIO connection IOCTL definitions
  */

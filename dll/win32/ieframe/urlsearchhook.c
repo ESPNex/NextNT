@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ieframe
+ * PROJECT:     NextNT ieframe
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Default URL search hook (IURLSearchHook2)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

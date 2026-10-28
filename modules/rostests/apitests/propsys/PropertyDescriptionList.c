@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests property descriptions and property description lists
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -55,7 +55,7 @@ TestNames(void)
     ok(IsEqualPropertyKey(Key, PKEY_Size), "System.Size key mismatch\n");
     ok_hr(PSGetPropertyKeyFromName(L"System.ItemNameDisplay", &Key), S_OK);
     ok(IsEqualPropertyKey(Key, PKEY_ItemNameDisplay), "System.ItemNameDisplay key mismatch\n");
-    ok(FAILED(PSGetPropertyKeyFromName(L"System.LiberNT.DoesNotExist", &Key)), "unknown name resolved\n");
+    ok(FAILED(PSGetPropertyKeyFromName(L"System.NextNT.DoesNotExist", &Key)), "unknown name resolved\n");
     ok_hr(PSGetNameFromPropertyKey(&PKEY_DateModified, &Name), S_OK);
     ok(Name && !wcscmp(Name, L"System.DateModified"), "name %ls\n", Name);
     CoTaskMemFree(Name);
@@ -158,7 +158,7 @@ TestLists(void)
     Count = ListCount(L"prop:", &hr);
     ok_hr(hr, S_OK);
     ok_int(Count, 0);
-    Count = ListCount(L"prop:System.LiberNT.DoesNotExist;System.Size", &hr);
+    Count = ListCount(L"prop:System.NextNT.DoesNotExist;System.Size", &hr);
     trace("unknown entry: hr %#lx count %d\n", hr, (int)Count);
     Count = ListCount(L"System.Size", &hr);
     trace("missing prefix: hr %#lx count %d\n", hr, (int)Count);
@@ -235,7 +235,7 @@ TestEnums(void)
         hr = IPropertyEnumTypeList_FindMatchingIndex(List, &Value, &Index);
         ok_hr(hr, S_OK);
         ok_int(Index, 14);
-        Value.pwszVal = L"liberntnokind";
+        Value.pwszVal = L"nextntnokind";
         Index = 77;
         hr = IPropertyEnumTypeList_FindMatchingIndex(List, &Value, &Index);
         trace("unknown kind: hr %#lx index %u\n", hr, Index);

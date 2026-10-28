@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT host-side miniport tests
+ * PROJECT:     NextNT host-side miniport tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Exercise the production queue handoff with simulated hardware.
  *

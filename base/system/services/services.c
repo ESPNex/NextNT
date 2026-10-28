@@ -127,7 +127,7 @@ CheckForLiveCD(VOID)
 
     if (dwSetupInProgress == 1)
     {
-        DPRINT("LiberNT Setup currently in progress!\n");
+        DPRINT("NextNT Setup currently in progress!\n");
         ScmSetupInProgress = TRUE;
     }
 

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT USB RNDIS Network Driver
+ * PROJECT:     NextNT USB RNDIS Network Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     USB RNDIS class driver header
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

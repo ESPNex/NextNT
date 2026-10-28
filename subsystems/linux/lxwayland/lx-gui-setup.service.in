@@ -1,6 +1,6 @@
 [Unit]
-Description=LiberNT GUI package setup
-ConditionPathExists=!/var/lib/libernt/gui-setup-done
+Description=NextNT GUI package setup
+ConditionPathExists=!/var/lib/nextnt/gui-setup-done
 
 [Service]
 Type=oneshot
@@ -12,8 +12,8 @@ ExecStart=-/usr/bin/gtk-update-icon-cache -q -t -f /usr/share/icons/Adwaita
 ExecStart=-/usr/bin/update-mime-database /usr/share/mime
 ExecStart=-/usr/bin/fc-cache -s
 ExecStart=-/usr/bin/update-desktop-database -q /usr/share/applications
-ExecStart=/usr/bin/mkdir -p /var/lib/libernt
-ExecStart=/usr/bin/touch /var/lib/libernt/gui-setup-done
+ExecStart=/usr/bin/mkdir -p /var/lib/nextnt
+ExecStart=/usr/bin/touch /var/lib/nextnt/gui-setup-done
 RemainAfterExit=yes
 StandardOutput=journal+console
 

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT user-mode display drivers
+ * PROJECT:     NextNT user-mode display drivers
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Optional video backend contract for the linear WDDM UMD core
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

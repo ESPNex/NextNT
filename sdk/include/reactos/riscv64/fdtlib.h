@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT RISC-V Platform Support
+ * PROJECT:     NextNT RISC-V Platform Support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     Bounded read-only flattened-device-tree navigation
@@ -7,7 +7,7 @@
  * Every function validates offsets against the structure and strings blocks
  * before dereferencing. Node handles are byte offsets of FDT_BEGIN_NODE
  * tokens inside the structure block; RISCV_FDT_NO_NODE means "none".
- * This header is shared by FreeLdr, the kernel and the HAL, so it depends
+ * This header is shared by NextLdr, the kernel and the HAL, so it depends
  * only on the base NT scalar types and <reactos/riscv64/fdt.h>.
  */
 

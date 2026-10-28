@@ -1,10 +1,10 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Extended D3DKMT synchronization-object matrix and keyed-mutex
  *              lifecycle tests (goes deeper/wider than d3dkmt_sync.c / sync2.c /
  *              surface.c, which only cover the basic NULL contracts).
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Two groups:
  *

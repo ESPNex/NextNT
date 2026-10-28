@@ -1468,7 +1468,7 @@ static struct decoder_pattern const tiff_patterns[] = {
 
 static struct regsvr_decoder const decoder_list[] = {
     {   &CLSID_WICWmpDecoder,
-        "LiberNT",
+        "NextNT",
         "JPEG XR Decoder",
         "1.0.0.0",
         &GUID_VendorMicrosoft,
@@ -1617,7 +1617,7 @@ static GUID const * const tiff_encode_formats[] = {
 
 static struct regsvr_encoder const encoder_list[] = {
     {   &CLSID_WICWmpEncoder,
-        "LiberNT",
+        "NextNT",
         "JPEG XR Encoder",
         "1.0.0.0",
         &GUID_VendorMicrosoft,
@@ -1999,7 +1999,7 @@ static const struct reader_containers xmpalt_containers[] = {
 
 static struct regsvr_metadatareader const metadatareader_list[] = {
     {   &CLSID_WICXMPStructMetadataReader,
-        "LiberNT",
+        "NextNT",
         "XMP Struct Reader",
         "1.0.0.0",
         "1.0.0.0",
@@ -2009,7 +2009,7 @@ static struct regsvr_metadatareader const metadatareader_list[] = {
         xmpstruct_containers
     },
     {   &CLSID_WICXMPBagMetadataReader,
-        "LiberNT",
+        "NextNT",
         "XMP Bag Reader",
         "1.0.0.0",
         "1.0.0.0",
@@ -2019,7 +2019,7 @@ static struct regsvr_metadatareader const metadatareader_list[] = {
         xmpbag_containers
     },
     {   &CLSID_WICXMPSeqMetadataReader,
-        "LiberNT",
+        "NextNT",
         "XMP Seq Reader",
         "1.0.0.0",
         "1.0.0.0",
@@ -2029,7 +2029,7 @@ static struct regsvr_metadatareader const metadatareader_list[] = {
         xmpseq_containers
     },
     {   &CLSID_WICXMPAltMetadataReader,
-        "LiberNT",
+        "NextNT",
         "XMP Alt Reader",
         "1.0.0.0",
         "1.0.0.0",

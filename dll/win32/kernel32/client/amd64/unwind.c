@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT System Libraries
+ * PROJECT:     NextNT System Libraries
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     AMD64 table-based step of the unhandled exception trace
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

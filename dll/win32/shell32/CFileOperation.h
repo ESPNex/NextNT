@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT shell32
+ * PROJECT:     NextNT shell32
  * LICENSE:     GPL-3.0-or-later
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     Public queued shell file operations

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CYW43455 SDIO Function Transport
+ * PROJECT:     NextNT CYW43455 SDIO Function Transport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private interface between the CYW43455 function drivers
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel
+ * PROJECT:         NextNT Kernel
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            ntoskrnl/ke/arm64/early_uart.c
  * PURPOSE:         ARM64 early UART runtime state for kernel
@@ -20,7 +20,7 @@ volatile UINT32 EarlyUartRxCachedBytes = 0;
 volatile UINT32 EarlyUartRxCachedByteCount = 0;
 
 /*
- * Kernel never re-detects at runtime. FreeLDR did the SPCR/DBG2 walk and
+ * Kernel never re-detects at runtime. NextLDR did the SPCR/DBG2 walk and
  * passed the result through LoaderBlock; KiSystemStartup populates the
  * globals from it. These functions exist only to satisfy callers that
  * happen to use the shared early_uart.h API (e.g. KdPortInitializeEx

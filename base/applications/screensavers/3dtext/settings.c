@@ -22,7 +22,7 @@
 
 #include <winreg.h>
 
-TCHAR g_Text[MAX_TEXT_LENGTH + 1] = _T("LiberNT Rocks!");
+TCHAR g_Text[MAX_TEXT_LENGTH + 1] = _T("NextNT Rocks!");
 
 VOID LoadSettings(VOID)
 {

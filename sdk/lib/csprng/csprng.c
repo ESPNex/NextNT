@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CSPRNG Library
+ * PROJECT:     NextNT CSPRNG Library
  * LICENSE:     GPL-3.0-only (https://spdx.org/licenses/GPL-3.0-only)
  * PURPOSE:     Kernel-seeded process random number generator
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

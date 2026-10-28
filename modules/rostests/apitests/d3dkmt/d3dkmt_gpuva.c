@@ -1,9 +1,9 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WDDM 2.0 GPU virtual addressing tests
  *              (Reserve / Map / Free / Update GpuVirtualAddress)
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * GPU virtual addressing is the defining WDDM 2.0 feature: each device owns a
  * per-process GPU virtual address space, into which allocations are mapped at

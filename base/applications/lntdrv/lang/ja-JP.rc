@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Driver Installer
+ * PROJECT:     NextNT Driver Installer
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -9,7 +9,7 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 
 IDD_FRAME DIALOGEX 0, 0, 420, 240
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "LiberNT ドライバー インストーラー"
+CAPTION "NextNT ドライバー インストーラー"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "", IDC_FRAME_TITLE, 120, 10, 290, 14, SS_NOPREFIX
@@ -71,7 +71,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_CAPTION "LiberNT ドライバー インストーラー"
+    IDS_CAPTION "NextNT ドライバー インストーラー"
     IDS_BACK "戻る(&B)"
     IDS_NEXT "次へ(&N)"
     IDS_CANCEL "キャンセル"
@@ -84,7 +84,7 @@ BEGIN
     IDS_DONE_TITLE "完了しました"
     IDS_DONE_SUBTITLE "各デバイスの結果です。"
     IDS_HISTORY_TITLE "カタログからインストールされたドライバー"
-    IDS_HISTORY_SUBTITLE "LiberNT ドライバー インストーラーがこの PC に加えたすべての変更 (新しい順)。"
+    IDS_HISTORY_SUBTITLE "NextNT ドライバー インストーラーがこの PC に加えたすべての変更 (新しい順)。"
     IDS_COL_DEVICE "デバイス"
     IDS_COL_VERSION "バージョン"
     IDS_COL_DRIVER "ドライバー"
@@ -113,20 +113,20 @@ BEGIN
     IDS_ACTION_ROLLBACK "ロールバック"
     IDS_ACTION_REMOVE "削除"
     IDS_ROLLBACK_CONFIRM "%1 が以前に使用していたドライバー (バージョン %2) に戻しますか?"
-    IDS_REMOVE_CONFIRM "%1 からカタログのドライバーを削除しますか? その後、LiberNT はこのデバイス用に残っている最適なドライバーをインストールします。"
+    IDS_REMOVE_CONFIRM "%1 からカタログのドライバーを削除しますか? その後、NextNT はこのデバイス用に残っている最適なドライバーをインストールします。"
     IDS_ACTION_DONE "完了しました。"
     IDS_ACTION_DONE_REBOOT "完了しました。完了するには PC を再起動してください。"
     IDS_ACTION_FAILED "変更に失敗しました: %1"
     IDS_HISTORY_WORKING "処理中..."
     IDS_ADMIN_REQUIRED "ドライバーのインストールと削除には管理者権限が必要です。"
-    IDS_ADMIN_RESTART "LiberNT ドライバー インストーラーを管理者として再起動しますか?"
+    IDS_ADMIN_RESTART "NextNT ドライバー インストーラーを管理者として再起動しますか?"
     IDS_WORKER_FAILED "ワーカー スレッドを開始できません: %1"
     IDS_ERROR_CHECKSUM "ダウンロードした内容が、カタログで公開されているチェックサムと一致しません。"
     IDS_ERROR_SERVER "Microsoft Update カタログから予期しない応答が返されました。"
     IDS_ERROR_CANCELLED "キャンセルされました。"
     IDS_ERROR_NOT_BETTER "既にインストールされているドライバーの方がこのデバイスに適合しています。"
     IDS_ERROR_NO_COMPAT "このパッケージには、この PC 上のこのデバイス用のドライバーがありません。"
-    IDS_ERROR_FORMAT "Microsoft Update カタログのページが変更されたため読み取れません。LiberNT ドライバー インストーラーの更新が必要です。"
+    IDS_ERROR_FORMAT "Microsoft Update カタログのページが変更されたため読み取れません。NextNT ドライバー インストーラーの更新が必要です。"
     IDS_ERROR_PROGRAM "このカタログ パッケージはドライバー パッケージではなくプログラムです。信頼できる場合はご自身で実行してください。"
     IDS_ERROR_ALREADY "このドライバーは既にインストールされています。"
     IDS_ERROR_NOT_NEWER "インストールされているドライバーの方が新しいです。"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SD/SDIO/eMMC Bus Driver
+ * PROJECT:     NextNT SD/SDIO/eMMC Bus Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     eMMC CMD6 SWITCH helpers, partition switching, SANITIZE hook,
  *              per-partition child PDO enumeration.

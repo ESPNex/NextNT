@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Build Tools
+ * PROJECT:     NextNT Build Tools
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Replace the COFF symbol table of an image by a compressed .symz section
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

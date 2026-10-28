@@ -82,7 +82,7 @@ BEGIN
     END
     POPUP "Ya&rdım", FCIDM_MENU_HELP
     BEGIN
-        MENUITEM "&LiberNT Hakkında", IDM_HELP_ABOUT
+        MENUITEM "&NextNT Hakkında", IDM_HELP_ABOUT
     END
 END
 
@@ -336,8 +336,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "LiberNT Gezgini"
-    IDS_PARSE_ADDR_ERR_TEXT "LiberNT Gezgini '%1' ögesini bulamadı. Girdiğiniz değeri kontrol edin ve yeniden arayın."
+    IDS_PARSE_ADDR_ERR_TITLE "NextNT Gezgini"
+    IDS_PARSE_ADDR_ERR_TEXT "NextNT Gezgini '%1' ögesini bulamadı. Girdiğiniz değeri kontrol edin ve yeniden arayın."
 END
 
 STRINGTABLE

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Realtek Bluetooth firmware library
+ * PROJECT:     NextNT Realtek Bluetooth firmware library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Realtek controller identification and patch download shared by the Bluetooth transports
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

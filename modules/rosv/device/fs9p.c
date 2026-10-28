@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VMX Hypervisor Driver
+ * PROJECT:     NextNT VMX Hypervisor Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Filesystem mount table and network port forwarding table
  * COPYRIGHT:   Copyright 2025-2026 Ahmed Arif

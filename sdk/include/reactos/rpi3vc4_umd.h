@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 3 VC4 private UMD/KMD contracts
+ * PROJECT:     NextNT Raspberry Pi 3 VC4 private UMD/KMD contracts
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Vendor-private D3DKMT escape ABI shared by the VC4 miniport,
  *              its matching user-mode driver, and focused hardware tests

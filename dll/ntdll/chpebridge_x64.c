@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ARM64EC runtime
+ * PROJECT:     NextNT ARM64EC runtime
  * PURPOSE:     AMD64 entry helpers which cannot use generated ARM64EC thunks
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

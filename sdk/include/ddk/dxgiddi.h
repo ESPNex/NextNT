@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT SDK
+ * PROJECT:     NextNT SDK
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DXGI shared user-mode display driver declarations
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * This is the kernel-safe subset of the public DXGI DDI contract needed by
  * display miniports when exchanging primary allocation data with a UMD.

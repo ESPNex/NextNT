@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT DirectX Graphics Kernel
+ * PROJECT:     NextNT DirectX Graphics Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GPU Virtual Address Space Management (WDDM 2.0)
- * COPYRIGHT:   Copyright 2024 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024 NextNT WDDM Team
  *
  * This file implements the software bookkeeping half of per-process WDDM 2.0
  * GPU virtual address management.  Reservations and update-operation planning

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Monitor Class Function Driver
+ * PROJECT:     NextNT Monitor Class Function Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared definitions of the monitor function driver
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

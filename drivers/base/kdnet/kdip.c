@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Network Kernel Debugger Transport
+ * PROJECT:     NextNT Network Kernel Debugger Transport
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Polled Ethernet, ARP, IPv4, ICMP echo, UDP and DHCP client
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

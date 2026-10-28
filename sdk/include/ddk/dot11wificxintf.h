@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DDK
+ * PROJECT:     NextNT DDK
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WiFiCx 802.11 interface definitions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

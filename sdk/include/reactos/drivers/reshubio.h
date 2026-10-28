@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Resource Hub private interface
+ * PROJECT:     NextNT Resource Hub private interface
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Connection registration shared by firmware enumerators
  */

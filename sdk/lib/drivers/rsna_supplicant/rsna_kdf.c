@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native WiFi - RSNA (WPA2-PSK) supplicant
+ * PROJECT:     NextNT Native WiFi - RSNA (WPA2-PSK) supplicant
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     PBKDF2-HMAC-SHA1 (RFC 2898) and IEEE 802.11i PRF.
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

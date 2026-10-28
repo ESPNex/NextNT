@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SD/MMC Storage Class Driver
+ * PROJECT:     NextNT SD/MMC Storage Class Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Main header for sffdisk.sys
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

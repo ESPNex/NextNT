@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Zip Shell Extension
+ * PROJECT:     NextNT Zip Shell Extension
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Data object exposing zip entries as file descriptors and content streams
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

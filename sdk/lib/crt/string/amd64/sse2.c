@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT library
+ * PROJECT:     NextNT CRT library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     SSE2 string and wide string routines for AMD64
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Driver Installer
+ * PROJECT:     NextNT Driver Installer
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Device inventory, driver package install and install history
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -24,8 +24,8 @@ namespace lntdrv
 namespace
 {
 
-const WCHAR HistoryKey[] = L"SOFTWARE\\LiberNT\\Drivers\\History";
-const WCHAR NamesKey[] = L"SOFTWARE\\LiberNT\\Drivers\\Names";
+const WCHAR HistoryKey[] = L"SOFTWARE\\NextNT\\Drivers\\History";
+const WCHAR NamesKey[] = L"SOFTWARE\\NextNT\\Drivers\\Names";
 const WCHAR DownloadsSecurity[] = L"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)";
 const size_t MaximumInfSize = 16 * 1024 * 1024;
 const DWORD MsiTimeout = 10 * 60 * 1000;
@@ -672,7 +672,7 @@ std::wstring DownloadsRoot()
 
     if (FAILED(SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, root)))
         return std::wstring();
-    return std::wstring(root) + L"\\LiberNT\\Drivers";
+    return std::wstring(root) + L"\\NextNT\\Drivers";
 }
 
 std::wstring PackageDirectory(const std::wstring &updateId)

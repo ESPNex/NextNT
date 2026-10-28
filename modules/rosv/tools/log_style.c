@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VMX Hypervisor Launcher tools
+ * PROJECT:     NextNT VMX Hypervisor Launcher tools
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared console log styling helpers
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

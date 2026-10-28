@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT
+ * PROJECT:     NextNT
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Bridge between the SD port engine and Windows-contract miniports
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

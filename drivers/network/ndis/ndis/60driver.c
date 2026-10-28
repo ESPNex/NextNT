@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NDIS library
+ * PROJECT:     NextNT NDIS library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        drivers/network/ndis/ndis/60driver.c
  * PURPOSE:     NDIS 6 miniport driver registration + PnP dispatcher.

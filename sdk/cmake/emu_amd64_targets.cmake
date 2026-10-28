@@ -1,4 +1,4 @@
-# PROJECT:     LiberNT Build System
+# PROJECT:     NextNT Build System
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Define the AMD64 guest runtime shipped beside the AMD64 emulator
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

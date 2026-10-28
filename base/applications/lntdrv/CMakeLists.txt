@@ -9,7 +9,7 @@ file(GLOB lntdrv_rc_deps lang/*.rc)
 add_rc_deps(lntdrv.rc ${lntdrv_rc_deps}
     ${CMAKE_CURRENT_SOURCE_DIR}/lntdrv.exe.manifest
     ${CMAKE_CURRENT_SOURCE_DIR}/../mscutils/devmgmt/devmgmt.ico
-    ${REACTOS_SOURCE_DIR}/base/setup/libernt/res/watermark.bmp)
+    ${REACTOS_SOURCE_DIR}/base/setup/nextnt/res/watermark.bmp)
 add_executable(lntdrv ${SOURCE} lntdrv.rc)
 set_property(TARGET lntdrv PROPERTY CXX_STANDARD 17)
 set_property(TARGET lntdrv PROPERTY CXX_STANDARD_REQUIRED ON)

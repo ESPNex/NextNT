@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native WiFi - RSNA supplicant
+ * PROJECT:     NextNT Native WiFi - RSNA supplicant
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     IEEE 802.11 CCMP-128 and BIP-CMAC-128 frame protection
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

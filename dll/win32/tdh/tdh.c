@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Trace Data Helper
+ * PROJECT:     NextNT Trace Data Helper
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Event schema lookup for ETW consumers
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

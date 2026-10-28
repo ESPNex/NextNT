@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Test for LdrGetDllHandleByName
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -56,7 +56,7 @@ START_TEST(LdrGetDllHandleByName)
     ok(Status == STATUS_DLL_NOT_FOUND, "base name without extension: status 0x%08lx\n", Status);
     ok(Handle == (PVOID)1, "base name without extension: handle %p\n", Handle);
 
-    Status = ByName(L"liberntnotloaded.dll", NULL, &Handle);
+    Status = ByName(L"nextntnotloaded.dll", NULL, &Handle);
     ok(Status == STATUS_DLL_NOT_FOUND, "module not loaded: status 0x%08lx\n", Status);
     ok(Handle == (PVOID)1, "module not loaded: handle %p\n", Handle);
 

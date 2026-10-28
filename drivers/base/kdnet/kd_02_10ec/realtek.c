@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Realtek Network Kernel Debugger Extension
+ * PROJECT:     NextNT Realtek Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Polled Realtek RTL8139C+, RTL8169 and RTL8168 Ethernet controller driver
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

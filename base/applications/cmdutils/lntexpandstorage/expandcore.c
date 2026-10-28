@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT storage expansion tool
+ * PROJECT:     NextNT storage expansion tool
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Grow the last MBR partition and its NTFS volume to the end of the disk
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

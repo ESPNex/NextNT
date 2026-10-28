@@ -9,7 +9,7 @@ STRINGTABLE
 
 STRINGTABLE
 {
-2000, "LiberNT 預設 (淺色)"
+2000, "NextNT 預設 (淺色)"
 }
 
 STRINGTABLE
@@ -28,12 +28,12 @@ STRINGTABLE
 
 STRINGTABLE
 {
-5000, "LiberNT 預設"
+5000, "NextNT 預設"
 5001, "視覺樣式"
 5002, "ReactOS Project"
 5003, "Foxlet, 基於 Lautus"
 5004, "於 2019 年以 GNU/GPL 2.0 條款發行"
 5005, "https://reactos.org/"
 5006, "1.0"
-5007, "LiberNT 的視覺樣式"
+5007, "NextNT 的視覺樣式"
 }

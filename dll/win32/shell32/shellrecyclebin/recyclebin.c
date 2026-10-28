@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Shell
+ * PROJECT:     NextNT Shell
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Flat recycle bin API over the recycle bin objects
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

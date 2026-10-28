@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Bluetooth stack
+ * PROJECT:     NextNT Bluetooth stack
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     AVRCP absolute volume exchange between the A2DP audio driver and the AVRCP driver
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,8 +7,8 @@
 
 #pragma once
 
-#define BTH_VOLUME_SET_CALLBACK     L"\\Callback\\LiberNTBthAbsoluteVolumeSet"
-#define BTH_VOLUME_STATE_CALLBACK   L"\\Callback\\LiberNTBthAbsoluteVolumeState"
+#define BTH_VOLUME_SET_CALLBACK     L"\\Callback\\NextNTBthAbsoluteVolumeSet"
+#define BTH_VOLUME_STATE_CALLBACK   L"\\Callback\\NextNTBthAbsoluteVolumeState"
 #define BTH_VOLUME_MAXIMUM_LEVEL    0x7F
 
 typedef struct _BTH_ABSOLUTE_VOLUME

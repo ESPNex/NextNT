@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 5 VC4 user-mode support
+ * PROJECT:     NextNT Raspberry Pi 5 VC4 user-mode support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private VC4 winsys helper library over D3DKMT.
  */

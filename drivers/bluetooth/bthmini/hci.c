@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Bluetooth stack
+ * PROJECT:     NextNT Bluetooth stack
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     HCI command engine and controller initialization
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -262,7 +262,7 @@ BthHciReadComputerName(
     ULONG Size;
     NTSTATUS Status;
 
-    RtlStringCbCopyA(Name, BTH_MAX_NAME_SIZE, "LiberNT");
+    RtlStringCbCopyA(Name, BTH_MAX_NAME_SIZE, "NextNT");
     RtlInitUnicodeString(&String, KeyName);
     InitializeObjectAttributes(&Attributes, &String, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, NULL);
     if (!NT_SUCCESS(ZwOpenKey(&Key, KEY_READ, &Attributes)))

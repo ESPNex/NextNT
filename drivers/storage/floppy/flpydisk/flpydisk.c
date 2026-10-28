@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Floppy Disk Driver
+ * PROJECT:     NextNT Floppy Disk Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Function driver of the floppy drives the fdc bus driver enumerates
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

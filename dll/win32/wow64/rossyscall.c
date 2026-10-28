@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT WoW64 layer
+ * PROJECT:     NextNT WoW64 layer
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Thunks for ReactOS syscalls that have no Wine counterpart
- * COPYRIGHT:   Copyright 2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2026 NextNT Team
  *
  * Wine's wow64 only provides thunks for the syscalls its own ntdll
  * implements.  This file adds thunks for the remaining entries of the

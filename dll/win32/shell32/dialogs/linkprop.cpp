@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Shell
+ * PROJECT:     NextNT Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Shortcut property page
  * COPYRIGHT:   Copyright 2005 Mike McCormack

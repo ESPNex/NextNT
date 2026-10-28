@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT WDDM DirectX Graphics Kernel
+ * PROJECT:     NextNT WDDM DirectX Graphics Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VidPN (Video Present Network) topology management
- * COPYRIGHT:   Copyright 2024-2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024-2026 NextNT WDDM Team
  *              Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  *
  * This file implements the VidPN manager subsystem for dxgkrnl.  It provides

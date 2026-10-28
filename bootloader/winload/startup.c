@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Manager
+ * PROJECT:     NextNT Boot Manager
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Startup settings and diagnostic boot options
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -15,7 +15,7 @@ static const struct
 {
     {NULL, NULL},
     {"DEBUG DEBUGPORT=FILE DEBUGPORT=SCREEN", "/NODEBUG/DEBUGPORT=FILE/DEBUGPORT=SCREEN"},
-    {"DEBUG DEBUGPORT=NET HOST_NAME=libernt.com HOST_PORT=50000", "/NODEBUG/DEBUGPORT=NET/HOST_IP=/HOST_NAME=/HOST_PORT="}
+    {"DEBUG DEBUGPORT=NET HOST_NAME=nextnt.vercel.app HOST_PORT=50000", "/NODEBUG/DEBUGPORT=NET/HOST_IP=/HOST_NAME=/HOST_PORT="}
 };
 
 static

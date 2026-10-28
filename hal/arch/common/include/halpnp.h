@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT HAL
+ * PROJECT:         NextNT HAL
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            hal/arch/common/include/halpnp.h
  * PURPOSE:         ACPI HAL bus driver and its architecture hooks

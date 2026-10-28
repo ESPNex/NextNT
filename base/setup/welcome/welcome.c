@@ -403,7 +403,7 @@ AddNewTopicEx(
         pTopic->bIsCommand = TRUE;
 
         /* Check for special applications: ReactOS Installer */
-        if (_tcsicmp(szCommand, TEXT("libernt.exe")) == 0)
+        if (_tcsicmp(szCommand, TEXT("nextnt.exe")) == 0)
         {
             ExpandInstallerPath(szCommand, pTopic->szCommand, ARRAYSIZE(pTopic->szCommand));
         }
@@ -563,7 +563,7 @@ LoadLocalizedResourcesFromINI(LCID Locale, LPTSTR lpResPath)
     }
 
     /* Try to load the default localized strings */
-    GetPrivateProfileString(TEXT("Defaults"), TEXT("AppTitle"), TEXT("LiberNT - Welcome") /* default */,
+    GetPrivateProfileString(TEXT("Defaults"), TEXT("AppTitle"), TEXT("NextNT - Welcome") /* default */,
                             szAppTitle, ARRAYSIZE(szAppTitle), szIniPath);
     GetPrivateProfileString(TEXT("Defaults"), TEXT("DefaultTopicTitle"), TEXT("") /* default */,
                             szDefaultTitle, ARRAYSIZE(szDefaultTitle), szIniPath);
@@ -658,7 +658,7 @@ LoadConfiguration(VOID)
      * They can be redefined by the localized INI files.
      */
     if (!LoadString(hInstance, IDS_APPTITLE, szAppTitle, ARRAYSIZE(szAppTitle)))
-        StringCchCopy(szAppTitle, ARRAYSIZE(szAppTitle), TEXT("LiberNT - Welcome"));
+        StringCchCopy(szAppTitle, ARRAYSIZE(szAppTitle), TEXT("NextNT - Welcome"));
     if (!LoadString(hInstance, IDS_DEFAULT_TOPIC_TITLE, szDefaultTitle, ARRAYSIZE(szDefaultTitle)))
         *szDefaultTitle = 0;
     if (!LoadString(hInstance, IDS_DEFAULT_TOPIC_DESC, szDefaultDesc, ARRAYSIZE(szDefaultDesc)))
@@ -1010,7 +1010,7 @@ RunAction(INT nTopic)
 
         if (!_tcsnicmp(Command, TEXT("<msg>"), 5))
         {
-            MessageBox(hWndMain, Command + 5, TEXT("LiberNT"), MB_OK | MB_TASKMODAL);
+            MessageBox(hWndMain, Command + 5, TEXT("NextNT"), MB_OK | MB_TASKMODAL);
             return TRUE;
         }
     }
@@ -1360,7 +1360,7 @@ OnPaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
     /* Draw version information */
     StringCchCopy(szVersion, ARRAYSIZE(szVersion),
-                  TEXT("LiberNT ") TEXT(KERNEL_VERSION_STR));
+                  TEXT("NextNT ") TEXT(KERNEL_VERSION_STR));
 
     /*
      * Compute the original rect (position & size) of the version info,

@@ -1,11 +1,11 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GPU submission-pipeline liveness: drives the dxgkrnl
  *              render-command escape (Render -> vidsch queue -> fence-at-
  *              kick -> SubmitCommand -> per-node completion -> retire)
  *              against the rpi5vc4 miniport's driver-private DMA stream.
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Win11-green rule: success is asserted ONLY when the adapter positively
  * identifies as rpi5vc4 (the RPI5VC4 info escape succeeds).  On any other

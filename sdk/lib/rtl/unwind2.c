@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT RTL
+ * PROJECT:     NextNT RTL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     RtlVirtualUnwind2 over the native RtlVirtualUnwind
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF

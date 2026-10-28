@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PowerVR Rogue graphics
+ * PROJECT:     NextNT PowerVR Rogue graphics
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private escape interface between powervr.sys and its user-mode transport
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

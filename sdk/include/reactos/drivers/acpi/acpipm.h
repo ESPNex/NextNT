@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ACPI and HAL
+ * PROJECT:     NextNT ACPI and HAL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     PM_DISPATCH_TABLE contents exchanged through HalInitPowerManagement
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

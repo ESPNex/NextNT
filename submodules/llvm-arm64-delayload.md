@@ -2,8 +2,8 @@
 
 LLD omits unwind records for its ARM64 delay-import tail thunk. The thunk changes
 the stack pointer and calls the delay-load helper, so an exception from that
-helper cannot unwind to its caller. The unmodified LiberNT delayimp hook tests
-terminate with `0xC06D007F` on both Windows 11 ARM64 and LiberNT.
+helper cannot unwind to its caller. The unmodified NextNT delayimp hook tests
+terminate with `0xC06D007F` on both Windows 11 ARM64 and NextNT.
 
 [`llvm-arm64-delayload.patch`](llvm-arm64-delayload.patch) adds a packed `.pdata`
 entry for the existing thunk. Its 116-byte code saves FP/LR, establishes FP and
@@ -15,7 +15,7 @@ comes from [Microsoft's ARM64 exception-handling specification](https://learn.mi
 The patch was built and tested with LLVM 22.1.8. Both patch contexts also match
 LLVM 23.1.0 commit `ea7d852a70e8bdfaf601d6626a760f9771b2c4b4`; its ARM64 thunk
 bytes are identical. The corrected delayimp binaries pass Windows 11 and
-LiberNT: nohook 18/0, globalhook 396/0 and runtimehook 396/0. Their flag check
+NextNT: nohook 18/0, globalhook 396/0 and runtimehook 396/0. Their flag check
 permits the SDK's reserved `EXCEPTION_SOFTWARE_ORIGINATE` bit.
 
 ## Build and select the linker
@@ -25,22 +25,22 @@ the version shipped with the selected Clang, particularly for LTO. Set these
 paths to the existing directories; do not duplicate a source tree or build cache:
 
 ```sh
-LIBERNT_SOURCE=/absolute/path/to/LiberNT
+NEXTNT_SOURCE=/absolute/path/to/NextNT
 LLD_SOURCE=/absolute/path/to/existing/llvm-project
 LLD_BUILD=/absolute/path/to/existing/native-llvm-build
-LIBERNT_BUILD=/absolute/path/to/existing/LiberNT-build
+NEXTNT_BUILD=/absolute/path/to/existing/NextNT-build
 ```
 
 Apply the patch once, then enable and build LLD in that native build. Keep its
 existing compiler, target and build-type settings:
 
 ```sh
-patch --dry-run -d "$LLD_SOURCE" -p1 < "$LIBERNT_SOURCE/submodules/llvm-arm64-delayload.patch"
-patch -d "$LLD_SOURCE" -p1 < "$LIBERNT_SOURCE/submodules/llvm-arm64-delayload.patch"
+patch --dry-run -d "$LLD_SOURCE" -p1 < "$NEXTNT_SOURCE/submodules/llvm-arm64-delayload.patch"
+patch -d "$LLD_SOURCE" -p1 < "$NEXTNT_SOURCE/submodules/llvm-arm64-delayload.patch"
 CCACHE_DISABLE=1 cmake -S "$LLD_SOURCE/llvm" -B "$LLD_BUILD" -DLLVM_ENABLE_PROJECTS=lld
 CCACHE_DISABLE=1 cmake --build "$LLD_BUILD" --target lld
-cmake -S "$LIBERNT_SOURCE" -B "$LIBERNT_BUILD" -DCMAKE_LINKER:FILEPATH="$LLD_BUILD/bin/ld.lld"
-CCACHE_DISABLE=1 cmake --build "$LIBERNT_BUILD" --target delayimp_nohook_apitest delayimp_globalhook_apitest delayimp_runtimehook_apitest
+cmake -S "$NEXTNT_SOURCE" -B "$NEXTNT_BUILD" -DCMAKE_LINKER:FILEPATH="$LLD_BUILD/bin/ld.lld"
+CCACHE_DISABLE=1 cmake --build "$NEXTNT_BUILD" --target delayimp_nohook_apitest delayimp_globalhook_apitest delayimp_runtimehook_apitest
 ```
 
 On Windows hosts, use `ld.lld.exe`. If the native LLVM build already enables
@@ -53,7 +53,7 @@ No installed compiler files or Mesa build definitions need modification.
 Check `llvm-readobj --unwind` on the resulting executables for the delay
 thunks (five in nohook, six in each hook test) with FunctionLength 116, CR 3 and
 FrameSize 224, then run the same binaries
-on Windows 11 and LiberNT. Selecting another linker changes link commands for
+on Windows 11 and NextNT. Selecting another linker changes link commands for
 the whole configured build; revalidate images rebuilt with that selection.
 
 ## RosBE packaging

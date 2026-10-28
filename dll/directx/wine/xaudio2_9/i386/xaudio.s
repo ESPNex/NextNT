@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT xaudio2_9.dll
+ * PROJECT:     NextNT xaudio2_9.dll
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     x86 voice callback wrapper for MSVC builds
  * COPYRIGHT:   Copyright 2015 Andrew Eikum for CodeWeavers

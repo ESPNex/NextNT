@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Layer DLL
+ * PROJECT:     NextNT NT Layer DLL
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     PE Control Flow Guard loader support

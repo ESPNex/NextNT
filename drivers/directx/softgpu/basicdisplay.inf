@@ -1,11 +1,11 @@
-; LiberNT Basic Display Adapter for display controllers without a vendor driver
+; NextNT Basic Display Adapter for display controllers without a vendor driver
 
 [Version]
 Signature="$Windows NT$"
 LayoutFile=layout.inf
 Class=Display
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=10/18/2026,1.0.0.0
 
 [DestinationDirs]
@@ -43,10 +43,10 @@ ServiceBinary=%12%\BasicDisplay.sys
 LoadOrderGroup=Video
 
 [Strings]
-LiberNT="LiberNT"
+NextNT="NextNT"
 StdMfg="(Standard display types)"
-BasicDisplay.DeviceDesc="LiberNT Basic Display Adapter"
-BasicDisplay.ServiceDesc="LiberNT Basic Display Driver"
+BasicDisplay.DeviceDesc="NextNT Basic Display Adapter"
+BasicDisplay.ServiceDesc="NextNT Basic Display Driver"
 REG_MULTI_SZ=0x00010000
 REG_DWORD=0x00010001
 REG_SZ=0x00000000

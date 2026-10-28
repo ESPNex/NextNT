@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT ACPI Bus Manager
+ * PROJECT:         NextNT ACPI Bus Manager
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         ACPI-based PCI interrupt routing provider for the HAL
  */

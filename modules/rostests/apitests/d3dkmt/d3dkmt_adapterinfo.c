@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Exhaustive D3DKMTQueryAdapterInfo selector coverage + adapter
  *              classification.  Every test is written to PASS on a real
@@ -15,7 +15,7 @@
  *              The suite compiles at DXGKDDI_INTERFACE_VERSION=0x5023 (WDDM2_0),
  *              so only selectors/structs visible at that tier are referenced;
  *              higher-tier selectors are wrapped in version #if guards.
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Tests: D3DKMTQueryAdapterInfo (all KMTQAITYPE_* selectors), adapter class.
  */

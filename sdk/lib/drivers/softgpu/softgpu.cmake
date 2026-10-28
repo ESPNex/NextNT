@@ -1,5 +1,5 @@
 #
-# PROJECT:     LiberNT software GPU engine
+# PROJECT:     NextNT software GPU engine
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Build the WDDM software GPU engine for a display miniport
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -9,7 +9,7 @@ STRINGTABLE
 
 STRINGTABLE
 {
-2000, "LiberNT varsayılan Light"
+2000, "NextNT varsayılan Light"
 }
 
 STRINGTABLE
@@ -28,12 +28,12 @@ STRINGTABLE
 
 STRINGTABLE
 {
-5000, "LiberNT varsayılan"
+5000, "NextNT varsayılan"
 5001, "Görsel Biçim"
 5002, "ReactOS Vakfı"
 5003, "Foxlet, Lautus tabanlı"
 5004, "GNU/GPL 2.0 altında yayımlanmaktadır, 2019"
 5005, "https://reactos.org/"
 5006, "1.0"
-5007, "LiberNT İçin Görsel Biçim"
+5007, "NextNT İçin Görsel Biçim"
 }

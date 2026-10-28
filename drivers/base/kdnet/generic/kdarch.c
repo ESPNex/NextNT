@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Network Kernel Debugger Transport
+ * PROJECT:     NextNT Network Kernel Debugger Transport
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Architecture hooks for architectures without a random source or device tree
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

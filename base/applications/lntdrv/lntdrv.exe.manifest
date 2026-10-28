@@ -3,11 +3,11 @@
   xmlns="urn:schemas-microsoft-com:asm.v1"
   manifestVersion="1.0">
 <assemblyIdentity
-    name="LiberNT.lntdrv"
+    name="NextNT.lntdrv"
     processorArchitecture="*"
     version="1.0.0.0"
     type="win32"/>
-<description>LiberNT Driver Installer</description>
+<description>NextNT Driver Installer</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity

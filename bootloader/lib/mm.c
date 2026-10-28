@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Loader page allocator and page type table
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -53,7 +53,7 @@ BOOLEAN
 MmSynchronizeFirmwareMap(VOID)
 {
     PPAGE_LOOKUP_TABLE_ITEM Table = PageLookupTableAddress;
-    PFREELDR_MEMORY_DESCRIPTOR Map;
+    PNEXTLDR_MEMORY_DESCRIPTOR Map;
     ULONG Count, i;
     PFN_NUMBER Page, End;
 
@@ -86,7 +86,7 @@ BOOLEAN
 MmInitializeMemoryManager(VOID)
 {
     PPAGE_LOOKUP_TABLE_ITEM Table;
-    PFREELDR_MEMORY_DESCRIPTOR Map;
+    PNEXTLDR_MEMORY_DESCRIPTOR Map;
     ULONG Count, i;
     PFN_NUMBER Lowest = (PFN_NUMBER)-1;
     PFN_NUMBER Highest = 0;

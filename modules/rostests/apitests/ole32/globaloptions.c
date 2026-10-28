@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests that IGlobalOptions keeps the values it is given
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

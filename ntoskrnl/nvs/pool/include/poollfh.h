@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Pool Allocator
+ * PROJECT:     NextNT Pool Allocator
  * FILE:        ntoskrnl/nvs/pool/include/poollfh.h
  * PURPOSE:     Low-fragmentation pool heap definitions
  *

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SDK
+ * PROJECT:     NextNT SDK
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Windows Portable Devices MTP extension commands and properties
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

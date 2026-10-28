@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT CYW43xx SDIO Function Transport
+; PROJECT:     NextNT CYW43xx SDIO Function Transport
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     CYW43xx SDIO function transport installation file
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,7 +7,7 @@
 Signature   = "$Windows NT$"
 Class       = System
 ClassGUID   = {4d36e97d-e325-11ce-bfc1-08002be10318}
-Provider    = %LiberNT%
+Provider    = %NextNT%
 DriverVer   = 08/15/2026,1.0.0.0
 CatalogFile = cyw43455sdio.cat
 
@@ -15,7 +15,7 @@ CatalogFile = cyw43455sdio.cat
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = Models,NTamd64,NTARM64
+%NextNT% = Models,NTamd64,NTARM64
 
 [Models]
 %Control43430Desc% = Transport_Install, SD\VID_02D0&PID_A9A6&FN_1
@@ -61,9 +61,9 @@ ServiceBinary = %12%\cyw43455sdio.sys
 cyw43455sdio.sys = 1
 
 [Strings]
-LiberNT       = "LiberNT Team"
+NextNT       = "NextNT Team"
 Control43430Desc = "Broadcom BCM43430 SDIO Control Function"
 ControlDesc   = "Broadcom CYW43455 SDIO Control Function"
 CompanionDesc = "Broadcom CYW43455 SDIO Companion Function"
-ServiceDesc   = "LiberNT CYW43xx SDIO Function Transport"
-DiskName      = "LiberNT CYW43xx SDIO Function Transport Installation Disk"
+ServiceDesc   = "NextNT CYW43xx SDIO Function Transport"
+DiskName      = "NextNT CYW43xx SDIO Function Transport Installation Disk"

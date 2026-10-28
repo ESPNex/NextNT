@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VirtIO Network Kernel Debugger Extension
+ * PROJECT:     NextNT VirtIO Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     VirtIO 1.0 PCI transport and network device layout, module interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests D3D11 format support flags and DXGI overlay support queries
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

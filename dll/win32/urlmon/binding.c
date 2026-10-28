@@ -1663,8 +1663,8 @@ static HRESULT start_binding(IMoniker *mon, Binding *binding_ctx, IUri *uri, IBi
     if(binding->service_provider) {
         IUnknown *unk;
 
-        if(SUCCEEDED(IServiceProvider_QueryService(binding->service_provider, &SID_LiberNTStartNotImplemented,
-                                                   &SID_LiberNTStartNotImplemented, (void**)&unk))) {
+        if(SUCCEEDED(IServiceProvider_QueryService(binding->service_provider, &SID_NextNTStartNotImplemented,
+                                                   &SID_NextNTStartNotImplemented, (void**)&unk))) {
             IUnknown_Release(unk);
             binding->start_not_impl = TRUE;
         }

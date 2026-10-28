@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
- * PROJECT:         LiberNT kernel
+ * PROJECT:         NextNT kernel
  * FILE:            drivers/base/kdgdb/hwbp_arm64.c
  * PURPOSE:         Hardware debug register support for ARM64.
  *

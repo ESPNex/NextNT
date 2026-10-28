@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Runtime Types
+ * PROJECT:     NextNT Windows Runtime Types
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Windows Runtime metadata file resolution and API information queries
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

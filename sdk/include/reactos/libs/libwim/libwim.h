@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SDK
+ * PROJECT:     NextNT SDK
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Public umbrella header for libwim (WIM archive support)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -10,7 +10,7 @@
  * libwim (sdk/lib/libwim/). Future tools such as an in-tree DISM
  * replacement or an installer-side WIM extractor consume this API.
  *
- * For bootloader / constrained environments (freeldr, installers that run
+ * For bootloader / constrained environments (nextldr, installers that run
  * before the CRT is available) use xpress_huff_decompress_static from
  * <xpress_huff.h> directly — it performs no dynamic allocation and only
  * requires a caller-provided XPRESS_DECOMPRESS_WORKSPACE_SIZE buffer.

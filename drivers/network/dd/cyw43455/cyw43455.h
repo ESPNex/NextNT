@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Broadcom/Cypress CYW43xx Native 802.11 Miniport
+ * PROJECT:     NextNT Broadcom/Cypress CYW43xx Native 802.11 Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     FullMAC SDIO WiFi driver for Raspberry Pi CYW43xx radios
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

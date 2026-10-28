@@ -1,5 +1,5 @@
 #
-# PROJECT:     LiberNT SpacemiT K1 UART driver
+# PROJECT:     NextNT SpacemiT K1 UART driver
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     SpacemiT K1 UART driver build rules
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

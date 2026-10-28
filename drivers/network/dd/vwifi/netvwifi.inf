@@ -1,4 +1,4 @@
-; LiberNT Virtual Native 802.11 (dot11) Miniport Installation File
+; NextNT Virtual Native 802.11 (dot11) Miniport Installation File
 ; Software-only Native 802.11 miniport; root-enumerated virtual device
 ; (instantiated at boot via the Enum\Root seed in hivesys.inf).
 ; Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,14 +7,14 @@
 Signature   = "$Windows NT$"
 Class       = Net
 ClassGUID   = {4d36e972-e325-11ce-bfc1-08002be10318}
-Provider    = %LiberNT%
+Provider    = %NextNT%
 DriverVer   = 06/02/2026,1.0.0.0
 
 [DestinationDirs]
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = Models,NTamd64,NTARM64
+%NextNT% = Models,NTamd64,NTARM64
 
 [Models]
 %vwifi.DeviceDesc% = vwifi.ndi, ROOT\NET\VWIFI
@@ -69,7 +69,7 @@ HKR, , TypesSupported,   0x00010001, 7
 vwifi.sys = 1
 
 [Strings]
-LiberNT          = "LiberNT Team"
-vwifi.DeviceDesc = "LiberNT Virtual Native 802.11 Adapter"
-vwifi.ServiceDesc = "LiberNT Virtual WiFi Driver"
-DiskName         = "LiberNT Virtual WiFi Driver Installation Disk"
+NextNT          = "NextNT Team"
+vwifi.DeviceDesc = "NextNT Virtual Native 802.11 Adapter"
+vwifi.ServiceDesc = "NextNT Virtual WiFi Driver"
+DiskName         = "NextNT Virtual WiFi Driver Installation Disk"

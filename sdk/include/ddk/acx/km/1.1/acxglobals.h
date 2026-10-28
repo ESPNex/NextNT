@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DDK
+ * PROJECT:     NextNT DDK
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Audio class extension 1.1 interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

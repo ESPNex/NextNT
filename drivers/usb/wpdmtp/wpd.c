@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT MTP device driver
+ * PROJECT:     NextNT MTP device driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WPD commands: dispatch, capabilities, enumeration, properties and events
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

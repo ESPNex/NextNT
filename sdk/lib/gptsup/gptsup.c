@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT GPT Support Library
+ * PROJECT:     NextNT GPT Support Library
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Identifiers and default names of new GPT partitions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

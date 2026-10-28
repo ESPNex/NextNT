@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Hyper-V VMBus Driver
+ * PROJECT:     NextNT Hyper-V VMBus Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Hypervisor interface: hypercalls and synthetic interrupt controller
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -85,7 +85,7 @@ HvInitialize(
     OldAffinity = KeSetSystemAffinityThreadEx((KAFFINITY)1);
 
     if (__readmsr(HV_X64_MSR_GUEST_OS_ID) == 0)
-        __writemsr(HV_X64_MSR_GUEST_OS_ID, HV_GUEST_OS_ID_LIBERNT);
+        __writemsr(HV_X64_MSR_GUEST_OS_ID, HV_GUEST_OS_ID_NEXTNT);
 
     Value = __readmsr(HV_X64_MSR_HYPERCALL);
     Value = (Value & 0xFFE) | ((ULONG64)HypercallPa.QuadPart & ~(ULONG64)(PAGE_SIZE - 1)) | 1;

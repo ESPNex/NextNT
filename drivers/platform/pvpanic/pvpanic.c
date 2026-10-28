@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT QEMU pvpanic Driver
+ * PROJECT:     NextNT QEMU pvpanic Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Reports bug checks to the QEMU pvpanic device
  * COPYRIGHT:   Copyright 2026 Ostap Brehin <osbre@protonmail.com>

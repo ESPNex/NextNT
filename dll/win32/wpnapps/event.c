@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Runtime
+ * PROJECT:     NextNT Windows Runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Event registration lists and shared helpers of the toast platform
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests preview handler lookup and hosting
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -127,7 +127,7 @@ TestNoHandler(void)
     DWORD Length = _countof(ClsidText);
     HRESULT hr;
 
-    hr = AssocQueryStringW(ASSOCF_INIT_DEFAULTTOSTAR, ASSOCSTR_SHELLEXTENSION, L".liberntnopreview",
+    hr = AssocQueryStringW(ASSOCF_INIT_DEFAULTTOSTAR, ASSOCSTR_SHELLEXTENSION, L".nextntnopreview",
                            g_PreviewHandlerIid, ClsidText, &Length);
     ok(FAILED(hr), "unknown type has a preview handler: %#lx\n", hr);
 }

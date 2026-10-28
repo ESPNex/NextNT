@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 3 VC4 user-mode support
+ * PROJECT:     NextNT Raspberry Pi 3 VC4 user-mode support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private D3DKMT wrapper for Mesa's VC4 winsys
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

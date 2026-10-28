@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests for SendMessageTimeout on a window whose thread stopped pumping
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -20,7 +20,7 @@ HungThread(
 
     Class.lpfnWndProc = DefWindowProcW;
     Class.hInstance = GetModuleHandleW(NULL);
-    Class.lpszClassName = L"LiberNTHungProbe";
+    Class.lpszClassName = L"NextNTHungProbe";
     RegisterClassW(&Class);
     HungWindow = CreateWindowExW(0, Class.lpszClassName, L"", WS_OVERLAPPEDWINDOW, 0, 0, 10, 10,
                                  NULL, NULL, Class.hInstance, NULL);
@@ -44,15 +44,15 @@ TestOtherProcess(VOID)
 
     GetModuleFileNameW(NULL, Path, ARRAYSIZE(Path));
     _snwprintf(CommandLine, ARRAYSIZE(CommandLine), L"\"%s\" SendMessageTimeoutHung", Path);
-    SetEnvironmentVariableW(L"LIBERNT_HUNG_CHILD", L"1");
+    SetEnvironmentVariableW(L"NEXTNT_HUNG_CHILD", L"1");
     if (!CreateProcessW(Path, CommandLine, NULL, NULL, FALSE, 0, NULL, NULL, &Startup, &Process))
     {
-        SetEnvironmentVariableW(L"LIBERNT_HUNG_CHILD", NULL);
+        SetEnvironmentVariableW(L"NEXTNT_HUNG_CHILD", NULL);
         ok(0, "CreateProcess failed %lu\n", GetLastError());
         return;
     }
-    SetEnvironmentVariableW(L"LIBERNT_HUNG_CHILD", NULL);
-    for (Tries = 0; Tries < 100 && !(Window = FindWindowW(L"LiberNTHungChild", NULL)); Tries++)
+    SetEnvironmentVariableW(L"NEXTNT_HUNG_CHILD", NULL);
+    for (Tries = 0; Tries < 100 && !(Window = FindWindowW(L"NextNTHungChild", NULL)); Tries++)
         Sleep(50);
     ok(Window != NULL, "Child window not found\n");
     if (Window)
@@ -95,7 +95,7 @@ RunHungChild(VOID)
 
     Class.lpfnWndProc = DefWindowProcW;
     Class.hInstance = GetModuleHandleW(NULL);
-    Class.lpszClassName = L"LiberNTHungChild";
+    Class.lpszClassName = L"NextNTHungChild";
     RegisterClassW(&Class);
     CreateWindowExW(0, Class.lpszClassName, L"", WS_OVERLAPPEDWINDOW, 0, 0, 10, 10, NULL, NULL, Class.hInstance, NULL);
     Sleep(20000);
@@ -108,7 +108,7 @@ START_TEST(SendMessageTimeoutHung)
     HANDLE Thread;
     DWORD Start, Elapsed, Error;
 
-    if (GetEnvironmentVariableW(L"LIBERNT_HUNG_CHILD", NULL, 0))
+    if (GetEnvironmentVariableW(L"NEXTNT_HUNG_CHILD", NULL, 0))
     {
         RunHungChild();
         ExitProcess(0);

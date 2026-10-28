@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests window DC lookup and that a temporary display mode change gives a full, unpanned desktop
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

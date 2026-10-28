@@ -31,5 +31,5 @@ STRINGTABLE
 BEGIN
     IDS_CPLNAME_1 "Manager de licențe"
     IDS_CPLDESCRIPTION_1 "Manager de licențe"
-    IDS_REACTOS "LiberNT - S.O. Public"
+    IDS_REACTOS "NextNT - S.O. Public"
 END

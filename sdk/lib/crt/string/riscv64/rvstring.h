@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT
+ * PROJECT:     NextNT CRT
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     RISC-V64 string and memory routines for the RVA20, RVA22 and RVA23 profiles
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

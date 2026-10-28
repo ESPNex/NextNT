@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Network Connections Shell
+ * PROJECT:     NextNT Network Connections Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Connection user interface objects
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

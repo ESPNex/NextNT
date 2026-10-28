@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT boot data
+; PROJECT:     NextNT boot data
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     32-bit registry view entries of the WoW64 system components
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -395,7 +395,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Command Processor","PathCompletionChar",0x0
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall",,0x00000012
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers",,0x00000012
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion","InstallDate",0x00010003,0
-HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion","ProductName",2,"LiberNT"
+HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion","ProductName",2,"NextNT"
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion","DisplayVersion",2,"24H2"
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion","ReleaseId",2,"2009"
 HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion","SoftwareType",2,"System"

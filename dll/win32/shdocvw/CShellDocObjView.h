@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT shdocvw
+ * PROJECT:     NextNT shdocvw
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Shell folder for documents that are browsed in place
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WPP auto-logger stub
+ * PROJECT:     NextNT WPP auto-logger stub
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     No-op WppRecorder exports so Win8+ inbox drivers (usbser.sys
  *              and friends) resolve their WPP tracing imports.

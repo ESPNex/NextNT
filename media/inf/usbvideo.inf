@@ -4,10 +4,10 @@
 ; Matches bInterfaceClass=0x0E (CC_VIDEO) devices on the USB bus.
 ;
 ; Note on Class: Windows ships usbvideo.sys under Class=Image because it
-; bridges USB Video Class to the WIA user-mode stack. LiberNT does not
+; bridges USB Video Class to the WIA user-mode stack. NextNT does not
 ; currently provide the STI/WIA class installer (sti_ci.dll is absent),
 ; so declaring Class=Image would point PnP at a missing co-installer.
-; We use Class=USB to match the LiberNT convention for bus-level function
+; We use Class=USB to match the NextNT convention for bus-level function
 ; drivers (see usb.inf usbhub/usbccgp). This can be revisited when the
 ; Image/WIA class installer lands.
 
@@ -17,7 +17,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = USB
 ClassGUID  = {36FC9E60-C465-11CF-8056-444553540000}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 10/02/2005,1.00.0.0
 
 [DestinationDirs]
@@ -52,7 +52,7 @@ LoadOrderGroup = Base
 
 [Strings]
 ; Non-localizable
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 
 ; Localizable
 GenericMfg                             = "(Generic USB Video devices)"

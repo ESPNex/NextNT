@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Intel Serial I/O I2C Driver
+ * PROJECT:     NextNT Intel Serial I/O I2C Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Intel LPSS DesignWare I2C controller support
  */

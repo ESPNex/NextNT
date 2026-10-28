@@ -36,7 +36,7 @@ extern BOOLEAN IsUnattendedSetup; // HACK
  * to share or give it to partlist.c, because when we'll support GPT disks,
  * things will change a bit).
  * And, bootsup.c can manage initializing / adding boot entries into NTLDR
- * and FREELDR, and installing the latter, and saving the old MBR / boot
+ * and NEXTLDR, and installing the latter, and saving the old MBR / boot
  * sectors in files.
  */
 
@@ -64,7 +64,7 @@ CreateFreeLoaderReactOSEntries(
     PNTOS_OPTIONS Options = (PNTOS_OPTIONS)&BootEntry->OsOptions;
     BOOT_STORE_OPTIONS BootOptions;
 
-    BootEntry->Version = FreeLdr;
+    BootEntry->Version = NextLdr;
     BootEntry->BootFilePath = NULL;
 
     BootEntry->OsOptionsLength = sizeof(NTOS_OPTIONS);
@@ -76,7 +76,7 @@ CreateFreeLoaderReactOSEntries(
 
     /* ReactOS */
     // BootEntry->BootEntryKey = MAKESTRKEY(L"ReactOS");
-    BootEntry->FriendlyName = L"\"LiberNT\"";
+    BootEntry->FriendlyName = L"\"NextNT\"";
     Options->OsLoadOptions  = L"/FASTDETECT";
     AddBootStoreEntry(BootStoreHandle, BootEntry, MAKESTRKEY(L"ReactOS"));
 
@@ -110,8 +110,8 @@ CreateFreeLoaderIniForReactOS(
     NTSTATUS Status;
     PVOID BootStoreHandle;
 
-    /* Initialize the INI file and create the common FreeLdr sections */
-    Status = OpenBootStore(&BootStoreHandle, IniPath, FreeLdr,
+    /* Initialize the INI file and create the common NextLdr sections */
+    Status = OpenBootStore(&BootStoreHandle, IniPath, NextLdr,
                            BS_CreateAlways /* BS_OpenAlways */, BS_ReadWriteAccess);
     if (!NT_SUCCESS(Status))
         return Status;
@@ -205,8 +205,8 @@ CreateFreeLoaderIniForReactOSAndBootSector(
         }
     }
 
-    /* Initialize the INI file and create the common FreeLdr sections */
-    Status = OpenBootStore(&BootStoreHandle, IniPath, FreeLdr,
+    /* Initialize the INI file and create the common NextLdr sections */
+    Status = OpenBootStore(&BootStoreHandle, IniPath, NextLdr,
                            BS_CreateAlways /* BS_OpenAlways */, BS_ReadWriteAccess);
     if (!NT_SUCCESS(Status))
         return Status;
@@ -214,7 +214,7 @@ CreateFreeLoaderIniForReactOSAndBootSector(
     /* Add the ReactOS entries */
     CreateFreeLoaderReactOSEntries(BootStoreHandle, ArcPath);
 
-    BootEntry->Version = FreeLdr;
+    BootEntry->Version = NextLdr;
     BootEntry->BootFilePath = NULL;
 
     BootEntry->OsOptionsLength = sizeof(BOOTSECTOR_OPTIONS);
@@ -319,12 +319,12 @@ EnumerateReactOSEntries(
 
 SkipThisEntry:
     Data->UseExistingEntry = FALSE;
-    if (Type == FreeLdr && wcscmp(Data->SectionName, (PWSTR)BootEntry->BootEntryKey)== 0)
+    if (Type == NextLdr && wcscmp(Data->SectionName, (PWSTR)BootEntry->BootEntryKey)== 0)
     {
         RtlStringCchPrintfW(Data->SectionName, ARRAYSIZE(Data->SectionName),
                             L"ReactOS_%lu", Data->i);
         RtlStringCchPrintfW(Data->OsName, ARRAYSIZE(Data->OsName),
-                            L"\"LiberNT %lu\"", Data->i);
+                            L"\"NextNT %lu\"", Data->i);
         Data->i++;
     }
     return STATUS_SUCCESS;
@@ -344,7 +344,7 @@ UpdateFreeLoaderIni(
     PNTOS_OPTIONS Options = (PNTOS_OPTIONS)&BootEntry->OsOptions;
 
     /* Open the INI file */
-    Status = OpenBootStore(&BootStoreHandle, IniPath, FreeLdr,
+    Status = OpenBootStore(&BootStoreHandle, IniPath, NextLdr,
                            BS_OpenExisting /* BS_OpenAlways */, BS_ReadWriteAccess);
     if (!NT_SUCCESS(Status))
         return Status;
@@ -354,7 +354,7 @@ UpdateFreeLoaderIni(
     Data.i = 1;
     Data.ArcPath = ArcPath;
     RtlStringCchCopyW(Data.SectionName, ARRAYSIZE(Data.SectionName), L"ReactOS");
-    RtlStringCchCopyW(Data.OsName, ARRAYSIZE(Data.OsName), L"\"LiberNT\"");
+    RtlStringCchCopyW(Data.OsName, ARRAYSIZE(Data.OsName), L"\"NextNT\"");
 
     //
     // FIXME: We temporarily use EnumerateBootStoreEntries, until
@@ -366,9 +366,9 @@ UpdateFreeLoaderIni(
     if (!Data.UseExistingEntry)
     {
         // RtlStringCchPrintfW(Data.SectionName, ARRAYSIZE(Data.SectionName), L"ReactOS_%lu", Data.i);
-        // RtlStringCchPrintfW(Data.OsName, ARRAYSIZE(Data.OsName), L"\"LiberNT %lu\"", Data.i);
+        // RtlStringCchPrintfW(Data.OsName, ARRAYSIZE(Data.OsName), L"\"NextNT %lu\"", Data.i);
 
-        BootEntry->Version = FreeLdr;
+        BootEntry->Version = NextLdr;
         BootEntry->BootFilePath = NULL;
 
         BootEntry->OsOptionsLength = sizeof(NTOS_OPTIONS);
@@ -416,7 +416,7 @@ UpdateBootIni(
     // Data.i = 1;
     Data.ArcPath = EntryName;
     // RtlStringCchCopyW(Data.SectionName, ARRAYSIZE(Data.SectionName), L"ReactOS");
-    RtlStringCchCopyW(Data.OsName, ARRAYSIZE(Data.OsName), L"\"LiberNT\"");
+    RtlStringCchCopyW(Data.OsName, ARRAYSIZE(Data.OsName), L"\"NextNT\"");
 
     //
     // FIXME: We temporarily use EnumerateBootStoreEntries, until
@@ -845,8 +845,8 @@ InstallBootloaderFiles(
     WCHAR DstPath[MAX_PATH];
 
     /* Copy FreeLoader to the system partition, always overwriting the older version */
-    CombinePaths(SrcPath, ARRAYSIZE(SrcPath), 2, SourceRootPath->Buffer, L"\\loader\\freeldr.sys");
-    CombinePaths(DstPath, ARRAYSIZE(DstPath), 2, SystemRootPath->Buffer, L"freeldr.sys");
+    CombinePaths(SrcPath, ARRAYSIZE(SrcPath), 2, SourceRootPath->Buffer, L"\\loader\\nextldr.sys");
+    CombinePaths(DstPath, ARRAYSIZE(DstPath), 2, SystemRootPath->Buffer, L"nextldr.sys");
 
     DPRINT("Copy: %S ==> %S\n", SrcPath, DstPath);
     Status = SetupCopyFile(SrcPath, DstPath, FALSE);
@@ -894,8 +894,8 @@ InstallBootloaderFiles(
 #define EFI_LOAD_OPTION_MAX             4096
 #define EFI_BOOT_ORDER_MAX              512
 #define EFI_BOOT_OPTION_SEARCH_MAX      0x1000
-#define EFI_BOOT_MANAGER_DESCRIPTION    L"LiberNT Boot Manager"
-#define EFI_BOOT_MANAGER_FILE           L"\\EFI\\LiberNT\\Boot\\bootmgfw.efi"
+#define EFI_BOOT_MANAGER_DESCRIPTION    L"NextNT Boot Manager"
+#define EFI_BOOT_MANAGER_FILE           L"\\EFI\\NextNT\\Boot\\bootmgfw.efi"
 #define EFI_WINDOWS_BOOT_MANAGER_FILE   L"\\EFI\\Microsoft\\Boot\\bootmgfw.efi"
 #define GPT_HEADER_ENTRIES_LBA_OFFSET   72
 #define GPT_HEADER_ENTRY_COUNT_OFFSET   80
@@ -1349,17 +1349,17 @@ InstallBcdStore(
     if (!NT_SUCCESS(Status))
         return Status;
 
-    CombinePaths(Path, ARRAYSIZE(Path), 2, SystemRootPath->Buffer, L"EFI\\LiberNT\\Boot");
+    CombinePaths(Path, ARRAYSIZE(Path), 2, SystemRootPath->Buffer, L"EFI\\NextNT\\Boot");
     Status = SetupCreateDirectory(Path);
     if (!NT_SUCCESS(Status) && Status != STATUS_OBJECT_NAME_COLLISION)
         return Status;
 
-    CombinePaths(Path, ARRAYSIZE(Path), 2, SystemRootPath->Buffer, L"EFI\\LiberNT\\Boot\\bootmgfw.efi");
+    CombinePaths(Path, ARRAYSIZE(Path), 2, SystemRootPath->Buffer, L"EFI\\NextNT\\Boot\\bootmgfw.efi");
     Status = SetupCopyFile(BootManagerPath, Path, FALSE);
     if (!NT_SUCCESS(Status))
         return Status;
 
-    CombinePaths(StorePath, ARRAYSIZE(StorePath), 2, SystemRootPath->Buffer, L"EFI\\LiberNT\\Boot\\BCD");
+    CombinePaths(StorePath, ARRAYSIZE(StorePath), 2, SystemRootPath->Buffer, L"EFI\\NextNT\\Boot\\BCD");
     Status = SetupCopyFile(TemplatePath, StorePath, FALSE);
     if (!NT_SUCCESS(Status))
         return Status;
@@ -1868,18 +1868,18 @@ InstallEfiSystemPartition(
         return Status;
     }
 
-    if (DoesFileExist_2(SystemRootPath->Buffer, L"freeldr.ini"))
+    if (DoesFileExist_2(SystemRootPath->Buffer, L"nextldr.ini"))
     {
-        DPRINT1("Update existing 'freeldr.ini' on the EFI system partition\n");
+        DPRINT1("Update existing 'nextldr.ini' on the EFI system partition\n");
         Status = UpdateFreeLoaderIni(SystemRootPath->Buffer, DestinationArcPath->Buffer);
     }
     else
     {
-        DPRINT1("Create new 'freeldr.ini' on the EFI system partition\n");
+        DPRINT1("Create new 'nextldr.ini' on the EFI system partition\n");
         Status = CreateFreeLoaderIniForReactOS(SystemRootPath->Buffer, DestinationArcPath->Buffer);
     }
     if (!NT_SUCCESS(Status))
-        DPRINT1("Writing 'freeldr.ini' failed (Status %lx)\n", Status);
+        DPRINT1("Writing 'nextldr.ini' failed (Status %lx)\n", Status);
     return Status;
 }
 
@@ -1892,7 +1892,7 @@ InstallFatBootcodeToPartition(
     _In_ PCWSTR FileSystemName)
 {
     NTSTATUS Status;
-    BOOLEAN DoesFreeLdrExist;
+    BOOLEAN DoesNextLdrExist;
     WCHAR SrcPath[MAX_PATH];
     WCHAR DstPath[MAX_PATH];
 
@@ -1916,12 +1916,12 @@ InstallFatBootcodeToPartition(
 
     InstallBcdFromTemplate(SystemRootPath, SourceRootPath, DestinationArcPath, FALSE, NULL, &Status);
 
-    /* Prepare for possibly updating 'freeldr.ini' */
-    DoesFreeLdrExist = DoesFileExist_2(SystemRootPath->Buffer, L"freeldr.ini");
-    if (DoesFreeLdrExist)
+    /* Prepare for possibly updating 'nextldr.ini' */
+    DoesNextLdrExist = DoesFileExist_2(SystemRootPath->Buffer, L"nextldr.ini");
+    if (DoesNextLdrExist)
     {
-        /* Update existing 'freeldr.ini' */
-        DPRINT1("Update existing 'freeldr.ini'\n");
+        /* Update existing 'nextldr.ini' */
+        DPRINT1("Update existing 'nextldr.ini'\n");
         Status = UpdateFreeLoaderIni(SystemRootPath->Buffer, DestinationArcPath->Buffer);
         if (!NT_SUCCESS(Status))
         {
@@ -1941,11 +1941,11 @@ InstallFatBootcodeToPartition(
         /* Search root directory for 'NTLDR' and 'BOOT.INI' */
         DPRINT1("Found Microsoft Windows NT/2000/XP boot loader\n");
 
-        /* Create or update 'freeldr.ini' */
-        if (DoesFreeLdrExist == FALSE)
+        /* Create or update 'nextldr.ini' */
+        if (DoesNextLdrExist == FALSE)
         {
-            /* Create new 'freeldr.ini' */
-            DPRINT1("Create new 'freeldr.ini'\n");
+            /* Create new 'nextldr.ini' */
+            DPRINT1("Create new 'nextldr.ini'\n");
             Status = CreateFreeLoaderIniForReactOS(SystemRootPath->Buffer, DestinationArcPath->Buffer);
             if (!NT_SUCCESS(Status))
             {
@@ -1994,7 +1994,7 @@ InstallFatBootcodeToPartition(
         DPRINT1("Update 'boot.ini'\n");
         Status = UpdateBootIni(SystemRootPath->Buffer,
                                L"C:\\bootsect.ros",
-                               L"\"LiberNT\"");
+                               L"\"NextNT\"");
         if (!NT_SUCCESS(Status))
         {
             DPRINT1("UpdateBootIni() failed (Status %lx)\n", Status);
@@ -2109,11 +2109,11 @@ InstallFatBootcodeToPartition(
             BootSector  = L"BOOTSECT.OLD";
         }
 
-        /* Create or update 'freeldr.ini' */
-        if (DoesFreeLdrExist == FALSE)
+        /* Create or update 'nextldr.ini' */
+        if (DoesNextLdrExist == FALSE)
         {
-            /* Create new 'freeldr.ini' */
-            DPRINT1("Create new 'freeldr.ini'\n");
+            /* Create new 'nextldr.ini' */
+            DPRINT1("Create new 'nextldr.ini'\n");
 
             if (IsThereAValidBootSector(SystemRootPath->Buffer))
             {
@@ -2190,7 +2190,7 @@ InstallBtrfsBootcodeToPartition(
     _In_ PCUNICODE_STRING DestinationArcPath)
 {
     NTSTATUS Status;
-    BOOLEAN DoesFreeLdrExist;
+    BOOLEAN DoesNextLdrExist;
     WCHAR SrcPath[MAX_PATH];
     WCHAR DstPath[MAX_PATH];
 
@@ -2205,12 +2205,12 @@ InstallBtrfsBootcodeToPartition(
         return Status;
     }
 
-    /* Prepare for possibly updating 'freeldr.ini' */
-    DoesFreeLdrExist = DoesFileExist_2(SystemRootPath->Buffer, L"freeldr.ini");
-    if (DoesFreeLdrExist)
+    /* Prepare for possibly updating 'nextldr.ini' */
+    DoesNextLdrExist = DoesFileExist_2(SystemRootPath->Buffer, L"nextldr.ini");
+    if (DoesNextLdrExist)
     {
-        /* Update existing 'freeldr.ini' */
-        DPRINT1("Update existing 'freeldr.ini'\n");
+        /* Update existing 'nextldr.ini' */
+        DPRINT1("Update existing 'nextldr.ini'\n");
         Status = UpdateFreeLoaderIni(SystemRootPath->Buffer, DestinationArcPath->Buffer);
         if (!NT_SUCCESS(Status))
         {
@@ -2221,11 +2221,11 @@ InstallBtrfsBootcodeToPartition(
 
     /* Check for *nix bootloaders */
 
-    /* Create or update 'freeldr.ini' */
-    if (DoesFreeLdrExist == FALSE)
+    /* Create or update 'nextldr.ini' */
+    if (DoesNextLdrExist == FALSE)
     {
-        /* Create new 'freeldr.ini' */
-        DPRINT1("Create new 'freeldr.ini'\n");
+        /* Create new 'nextldr.ini' */
+        DPRINT1("Create new 'nextldr.ini'\n");
 
         /* Certainly SysLinux, GRUB, LILO... or an unknown boot loader */
         DPRINT1("*nix or unknown boot loader found\n");
@@ -2289,7 +2289,7 @@ InstallNtfsBootcodeToPartition(
     _In_ PCUNICODE_STRING DestinationArcPath)
 {
     NTSTATUS Status;
-    BOOLEAN DoesFreeLdrExist;
+    BOOLEAN DoesNextLdrExist;
     WCHAR SrcPath[MAX_PATH];
     WCHAR DstPath[MAX_PATH];
 
@@ -2304,12 +2304,12 @@ InstallNtfsBootcodeToPartition(
         return Status;
     }
 
-    /* Prepare for possibly updating 'freeldr.ini' */
-    DoesFreeLdrExist = DoesFileExist_2(SystemRootPath->Buffer, L"freeldr.ini");
-    if (DoesFreeLdrExist)
+    /* Prepare for possibly updating 'nextldr.ini' */
+    DoesNextLdrExist = DoesFileExist_2(SystemRootPath->Buffer, L"nextldr.ini");
+    if (DoesNextLdrExist)
     {
-        /* Update existing 'freeldr.ini' */
-        DPRINT1("Update existing 'freeldr.ini'\n");
+        /* Update existing 'nextldr.ini' */
+        DPRINT1("Update existing 'nextldr.ini'\n");
         Status = UpdateFreeLoaderIni(SystemRootPath->Buffer, DestinationArcPath->Buffer);
         if (!NT_SUCCESS(Status))
         {
@@ -2322,7 +2322,7 @@ InstallNtfsBootcodeToPartition(
 
     /* Check for *nix bootloaders */
 
-    DPRINT1("Create new 'freeldr.ini'\n");
+    DPRINT1("Create new 'nextldr.ini'\n");
 
     /* Certainly SysLinux, GRUB, LILO... or an unknown boot loader */
     DPRINT1("*nix or unknown boot loader found\n");
@@ -2529,8 +2529,8 @@ InstallBootManagerAndBootEntriesWorker(
             return Status;
         }
 
-        /* Create new 'freeldr.ini' */
-        DPRINT("Create new 'freeldr.ini'\n");
+        /* Create new 'nextldr.ini' */
+        DPRINT("Create new 'nextldr.ini'\n");
         Status = CreateFreeLoaderIniForReactOS(SystemRootPath->Buffer, DestinationArcPath->Buffer);
         if (!NT_SUCCESS(Status))
         {
@@ -2633,11 +2633,11 @@ GetDeviceInfo(
  * The target architecture.
  *
  * @param[in]   SystemRootPath
- * The system partition path, where the FreeLdr boot manager and its
+ * The system partition path, where the NextLdr boot manager and its
  * settings are saved to.
  *
  * @param[in]   SourceRootPath
- * The installation source, where to copy the FreeLdr boot manager from.
+ * The installation source, where to copy the NextLdr boot manager from.
  *
  * @param[in]   DestinationArcPath
  * The ReactOS installation path in ARC format.

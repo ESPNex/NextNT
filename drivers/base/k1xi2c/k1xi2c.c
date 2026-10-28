@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SpacemiT K1 I2C driver
+ * PROJECT:     NextNT SpacemiT K1 I2C driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     SpbCx controller driver for the SpacemiT K1 TWSI I2C controllers
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

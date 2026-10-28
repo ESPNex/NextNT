@@ -2,7 +2,7 @@
 """
 analyze_cpu_state.py - per-CPU state & KPI analysis of an ARM64 SMP boot log.
 
-Reads the SMP4DBG-instrumented freeldr/ntoskrnl log and reconstructs, per CPU:
+Reads the SMP4DBG-instrumented nextldr/ntoskrnl log and reconstructs, per CPU:
   * timer health   - per-CPU architected-timer tick rate over time, and exactly
                      when (and at what count) a core's timer stops firing
   * liveness       - when each core is producing events vs silent
@@ -15,7 +15,7 @@ probe (per-CPU KiArm64PerCpuTimerTicks). Everything else is derived from the
 cpu=N tag carried by SMP4DBG lines.
 
 Usage: analyze_cpu_state.py [log] [--bucket 2.0] [--freeze 0.5] [--ncpu 4]
-Default log: /tmp/freeldr_arm64.log
+Default log: /tmp/nextldr_arm64.log
 """
 import argparse
 import re
@@ -290,7 +290,7 @@ def sanity(rows, ticks, ncpu, end):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument('log', nargs='?', default='/tmp/freeldr_arm64.log')
+    ap.add_argument('log', nargs='?', default='/tmp/nextldr_arm64.log')
     ap.add_argument('--bucket', type=float, default=2.0)
     ap.add_argument('--freeze', type=float, default=0.5)
     ap.add_argument('--ncpu', type=int, default=4)

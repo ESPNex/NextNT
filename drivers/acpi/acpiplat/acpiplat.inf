@@ -2,7 +2,7 @@
 Signature = "$Windows NT$"
 Class = System
 ClassGUID = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 08/04/2026,1.0.0.0
 
 [ControlFlags]
@@ -12,9 +12,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT
+%NextNT% = NextNT
 
-[LiberNT]
+[NextNT]
 %PowerResource.DeviceDesc% = AcpiPlat_Inst,ACPI\ACPI_PWR
 %PowerButton.DeviceDesc% = AcpiPlat_Inst,ACPI\PNP0C0C
 %SleepButton.DeviceDesc% = AcpiPlat_Inst,ACPI\PNP0C0E
@@ -38,9 +38,9 @@ ServiceBinary = %12%\acpiplat.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 PowerResource.DeviceDesc = "ACPI Power Resource"
 PowerButton.DeviceDesc = "ACPI Power Button"
 SleepButton.DeviceDesc = "ACPI Sleep Button"
 PlatformResource.DeviceDesc = "ACPI Motherboard Resource"
-AcpiPlat.ServiceDesc = "LiberNT ACPI Platform Device Driver"
+AcpiPlat.ServiceDesc = "NextNT ACPI Platform Device Driver"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Runtime
+ * PROJECT:     NextNT Windows Runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Asynchronous operations and item views of the Store install control
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

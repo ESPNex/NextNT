@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Network Kernel Debugger Transport
+ * PROJECT:     NextNT Network Kernel Debugger Transport
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Architecture hooks, RISC-V64: the device tree handed over by the boot loader
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

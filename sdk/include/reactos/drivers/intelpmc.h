@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Intel Power Management Controller interface
+ * PROJECT:         NextNT Intel Power Management Controller interface
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  */
 

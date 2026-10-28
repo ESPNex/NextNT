@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HID Stack
+ * PROJECT:     NextNT HID Stack
  * SPDX-License-Identifier: GPL-3.0-or-later
  * PURPOSE:     Xbox USB gamepad HID minidriver definitions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

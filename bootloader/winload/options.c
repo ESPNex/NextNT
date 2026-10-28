@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Kernel load options from a BCD OS loader entry
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

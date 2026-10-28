@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Runtime Library
+ * PROJECT:     NextNT Runtime Library
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Fiber local storage
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

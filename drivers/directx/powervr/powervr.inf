@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT PowerVR Rogue WDDM miniport
+; PROJECT:     NextNT PowerVR Rogue WDDM miniport
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     PowerVR Rogue graphics driver installation file
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,16 +7,16 @@
 Signature="$Windows NT$"
 Class=Display
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=10/04/2026,1.0.0.0
 
 [DestinationDirs]
 DefaultDestDir=12
 
 [Manufacturer]
-%LiberNT%=LiberNT,NTriscv64
+%NextNT%=NextNT,NTriscv64
 
-[LiberNT.NTriscv64]
+[NextNT.NTriscv64]
 %PowerVr.K1.DeviceDesc%=PowerVr_Install,FDT\spacemit_k1-gpu
 
 [PowerVr_Install]
@@ -44,8 +44,8 @@ ServiceBinary=%12%\powervr.sys
 LoadOrderGroup=Video
 
 [Strings]
-LiberNT="LiberNT"
+NextNT="NextNT"
 PowerVr.K1.DeviceDesc="SpacemiT K1 PowerVR BXE-2-32 GPU"
-PowerVr.ServiceDesc="LiberNT PowerVR Rogue Graphics Driver"
+PowerVr.ServiceDesc="NextNT PowerVR Rogue Graphics Driver"
 REG_SZ=0x00000000
 REG_DWORD=0x00010001

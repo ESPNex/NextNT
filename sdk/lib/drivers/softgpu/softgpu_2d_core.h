@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WDDM software GPU miniport
+ * PROJECT:     NextNT WDDM software GPU miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Pure validation and linear 2D copy/fill policy
  */

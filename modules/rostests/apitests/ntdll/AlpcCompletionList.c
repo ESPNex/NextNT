@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT API tests
+ * PROJECT:         NextNT API tests
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         ALPC completion-list helper and end-to-end tests
  * COPYRIGHT:       Copyright 2026 Ahmed ARIF

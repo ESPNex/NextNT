@@ -1614,7 +1614,7 @@ HvValidateHive(
  * doesn't come into action if no volatile data has been found.
  *
  * CM_CHECK_REGISTRY_BOOTLOADER_PURGE_VOLATILES - A special flag used
- * by FreeLdr and Environ. When this flag is set the function will not
+ * by NextLdr and Environ. When this flag is set the function will not
  * clean up the volatile storage but it will unintialize the storage
  * instead (this is the case if the given registry hive for validation
  * is a XP Beta 1 hive or newer). Otherwise it will perform a normal

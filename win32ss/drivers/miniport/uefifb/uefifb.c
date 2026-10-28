@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT UEFI GOP Framebuffer Miniport
+ * PROJECT:     NextNT UEFI GOP Framebuffer Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Videoport miniport that exposes the firmware-provided GOP
  *              linear framebuffer (preserved by ntoskrnl across the loader
@@ -60,7 +60,7 @@ UefiFbDecodePixelFormat(
 
     /*
      * PixelFormat in LOADER_PARAMETER_FRAMEBUFFER is the loader-normalized
-     * bits-per-pixel value. FreeLdr has already converted the EFI GOP enum
+     * bits-per-pixel value. NextLdr has already converted the EFI GOP enum
      * into this value and copied the corresponding channel masks.
      */
     switch (FrameBuffer->PixelFormat)

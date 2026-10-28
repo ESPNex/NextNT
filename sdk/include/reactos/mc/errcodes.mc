@@ -812,19 +812,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_REM_NOT_LIST
 Language=English
-LiberNT cannot find the network path. Verify that the network path is correct and the destination computer is not busy or turned off. If LiberNT still cannot find the network path, contact your network administrator.
+NextNT cannot find the network path. Verify that the network path is correct and the destination computer is not busy or turned off. If NextNT still cannot find the network path, contact your network administrator.
 .
 Language=Russian
 Невозможно найти сетевой путь. Убедитесь, что сетевой путь указан верно, а конечный компьютер включен и не занят. Если система вновь не сможет найти путь, обратитесь к сетевому администратору.
 .
 Language=Polish
-System LiberNT nie może odnaleźć ścieżki sieciowej. Sprawdź, czy ścieżka sieciowa jest poprawna i czy komputer docelowy nie jest zajęty lub wyłączony. Jeśli system LiberNT nadal nie będzie mógł odnaleźć ścieżki sieciowej, skontaktuj się z administratorem sieci.
+System NextNT nie może odnaleźć ścieżki sieciowej. Sprawdź, czy ścieżka sieciowa jest poprawna i czy komputer docelowy nie jest zajęty lub wyłączony. Jeśli system NextNT nadal nie będzie mógł odnaleźć ścieżki sieciowej, skontaktuj się z administratorem sieci.
 .
 Language=Romanian
 Calea în rețea nu a fost găsită. Asigurați-vă că este corectă și că destinația în rețea este disponibilă fizic. Dacă veți întâmpina această problemă în continuare, contactați administratorul de rețea.
 .
 Language=Japanese
-LiberNTでネットワークパスが見つかりません。ネットワークパスが正しく、宛先コンピュータがビジー状態または電源オフになっていないことを確認します。それでもLiberNTがネットワークパスを見つけられない場合は、ネットワーク管理者に連絡してください。
+NextNTでネットワークパスが見つかりません。ネットワークパスが正しく、宛先コンピュータがビジー状態または電源オフになっていないことを確認します。それでもNextNTがネットワークパスを見つけられない場合は、ネットワーク管理者に連絡してください。
 .
 
 MessageId=52
@@ -3364,7 +3364,7 @@ Language=Romanian
 Fișierul imagine «%1» este valid, însă nu pentru tipul mașinii de calcul curente.
 .
 Language=Japanese
-このバージョンの %1 は、実行している LiberNT のバージョンと互換性がありません。コンピュータのシステム情報を確認してから、ソフトウェア発行元に連絡してください。
+このバージョンの %1 は、実行している NextNT のバージョンと互換性がありません。コンピュータのシステム情報を確認してから、ソフトウェア発行元に連絡してください。
 .
 
 MessageId=217
@@ -4649,7 +4649,7 @@ Language=Romanian
 The SAM database on a Windows Server is significantly out of synchronization with the copy on the Domain Controller. A complete synchronization is required.
 .
 Language=Japanese
-LiberNT Server上のSAMデータベースがドメイン コントローラー上のコピーと同期していません。完全な同期が必要です。
+NextNT Server上のSAMデータベースがドメイン コントローラー上のコピーと同期していません。完全な同期が必要です。
 .
 
 MessageId=570
@@ -4669,7 +4669,7 @@ Language=Romanian
 The NtCreateFile API failed. This error should never be returned to an application, it is a place holder for the Windows Lan Manager Redirector to use in its internal error mapping routines.
 .
 Language=Japanese
-NtCreateFile APIが失敗しました。このエラーはLiberNT Lan Manager Redirectorが内部のエラーマップルーチンで使用するプレースホルダーです。
+NtCreateFile APIが失敗しました。このエラーはNextNT Lan Manager Redirectorが内部のエラーマップルーチンで使用するプレースホルダーです。
 .
 
 MessageId=571
@@ -4869,7 +4869,7 @@ Language=Romanian
 A Windows Server has an incorrect configuration.
 .
 Language=Japanese
-LiberNTサーバーの構成が正しくありません。
+NextNTサーバーの構成が正しくありません。
 .
 
 MessageId=582
@@ -5157,19 +5157,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_LOST_WRITEBEHIND_DATA
 Language=English
-LiberNT was unable to save all the data for the file %hs. The data has been lost. This error may be caused by a failure of your computer hardware or network connection. Please try to save this file elsewhere.
+NextNT was unable to save all the data for the file %hs. The data has been lost. This error may be caused by a failure of your computer hardware or network connection. Please try to save this file elsewhere.
 .
 Language=Russian
-LiberNT was unable to save all the data for the file %hs. The data has been lost. This error may be caused by a failure of your computer hardware or network connection. Please try to save this file elsewhere.
+NextNT was unable to save all the data for the file %hs. The data has been lost. This error may be caused by a failure of your computer hardware or network connection. Please try to save this file elsewhere.
 .
 Language=Polish
-System LiberNT nie mógł zapisać wszystkich danych dla pliku %hs. Dane zostały utracone. Powodem tego błędu mogła być awaria sprzętu komputerowego lub połączenia sieciowego. Spróbuj zapisać ten plik w innym miejscu.
+System NextNT nie mógł zapisać wszystkich danych dla pliku %hs. Dane zostały utracone. Powodem tego błędu mogła być awaria sprzętu komputerowego lub połączenia sieciowego. Spróbuj zapisać ten plik w innym miejscu.
 .
 Language=Romanian
-LiberNT was unable to save all the data for the file %hs. The data has been lost. This error may be caused by a failure of your computer hardware or network connection. Please try to save this file elsewhere.
+NextNT was unable to save all the data for the file %hs. The data has been lost. This error may be caused by a failure of your computer hardware or network connection. Please try to save this file elsewhere.
 .
 Language=Japanese
-LiberNT はファイル %hs のすべてのデータを保存できませんでした。
+NextNT はファイル %hs のすべてのデータを保存できませんでした。
 このエラーは、コンピュータのハードウェアまたはネットワーク接続の障害によって発生した可能性があります。このファイルを別の場所に保存してください。
 .
 
@@ -5696,7 +5696,7 @@ Language=Romanian
 The evaluation period for this installation of Windows has expired. This system will shutdown in 1 hour. To restore access to this installation of Windows, please upgrade this installation using a licensed distribution of this product.
 .
 Language=Japanese
-このLiberNTインストールの評価期間が終了しました。このシステムは1時間後にシャットダウンされます。LiberNTのこのインストールへのアクセスを回復するには、この製品のライセンス配布を使用してこのインストールをアップグレードしてください。
+このNextNTインストールの評価期間が終了しました。このシステムは1時間後にシャットダウンされます。NextNTのこのインストールへのアクセスを回復するには、この製品のライセンス配布を使用してこのインストールをアップグレードしてください。
 .
 
 MessageId=623
@@ -5704,19 +5704,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_ILLEGAL_DLL_RELOCATION
 Language=English
-The system DLL %hs was relocated in memory. The application will not run properly. The relocation occurred because the DLL %hs occupied an address range reserved for LiberNT system DLLs. The vendor supplying the DLL should be contacted for a new DLL.
+The system DLL %hs was relocated in memory. The application will not run properly. The relocation occurred because the DLL %hs occupied an address range reserved for NextNT system DLLs. The vendor supplying the DLL should be contacted for a new DLL.
 .
 Language=Russian
-The system DLL %hs was relocated in memory. The application will not run properly. The relocation occurred because the DLL %hs occupied an address range reserved for LiberNT system DLLs. The vendor supplying the DLL should be contacted for a new DLL.
+The system DLL %hs was relocated in memory. The application will not run properly. The relocation occurred because the DLL %hs occupied an address range reserved for NextNT system DLLs. The vendor supplying the DLL should be contacted for a new DLL.
 .
 Language=Polish
-Biblioteka systemowa DLL %hs została zrelokowana w pamięci. Aplikacja nie będzie działać prawidłowo. Powodem relokacji było to, że biblioteka DLL %hs zajmowała zakres adresów zarezerwowany dla LiberNT systemowej biblioteki DLL. Należy skontaktować się z dostawcą w sprawie nowej biblioteki DLL.
+Biblioteka systemowa DLL %hs została zrelokowana w pamięci. Aplikacja nie będzie działać prawidłowo. Powodem relokacji było to, że biblioteka DLL %hs zajmowała zakres adresów zarezerwowany dla NextNT systemowej biblioteki DLL. Należy skontaktować się z dostawcą w sprawie nowej biblioteki DLL.
 .
 Language=Romanian
-The system DLL %hs was relocated in memory. The application will not run properly. The relocation occurred because the DLL %hs occupied an address range reserved for LiberNT system DLLs. The vendor supplying the DLL should be contacted for a new DLL.
+The system DLL %hs was relocated in memory. The application will not run properly. The relocation occurred because the DLL %hs occupied an address range reserved for NextNT system DLLs. The vendor supplying the DLL should be contacted for a new DLL.
 .
 Language=Japanese
-システム DLL %hs がメモリ内に再配置されました。アプリは適切に動作しないかもしれません。再配置は、DLL %hs が LiberNT システム DLL 用に予約されているアドレス範囲を占有していたために発生しました。DLL を提供しているベンダーに連絡して、新しい DLL を入手してください。
+システム DLL %hs がメモリ内に再配置されました。アプリは適切に動作しないかもしれません。再配置は、DLL %hs が NextNT システム DLL 用に予約されているアドレス範囲を占有していたために発生しました。DLL を提供しているベンダーに連絡して、新しい DLL を入手してください。
 .
 
 MessageId=624
@@ -5944,16 +5944,16 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_COMMITMENT_MINIMUM
 Language=English
-Your system is low on virtual memory. LiberNT is increasing the size of your virtual memory paging file. During this process, memory requests for some applications may be denied. For more information, see Help.
+Your system is low on virtual memory. NextNT is increasing the size of your virtual memory paging file. During this process, memory requests for some applications may be denied. For more information, see Help.
 .
 Language=Russian
-Your system is low on virtual memory. LiberNT is increasing the size of your virtual memory paging file. During this process, memory requests for some applications may be denied. For more information, see Help.
+Your system is low on virtual memory. NextNT is increasing the size of your virtual memory paging file. During this process, memory requests for some applications may be denied. For more information, see Help.
 .
 Language=Polish
-System ma za mało pamięci wirtualnej. System LiberNT zwiększa rozmiar pliku stronicowania pamięci wirtualnej. W czasie trwania tego procesu, może wystąpić odmowa na żądania pamięci niektórych aplikacji. Więcej informacji możesz znaleźć w Pomocy.
+System ma za mało pamięci wirtualnej. System NextNT zwiększa rozmiar pliku stronicowania pamięci wirtualnej. W czasie trwania tego procesu, może wystąpić odmowa na żądania pamięci niektórych aplikacji. Więcej informacji możesz znaleźć w Pomocy.
 .
 Language=Romanian
-Your system is low on virtual memory. LiberNT is increasing the size of your virtual memory paging file. During this process, memory requests for some applications may be denied. For more information, see Help.
+Your system is low on virtual memory. NextNT is increasing the size of your virtual memory paging file. During this process, memory requests for some applications may be denied. For more information, see Help.
 .
 Language=Japanese
 システムの仮想メモリが不足しています。このプロセスの間、一部のアプリケーションのメモリ要求が拒否されることがあります。詳細については、ヘルプを参照してください。
@@ -6086,19 +6086,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_DS_VERSION_CHECK_FAILURE
 Language=English
-This version of LiberNT is not compatible with the behavior version of directory forest, domain or domain controller.
+This version of NextNT is not compatible with the behavior version of directory forest, domain or domain controller.
 .
 Language=Russian
-This version of LiberNT is not compatible with the behavior version of directory forest, domain or domain controller.
+This version of NextNT is not compatible with the behavior version of directory forest, domain or domain controller.
 .
 Language=Polish
-Ta wersja systemu LiberNT jest niezgodna z wersją zachowania lasu katalogów, domeny lub kontrolera domeny.
+Ta wersja systemu NextNT jest niezgodna z wersją zachowania lasu katalogów, domeny lub kontrolera domeny.
 .
 Language=Romanian
-This version of LiberNT is not compatible with the behavior version of directory forest, domain or domain controller.
+This version of NextNT is not compatible with the behavior version of directory forest, domain or domain controller.
 .
 Language=Japanese
-このバージョンのLiberNTは、ディレクトリ フォレスト、ドメイン、またはドメイン コントローラの動作バージョンと互換性がありません。
+このバージョンのNextNTは、ディレクトリ フォレスト、ドメイン、またはドメイン コントローラの動作バージョンと互換性がありません。
 .
 
 MessageId=644
@@ -6358,7 +6358,7 @@ Language=Romanian
 The %hs display driver has stopped working normally. Save your work and reboot the system to restore full display functionality. The next time you reboot the machine a dialog will be displayed giving you a chance to report this failure to Microsoft.
 .
 Language=Japanese
-ディスプレイドライバ%hsが正常に動作しなくなりました。作業を保存してシステムを再起動し、ディスプレイ機能を完全に回復してください。次にマシンを再起動するとダイアログが表示され、LiberNTにこの障害を報告することができます。
+ディスプレイドライバ%hsが正常に動作しなくなりました。作業を保存してシステムを再起動し、ディスプレイ機能を完全に回復してください。次にマシンを再起動するとダイアログが表示され、NextNTにこの障害を報告することができます。
 .
 
 MessageId=665
@@ -6640,7 +6640,7 @@ Language=Romanian
 During the translation of a global identifier (GUID) to a Windows security ID (SID), no administratively-defined GUID prefix was found. A substitute prefix was used, which will not compromise system security. However, this may provide a more restrictive access than intended.
 .
 Language=Japanese
-グローバル識別子 (GUID)  から LiberNT セキュリティ ID (SID)  への変換中に、管理上定義された GUID 接頭辞が見つかりませんでした。システムのセキュリティを損なわない代替接頭辞が使用されました。代替接頭辞が使用されました。
+グローバル識別子 (GUID)  から NextNT セキュリティ ID (SID)  への変換中に、管理上定義された GUID 接頭辞が見つかりませんでした。システムのセキュリティを損なわない代替接頭辞が使用されました。代替接頭辞が使用されました。
 .
 
 MessageId=681
@@ -7508,19 +7508,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_FIRMWARE_UPDATED
 Language=English
-LiberNT has detected that the system firmware (BIOS) was updated [previous firmware date = %2, current firmware date %3].
+NextNT has detected that the system firmware (BIOS) was updated [previous firmware date = %2, current firmware date %3].
 .
 Language=Russian
-LiberNT has detected that the system firmware (BIOS) was updated [previous firmware date = %2, current firmware date %3].
+NextNT has detected that the system firmware (BIOS) was updated [previous firmware date = %2, current firmware date %3].
 .
 Language=Polish
-System LiberNT wykrył, że oprogramowanie układowe systemu (BIOS) zostało zaktualizowane [poprzednia data oprogramowania układowego = %2, bieżąca data oprogramowania układowego %3].
+System NextNT wykrył, że oprogramowanie układowe systemu (BIOS) zostało zaktualizowane [poprzednia data oprogramowania układowego = %2, bieżąca data oprogramowania układowego %3].
 .
 Language=Romanian
-LiberNT has detected that the system firmware (BIOS) was updated [previous firmware date = %2, current firmware date %3].
+NextNT has detected that the system firmware (BIOS) was updated [previous firmware date = %2, current firmware date %3].
 .
 Language=Japanese
-LiberNT はシステムのファームウェア (BIOS)  が更新されたことを検出しました [以前のファームウェアの日付 = %2、現在のファームウェアの日付 %3]。
+NextNT はシステムのファームウェア (BIOS)  が更新されたことを検出しました [以前のファームウェアの日付 = %2、現在のファームウェアの日付 %3]。
 .
 
 MessageId=729
@@ -10311,19 +10311,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_OLD_WIN_VERSION
 Language=English
-The specified program requires a newer version of LiberNT.
+The specified program requires a newer version of NextNT.
 .
 Language=Russian
-The specified program requires a newer version of LiberNT.
+The specified program requires a newer version of NextNT.
 .
 Language=Polish
-Określony program wymaga nowszej wersji systemu LiberNT.
+Określony program wymaga nowszej wersji systemu NextNT.
 .
 Language=Romanian
-The specified program requires a newer version of LiberNT.
+The specified program requires a newer version of NextNT.
 .
 Language=Japanese
-指定されたプログラムには新しいバージョンの LiberNT が必要です。
+指定されたプログラムには新しいバージョンの NextNT が必要です。
 .
 
 MessageId=1151
@@ -10343,7 +10343,7 @@ Language=Romanian
 The specified program is not a Windows or MS-DOS program.
 .
 Language=Japanese
-指定されたプログラムは LiberNT または MS-DOS プログラムではありません。
+指定されたプログラムは NextNT または MS-DOS プログラムではありません。
 .
 
 MessageId=1152
@@ -10371,19 +10371,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_RMODE_APP
 Language=English
-The specified program was written for an earlier version of LiberNT.
+The specified program was written for an earlier version of NextNT.
 .
 Language=Russian
-The specified program was written for an earlier version of LiberNT.
+The specified program was written for an earlier version of NextNT.
 .
 Language=Polish
-Określony program został napisany dla starszej wersji systemu LiberNT.
+Określony program został napisany dla starszej wersji systemu NextNT.
 .
 Language=Romanian
-The specified program was written for an earlier version of LiberNT.
+The specified program was written for an earlier version of NextNT.
 .
 Language=Japanese
-指定されたプログラムは以前のバージョンの LiberNT 用に作成されました。
+指定されたプログラムは以前のバージョンの NextNT 用に作成されました。
 .
 
 MessageId=1154
@@ -11554,16 +11554,16 @@ Language=English
 The network location cannot be reached. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Russian
-Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе LiberNT.
+Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе NextNT.
 .
 Language=Polish
-Lokalizacja sieciowa jest nieosiągalna. Informacje na temat rozwiązywania problemów z siecią można znaleźć w Pomocy systemu LiberNT.
+Lokalizacja sieciowa jest nieosiągalna. Informacje na temat rozwiązywania problemów z siecią można znaleźć w Pomocy systemu NextNT.
 .
 Language=Romanian
 The network location cannot be reached. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Japanese
-ネットワークの場所にアクセスできません。ネットワークのトラブルシューティングについては、LiberNTヘルプを参照してください。
+ネットワークの場所にアクセスできません。ネットワークのトラブルシューティングについては、NextNTヘルプを参照してください。
 .
 
 MessageId=1232
@@ -11574,16 +11574,16 @@ Language=English
 The network location cannot be reached. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Russian
-Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе LiberNT.
+Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе NextNT.
 .
 Language=Polish
-Lokalizacja sieciowa jest nieosiągalna. Informacje na temat rozwiązywania problemów z siecią można znaleźć w Pomocy systemu LiberNT.
+Lokalizacja sieciowa jest nieosiągalna. Informacje na temat rozwiązywania problemów z siecią można znaleźć w Pomocy systemu NextNT.
 .
 Language=Romanian
 The network location cannot be reached. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Japanese
-ネットワークの場所にアクセスできません。ネットワークのトラブルシューティングについては、LiberNTヘルプを参照してください。
+ネットワークの場所にアクセスできません。ネットワークのトラブルシューティングについては、NextNTヘルプを参照してください。
 .
 
 MessageId=1233
@@ -11594,16 +11594,16 @@ Language=English
 The network location cannot be reached. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Russian
-Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе LiberNT.
+Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе NextNT.
 .
 Language=Polish
-Lokalizacja sieciowa jest nieosiągalna. Informacje na temat rozwiązywania problemów z siecią można znaleźć w Pomocy systemu LiberNT.
+Lokalizacja sieciowa jest nieosiągalna. Informacje na temat rozwiązywania problemów z siecią można znaleźć w Pomocy systemu NextNT.
 .
 Language=Romanian
 The network location cannot be reached. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Japanese
-ネットワークの場所にアクセスできません。ネットワークのトラブルシューティングについては、LiberNTヘルプを参照してください。
+ネットワークの場所にアクセスできません。ネットワークのトラブルシューティングについては、NextNTヘルプを参照してください。
 .
 
 MessageId=1234
@@ -12023,7 +12023,7 @@ Language=Romanian
 This operation is not supported on a computer running Windows Server 2003 for Small Business Server.
 .
 Language=Japanese
-この操作は、LiberNT Server を実行しているコンピュータではサポートされていません。
+この操作は、NextNT Server を実行しているコンピュータではサポートされていません。
 .
 
 MessageId=1255
@@ -12054,16 +12054,16 @@ Language=English
 The remote system is not available. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Russian
-Удаленная система недоступна. За информацией о разрешении проблем в сети, обратитесь к справочной системе LiberNT.
+Удаленная система недоступна. За информацией о разрешении проблем в сети, обратитесь к справочной системе NextNT.
 .
 Language=Polish
-System zdalny jest niedostępny. Aby uzyskać informacje dotyczące rozwiązywania problemów z siecią, zobacz Pomoc systemu LiberNT.
+System zdalny jest niedostępny. Aby uzyskać informacje dotyczące rozwiązywania problemów z siecią, zobacz Pomoc systemu NextNT.
 .
 Language=Romanian
 The remote system is not available. For information about network troubleshooting, see ReactOS Help.
 .
 Language=Japanese
-リモート システムが使用できません。ネットワークのトラブルシューティングについては、LiberNTヘルプを参照してください。
+リモート システムが使用できません。ネットワークのトラブルシューティングについては、NextNTヘルプを参照してください。
 .
 
 MessageId=1257
@@ -12131,7 +12131,7 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_ACCESS_DISABLED_BY_POLICY
 Language=English
-LiberNT cannot open this program because it has been prevented by a software restriction policy. For more information, open Event Viewer or contact your system administrator.
+NextNT cannot open this program because it has been prevented by a software restriction policy. For more information, open Event Viewer or contact your system administrator.
 .
 Language=Russian
 Эта программа заблокирована групповой политикой. За дополнительными сведениями обращайтесь к системному администратору.
@@ -12140,7 +12140,7 @@ Language=Polish
 Ten program jest blokowany przez zasady grupy. Aby uzyskać więcej informacji, otwórz Podgląd zdarzeń lub skontaktuj się z administratorem systemu.
 .
 Language=Romanian
-LiberNT cannot open this program because it has been prevented by a software restriction policy. For more information, open Event Viewer or contact your system administrator.
+NextNT cannot open this program because it has been prevented by a software restriction policy. For more information, open Event Viewer or contact your system administrator.
 .
 Language=Japanese
 このプログラムはグループ ポリシーでブロックされています。詳細については、システム管理者にお問い合わせください。
@@ -12451,19 +12451,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_ACCESS_DISABLED_WEBBLADE
 Language=English
-LiberNT cannot open this program since it has been disabled.
+NextNT cannot open this program since it has been disabled.
 .
 Language=Russian
-LiberNT не удается запустить эту программу, так как она отключена.
+NextNT не удается запустить эту программу, так как она отключена.
 .
 Language=Polish
-System LiberNT nie może otworzyć tego programu, ponieważ został on wyłączony.
+System NextNT nie może otworzyć tego programu, ponieważ został on wyłączony.
 .
 Language=Romanian
-LiberNT cannot open this program since it has been disabled.
+NextNT cannot open this program since it has been disabled.
 .
 Language=Japanese
-LiberNTが無効になっているため、このプログラムを開くことができません。
+NextNTが無効になっているため、このプログラムを開くことができません。
 .
 
 MessageId=1278
@@ -12471,19 +12471,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_ACCESS_DISABLED_WEBBLADE_TAMPER
 Language=English
-LiberNT cannot open this program because the license enforcement system has been tampered with or become corrupted.
+NextNT cannot open this program because the license enforcement system has been tampered with or become corrupted.
 .
 Language=Russian
-LiberNT не удается открыть эту программу, так как система учета лицензий изменена или повреждена.
+NextNT не удается открыть эту программу, так как система учета лицензий изменена или повреждена.
 .
 Language=Polish
-System LiberNT nie może otworzyć tego programu, ponieważ system wymuszania licencji został zmieniony lub uszkodzony.
+System NextNT nie może otworzyć tego programu, ponieważ system wymuszania licencji został zmieniony lub uszkodzony.
 .
 Language=Romanian
-LiberNT cannot open this program because the license enforcement system has been tampered with or become corrupted.
+NextNT cannot open this program because the license enforcement system has been tampered with or become corrupted.
 .
 Language=Japanese
-ライセンス実施システムが改ざんされたか破損しているため、LiberNT でこのプログラムを開くことができません。
+ライセンス実施システムが改ざんされたか破損しているため、NextNT でこのプログラムを開くことができません。
 .
 
 MessageId=1279
@@ -12864,7 +12864,7 @@ Language=Romanian
 An operation attempted to exceed an implementation-defined limit.
 .
 Language=Japanese
-サービス LiberNT 管理コンソール (MMC) スナップイン (services.msc) およびローカルセキュリティ設定MMCスナップイン (secpol.msc) を使用して、サービス構成とアカウント構成を表示できます。
+サービス NextNT 管理コンソール (MMC) スナップイン (services.msc) およびローカルセキュリティ設定MMCスナップイン (secpol.msc) を使用して、サービス構成とアカウント構成を表示できます。
 .
 
 MessageId=1298
@@ -16192,16 +16192,16 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_INSTALL_SERVICE_FAILURE
 Language=English
-The ReactOS Installer service could not be accessed. This can occur if you are running LiberNT in safe mode, or if the ReactOS Installer is not correctly installed. Contact your support personnel for assistance.
+The ReactOS Installer service could not be accessed. This can occur if you are running NextNT in safe mode, or if the ReactOS Installer is not correctly installed. Contact your support personnel for assistance.
 .
 Language=Russian
-The ReactOS Installer service could not be accessed. This can occur if you are running LiberNT in safe mode, or if the ReactOS Installer is not correctly installed. Contact your support personnel for assistance.
+The ReactOS Installer service could not be accessed. This can occur if you are running NextNT in safe mode, or if the ReactOS Installer is not correctly installed. Contact your support personnel for assistance.
 .
 Language=Polish
-Nie można uzyskać dostępu do usługi Instalator LiberNT. Może mieć to miejsce, jeśli system LiberNT jest uruchomiony w trybie awaryjnym lub Instalator LiberNT jest niepoprawnie zainstalowany. Skontaktuj się z pomocą techniczną, aby uzyskać pomoc.
+Nie można uzyskać dostępu do usługi Instalator NextNT. Może mieć to miejsce, jeśli system NextNT jest uruchomiony w trybie awaryjnym lub Instalator NextNT jest niepoprawnie zainstalowany. Skontaktuj się z pomocą techniczną, aby uzyskać pomoc.
 .
 Language=Romanian
-The ReactOS Installer service could not be accessed. This can occur if you are running LiberNT in safe mode, or if the ReactOS Installer is not correctly installed. Contact your support personnel for assistance.
+The ReactOS Installer service could not be accessed. This can occur if you are running NextNT in safe mode, or if the ReactOS Installer is not correctly installed. Contact your support personnel for assistance.
 .
 Language=Japanese
 ReactOS Installer サービスにアクセスできませんでした。ReactOS Installerが正しくインストールされていない場合に発生する可能性があります。サポート担当者にお問い合わせください。
@@ -16432,19 +16432,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_INSTALL_PACKAGE_VERSION
 Language=English
-This installation package cannot be installed by the ReactOS Installer service. You must install a LiberNT service pack that contains a newer version of the ReactOS Installer service.
+This installation package cannot be installed by the ReactOS Installer service. You must install a NextNT service pack that contains a newer version of the ReactOS Installer service.
 .
 Language=Russian
-This installation package cannot be installed by the ReactOS Installer service. You must install a LiberNT service pack that contains a newer version of the ReactOS Installer service.
+This installation package cannot be installed by the ReactOS Installer service. You must install a NextNT service pack that contains a newer version of the ReactOS Installer service.
 .
 Language=Polish
-Usługa Instalator LiberNT nie może zainstalować tego pakietu instalacyjnego. Musisz zainstalować dodatek LiberNT Service Pack, zawierający nowszą wersję usługi Instalator LiberNT.
+Usługa Instalator NextNT nie może zainstalować tego pakietu instalacyjnego. Musisz zainstalować dodatek NextNT Service Pack, zawierający nowszą wersję usługi Instalator NextNT.
 .
 Language=Romanian
-This installation package cannot be installed by the ReactOS Installer service. You must install a LiberNT service pack that contains a newer version of the ReactOS Installer service.
+This installation package cannot be installed by the ReactOS Installer service. You must install a NextNT service pack that contains a newer version of the ReactOS Installer service.
 .
 Language=Japanese
-このインストール パッケージは ReactOS Installer サービスではインストールできません。新しいバージョンのReactOS Installerサービスが含まれているLiberNTサービスパックをインストールする必要があります。
+このインストール パッケージは ReactOS Installer サービスではインストールできません。新しいバージョンのReactOS Installerサービスが含まれているNextNTサービスパックをインストールする必要があります。
 .
 
 MessageId=1614
@@ -16598,7 +16598,7 @@ Language=Russian
 There was an error starting the ReactOS Installer service user interface. Contact your support personnel.
 .
 Language=Polish
-Podczas uruchamiania interfejsu użytkownika usługi Instalator LiberNT wystąpił błąd. Skontaktuj się z personelem technicznym.
+Podczas uruchamiania interfejsu użytkownika usługi Instalator NextNT wystąpił błąd. Skontaktuj się z personelem technicznym.
 .
 Language=Romanian
 There was an error starting the ReactOS Installer service user interface. Contact your support personnel.
@@ -16798,7 +16798,7 @@ Language=Russian
 The ReactOS Installer service failed to start. Contact your support personnel.
 .
 Language=Polish
-Nie można uruchomić usługi Instalator LiberNT. Skontaktuj się z działem Pomocy technicznej.
+Nie można uruchomić usługi Instalator NextNT. Skontaktuj się z działem Pomocy technicznej.
 .
 Language=Romanian
 The ReactOS Installer service failed to start. Contact your support personnel.
@@ -16912,19 +16912,19 @@ Severity=Success
 Facility=System
 SymbolicName=ERROR_PATCH_PACKAGE_UNSUPPORTED
 Language=English
-This patch package cannot be processed by the ReactOS Installer service. You must install a LiberNT service pack that contains a newer version of the ReactOS Installer service.
+This patch package cannot be processed by the ReactOS Installer service. You must install a NextNT service pack that contains a newer version of the ReactOS Installer service.
 .
 Language=Russian
-This patch package cannot be processed by the ReactOS Installer service. You must install a LiberNT service pack that contains a newer version of the ReactOS Installer service.
+This patch package cannot be processed by the ReactOS Installer service. You must install a NextNT service pack that contains a newer version of the ReactOS Installer service.
 .
 Language=Polish
-Usługa Instalator LiberNT nie może przetworzyć tego pakietu aktualizacji. Musisz zainstalować dodatek LiberNT Service Pack, zawierający nowszą wersję usługi Instalator LiberNT.
+Usługa Instalator NextNT nie może przetworzyć tego pakietu aktualizacji. Musisz zainstalować dodatek NextNT Service Pack, zawierający nowszą wersję usługi Instalator NextNT.
 .
 Language=Romanian
-This patch package cannot be processed by the ReactOS Installer service. You must install a LiberNT service pack that contains a newer version of the ReactOS Installer service.
+This patch package cannot be processed by the ReactOS Installer service. You must install a NextNT service pack that contains a newer version of the ReactOS Installer service.
 .
 Language=Japanese
-この更新パッケージは ReactOS Installer サービスで処理できません。新しいバージョンの ReactOS Installer サービスが含まれている LiberNT サービス パックをインストールする必要があります。
+この更新パッケージは ReactOS Installer サービスで処理できません。新しいバージョンの ReactOS Installer サービスが含まれている NextNT サービス パックをインストールする必要があります。
 .
 
 MessageId=1638
@@ -17018,7 +17018,7 @@ Language=Russian
 The upgrade patch cannot be installed by the ReactOS Installer service because the program to be upgraded may be missing, or the upgrade patch may update a different version of the program. Verify that the program to be upgraded exists on your computer and that you have the correct upgrade patch.
 .
 Language=Polish
-Uaktualnienia nie można zainstalować przez usługę Instalator LiberNT, ponieważ nie ma programu do uaktualnienia albo uaktualnienie jest przeznaczone do innej wersji tego programu. Sprawdź, czy program, który ma być uaktualniony, znajduje się na dysku i czy masz prawidłowe uaktualnienie.
+Uaktualnienia nie można zainstalować przez usługę Instalator NextNT, ponieważ nie ma programu do uaktualnienia albo uaktualnienie jest przeznaczone do innej wersji tego programu. Sprawdź, czy program, który ma być uaktualniony, znajduje się na dysku i czy masz prawidłowe uaktualnienie.
 .
 Language=Romanian
 The upgrade patch cannot be installed by the ReactOS Installer service because the program to be upgraded may be missing, or the upgrade patch may update a different version of the program. Verify that the program to be upgraded exists on your computer and that you have the correct upgrade patch.
@@ -17078,13 +17078,13 @@ Language=Russian
 The ReactOS Installer does not permit installation from a Remote Desktop Connection.
 .
 Language=Polish
-Instalator LiberNT nie zezwala na instalację przy użyciu podłączania pulpitu zdalnego.
+Instalator NextNT nie zezwala na instalację przy użyciu podłączania pulpitu zdalnego.
 .
 Language=Romanian
 The ReactOS Installer does not permit installation from a Remote Desktop Connection.
 .
 Language=Japanese
-LiberNT インストーラは、リモート デスクトップ接続からのインストールを許可しません。
+NextNT インストーラは、リモート デスクトップ接続からのインストールを許可しません。
 .
 
 MessageId=1654
@@ -19504,7 +19504,7 @@ Language=Romanian
 The error specified is not a valid Windows RPC error code.
 .
 Language=Japanese
-指定されたエラーは有効な LiberNT RPC エラーコードではありません。
+指定されたエラーは有効な NextNT RPC エラーコードではありません。
 .
 
 MessageId=1824
@@ -25146,7 +25146,7 @@ Language=Romanian
 This computer cannot be made a member of a cluster because it does not have the correct version of Windows installed.
 .
 Language=Japanese
-このコンピュータには正しいバージョンのLiberNTがインストールされていないため、クラスタのメンバにできません。
+このコンピュータには正しいバージョンのNextNTがインストールされていないため、クラスタのメンバにできません。
 .
 
 MessageId=5900
@@ -25246,7 +25246,7 @@ Language=Romanian
 One or more nodes in the cluster are running a version of Windows that does not support this operation.
 .
 Language=Japanese
-クラスタ内の1つまたは複数のノードで、この操作をサポートしないバージョンのLiberNTが実行されています。
+クラスタ内の1つまたは複数のノードで、この操作をサポートしないバージョンのNextNTが実行されています。
 .
 
 MessageId=5905
@@ -32109,7 +32109,7 @@ Language=Romanian
 The directory cannot validate the proposed naming context name because it does not hold a replica of the naming context above the proposed naming context. Please ensure that the domain naming master role is held by a server that is configured as a global catalog server, and that the server is up to date with its replication partners. (Applies only to Windows 2000 Domain Naming masters)
 .
 Language=Japanese
-ディレクトリが提案されたネーミング コンテキストの上のネーミング コンテキストのレプリカを保持していないため、提案されたネーミング コンテキスト名を検証できません。グローバルカタログサーバーとして構成されているサーバーによってドメインネーミングマスターの役割が保持され、そのサーバーがレプリケーションパートナーと最新であることを確認してください。 (LiberNT 2000ドメイン ネーミング マスターにのみ適用されます) 。
+ディレクトリが提案されたネーミング コンテキストの上のネーミング コンテキストのレプリカを保持していないため、提案されたネーミング コンテキスト名を検証できません。グローバルカタログサーバーとして構成されているサーバーによってドメインネーミングマスターの役割が保持され、そのサーバーがレプリケーションパートナーと最新であることを確認してください。 (NextNT 2000ドメイン ネーミング マスターにのみ適用されます) 。
 .
 
 MessageId=8496
@@ -32675,7 +32675,7 @@ Language=Romanian
 Only DSAs configured to be Global Catalog servers should be allowed to hold the Domain Naming Master FSMO role. (Applies only to Windows 2000 servers)
 .
 Language=Japanese
-グローバルカタログサーバーとして構成されたDSAのみがドメインネーミングマスターFSMOロールを保持できます。 (LiberNT 2000サーバーにのみ適用されます) 。
+グローバルカタログサーバーとして構成されたDSAのみがドメインネーミングマスターFSMOロールを保持できます。 (NextNT 2000サーバーにのみ適用されます) 。
 .
 
 MessageId=8524
@@ -36374,7 +36374,7 @@ Language=Romanian
 The application directory partition operation failed. The domain controller holding the domain naming master role is down or unable to service the request or is not running Windows Server 2003.
 .
 Language=Japanese
-ドメインネーミングマスターFSMOロールに到達できなかったため、操作は失敗しました。ドメイン ネーミング マスター FSMO ロールを保持するドメイン コントローラーがダウンしているか、要求を処理できないか、LiberNT Server 2003 以降が実行されていません。
+ドメインネーミングマスターFSMOロールに到達できなかったため、操作は失敗しました。ドメイン ネーミング マスター FSMO ロールを保持するドメイン コントローラーがダウンしているか、要求を処理できないか、NextNT Server 2003 以降が実行されていません。
 .
 
 MessageId=10004
@@ -37154,7 +37154,7 @@ Language=Romanian
 A Windows Sockets implementation may have a limit on the number of applications that may use it simultaneously.
 .
 Language=Japanese
-LiberNT ソケットの実装では、同時に使用できるアプリケーションの数に制限がある場合があります。
+NextNT ソケットの実装では、同時に使用できるアプリケーションの数に制限がある場合があります。
 .
 
 MessageId=10068
@@ -37274,7 +37274,7 @@ Language=Romanian
 The Windows Sockets version requested is not supported.
 .
 Language=Japanese
-要求された LiberNT ソケットのバージョンはサポートされていません。
+要求された NextNT ソケットのバージョンはサポートされていません。
 .
 
 MessageId=10093
@@ -40214,7 +40214,7 @@ Language=Romanian
 The lifetime value received in the Responder Lifetime Notify is below the Windows 2000 configured minimum value. Please fix the policy on the peer machine.
 .
 Language=Japanese
-レスポンダライフタイム通知で受信したライフタイム値が、LiberNT 2000で設定されている最小値を下回っています。対向マシンのポリシーを修正してください。
+レスポンダライフタイム通知で受信したライフタイム値が、NextNT 2000で設定されている最小値を下回っています。対向マシンのポリシーを修正してください。
 .
 
 MessageId=13881

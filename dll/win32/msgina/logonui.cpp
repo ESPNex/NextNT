@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Logon GINA DLL
+ * PROJECT:     NextNT Logon GINA DLL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Full-screen lock, sign-in, unlock and security options screens
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -30,8 +30,8 @@ extern "C" {
 #define LOGONUI_ACCENT          RGB(0, 103, 192)
 #define LOGONUI_ACCENT_HOT      RGB(0, 120, 215)
 #define LOGONUI_PASSWORD_CHAR   0x2022
-#define LOGONUI_CUE_PROP        L"LiberNTLogonCue"
-#define LOGONUI_COVER_CLASS     L"LiberNTLogonCover"
+#define LOGONUI_CUE_PROP        L"NextNTLogonCue"
+#define LOGONUI_COVER_CLASS     L"NextNTLogonCover"
 
 enum class Page
 {

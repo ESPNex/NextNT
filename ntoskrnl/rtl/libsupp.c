@@ -711,7 +711,7 @@ RtlpImageNtHeaderEx(
 
 /*
  * @implemented
- * @note: This is here, so that we do not drag SEH into rosload, freeldr and bootmgfw
+ * @note: This is here, so that we do not drag SEH into rosload, nextldr and bootmgfw
  */
 NTSTATUS
 NTAPI

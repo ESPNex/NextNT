@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NDIS library
+ * PROJECT:     NextNT NDIS library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        drivers/network/ndis/ndis/60nbl.c
  * PURPOSE:     NDIS 6 NET_BUFFER / NET_BUFFER_LIST allocation.

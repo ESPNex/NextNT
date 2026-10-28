@@ -1,6 +1,6 @@
 /*
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
- * PROJECT:         LiberNT Client/Server Runtime SubSystem
+ * PROJECT:         NextNT Client/Server Runtime SubSystem
  * FILE:            include/reactos/subsys/csr/csrwow64.h
  * PURPOSE:         Fixed-width CSR structures used by WoW64
  */

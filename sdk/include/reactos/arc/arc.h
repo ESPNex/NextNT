@@ -642,7 +642,7 @@ typedef struct _LOADER_PARAMETER_EXTENSION
 #endif
 #elif (NTDDI_VERSION == NTDDI_WIN7)
 #if defined(__REACTOS__)
-    /* ReactOS-specific flags consumed by freeldr/ntoskrnl UEFI path */
+    /* ReactOS-specific flags consumed by nextldr/ntoskrnl UEFI path */
     ULONG BootViaWinload:1;
     ULONG BootViaEFI:1;
     ULONG Reserved:27;

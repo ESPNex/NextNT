@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel (ARM64)
+ * PROJECT:         NextNT Kernel (ARM64)
  * PURPOSE:         AArch64 disassembler integration for KDBG
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  */

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Loader page allocator
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -12,12 +12,12 @@
 #define MM_PAGE_MASK  (PAGE_SIZE - 1)
 #define MM_SIZE_TO_PAGES(Size) (((Size) >> MM_PAGE_SHIFT) + (((Size) & MM_PAGE_MASK) ? 1 : 0))
 
-typedef struct _FREELDR_MEMORY_DESCRIPTOR
+typedef struct _NEXTLDR_MEMORY_DESCRIPTOR
 {
     TYPE_OF_MEMORY MemoryType;
     PFN_NUMBER BasePage;
     PFN_NUMBER PageCount;
-} FREELDR_MEMORY_DESCRIPTOR, *PFREELDR_MEMORY_DESCRIPTOR;
+} NEXTLDR_MEMORY_DESCRIPTOR, *PNEXTLDR_MEMORY_DESCRIPTOR;
 
 #pragma pack(push, 1)
 typedef struct
@@ -83,6 +83,6 @@ MmGetLoaderPagesSpanned(VOID);
 PFN_NUMBER
 MmGetHighestPhysicalPage(VOID);
 
-FREELDR_MEMORY_DESCRIPTOR*
+NEXTLDR_MEMORY_DESCRIPTOR*
 UefiMemGetMemoryMap(
     PULONG MaxMemoryMapSize);

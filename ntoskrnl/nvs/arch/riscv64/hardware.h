@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Virtual Memory Subsystem
+ * PROJECT:     NextNT NT Virtual Memory Subsystem
  * FILE:        ntoskrnl/nvs/arch/riscv64/hardware.h
  * PURPOSE:     RISC-V 64-bit memory management hardware definitions
  *

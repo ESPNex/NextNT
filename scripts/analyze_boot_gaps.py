@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-analyze_boot_gaps.py - find time gaps in a freeldr/ntoskrnl boot log.
+analyze_boot_gaps.py - find time gaps in a nextldr/ntoskrnl boot log.
 
 Each log line is prefixed with a kernel timestamp like "[   62.220875] ...".
 A "gap" is a jump between two consecutive timestamped lines that is larger
@@ -13,7 +13,7 @@ Usage:
                          [--grep REGEX]   # only count lines matching REGEX
                          [--cpu N]        # only SMP4DBG lines for cpu=N
 
-Default log: /tmp/freeldr_arm64.log
+Default log: /tmp/nextldr_arm64.log
 """
 import argparse
 import re
@@ -57,7 +57,7 @@ def fmt(rows, i):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument('log', nargs='?', default='/tmp/freeldr_arm64.log')
+    ap.add_argument('log', nargs='?', default='/tmp/nextldr_arm64.log')
     ap.add_argument('--threshold', type=float, default=0.2,
                     help='minimum gap in seconds to report (default 0.2)')
     ap.add_argument('--context', type=int, default=3,

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Disk Management
+ * PROJECT:     NextNT Disk Management
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     English (United States) resources
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -108,7 +108,7 @@ BEGIN
     IDS_SCHEME_GPT "GUID Partition Table"
     IDS_SCHEME_MBR "Master Boot Record"
     IDS_SCHEME_RAW "Not initialized"
-    IDS_SYSTEM_VOLUME "LiberNT system volume"
+    IDS_SYSTEM_VOLUME "NextNT system volume"
     IDS_BOOT_PARTITION "Used by the boot manager"
     IDS_CAPTION_PARTITIONS "%lu partitions"
     IDS_LOCATION "Disk %lu, partition %lu"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT
+ * PROJECT:     NextNT CRT
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Bounds-checked (secure) printf family. These delegate to the
  *              existing _vsnprintf / _vsnwprintf engines and NUL-terminate.

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Cache Manager
+ * PROJECT:     NextNT Cache Manager
  * FILE:        ntoskrnl/cc/api/cccopy.c
  * PURPOSE:     NT cached copy interfaces
  *

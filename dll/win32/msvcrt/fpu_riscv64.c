@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT MSVCRT
+ * PROJECT:     NextNT MSVCRT
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     RISC-V64 floating-point control and status words
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

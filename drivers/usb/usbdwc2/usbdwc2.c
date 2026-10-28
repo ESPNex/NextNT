@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Synopsys DWC2 USB Miniport Driver
+ * PROJECT:     NextNT Synopsys DWC2 USB Miniport Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     USBPORT miniport for the DWC2 host controller used by RPi3
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

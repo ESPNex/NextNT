@@ -2,7 +2,7 @@ LANGUAGE LANG_FRENCH, SUBLANG_NEUTRAL
 
 IDD_FRAME DIALOGEX 0, 0, 420, 240
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "Installateur de pilotes LiberNT"
+CAPTION "Installateur de pilotes NextNT"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "", IDC_FRAME_TITLE, 120, 10, 290, 14, SS_NOPREFIX
@@ -64,7 +64,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_CAPTION "Installateur de pilotes LiberNT"
+    IDS_CAPTION "Installateur de pilotes NextNT"
     IDS_BACK "&Précédent"
     IDS_NEXT "&Suivant"
     IDS_CANCEL "Annuler"
@@ -77,7 +77,7 @@ BEGIN
     IDS_DONE_TITLE "Terminé"
     IDS_DONE_SUBTITLE "Le résultat pour chaque périphérique."
     IDS_HISTORY_TITLE "Pilotes installés depuis le catalogue"
-    IDS_HISTORY_SUBTITLE "Toutes les modifications faites par l'Installateur de pilotes LiberNT sur ce PC, des plus récentes aux plus anciennes."
+    IDS_HISTORY_SUBTITLE "Toutes les modifications faites par l'Installateur de pilotes NextNT sur ce PC, des plus récentes aux plus anciennes."
     IDS_COL_DEVICE "Périphérique"
     IDS_COL_VERSION "Version"
     IDS_COL_DRIVER "Pilote"
@@ -106,20 +106,20 @@ BEGIN
     IDS_ACTION_ROLLBACK "Restauration"
     IDS_ACTION_REMOVE "Suppression"
     IDS_ROLLBACK_CONFIRM "Remettre le pilote que %1 utilisait avant (version %2) ?"
-    IDS_REMOVE_CONFIRM "Supprimer le pilote du catalogue de %1 ? LiberNT installe ensuite le meilleur pilote qu'il possède encore pour ce périphérique."
+    IDS_REMOVE_CONFIRM "Supprimer le pilote du catalogue de %1 ? NextNT installe ensuite le meilleur pilote qu'il possède encore pour ce périphérique."
     IDS_ACTION_DONE "Terminé."
     IDS_ACTION_DONE_REBOOT "Terminé. Redémarrez le PC pour finir."
     IDS_ACTION_FAILED "La modification a échoué : %1"
     IDS_HISTORY_WORKING "En cours..."
     IDS_ADMIN_REQUIRED "Installer et supprimer des pilotes demande les droits d'administrateur."
-    IDS_ADMIN_RESTART "Relancer l'Installateur de pilotes LiberNT en tant qu'administrateur ?"
+    IDS_ADMIN_RESTART "Relancer l'Installateur de pilotes NextNT en tant qu'administrateur ?"
     IDS_WORKER_FAILED "Impossible de démarrer le thread de travail : %1"
     IDS_ERROR_CHECKSUM "Le téléchargement ne correspond pas à la somme de contrôle publiée par le catalogue."
     IDS_ERROR_SERVER "Le catalogue Microsoft Update a renvoyé une réponse inattendue."
     IDS_ERROR_CANCELLED "Annulé."
     IDS_ERROR_NOT_BETTER "Le pilote déjà installé convient mieux à ce périphérique."
     IDS_ERROR_NO_COMPAT "Le paquet n'a pas de pilote pour ce périphérique sur ce PC."
-    IDS_ERROR_FORMAT "La page du catalogue Microsoft Update a changé et ne peut pas être lue. L'Installateur de pilotes LiberNT doit être mis à jour."
+    IDS_ERROR_FORMAT "La page du catalogue Microsoft Update a changé et ne peut pas être lue. L'Installateur de pilotes NextNT doit être mis à jour."
     IDS_ERROR_PROGRAM "Le paquet du catalogue est un programme, pas un paquet de pilote. Lancez-le vous-même si vous lui faites confiance."
     IDS_ERROR_ALREADY "Ce pilote est déjà installé."
     IDS_ERROR_NOT_NEWER "Le pilote installé est plus récent que celui-ci."

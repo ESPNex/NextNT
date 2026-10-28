@@ -21,8 +21,8 @@ BEGIN
     IDS_PUMPKIN "Dovleac"
     IDS_RAIN "Zi ploioasă"
     IDS_RWB "Roșu, alb și albastru"
-    IDS_CLASSIC "LiberNT Clasic"
-    IDS_STANDARD "LiberNT Standard"
+    IDS_CLASSIC "NextNT Clasic"
+    IDS_STANDARD "NextNT Standard"
     IDS_ROSE "Trandafiriu"
     IDS_SAND "Nisip" //Desert
     IDS_SLATE "Ardezie"

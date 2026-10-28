@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Desktop Window Manager API
+ * PROJECT:     NextNT Desktop Window Manager API
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     D3DKMT shared redirection-surface management
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT diskbench
+ * PROJECT:     NextNT diskbench
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Unbuffered disk read/write benchmark
- * COPYRIGHT:   Copyright 2026 LiberNT Project
+ * COPYRIGHT:   Copyright 2026 NextNT Project
  *
  * Usage: diskbench <file-on-target-volume> [file-size-MB]
  *

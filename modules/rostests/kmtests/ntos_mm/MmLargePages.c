@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT kernel-mode tests
+ * PROJECT:     NextNT kernel-mode tests
  * FILE:        modules/rostests/kmtests/ntos_mm/MmLargePages.c
  * PURPOSE:     Large-page virtual memory regression tests
  *

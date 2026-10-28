@@ -841,7 +841,7 @@ ArcPathToNtPath(
      *   NT path by deconstructing the ARC path, using its disk and
      *   partition numbers. We may use here our disk/partition list.
      *
-     * See also freeldr/arcname.c
+     * See also nextldr/arcname.c
      *
      * Note that it would be nice to maintain a cache of these mappings.
      */
@@ -924,7 +924,7 @@ NtPathToArcPath(
      *   ARC path by deconstructing the NT path, using its disk and
      *   partition numbers. We may use here our disk/partition list.
      *
-     * See also freeldr/arcname.c
+     * See also nextldr/arcname.c
      *
      * Note that it would be nice to maintain a cache of these mappings.
      */

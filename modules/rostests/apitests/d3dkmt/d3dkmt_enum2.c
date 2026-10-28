@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     D3DKMTEnumAdapters2 / EnumAdapters3 enumeration tests
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * EnumAdapters2 (WDDM 1.2) and EnumAdapters3 (WDDM 2.7) are the modern
  * two-pass adapter enumeration entry points: call once with a NULL array to

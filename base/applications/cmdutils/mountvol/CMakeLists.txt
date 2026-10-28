@@ -1,4 +1,4 @@
-# PROJECT:     LiberNT Mount Volume Command
+# PROJECT:     NextNT Mount Volume Command
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Build script for mountvol.exe
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

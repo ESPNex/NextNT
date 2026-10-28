@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Raspberry Pi 5 HDMI Audio Driver
+ * PROJECT:         NextNT Raspberry Pi 5 HDMI Audio Driver
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Internal driver definitions
  * COPYRIGHT:       Copyright 2026 Ahmed Arif <arif193@gmail.com>

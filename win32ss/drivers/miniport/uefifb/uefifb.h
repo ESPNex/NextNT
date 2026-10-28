@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT UEFI GOP Framebuffer Miniport
+ * PROJECT:     NextNT UEFI GOP Framebuffer Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared declarations for the UEFI framebuffer video miniport.
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

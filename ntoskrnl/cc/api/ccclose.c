@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Cache Manager
+ * PROJECT:     NextNT Cache Manager
  * FILE:        ntoskrnl/cc/api/ccclose.c
  * PURPOSE:     Cache map teardown and cached-view reclamation
  *

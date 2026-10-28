@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-only (https://spdx.org/licenses/GPL-3.0-only)
  * PURPOSE:     ABI contract tests for RtlFlushHeaps, the WNF Rtl layer and WinSqm
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

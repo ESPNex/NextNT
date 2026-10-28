@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Pool Allocator
+ * PROJECT:     NextNT Pool Allocator
  * FILE:        ntoskrnl/nvs/pool/heap/heapdebug.c
  * PURPOSE:     Pool heap diagnostics and validation
  *

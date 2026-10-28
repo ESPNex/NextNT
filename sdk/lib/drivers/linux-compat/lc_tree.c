@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux kernel compatibility library
+ * PROJECT:     NextNT Linux kernel compatibility library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Red-black tree with augmentation hooks, and an index map with the xarray interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

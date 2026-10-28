@@ -2,7 +2,7 @@
 Signature = "$Windows NT$"
 Class = System
 ClassGUID = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 08/04/2026,1.0.0.0
 
 [ControlFlags]
@@ -12,9 +12,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT,NTx86,NTamd64,NTarm64
+%NextNT% = NextNT,NTx86,NTamd64,NTarm64
 
-[LiberNT.NTx86]
+[NextNT.NTx86]
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02E8
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02E9
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02EA
@@ -200,7 +200,7 @@ DefaultDestDir = 12
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_E47A
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_E47B
 
-[LiberNT.NTamd64]
+[NextNT.NTamd64]
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02E8
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02E9
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02EA
@@ -386,7 +386,7 @@ DefaultDestDir = 12
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_E47A
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_E47B
 
-[LiberNT.NTarm64]
+[NextNT.NTarm64]
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02E8
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02E9
 %IntelI2c.DeviceDesc% = IntelI2c_Inst,PCI\VEN_8086&DEV_02EA
@@ -590,6 +590,6 @@ ServiceBinary = %12%\inteli2c.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 IntelI2c.DeviceDesc = "Intel Serial I/O I2C Host Controller"
-IntelI2c.ServiceDesc = "LiberNT Intel Serial I/O I2C Driver"
+IntelI2c.ServiceDesc = "NextNT Intel Serial I/O I2C Driver"

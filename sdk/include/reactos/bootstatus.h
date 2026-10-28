@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Modern Boot Status
+ * PROJECT:     NextNT Modern Boot Status
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared boot-status surface interface
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

@@ -186,7 +186,7 @@ def generate(root, work):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-root", type=Path, help="LiberNT source directory")
+    parser.add_argument("--source-root", type=Path, help="NextNT source directory")
     parser.add_argument("--keep", type=Path, help="Directory that keeps the generated sources")
     args = parser.parse_args()
     here = Path(__file__).resolve().parent

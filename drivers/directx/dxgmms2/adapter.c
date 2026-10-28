@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WDDM 2.x Graphics Memory Manager and Scheduler
+ * PROJECT:     NextNT WDDM 2.x Graphics Memory Manager and Scheduler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Administrative adapter lifecycle for the v1 module boundary
  */

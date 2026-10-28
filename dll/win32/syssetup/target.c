@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT System Setup
+ * PROJECT:     NextNT System Setup
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Configuration of a newly installed system from the installer
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

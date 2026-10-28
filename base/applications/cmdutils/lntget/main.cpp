@@ -40,7 +40,7 @@ struct CommandOptions
 void PrintHelp()
 {
     std::printf(
-        "lntget %.*s - LiberNT package manager for the WinGet community repository\n\n"
+        "lntget %.*s - NextNT package manager for the WinGet community repository\n\n"
         "Usage:\n"
         "  lntget search [[-q] <query>] [--id|--name|--moniker|--tag|--command <value>] [-e] [-n <count>]\n"
         "  lntget show <query> [--id <id>] [-e]\n"

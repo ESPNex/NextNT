@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Setup API
+ * PROJECT:     NextNT Setup API
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Driver store staging for published OEM driver packages
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT WDDM DirectX Graphics Kernel
+ * PROJECT:     NextNT WDDM DirectX Graphics Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VidPN (Video Present Network) manager private declarations
- * COPYRIGHT:   Copyright 2024-2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024-2026 NextNT WDDM Team
  *
  * This header declares the internal data structures used by the VidPN
  * manager (vidpn.c).  These are NOT part of the public WDDM DDI; they are

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel CNG
+ * PROJECT:     NextNT Kernel CNG
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     cng.sys export surface, forwarded to the ksecdd primitive provider
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

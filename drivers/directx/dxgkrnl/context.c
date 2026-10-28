@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT DirectX Graphics Kernel
+ * PROJECT:     NextNT DirectX Graphics Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WDDM GPU device and context lifecycle management
- * COPYRIGHT:   Copyright 2024 LiberNT Team
+ * COPYRIGHT:   Copyright 2024 NextNT Team
  *
  * Overview
  * --------

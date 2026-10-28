@@ -48,7 +48,7 @@ ICONS = (
     ("system-software-install", ("base/applications/rapps/res/main.ico", "base/applications/cmdutils/lntget/res/lntget.ico")),
     ("utilities-terminal", ("base/shell/cmd/res/terminal.ico",)),
     ("preferences-system-windows", ("base/applications/dwmsettings/res/dwm-settings.ico",)),
-    ("yast-vm-install", ("base/setup/libernt/res/libernt.ico",)),
+    ("yast-vm-install", ("base/setup/nextnt/res/nextnt.ico",)),
     ("tux", ("subsystems/linux/lxwinhost/res/linux.ico",)),
 )
 SCREENS = {

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Native WiFi - RSNA (WPA2-PSK) supplicant
+ * PROJECT:     NextNT Native WiFi - RSNA (WPA2-PSK) supplicant
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     SHA-1 (FIPS 180-4) - cleanroom implementation
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

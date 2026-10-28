@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT modemui
+ * PROJECT:     NextNT modemui
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -371,7 +371,7 @@ BEGIN
     3053 "モデムを使用できないため、モデムのプロパティを表示できません。\n\nシステムを再起動してから、もう一度実行してください。"
     3054 "モデムのプロパティ"
     3060 "選択したモデムをシステムから削除しますか?"
-    3061 "LiberNT は %2 からモデム '%1' を削除できませんでした。"
+    3061 "NextNT は %2 からモデム '%1' を削除できませんでした。"
     3062 "モデム"
     3069 "モデムのコントロール パネルを開くためのメモリが不足しています。\n\nいくつかのプログラムを閉じてから、もう一度実行してください。"
     3073 "モデムをインストールするには、システム管理者である必要があります。"

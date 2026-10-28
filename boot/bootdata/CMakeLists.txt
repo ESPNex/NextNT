@@ -90,9 +90,9 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/welcome_config/)
     add_custom_target(converted_welcome_i18n_files DEPENDS ${_converted_welcome_i18n_files})
 endif()
 
-# freeldr.ini (FREELDR_BOOTCD_INI is prepared by boot/boot_images.cmake)
-set(_boot_media_freeldr_ini "${FREELDR_BOOTCD_INI}")
-add_cd_file(FILE ${_boot_media_freeldr_ini} DESTINATION root NO_CAB NAME_ON_CD freeldr.ini FOR bootcd livecd)
+# nextldr.ini (NEXTLDR_BOOTCD_INI is prepared by boot/boot_images.cmake)
+set(_boot_media_nextldr_ini "${NEXTLDR_BOOTCD_INI}")
+add_cd_file(FILE ${_boot_media_nextldr_ini} DESTINATION root NO_CAB NAME_ON_CD nextldr.ini FOR bootcd livecd)
 
 # Unattend
 add_cd_file(FILE ${CMAKE_CURRENT_SOURCE_DIR}/bootcd/unattend.inf DESTINATION reactos NO_CAB FOR bootcd)
@@ -158,10 +158,10 @@ set(dir_quicklaunch             "reactos/system32/config/systemprofile/AppData/R
 
 cmdenvvar(envvar_systemdrive "SystemDrive" TRUE)
 cmdenvvar(envvar_archdir     "PROCESSOR_ARCHITECTURE:x86=I386" TRUE)
-add_livecd_shortcut("Install LiberNT"
+add_livecd_shortcut("Install NextNT"
     "shell:system\\cmd.exe"
-    CMDLINE_ARGS "/D /E:ON /C \"start ${envvar_systemdrive}\\${envvar_archdir}\\libernt.exe\""
-    ICON "${envvar_systemdrive}\\${envvar_archdir}\\libernt.exe"
+    CMDLINE_ARGS "/D /E:ON /C \"start ${envvar_systemdrive}\\${envvar_archdir}\\nextnt.exe\""
+    ICON "${envvar_systemdrive}\\${envvar_archdir}\\nextnt.exe"
     MINIMIZE
     DESTINATION "${dir_allusers_desktop}")
 
@@ -169,7 +169,7 @@ add_livecd_shortcut("Read Me"
     "shell:windows\\readme.txt"
     ICON "${envvar_systemroot}\\system32\\shell32.dll" ICON_INDEX -152
     DESTINATION "${dir_allusers_desktop}")
-add_livecd_shortcut("LiberNT Explorer"
+add_livecd_shortcut("NextNT Explorer"
     "shell:windows\\explorer.exe" ICON_INDEX 1
     WORKDIR "${envvar_homedrive}${envvar_homepath}"
     DESTINATION "${dir_startmenu_programs}" "${dir_quicklaunch}")
@@ -237,7 +237,7 @@ add_livecd_shortcut("Task Manager 11"
 add_livecd_shortcut("LntGet"
     "shell:system\\lntget.exe" ICON_INDEX 0 CMDLINE_ARGS "gui"
     DESTINATION "${dir_startmenu_systemtools}")
-add_livecd_shortcut("LiberNT Driver Installer"
+add_livecd_shortcut("NextNT Driver Installer"
     "shell:system\\lntdrv.exe" ICON_INDEX 0
     DESTINATION "${dir_startmenu_systemtools}")
 add_livecd_shortcut("Calculator"

@@ -90,7 +90,7 @@ BEGIN
     END
     POPUP "ヘルプ(&H)", FCIDM_MENU_HELP
     BEGIN
-        MENUITEM "LiberNTについて(&A)", IDM_HELP_ABOUT
+        MENUITEM "NextNTについて(&A)", IDM_HELP_ABOUT
     END
 END
 
@@ -344,8 +344,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "LiberNT エクスプローラ"
-    IDS_PARSE_ADDR_ERR_TEXT "LiberNT エクスプローラは '%1' を見つけられませんでした。スペルを確認してやり直して下さい。"
+    IDS_PARSE_ADDR_ERR_TITLE "NextNT エクスプローラ"
+    IDS_PARSE_ADDR_ERR_TEXT "NextNT エクスプローラは '%1' を見つけられませんでした。スペルを確認してやり直して下さい。"
 END
 
 STRINGTABLE

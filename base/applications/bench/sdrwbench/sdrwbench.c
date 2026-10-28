@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT microSD R/W benchmark
+ * PROJECT:     NextNT microSD R/W benchmark
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Truthful sequential + random I/O throughput on a real drive,
  *              cache-bypassing (FILE_FLAG_NO_BUFFERING|WRITE_THROUGH).

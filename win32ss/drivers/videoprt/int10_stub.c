@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Video Port Driver
+ * PROJECT:     NextNT Video Port Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     INT10 stubs for architectures without BIOS real-mode support
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

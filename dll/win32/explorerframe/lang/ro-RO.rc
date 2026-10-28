@@ -334,8 +334,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "Navigatorul LiberNT"
-    IDS_PARSE_ADDR_ERR_TEXT "Navigatorul LiberNT nu poate găsi '%1'. Verificați ortografia și încercați din nou."
+    IDS_PARSE_ADDR_ERR_TITLE "Navigatorul NextNT"
+    IDS_PARSE_ADDR_ERR_TEXT "Navigatorul NextNT nu poate găsi '%1'. Verificați ortografia și încercați din nou."
 END
 
 STRINGTABLE

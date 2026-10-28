@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT powrprof API tests
+ * PROJECT:     NextNT powrprof API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Modern processor power-scheme and telemetry parity tests
  */

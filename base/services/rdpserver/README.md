@@ -1,4 +1,4 @@
-# LiberNT RDP console server
+# NextNT RDP console server
 
 `rdpserver.exe` mirrors the interactive console desktop over RDP for a test
 LAN. FreeRDP implements the wire protocol and TLS; the server captures the
@@ -9,7 +9,7 @@ file transfers to a configured local directory.
 
 ## Building
 
-The server is built outside the LiberNT toolchain, with an x86_64 MinGW
+The server is built outside the NextNT toolchain, with an x86_64 MinGW
 compiler, against FreeRDP 3.32.0 and OpenSSL 3:
 
 1. Apply `freerdp-rdpdr.patch` to FreeRDP 3.32.0 and build and install it

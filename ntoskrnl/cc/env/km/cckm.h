@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Cache Manager
+ * PROJECT:     NextNT Cache Manager
  * FILE:        ntoskrnl/cc/env/km/cckm.h
  * PURPOSE:     Kernel environment for the cache manager
  *

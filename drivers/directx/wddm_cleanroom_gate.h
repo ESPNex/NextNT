@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WDDM clean-room policy
+ * PROJECT:     NextNT WDDM clean-room policy
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Compile-time guard for quarantined scheduler mechanisms
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

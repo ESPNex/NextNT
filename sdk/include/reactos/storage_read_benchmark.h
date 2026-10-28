@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT storage read benchmark
+ * PROJECT:     NextNT storage read benchmark
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Shared protocol for kernel- and user-mode raw read measurements
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

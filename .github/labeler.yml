@@ -14,10 +14,10 @@ drivers:
     - win32ss/drivers/**
     - '!win32ss/drivers/font/**'
 
-freeldr:
+nextldr:
 - changed-files:
   - any-glob-to-any-file:
-    - boot/freeldr/**
+    - boot/nextldr/**
 
 "kernel&hal":
 - changed-files:

@@ -269,10 +269,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROGRESS_INFO_START "LiberNT essaye de démarrer le service suivant"
-    IDS_PROGRESS_INFO_STOP "LiberNT essaye d'arrêter le service suivant"
-    IDS_PROGRESS_INFO_PAUSE "LiberNT essaye de suspendre le service suivant"
-    IDS_PROGRESS_INFO_RESUME "LiberNT essaye de relancer le service suivant"
+    IDS_PROGRESS_INFO_START "NextNT essaye de démarrer le service suivant"
+    IDS_PROGRESS_INFO_STOP "NextNT essaye d'arrêter le service suivant"
+    IDS_PROGRESS_INFO_PAUSE "NextNT essaye de suspendre le service suivant"
+    IDS_PROGRESS_INFO_RESUME "NextNT essaye de relancer le service suivant"
     IDS_CREATE_SUCCESS "Service créé"
     IDS_DELETE_SUCCESS "Service supprimé avec succès"
     IDS_CREATE_REQ "Les champs marqués d'une astérisque\nsont obligatoires"
@@ -307,7 +307,7 @@ BEGIN
     IDS_HINT_DETAILS " Afficher les informations sur chaque élément dans une fenêtre."
     IDS_HINT_CUST " Personnaliser l'affichage."
     IDS_HINT_HELP " Affiche la fenêtre d'aide."
-    IDS_HINT_ABOUT " À propos du gestionnaire de Services LiberNT."
+    IDS_HINT_ABOUT " À propos du gestionnaire de Services NextNT."
     IDS_HINT_SYS_RESTORE " Restaurer la taille de la fenêtre."
     IDS_HINT_SYS_MOVE " Déplacer la fenêtre."
     IDS_HINT_SYS_SIZE " Retailler la fenêtre."
@@ -319,7 +319,7 @@ END
 /* Application title */
 STRINGTABLE
 BEGIN
-    IDS_APPNAME "Gestionnaire de Services LiberNT"
+    IDS_APPNAME "Gestionnaire de Services NextNT"
     IDS_APPAUTHORS "Copyright (C) 2005-2007 by Ged Murphy (gedmurphy@reactos.org)"
 END
 

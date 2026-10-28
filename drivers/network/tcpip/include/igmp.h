@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT TCP/IP protocol driver
+ * PROJECT:     NextNT TCP/IP protocol driver
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     IPv4 multicast group membership and IGMPv3 host reports
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

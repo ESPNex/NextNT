@@ -349,10 +349,10 @@ ROSDATA VSC_LPWSTR extended_key_names[] = {
   { 0x51, L"PAGE DOWN" },
   { 0x52, L"INS" },
   { 0x53, L"DEL" },
-  { 0x54, L"<LiberNT>" },
+  { 0x54, L"<NextNT>" },
   { 0x56, L"HELP" },
-  { 0x5b, L"VASEN <LiberNT>" },
-  { 0x5c, L"OIKEA <LiberNT>" },
+  { 0x5b, L"VASEN <NextNT>" },
+  { 0x5c, L"OIKEA <NextNT>" },
   { 0x5d, L"Program" },
   { 0, NULL }
 };

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Disk Image Creator
+ * PROJECT:     NextNT Disk Image Creator
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Assembles a bootable MBR disk image from partition images
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.img@outlook.com>
@@ -1126,7 +1126,7 @@ static void write_vhdx_metadata_entry(unsigned char* entry, const char* item, un
 
 static int write_dynamic_vhdx(FILE* dst, FILE* src, unsigned long long virtual_size)
 {
-    static const char creator[] = "LiberNT mkdiskimg";
+    static const char creator[] = "NextNT mkdiskimg";
     unsigned char file_write_guid[16];
     unsigned char data_write_guid[16];
     unsigned char page83[16];

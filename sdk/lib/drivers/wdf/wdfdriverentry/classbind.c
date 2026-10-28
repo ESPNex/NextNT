@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel-Mode Driver Framework
+ * PROJECT:     NextNT Kernel-Mode Driver Framework
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     KMDF client class-extension binding lifecycle
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NetIO driver
+ * PROJECT:     NextNT NetIO driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WFP engine state, provider context and IPsec SA entry points
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

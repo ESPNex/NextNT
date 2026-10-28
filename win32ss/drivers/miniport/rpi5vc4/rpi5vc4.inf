@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT Raspberry Pi 5 framebuffer miniport
+; PROJECT:     NextNT Raspberry Pi 5 framebuffer miniport
 ; LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 ; PURPOSE:     Raspberry Pi 5 VC4 display installation file
 ; COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>
@@ -8,7 +8,7 @@ Signature="$Windows NT$"
 LayoutFile=layout.inf
 Class=Display
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=06/01/2026,1.0.0.0
 
 [DestinationDirs]
@@ -17,9 +17,9 @@ Rpi5Vc4.Miniport_CopyFiles=12
 Rpi5Vc4.Display_CopyFiles=11
 
 [Manufacturer]
-%LiberNT%=LiberNT,NTarm64
+%NextNT%=NextNT,NTarm64
 
-[LiberNT.NTarm64]
+[NextNT.NTarm64]
 %Rpi5Vc4.DeviceDesc%=Rpi5Vc4_Install,ACPI\BCM2712
 
 [Rpi5Vc4_Install]
@@ -58,9 +58,9 @@ ServiceBinary=%12%\rpi5vc4.sys
 LoadOrderGroup=Video Save
 
 [Strings]
-LiberNT="LiberNT"
+NextNT="NextNT"
 Rpi5Vc4.DeviceDesc="Raspberry Pi 5 VC4 Display"
-Rpi5Vc4.ServiceDesc="LiberNT Raspberry Pi 5 VC4 Display Miniport"
+Rpi5Vc4.ServiceDesc="NextNT Raspberry Pi 5 VC4 Display Miniport"
 REG_MULTI_SZ=0x00010000
 REG_DWORD=0x00010001
 REG_SZ=0x00000000

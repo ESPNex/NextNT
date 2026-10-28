@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Hyper-V VMBus Driver
+ * PROJECT:     NextNT Hyper-V VMBus Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Internal definitions
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -33,7 +33,7 @@
 #define HV_SINT_MASKED   (1ULL << 16)
 #define HV_SINT_POLLING  (1ULL << 18)
 
-#define HV_GUEST_OS_ID_LIBERNT 0x8000000A000065F4ULL
+#define HV_GUEST_OS_ID_NEXTNT 0x8000000A000065F4ULL
 
 #define HVCALL_POST_MESSAGE   0x005C
 #define HVCALL_SIGNAL_EVENT   0x005D

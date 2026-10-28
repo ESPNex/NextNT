@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT USB Network Kernel Debugger Extension
+ * PROJECT:     NextNT USB Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     RNDIS, CDC-ECM, CDC-NCM and CDC-EEM setup and framing
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

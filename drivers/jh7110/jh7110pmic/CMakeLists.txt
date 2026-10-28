@@ -1,5 +1,5 @@
 #
-# PROJECT:     LiberNT StarFive JH7110 PMIC driver
+# PROJECT:     NextNT StarFive JH7110 PMIC driver
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     StarFive JH7110 PMIC driver build rules
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Driver Installer
+ * PROJECT:     NextNT Driver Installer
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Microsoft Update Catalog client
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -28,7 +28,7 @@ const size_t MaximumDetails = 160;
 const size_t WantedMatches = 3;
 const unsigned MaximumPages = 10;
 const unsigned DetailWorkers = 6;
-const WCHAR DetailsKey[] = L"SOFTWARE\\LiberNT\\Drivers\\Catalog";
+const WCHAR DetailsKey[] = L"SOFTWARE\\NextNT\\Drivers\\Catalog";
 const unsigned MaximumAttempts = 3;
 const size_t RowsPerPage = 25;
 
@@ -417,7 +417,7 @@ Catalog::Catalog() : m_Cancel(NULL)
 {
     DWORD timeout = 30000;
 
-    m_Session = InternetOpenW(L"LiberNT-Driver-Installer/1.0", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    m_Session = InternetOpenW(L"NextNT-Driver-Installer/1.0", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
     if (m_Session)
     {
         InternetSetOptionW(m_Session, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout, sizeof(timeout));

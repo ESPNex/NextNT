@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SpacemiT K1 Network Kernel Debugger Extension
+ * PROJECT:     NextNT SpacemiT K1 Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     SpacemiT K1 EMAC register layout and module interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

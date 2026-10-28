@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 5 XPDM graphics stack
+ * PROJECT:     NextNT Raspberry Pi 5 XPDM graphics stack
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Read-only BCM2712 V3D 7.1 discovery
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

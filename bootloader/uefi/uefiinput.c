@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Manager
+ * PROJECT:     NextNT Boot Manager
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     UEFI pointer input and menu timers
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

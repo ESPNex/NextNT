@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ieframe
+ * PROJECT:     NextNT ieframe
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Shell Name Space ActiveX control
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -221,7 +221,7 @@ public:
 
     CShellNameSpaceWnd() : m_pOwner(NULL) {}
 
-    DECLARE_WND_CLASS_EX(L"LiberNT ShellNameSpace", CS_DBLCLKS, COLOR_WINDOW)
+    DECLARE_WND_CLASS_EX(L"NextNT ShellNameSpace", CS_DBLCLKS, COLOR_WINDOW)
 
     LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnSetFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);

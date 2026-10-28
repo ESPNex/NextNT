@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT
+ * PROJECT:     NextNT
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private USER calls for per-window touch registration
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

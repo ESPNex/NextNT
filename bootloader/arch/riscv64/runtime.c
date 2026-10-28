@@ -49,7 +49,7 @@ FrLdrBugCheckWithMessage(
 
     RtlStringCbPrintfA(Message,
                        sizeof(Message),
-                       "FreeLdr bug check %lu at %s:%lu\n%s",
+                       "NextLdr bug check %lu at %s:%lu\n%s",
                        BugCode,
                        File ? File : "<unknown>",
                        Line,

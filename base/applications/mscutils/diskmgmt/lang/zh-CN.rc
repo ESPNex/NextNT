@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Disk Management
+ * PROJECT:     NextNT Disk Management
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Chinese (Simplified) resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -108,7 +108,7 @@ BEGIN
     IDS_SCHEME_GPT "GUID 分区表"
     IDS_SCHEME_MBR "主启动记录"
     IDS_SCHEME_RAW "未初始化"
-    IDS_SYSTEM_VOLUME "LiberNT 系统卷"
+    IDS_SYSTEM_VOLUME "NextNT 系统卷"
     IDS_BOOT_PARTITION "由启动管理器使用"
     IDS_CAPTION_PARTITIONS "%lu 个分区"
     IDS_LOCATION "磁盘 %lu，分区 %lu"

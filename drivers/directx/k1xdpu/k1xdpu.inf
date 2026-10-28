@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT SpacemiT K1 display miniport
+; PROJECT:     NextNT SpacemiT K1 display miniport
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; PURPOSE:     SpacemiT K1 display driver installation file
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,16 +7,16 @@
 Signature="$Windows NT$"
 Class=Display
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=10/03/2026,1.0.0.0
 
 [DestinationDirs]
 DefaultDestDir=12
 
 [Manufacturer]
-%LiberNT%=LiberNT,NTriscv64
+%NextNT%=NextNT,NTriscv64
 
-[LiberNT.NTriscv64]
+[NextNT.NTriscv64]
 %K1xDpu.DeviceDesc%=K1xDpu_Install,FDT\spacemit_dpu
 
 [K1xDpu_Install]
@@ -46,9 +46,9 @@ ServiceBinary=%12%\k1xdpu.sys
 LoadOrderGroup=Video
 
 [Strings]
-LiberNT="LiberNT"
+NextNT="NextNT"
 K1xDpu.DeviceDesc="SpacemiT K1 Display (WDDM)"
-K1xDpu.ServiceDesc="LiberNT SpacemiT K1 WDDM Display Driver"
+K1xDpu.ServiceDesc="NextNT SpacemiT K1 WDDM Display Driver"
 REG_MULTI_SZ=0x00010000
 REG_DWORD=0x00010001
 REG_SZ=0x00000000

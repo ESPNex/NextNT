@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Driver Library
+ * PROJECT:     NextNT Driver Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NTDDI version check for drivers built against the WDM library
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

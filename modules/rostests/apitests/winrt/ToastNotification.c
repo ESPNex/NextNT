@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests Windows.UI.Notifications toast manager, notifier, notification and history
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -18,7 +18,7 @@ static WCHAR ShortcutAppId[64];
 static WCHAR RegisteredKey[128];
 static const WCHAR ToastXml[] =
     L"<toast launch=\"apitest-launch\"><visual><binding template=\"ToastGeneric\">"
-    L"<text>LiberNT API test</text><text>Toast body</text></binding></visual></toast>";
+    L"<text>NextNT API test</text><text>Toast body</text></binding></visual></toast>";
 
 struct failed_handler
 {
@@ -400,9 +400,9 @@ START_TEST(ToastNotification)
     hr = RoInitialize(RO_INIT_MULTITHREADED);
     ok(SUCCEEDED(hr), "RoInitialize failed, hr %#lx\n", hr);
 
-    swprintf(UnregisteredAppId, ARRAYSIZE(UnregisteredAppId), L"LiberNT.ApiTest.ToastUnregistered.%lu", GetCurrentProcessId());
-    swprintf(RegisteredAppId, ARRAYSIZE(RegisteredAppId), L"LiberNT.ApiTest.ToastRegistered.%lu", GetCurrentProcessId());
-    swprintf(ShortcutAppId, ARRAYSIZE(ShortcutAppId), L"LiberNT.ApiTest.ToastShortcut.%lu", GetCurrentProcessId());
+    swprintf(UnregisteredAppId, ARRAYSIZE(UnregisteredAppId), L"NextNT.ApiTest.ToastUnregistered.%lu", GetCurrentProcessId());
+    swprintf(RegisteredAppId, ARRAYSIZE(RegisteredAppId), L"NextNT.ApiTest.ToastRegistered.%lu", GetCurrentProcessId());
+    swprintf(ShortcutAppId, ARRAYSIZE(ShortcutAppId), L"NextNT.ApiTest.ToastShortcut.%lu", GetCurrentProcessId());
     swprintf(RegisteredKey, ARRAYSIZE(RegisteredKey), L"Software\\Classes\\AppUserModelId\\%ls", RegisteredAppId);
 
     TraceActivatableClass(RuntimeClass_Windows_UI_Notifications_ToastNotificationManager);
@@ -466,8 +466,8 @@ START_TEST(ToastNotification)
             TestShow(Statics, History2, Document, UnregisteredAppId, FALSE);
             if (!RegCreateKeyExW(HKEY_CURRENT_USER, RegisteredKey, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &Key, NULL))
             {
-                RegSetValueExW(Key, L"DisplayName", 0, REG_SZ, (const BYTE *)L"LiberNT API test",
-                               sizeof(L"LiberNT API test"));
+                RegSetValueExW(Key, L"DisplayName", 0, REG_SZ, (const BYTE *)L"NextNT API test",
+                               sizeof(L"NextNT API test"));
                 RegCloseKey(Key);
                 TestShow(Statics, History2, Document, RegisteredAppId, TRUE);
                 Id = CreateHString(RegisteredAppId);

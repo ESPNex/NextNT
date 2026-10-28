@@ -5,5 +5,5 @@ Local additions per file: a public-name alias (.set <name>, __<name>_aarch64)
 and the asmdefs.h shim (ENTRY/ENTRY_ALIAS/END/L) for the ReactOS COFF/clang toolchain.
 memcpy-advsimd.S and memset.S come from tag v26.07.
 wcsnlen.S (wcslen, wcsnlen), wcschr.S (wcschr, wcsrchr), wcscmp.S (wcscmp, wcsncmp) and
-strcopy.c (string copy and append routines) are LiberNT implementations, not part of
+strcopy.c (string copy and append routines) are NextNT implementations, not part of
 optimized-routines.

@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT DirectX GPU Memory Manager and Scheduler
+ * PROJECT:     NextNT DirectX GPU Memory Manager and Scheduler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DriverEntry and global state for dxgmms1.sys
- * COPYRIGHT:   Copyright 2024 LiberNT Team
+ * COPYRIGHT:   Copyright 2024 NextNT Team
  *
  * dxgmms1.sys is the GPU memory manager and scheduler helper that is
  * loaded explicitly by dxgkrnl.sys, NOT by the PnP manager.  It does

@@ -796,7 +796,7 @@ wWinMain(IN HINSTANCE hInst,
         NotifyLogon();
 
     if (bIsLiveCD)
-        StartInstaller(L"libernt.exe");
+        StartInstaller(L"nextnt.exe");
 
     return 0;
 }

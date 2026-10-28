@@ -3,7 +3,7 @@ Signature = "$WINDOWS NT$"
 LayoutFile = layout.inf
 Class     = WPD
 ClassGuid = {eec5ad98-8080-425f-922a-dabf3de3f69a}
-Provider  = %LiberNT%
+Provider  = %NextNT%
 DriverVer = 06/21/2006,10.0.26100.1
 
 [ClassInstall32]
@@ -16,7 +16,7 @@ HKR, , Installer32, 0, "wpd_ci.dll,WpdClassInstaller"
 
 [Strings]
 ; Non-localizable
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 
 ; Localizable
 WpdClassName = "Portable Devices"

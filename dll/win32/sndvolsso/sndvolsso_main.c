@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT sndvolsso.dll
+ * PROJECT:     NextNT sndvolsso.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Volume control shell service object
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Command Processor
+ * PROJECT:     NextNT Command Processor
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     FTYPE internal command
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

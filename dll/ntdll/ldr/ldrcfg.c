@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT Layer DLL
+ * PROJECT:     NextNT NT Layer DLL
  * FILE:        dll/ntdll/ldr/ldrcfg.c
  * PURPOSE:     Dynamic Control Flow Guard target registration and validation
  *

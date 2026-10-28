@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SDK
+ * PROJECT:     NextNT SDK
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Public process snapshot capture and query declarations
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

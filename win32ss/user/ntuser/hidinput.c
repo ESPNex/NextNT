@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Win32k subsystem
+ * PROJECT:     NextNT Win32k subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Consumer control collections opened for system use
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

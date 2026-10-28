@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Network Kernel Debugger Transport
+ * PROJECT:     NextNT Network Kernel Debugger Transport
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Encrypted debugger session: Noise NNpsk0 handshake and reliable terminal streams
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -84,7 +84,7 @@ BOOLEAN KdNetStopped;
 
 static const CHAR KdpMagic[4] = {'L', 'K', 'D', 'N'};
 static const CHAR KdpProtocolName[] = "Noise_NNpsk0_25519_ChaChaPoly_SHA256";
-static const CHAR KdpPrologueLabel[] = "LiberNT KDNET 1";
+static const CHAR KdpPrologueLabel[] = "NextNT KDNET 1";
 
 static UCHAR KdpPresharedKey[KDNET_KEY_SIZE];
 static UCHAR KdpHelloKey[KDNET_KEY_SIZE];
@@ -619,9 +619,9 @@ KdSessionAttached(
 VOID
 KdSessionInitialize(VOID)
 {
-    static const CHAR KeyLabel[] = "LiberNT KDNET v1 key";
-    static const CHAR HelloLabel[] = "LiberNT KDNET v1 hello";
-    static const CHAR RendezvousLabel[] = "LiberNT KDNET v1 rendezvous";
+    static const CHAR KeyLabel[] = "NextNT KDNET v1 key";
+    static const CHAR HelloLabel[] = "NextNT KDNET v1 hello";
+    static const CHAR RendezvousLabel[] = "NextNT KDNET v1 rendezvous";
     UCHAR Hash[KDNET_HASH_SIZE];
     CHAR Normalized[KDNET_KEY_TEXT_SIZE];
     ULONG i, Length = 0, Value;

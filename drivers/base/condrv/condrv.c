@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Console Driver
+ * PROJECT:     NextNT Console Driver
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Console device objects, process attachment and console host queue
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

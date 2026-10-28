@@ -7,7 +7,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = WPD
 ClassGUID  = {EEC5AD98-8080-425F-922A-DABF3DE3F69A}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 06/21/2006,10.0.26100.1
 
 [DestinationDirs]
@@ -46,7 +46,7 @@ ServiceBinary  = %12%\wpdmtp.sys
 
 [Strings]
 ; Non-localizable
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 
 ; Localizable
 GenericMfg            = "(Standard MTP Device)"

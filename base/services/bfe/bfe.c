@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Base Filtering Engine (BFE) stub
+ * PROJECT:     NextNT Base Filtering Engine (BFE) stub
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        base/services/bfe/bfe.c
  * PURPOSE:     Minimal BFE service. Registers under the "BFE" service name

@@ -2,7 +2,7 @@
  * PROJECT:     GCC C++ support library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     mbsrtowcs shim for GCC 15 libwinpthread
- * COPYRIGHT:   Copyright 2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2026 NextNT Team
  *
  * GCC 15's libwinpthread references mbsrtowcs, which is only exported by
  * ReactOS msvcrt for DLL_EXPORT_VERSION >= 0x600. Provide a shim that

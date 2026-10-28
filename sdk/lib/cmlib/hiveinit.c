@@ -454,7 +454,7 @@ HvpInitializeMemoryHive(
     /*
      * Mark the entire hive as dirty. Indeed we understand if we charged up
      * the alternate variant of the primary hive (e.g. SYSTEM.ALT) because
-     * FreeLdr could not load the main SYSTEM hive, due to corruptions, and
+     * NextLdr could not load the main SYSTEM hive, due to corruptions, and
      * repairing it with a LOG did not help at all.
      */
     if (ChunkBase->BootRecover == HBOOT_BOOT_RECOVERED_BY_ALTERNATE_HIVE)
@@ -673,7 +673,7 @@ HvpGetHiveHeader(
 
 /*
  * FIXME: Disable compilation for AMD64 for now since it makes
- * the FreeLdr binary size so large it makes booting impossible.
+ * the NextLdr binary size so large it makes booting impossible.
  */
 #if !defined(_M_AMD64)
 static

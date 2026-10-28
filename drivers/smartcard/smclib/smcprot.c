@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Smart Card Driver Library
+ * PROJECT:     NextNT Smart Card Driver Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Answer to reset parsing and the T=0, T=1 and raw protocols
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

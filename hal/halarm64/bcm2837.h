@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HAL — ARM64 BCM2837 (Raspberry Pi 3) platform support
+ * PROJECT:     NextNT HAL — ARM64 BCM2837 (Raspberry Pi 3) platform support
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Header for the BCM2836/BCM2837 interrupt controller backend.
  *

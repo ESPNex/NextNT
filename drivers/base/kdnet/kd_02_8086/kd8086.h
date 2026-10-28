@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Intel Network Kernel Debugger Extension
+ * PROJECT:     NextNT Intel Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Intel 8254x, 82574, I218 and 8255x register layout and module interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

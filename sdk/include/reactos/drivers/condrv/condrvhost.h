@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Console Driver
+ * PROJECT:     NextNT Console Driver
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Console host protocol between condrv.sys, conhost and kernelbase
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

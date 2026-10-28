@@ -157,9 +157,9 @@ BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10, SS_NOPREFIX
-    LTEXT "Copyright 2026 LiberNT Team", IDC_STATIC, 35, 75, 200, 10
+    LTEXT "Copyright 2026 NextNT Team", IDC_STATIC, 35, 75, 200, 10
     LTEXT "", IDC_ABOUT_OTHERSTUFF, 35, 90, 180, 20, SS_NOPREFIX
-    LTEXT "Ця версія LiberNT зареєстрована на:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
+    LTEXT "Ця версія NextNT зареєстрована на:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
     LTEXT "", IDC_ABOUT_REG_USERNAME, 45, 125, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_REG_ORGNAME, 45, 135, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_STATIC, 35, 147, 235, 1, SS_ETCHEDHORZ
@@ -173,7 +173,7 @@ IDD_ABOUT_AUTHORS DIALOGEX 35, 90, 235, 85
 STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Розробники LiberNT:", IDC_STATIC, 0, 0, 180, 10
+    LTEXT "Розробники NextNT:", IDC_STATIC, 0, 0, 180, 10
     LISTBOX IDC_ABOUT_AUTHORS_LISTBOX, 0, 10, 165, 75
 END
 
@@ -183,7 +183,7 @@ CAPTION "Виконати"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "Введіть ім'я програми, папки, документа або ресурсу Інтернету, і LiberNT відкриє їх.", 12289, 36, 11, 185, 18
+    LTEXT "Введіть ім'я програми, папки, документа або ресурсу Інтернету, і NextNT відкриє їх.", 12289, 36, 11, 185, 18
     LTEXT "&Відкрити:", 12305, 7, 39, 32, 10
     CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 43, 37, 177, 100
     DEFPUSHBUTTON "OK", IDOK, 62, 70, 50, 14
@@ -432,7 +432,7 @@ BEGIN
     GROUPBOX "Завдання", -1, 7, 10, 249, 40
     CONTROL "", IDC_FOLDER_OPTIONS_TASKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 20, 21, 20
     AUTORADIOBUTTON "&Показувати список типових завдань у теках", IDC_FOLDER_OPTIONS_COMMONTASKS, 40, 20, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "Використовувати зви&чайні папки LiberNT", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
+    AUTORADIOBUTTON "Використовувати зви&чайні папки NextNT", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
     GROUPBOX "Огляд папок", -1, 7, 60, 249, 40, WS_TABSTOP
     CONTROL "", IDC_FOLDER_OPTIONS_FOLDERICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 70, 21, 20
     AUTORADIOBUTTON "Відкривати папки в то&му самому вікні", IDC_FOLDER_OPTIONS_SAMEWINDOW, 40, 70, 210, 10, WS_TABSTOP | WS_GROUP
@@ -521,7 +521,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "На цьому диску або пристрої зберігається вміст декількох типів.", 1001, 32, 7, 191, 20
-    LTEXT "Яку дію слід виконувати LiberNT?", 1002, 32, 31, 188, 8
+    LTEXT "Яку дію слід виконувати NextNT?", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "OK", IDOK, 96, 186, 60, 14
     PUSHBUTTON "Скасувати", IDCANCEL, 160, 186, 60, 14
@@ -533,10 +533,10 @@ CAPTION "Мішаний вміст"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT може виконувати одну й ту саму дію кожного разу, коли ви вставляєте диск або під'єднуєте пристрій із файлами цього типу:", 1001, 30, 7, 193, 20
+    LTEXT "NextNT може виконувати одну й ту саму дію кожного разу, коли ви вставляєте диск або під'єднуєте пристрій із файлами цього типу:", 1001, 30, 7, 193, 20
     ICON "", 1005, 32, 27, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 28, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
-    LTEXT "Яку дію слід виконувати LiberNT?", 1002, 32, 41, 190, 8
+    LTEXT "Яку дію слід виконувати NextNT?", 1002, 32, 41, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 55, 188, 112
     AUTOCHECKBOX "Завжди виконувати вибрану дію.", 1004, 32, 171, 190, 10
     DEFPUSHBUTTON "OK", IDOK, 96, 185, 60, 14
@@ -549,8 +549,8 @@ CAPTION "Автозапуск"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT може виконувати одну й ту саму дію кожного разу, коли ви під'єднуєте цей пристрій.", 1001, 32, 7, 190, 22
-    LTEXT "&Яку дію слід виконувати LiberNT?", 1002, 32, 31, 190, 8
+    LTEXT "NextNT може виконувати одну й ту саму дію кожного разу, коли ви під'єднуєте цей пристрій.", 1001, 32, 7, 190, 22
+    LTEXT "&Яку дію слід виконувати NextNT?", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "&Завжди виконувати вибрану дію", 1004, 32, 143, 190, 8
     DEFPUSHBUTTON "OK", IDOK, 94, 160, 60, 14
@@ -818,7 +818,7 @@ BEGIN
 
     /* Warning format system drive dialog strings */
     IDS_NO_FORMAT_TITLE "Cannot format this volume"
-    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for LiberNT to run."
+    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for NextNT to run."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "Неможливо відобразити діалог запуску файлу (внутрішня помилка)"
@@ -904,8 +904,8 @@ BEGIN
 
     /* Friendly File Type Names */
     IDS_DIRECTORY "Папка"
-    IDS_BAT_FILE "Пакетний файл LiberNT"
-    IDS_CMD_FILE "Командний скрипт LiberNT"
+    IDS_BAT_FILE "Пакетний файл NextNT"
+    IDS_CMD_FILE "Командний скрипт NextNT"
     IDS_COM_FILE "Додаток DOS"
     IDS_CPL_FILE "Елемент панелі керування"
     IDS_CUR_FILE "Курсор"

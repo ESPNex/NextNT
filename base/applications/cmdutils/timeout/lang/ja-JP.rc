@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT timeout
+ * PROJECT:     NextNT timeout
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -9,7 +9,7 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 
 STRINGTABLE
 BEGIN
-    IDS_USAGE "LiberNT Timeout ユーティリティ\n\
+    IDS_USAGE "NextNT Timeout ユーティリティ\n\
 \n\
 TIMEOUT [/?] [/T] delay [/NOBREAK]\n\
 \n\

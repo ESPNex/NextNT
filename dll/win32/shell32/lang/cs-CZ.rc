@@ -165,9 +165,9 @@ BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10, SS_NOPREFIX
-    LTEXT "Copyright 2026 LiberNT Team", IDC_STATIC, 35, 75, 200, 10
+    LTEXT "Copyright 2026 NextNT Team", IDC_STATIC, 35, 75, 200, 10
     LTEXT "", IDC_ABOUT_OTHERSTUFF, 35, 90, 180, 20, SS_NOPREFIX
-    LTEXT "Tato verze LiberNT je zaregistrována na:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
+    LTEXT "Tato verze NextNT je zaregistrována na:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
     LTEXT "", IDC_ABOUT_REG_USERNAME, 45, 125, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_REG_ORGNAME, 45, 135, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_STATIC, 35, 147, 235, 1, SS_ETCHEDHORZ
@@ -181,7 +181,7 @@ IDD_ABOUT_AUTHORS DIALOGEX 35, 90, 235, 85
 STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT je dílem:", IDC_STATIC, 0, 0, 180, 10
+    LTEXT "NextNT je dílem:", IDC_STATIC, 0, 0, 180, 10
     LISTBOX IDC_ABOUT_AUTHORS_LISTBOX, 0, 10, 165, 75
 END
 
@@ -191,7 +191,7 @@ CAPTION "Spustit"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "Zadejte název programu, složky, dokumentu, nebo zdroje v síti Internet a LiberNT jej pro vás otevře.", 12289, 36, 11, 185, 18
+    LTEXT "Zadejte název programu, složky, dokumentu, nebo zdroje v síti Internet a NextNT jej pro vás otevře.", 12289, 36, 11, 185, 18
     LTEXT "&Otevřít:", 12305, 7, 39, 24, 10
     CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 36, 37, 184, 100
     DEFPUSHBUTTON "OK", IDOK, 62, 70, 50, 14
@@ -440,7 +440,7 @@ BEGIN
     GROUPBOX "Úkoly", -1, 7, 10, 249, 40
     CONTROL "", IDC_FOLDER_OPTIONS_TASKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 20, 21, 20
     AUTORADIOBUTTON "&Zobrazit běžné operace ve složkách", IDC_FOLDER_OPTIONS_COMMONTASKS, 40, 20, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "Použít klas&ické složky LiberNT", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
+    AUTORADIOBUTTON "Použít klas&ické složky NextNT", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
     GROUPBOX "Procházení složek", -1, 7, 60, 249, 40, WS_TABSTOP
     CONTROL "", IDC_FOLDER_OPTIONS_FOLDERICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 70, 21, 20
     AUTORADIOBUTTON "Otevírat každou složku ve stejné&m okně", IDC_FOLDER_OPTIONS_SAMEWINDOW, 40, 70, 210, 10, WS_TABSTOP | WS_GROUP
@@ -513,7 +513,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_VISIBLE | WS_CLIPSIBLIN
 CAPTION "Autopřehrávání"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Vyberte &typ obsahu a akci, kterou systém LiberNT automaticky provede když se v tomto zařízení objeví tento typ obsahu:", 1000, 7, 7, 215, 20
+    LTEXT "Vyberte &typ obsahu a akci, kterou systém NextNT automaticky provede když se v tomto zařízení objeví tento typ obsahu:", 1000, 7, 7, 215, 20
     CONTROL "", 1001, "COMBOBOXEX32", WS_TABSTOP | 0x00000043, 7, 27, 212, 200
     GROUPBOX "Akce", -1, 7, 45, 212, 146
     AUTORADIOBUTTON "Zvolte akci, která bude &provedena:", 1005, 14, 54, 202, 10, WS_GROUP
@@ -529,7 +529,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "Tento disk nebo zařízení obsahuje víc než jeden typ obsahu.", 1001, 32, 7, 191, 20
-    LTEXT "Co má systém LiberNT provést?", 1002, 32, 31, 188, 8
+    LTEXT "Co má systém NextNT provést?", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "OK", IDOK, 96, 186, 60, 14
     PUSHBUTTON "Storno", IDCANCEL, 160, 186, 60, 14
@@ -541,10 +541,10 @@ CAPTION "Smíšený obsah"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT může provést stejnou akci vždy, když vložíte disk či připojíte zařízení s tímto druhem souboru:", 1001, 30, 7, 193, 20
+    LTEXT "NextNT může provést stejnou akci vždy, když vložíte disk či připojíte zařízení s tímto druhem souboru:", 1001, 30, 7, 193, 20
     ICON "", 1005, 32, 27, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 28, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
-    LTEXT "Co má systém LiberNT provést?", 1002, 32, 41, 190, 8
+    LTEXT "Co má systém NextNT provést?", 1002, 32, 41, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 55, 188, 112
     AUTOCHECKBOX "Zvolenou akci provést vždy.", 1004, 32, 171, 190, 10
     DEFPUSHBUTTON "OK", IDOK, 96, 185, 60, 14
@@ -557,8 +557,8 @@ CAPTION "Autopřehrávání"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT může provést stejnou akci vždy, když připojíte toto zařízení.", 1001, 32, 7, 190, 22
-    LTEXT "&Co má systém LiberNT provést?", 1002, 32, 31, 190, 8
+    LTEXT "NextNT může provést stejnou akci vždy, když připojíte toto zařízení.", 1001, 32, 7, 190, 22
+    LTEXT "&Co má systém NextNT provést?", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "Zvolenou akci provést &vždy", 1004, 32, 143, 190, 8
     DEFPUSHBUTTON "OK", IDOK, 94, 160, 60, 14
@@ -826,7 +826,7 @@ BEGIN
 
     /* Warning format system drive dialog strings */
     IDS_NO_FORMAT_TITLE "Cannot format this volume"
-    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for LiberNT to run."
+    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for NextNT to run."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "Nelze zobrazit dialog Spustit soubor (interní chyba)"
@@ -912,8 +912,8 @@ BEGIN
 
     /* Friendly File Type Names */
     IDS_DIRECTORY "Složka"
-    IDS_BAT_FILE "LiberNT dávkový soubor"
-    IDS_CMD_FILE "LiberNT příkazový skript"
+    IDS_BAT_FILE "NextNT dávkový soubor"
+    IDS_CMD_FILE "NextNT příkazový skript"
     IDS_COM_FILE "DOS Aplikace"
     IDS_CPL_FILE "Položka Ovládacích panelů"
     IDS_CUR_FILE "Kurzor"

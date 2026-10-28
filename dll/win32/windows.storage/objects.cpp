@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Storage
+ * PROJECT:     NextNT Windows Storage
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ATL module for the shell storage objects
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

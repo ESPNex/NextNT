@@ -7,7 +7,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = Display
 ClassGUID  = {4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 08/25/2007,1.10
 
 [DestinationDirs]
@@ -45,7 +45,7 @@ ServiceBinary  = %12%\vgapnp.sys
 LoadOrderGroup = Video Save
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 StdMfg = "(Standard display adapters)"
 VGA.DeviceDesc = "VGA-compatible graphics card"
 

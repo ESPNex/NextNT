@@ -396,7 +396,7 @@ RamdiskEnsureBootPfnTable(IN PRAMDISK_DRIVE_EXTENSION DriveExtension)
     }
 
     /*
-     * FreeLDR boot ramdisks are handed to the kernel as one contiguous
+     * NextLDR boot ramdisks are handed to the kernel as one contiguous
      * LoaderXIPRom descriptor. Do not require the legacy PFN-list format for
      * writable disks: they can be mapped directly from BasePage + DiskOffset.
      */

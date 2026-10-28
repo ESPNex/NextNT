@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT msi.dll
+ * PROJECT:     NextNT msi.dll
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     x86 custom action entry point wrapper for MSVC builds
  * COPYRIGHT:   Copyright 2005 Aric Stewart for CodeWeavers

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel Debugger
+ * PROJECT:     NextNT Kernel Debugger
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Terminal channel a debugger transport module offers to the built-in debugger
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

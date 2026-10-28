@@ -164,9 +164,9 @@ BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10, SS_NOPREFIX
-    LTEXT "Copyright 2026 Ekipi LiberNT", IDC_STATIC, 35, 75, 200, 10
+    LTEXT "Copyright 2026 Ekipi NextNT", IDC_STATIC, 35, 75, 200, 10
     LTEXT "", IDC_ABOUT_OTHERSTUFF, 35, 90, 180, 20, SS_NOPREFIX
-    LTEXT "Ky version LiberNT është i regjistruar për:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
+    LTEXT "Ky version NextNT është i regjistruar për:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
     LTEXT "", IDC_ABOUT_REG_USERNAME, 45, 125, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_REG_ORGNAME, 45, 135, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_STATIC, 35, 147, 235, 1, SS_ETCHEDHORZ
@@ -180,7 +180,7 @@ IDD_ABOUT_AUTHORS DIALOGEX 35, 90, 235, 85
 STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT u soll tek ju nga:", IDC_STATIC, 0, 0, 180, 10
+    LTEXT "NextNT u soll tek ju nga:", IDC_STATIC, 0, 0, 180, 10
     LISTBOX IDC_ABOUT_AUTHORS_LISTBOX, 0, 10, 165, 75
 END
 
@@ -190,7 +190,7 @@ CAPTION "Ekzekuto"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "Shkruaj emrin e një programi, dosje, dokumenti, apo burim interneti, dhe LiberNT do të hap atë për ju.", 12289, 36, 11, 185, 18
+    LTEXT "Shkruaj emrin e një programi, dosje, dokumenti, apo burim interneti, dhe NextNT do të hap atë për ju.", 12289, 36, 11, 185, 18
     LTEXT "&Hap:", 12305, 7, 39, 24, 10
     CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 36, 37, 184, 100
     DEFPUSHBUTTON "OK", IDOK, 36, 70, 59, 14
@@ -439,7 +439,7 @@ BEGIN
     GROUPBOX "Detyra", -1, 7, 10, 249, 40
     CONTROL "", IDC_FOLDER_OPTIONS_TASKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 20, 21, 20
     AUTORADIOBUTTON "Trego detyra të përbashkëta në dosjet", IDC_FOLDER_OPTIONS_COMMONTASKS, 40, 20, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "Përdorimi LiberNT dosjet klasike", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
+    AUTORADIOBUTTON "Përdorimi NextNT dosjet klasike", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
     GROUPBOX "Shfleto Dosje", -1, 7, 60, 249, 40, WS_TABSTOP
     CONTROL "", IDC_FOLDER_OPTIONS_FOLDERICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 70, 21, 20
     AUTORADIOBUTTON "Hap çdo dosje në të njëtën dritare", IDC_FOLDER_OPTIONS_SAMEWINDOW, 40, 70, 210, 10, WS_TABSTOP | WS_GROUP
@@ -512,7 +512,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_VISIBLE | WS_CLIPSIBLIN
 CAPTION "HapAuto"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "&Zgjidhni një lloj përmbajtje, më pas zgjidhni një veprim për LiberNT për të kryer automatikisht kur lloji që është përdorur në këtë pajisje:", 1000, 7, 7, 215, 20
+    LTEXT "&Zgjidhni një lloj përmbajtje, më pas zgjidhni një veprim për NextNT për të kryer automatikisht kur lloji që është përdorur në këtë pajisje:", 1000, 7, 7, 215, 20
     CONTROL "", 1001, "COMBOBOXEX32", WS_TABSTOP | 0x00000043, 7, 27, 212, 200
     GROUPBOX "Veprim", -1, 7, 45, 212, 146
     AUTORADIOBUTTON "Zgjidhni një veprim për të kryer:", 1005, 14, 54, 202, 10, WS_GROUP
@@ -528,7 +528,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "Ky disk ose pajisje përmban më shumë se një lloj të përmbajtjes.", 1001, 32, 7, 191, 20
-    LTEXT "Çfarë doni që LiberNT të bëjë?", 1002, 32, 31, 188, 8
+    LTEXT "Çfarë doni që NextNT të bëjë?", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "OK", IDOK, 96, 186, 60, 14
     PUSHBUTTON "Anulo", IDCANCEL, 160, 186, 60, 14
@@ -540,10 +540,10 @@ CAPTION "Përmbajtja Përzier"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT mund të kryej të njëjtin veprim sa herë që ju të fusni një disk, ose një pajisje të lidhur me këtë lloj dokumenti:", 1001, 30, 7, 193, 20
+    LTEXT "NextNT mund të kryej të njëjtin veprim sa herë që ju të fusni një disk, ose një pajisje të lidhur me këtë lloj dokumenti:", 1001, 30, 7, 193, 20
     ICON "", 1005, 32, 27, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 28, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
-    LTEXT "Çfarë doni që LiberNT të bëjë?", 1002, 32, 41, 190, 8
+    LTEXT "Çfarë doni që NextNT të bëjë?", 1002, 32, 41, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 55, 188, 112
     AUTOCHECKBOX "Gjithmonë të bëjë veprimin e zgjedhur.", 1004, 32, 171, 190, 10
     DEFPUSHBUTTON "OK", IDOK, 96, 185, 60, 14
@@ -556,8 +556,8 @@ CAPTION "HapAuto"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT mund të kryejë të njëjtën veprim sa herë që ju lidhni këtë pajisje.", 1001, 32, 7, 190, 22
-    LTEXT "&Çfarë doni që LiberNT të bëjë?", 1002, 32, 31, 190, 8
+    LTEXT "NextNT mund të kryejë të njëjtën veprim sa herë që ju lidhni këtë pajisje.", 1001, 32, 7, 190, 22
+    LTEXT "&Çfarë doni që NextNT të bëjë?", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "&Gjithmonë të bëjë veprimin e zgjedhur", 1004, 32, 143, 190, 8
     DEFPUSHBUTTON "OK", IDOK, 94, 160, 60, 14
@@ -825,7 +825,7 @@ BEGIN
 
     /* Warning format system drive dialog strings */
     IDS_NO_FORMAT_TITLE "Cannot format this volume"
-    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for LiberNT to run."
+    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for NextNT to run."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "Në pamundësi për të shfaqur kutinë dialogut ekzekuto (gabim i brendshëm)"
@@ -911,8 +911,8 @@ BEGIN
 
     /* Friendly File Type Names */
     IDS_DIRECTORY "Dosje"
-    IDS_BAT_FILE "LiberNT Dokument Batch"
-    IDS_CMD_FILE "LiberNT Skript Komande"
+    IDS_BAT_FILE "NextNT Dokument Batch"
+    IDS_CMD_FILE "NextNT Skript Komande"
     IDS_COM_FILE "Aplikacion DOS"
     IDS_CPL_FILE "Artikuj Kontroll Panelit"
     IDS_CUR_FILE "Tregues"
@@ -957,7 +957,7 @@ BEGIN
     IDS_DEFAULT_CLUSTER_SIZE "Masa parazgjedhur shpërndarjes"
     IDS_COPY_OF "Kopjo"
 
-    IDS_SHLEXEC_NOASSOC "Nuk ka asnjë program të LiberNT të konfiguruar për të hapur këtë lloj file."
+    IDS_SHLEXEC_NOASSOC "Nuk ka asnjë program të NextNT të konfiguruar për të hapur këtë lloj file."
 
     IDS_FILE_DETAILS "Detaje për '%s' prapashtesë"
     IDS_FILE_DETAILSADV "Dokumente me prapashtesë '%s' janë të tipit '%s'. Për të ndryshuar cilësimet që ndikojnë të gjithë '%s' dokumentet, kliko Avancuar."

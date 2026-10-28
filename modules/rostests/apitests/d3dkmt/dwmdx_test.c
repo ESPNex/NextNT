@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows parity for the DWM D3DKMT window redirection surface
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Covers the surface added for the shared-GPU-redirection path:
  *   dwmapi ordinal 100/101 (DwmpDxGetWindowSharedSurface /
@@ -103,7 +103,7 @@ RunningOnReactOS(void)
             Type == REG_SZ)
         {
             Product[ARRAYSIZE(Product) - 1] = L'\0';
-            if (wcsstr(Product, L"LiberNT") != NULL)
+            if (wcsstr(Product, L"NextNT") != NULL)
                 Cached = 1;
         }
         RegCloseKey(Key);

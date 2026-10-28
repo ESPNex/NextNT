@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Loader/Kernel Handoff
+ * PROJECT:     NextNT Loader/Kernel Handoff
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Entries of EFI_FIRMWARE_INFORMATION.FirmwareResourceList (one per ESRT entry)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

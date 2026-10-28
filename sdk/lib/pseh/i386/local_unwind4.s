@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT CRT
+ * PROJECT:     NextNT CRT
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     EH4 local unwind entry point for x86
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

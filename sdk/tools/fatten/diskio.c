@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT FAT/exFAT Image Creator
+ * PROJECT:     NextNT FAT/exFAT Image Creator
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     FatFs media-access adapter for host image files
  */

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Lists every registered property description for schema comparison
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -64,7 +64,7 @@ DumpDefaultText(IPropertyDescription *Desc, IPropertyEnumTypeList *List, LPCWSTR
             if (i)
                 break;
             Value.vt = VT_LPWSTR;
-            Value.pwszVal = L"liberntprobe";
+            Value.pwszVal = L"nextntprobe";
         }
         else if (i == ARRAYSIZE(Probes))
         {

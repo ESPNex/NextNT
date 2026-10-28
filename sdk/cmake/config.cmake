@@ -210,7 +210,7 @@ cmake_dependent_option(ENABLE_ROSTESTS "Whether to build the ReactOS test suite.
 
 option(ENABLE_MESA_LLVMPIPE "Package the LLVMpipe OpenGL and Lavapipe Vulkan software ICDs." OFF)
 cmake_dependent_option(MESA_LLVMPIPE_FROM_SOURCE
-                       "Build LLVM and LLVMpipe into mesa_gallium.dll instead of using the LiberNT release payload." OFF
+                       "Build LLVM and LLVMpipe into mesa_gallium.dll instead of using the NextNT release payload." OFF
                        "ENABLE_MESA_LLVMPIPE" OFF)
 
 cmake_dependent_option(ENABLE_FEX_ARM64EC
@@ -253,7 +253,7 @@ cmake_dependent_option(ENABLE_FFMPEG
                        "Build the H.264 and AAC Media Foundation decoders against the LGPL FFmpeg payload" ON
                        "ARCH STREQUAL i386 OR ARCH STREQUAL amd64 OR ARCH STREQUAL arm64;CMAKE_C_COMPILER_ID STREQUAL Clang;NOT MSVC" OFF)
 cmake_dependent_option(FFMPEG_FROM_SOURCE
-                       "Build the LGPL FFmpeg libraries from the ffmpeg feed instead of using the LiberNT release payload." OFF
+                       "Build the LGPL FFmpeg libraries from the ffmpeg feed instead of using the NextNT release payload." OFF
                        "ENABLE_FFMPEG" OFF)
 
 cmake_dependent_option(ENABLE_DXILCONV
@@ -290,8 +290,8 @@ cmake_dependent_option(ENABLE_ROSV
                        "Whether to build the ROSV VMX hypervisor driver and its user-mode tools." OFF
                        "ARCH STREQUAL amd64" OFF)
 
-cmake_dependent_option(FREELDR_HTTP_BOOT
-                       "Whether to build the FreeLdr UEFI HTTP boot path." OFF
+cmake_dependent_option(NEXTLDR_HTTP_BOOT
+                       "Whether to build the NextLdr UEFI HTTP boot path." OFF
                        "LATTEPANDAMU_SUPPORT OR RPI_SUPPORT" OFF)
 
 cmake_dependent_option(ENABLE_ROSAUTOTEST_BOOT_RUN
@@ -308,7 +308,7 @@ cmake_dependent_option(ENABLE_KMTEST_BOOT_RUN
 
 cmake_dependent_option(ENABLE_RP1GEM_BENCHMARK
                        "Whether to run the single-stream RP1 GEM benchmark from ARM64 HTTP boot." OFF
-                       "ARCH STREQUAL arm64 AND CMAKE_BUILD_TYPE STREQUAL Debug AND RPI5_SUPPORT AND FREELDR_HTTP_BOOT" OFF)
+                       "ARCH STREQUAL arm64 AND CMAKE_BUILD_TYPE STREQUAL Debug AND RPI5_SUPPORT AND NEXTLDR_HTTP_BOOT" OFF)
 
 cmake_dependent_option(ENABLE_RPI5_WIFI_BOOT_RUN
                        "Whether to run the RPi5 Wi-Fi scan automatically at boot." OFF

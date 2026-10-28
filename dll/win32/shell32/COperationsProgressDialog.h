@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT browseui
+ * PROJECT:     NextNT browseui
  * LICENSE:     GPL-3.0-or-later
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     Shell operation progress UI and public COM interfaces

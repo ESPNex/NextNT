@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Kernel (ARM64)
+ * PROJECT:     NextNT Kernel (ARM64)
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ARM64 generic timer and GIC SMP diagnostics. Recorded from
  *              ntoskrnl and the HAL; gated at runtime by /SMPDIAG

@@ -335,7 +335,7 @@ BEGIN
     BEGIN
         MENUITEM "נושאי עזרה", IDM_HELP_HELP
         MENUITEM SEPARATOR
-        MENUITEM "אודות מחשבון LiberNT", IDM_HELP_ABOUT
+        MENUITEM "אודות מחשבון NextNT", IDM_HELP_ABOUT
     END
 END
 
@@ -368,7 +368,7 @@ BEGIN
     BEGIN
         MENUITEM "נושאי עזרה", IDM_HELP_HELP
         MENUITEM SEPARATOR
-        MENUITEM "אודות המחשבון LiberNT", IDM_HELP_ABOUT
+        MENUITEM "אודות המחשבון NextNT", IDM_HELP_ABOUT
     END
 END
 
@@ -391,7 +391,7 @@ BEGIN
     BEGIN
         MENUITEM "נושאי עזרה", IDM_HELP_HELP
         MENUITEM SEPARATOR
-        MENUITEM "אודות המחשבון LiberNT", IDM_HELP_ABOUT
+        MENUITEM "אודות המחשבון NextNT", IDM_HELP_ABOUT
     END
 END
 
@@ -406,7 +406,7 @@ END
 /* About */
 STRINGTABLE
 BEGIN
-    IDS_CALC_NAME "מחשבון LiberNT"
+    IDS_CALC_NAME "מחשבון NextNT"
     IDS_AUTHOR "נכתב על ידי Carlo Bramini"
 END
 

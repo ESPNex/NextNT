@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Open Firmware entry point and firmware services
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -70,12 +70,12 @@ static POFW_SHARED_STATE OfwShared;
 static OFW_DISK OfwDisks[OFW_MAX_DISKS];
 static ULONG OfwDiskCount;
 static BOOLEAN OfwDisksScanned;
-static FREELDR_MEMORY_DESCRIPTOR OfwMap[OFW_MAX_DESCRIPTORS + 1];
+static NEXTLDR_MEMORY_DESCRIPTOR OfwMap[OFW_MAX_DESCRIPTORS + 1];
 static ULONG OfwMapCount;
 
 static const PCWSTR OfwStorePaths[] =
 {
-    L"\\EFI\\LiberNT\\Boot\\BCD",
+    L"\\EFI\\NextNT\\Boot\\BCD",
     L"\\Boot\\BCD",
 };
 
@@ -376,7 +376,7 @@ OfwPaint(
     _In_ ULONG PageCount,
     _In_ TYPE_OF_MEMORY Type)
 {
-    FREELDR_MEMORY_DESCRIPTOR Pieces[OFW_MAX_DESCRIPTORS + 1];
+    NEXTLDR_MEMORY_DESCRIPTOR Pieces[OFW_MAX_DESCRIPTORS + 1];
     ULONG Count = 0, i, Start, End, CutStart, CutEnd;
 
     if (PageCount == 0)
@@ -420,7 +420,7 @@ OfwPaint(
 
     for (i = 1; i < Count; i++)
     {
-        FREELDR_MEMORY_DESCRIPTOR Entry = Pieces[i];
+        NEXTLDR_MEMORY_DESCRIPTOR Entry = Pieces[i];
         ULONG j = i;
 
         while (j > 0 && Pieces[j - 1].BasePage > Entry.BasePage)
@@ -465,7 +465,7 @@ OfwPaintBytes(
         OfwPaint(First, Last - First, Type);
 }
 
-PFREELDR_MEMORY_DESCRIPTOR
+PNEXTLDR_MEMORY_DESCRIPTOR
 FwGetMemoryMap(
     _Out_ PULONG Count)
 {

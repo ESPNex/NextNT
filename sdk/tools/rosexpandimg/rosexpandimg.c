@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT host tools
+ * PROJECT:     NextNT host tools
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Grow a disk image file and its last partition and NTFS volume to a new size
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

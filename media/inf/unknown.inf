@@ -18,7 +18,7 @@ HKR, , Icon,           0, "-18"
 
 [Strings]
 ; Non-localizable
-ReactOS = "LiberNT Project"
+ReactOS = "NextNT Project"
 
 ; Localizable
 UnknownClassName = "Other Devices"

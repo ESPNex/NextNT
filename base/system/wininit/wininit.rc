@@ -2,7 +2,7 @@
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
-#define REACTOS_STR_FILE_DESCRIPTION  "LiberNT Windows Start-Up Application"
+#define REACTOS_STR_FILE_DESCRIPTION  "NextNT Windows Start-Up Application"
 #define REACTOS_STR_INTERNAL_NAME     "wininit"
 #define REACTOS_STR_ORIGINAL_FILENAME "wininit.exe"
 #include <reactos/version.rc>

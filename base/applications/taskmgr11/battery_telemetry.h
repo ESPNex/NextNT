@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Task Manager
+ * PROJECT:     NextNT Task Manager
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Battery telemetry unit conversion helpers
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

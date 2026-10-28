@@ -1000,7 +1000,7 @@ RtlValidAcl(IN PACL Acl)
                                         GuidSize + FIELD_OFFSET(SID, SubAuthority);
                 if (Ace->AceSize < RequiredObjectAceSize)
                 {
-                    DPRINT1("LiberNT: Object ACE is too small for its GUIDs and SID header\n");
+                    DPRINT1("NextNT: Object ACE is too small for its GUIDs and SID header\n");
                     _SEH2_YIELD(return FALSE);
                 }
 

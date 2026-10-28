@@ -5,7 +5,7 @@
 Signature = "$Windows NT$"
 Class = System
 ClassGUID = {4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 08/15/2026,1.0.0.0
 
 [ControlFlags]
@@ -15,9 +15,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT,NTarm64
+%NextNT% = NextNT,NTarm64
 
-[LiberNT.NTarm64]
+[NextNT.NTarm64]
 %AcpiPagr.DeviceDesc% = AcpiPagr_Inst,ACPI\ACPI000C
 
 [AcpiPagr_Inst.NT]
@@ -38,6 +38,6 @@ ServiceBinary = %12%\acpipagr.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 AcpiPagr.DeviceDesc = "ACPI Processor Aggregator"
-AcpiPagr.ServiceDesc = "LiberNT ACPI Processor Aggregator Driver"
+AcpiPagr.ServiceDesc = "NextNT ACPI Processor Aggregator Driver"

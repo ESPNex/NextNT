@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ACPI Processor Module Driver
+ * PROJECT:     NextNT ACPI Processor Module Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ACPI0007 topology and processor power capability discovery
  */

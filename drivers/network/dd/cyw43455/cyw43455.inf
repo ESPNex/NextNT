@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT Broadcom/Cypress CYW43xx Native 802.11 Miniport
+; PROJECT:     NextNT Broadcom/Cypress CYW43xx Native 802.11 Miniport
 ; LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 ; PURPOSE:     CYW43xx SDIO Native Wi-Fi miniport installation file
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,7 +7,7 @@
 Signature   = "$Windows NT$"
 Class       = Net
 ClassGUID   = {4d36e972-e325-11ce-bfc1-08002be10318}
-Provider    = %LiberNT%
+Provider    = %NextNT%
 DriverVer   = 06/25/2026,1.0.0.0
 CatalogFile = cyw43455.cat
 
@@ -15,7 +15,7 @@ CatalogFile = cyw43455.cat
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = Models,NTamd64,NTARM64
+%NextNT% = Models,NTamd64,NTARM64
 
 [Models]
 %cyw43430.DeviceDesc% = cyw.ndi, SD\VID_02D0&PID_A9A6&FN_2
@@ -76,8 +76,8 @@ HKR, , TypesSupported,   0x00010001, 7
 cyw43455.sys = 1
 
 [Strings]
-LiberNT         = "LiberNT Team"
+NextNT         = "NextNT Team"
 cyw43430.DeviceDesc = "Broadcom BCM43430 802.11n SDIO WiFi Adapter"
 cyw.DeviceDesc  = "Broadcom CYW43455 802.11ac SDIO WiFi Adapter"
-cyw.ServiceDesc = "LiberNT CYW43xx WiFi Driver"
-DiskName        = "LiberNT CYW43xx WiFi Driver Installation Disk"
+cyw.ServiceDesc = "NextNT CYW43xx WiFi Driver"
+DiskName        = "NextNT CYW43xx WiFi Driver Installation Disk"

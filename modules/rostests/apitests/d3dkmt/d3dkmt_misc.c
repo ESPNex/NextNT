@@ -1,12 +1,12 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Miscellaneous D3DKMT user-mode surface tests:
  *              output duplication, GPU clock calibration, stable power state,
  *              process scheduling-priority class, in-process context priority,
  *              trim / budget-change notifications, InvalidateCache,
  *              QueryStatistics and QueryVideoMemoryInfo budget edge cases.
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * This file pins to WDDM 2.0 (DXGKDDI_INTERFACE_VERSION == 0x5023, set by the
  * test CMakeLists). Entry points whose PFND3DKMT_* typedef only exists at a

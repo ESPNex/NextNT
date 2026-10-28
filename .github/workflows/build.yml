@@ -63,7 +63,7 @@ jobs:
     - name: Compute RosBE bootstrap SHA
       id: rosbe_spec
       run: |
-        curl -fsSL https://raw.githubusercontent.com/LiberNT/libernt-build-toolchain/main/rosbe-unix-bootstrap.sh -o /tmp/rosbe-bootstrap.sh
+        curl -fsSL https://raw.githubusercontent.com/NextNT/nextnt-build-toolchain/main/rosbe-unix-bootstrap.sh -o /tmp/rosbe-bootstrap.sh
         echo "sha=$(sha1sum /tmp/rosbe-bootstrap.sh | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
     - name: Cache RosBE
@@ -119,7 +119,7 @@ jobs:
     - name: Build images
       run: |
         . "$HOME/.local/opt/rosbe/rosbe-env.sh"
-        ninja -C ${{steps.configure.outputs.outdir}} bootcd liberntimg liberntvhd -k0
+        ninja -C ${{steps.configure.outputs.outdir}} bootcd nextntimg nextntvhd -k0
 
     - name: Print ccache statistics
       if: ${{ always() && steps.ccache_restore.outcome == 'success' }}
@@ -157,23 +157,23 @@ jobs:
         name: bootcd-iso-${{steps.images.outputs.tag}}
         path: ${{steps.configure.outputs.outdir}}/bootcd.iso
 
-    - name: Upload LiberNT.img
+    - name: Upload NextNT.img
       uses: actions/upload-artifact@v7
       with:
-        name: LiberNT-img-${{steps.images.outputs.tag}}
-        path: ${{steps.configure.outputs.outdir}}/LiberNT.img
+        name: NextNT-img-${{steps.images.outputs.tag}}
+        path: ${{steps.configure.outputs.outdir}}/NextNT.img
 
-    - name: Upload LiberNT.vhd
+    - name: Upload NextNT.vhd
       uses: actions/upload-artifact@v7
       with:
-        name: LiberNT-vhd-${{steps.images.outputs.tag}}
-        path: ${{steps.configure.outputs.outdir}}/LiberNT.vhd
+        name: NextNT-vhd-${{steps.images.outputs.tag}}
+        path: ${{steps.configure.outputs.outdir}}/NextNT.vhd
 
-    - name: Upload LiberNT.vhdx
+    - name: Upload NextNT.vhdx
       uses: actions/upload-artifact@v7
       with:
-        name: LiberNT-vhdx-${{steps.images.outputs.tag}}
-        path: ${{steps.configure.outputs.outdir}}/LiberNT.vhdx
+        name: NextNT-vhdx-${{steps.images.outputs.tag}}
+        path: ${{steps.configure.outputs.outdir}}/NextNT.vhdx
 
     - name: Check build dependencies
       run: python3 sdk/tools/depcheck.py ${{steps.configure.outputs.outdir}} --mode depfiles --nested --fail-on-gaps
@@ -204,7 +204,7 @@ jobs:
       run: |
         choco install -y --no-progress ninja winflexbison3
         python -m pip install --upgrade mako pyyaml packaging
-        # LiberNT's CMake looks for flex/bison; winflexbison3 ships them as
+        # NextNT's CMake looks for flex/bison; winflexbison3 ships them as
         # win_flex/win_bison, so expose both names on PATH.
         $tools = "C:\ProgramData\chocolatey\lib\winflexbison3\tools"
         if (-not (Test-Path "$tools\win_flex.exe")) { $tools = Split-Path (Get-Command win_flex).Source }

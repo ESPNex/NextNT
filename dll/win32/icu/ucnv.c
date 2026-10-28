@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT International Components for Unicode
+ * PROJECT:     NextNT International Components for Unicode
  * FILE:        dll/win32/icu/ucnv.c
  * PURPOSE:     ICU character set converters over Windows code pages
  *

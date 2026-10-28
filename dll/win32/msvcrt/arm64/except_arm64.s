@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT msvcrt.dll
+ * PROJECT:     NextNT msvcrt.dll
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ARM64 asm code for except_arm64.c
  * COPYRIGHT:   Copyright 2011-2017 Wine team

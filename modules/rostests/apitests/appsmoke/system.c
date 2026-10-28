@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests the program folders of a 64-bit system and registry security by object type
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -80,7 +80,7 @@ START_TEST(registry_security)
     DWORD Error;
     UINT Index;
 
-    Error = RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\LiberNTAppSmoke", 0, NULL, REG_OPTION_VOLATILE,
+    Error = RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\NextNTAppSmoke", 0, NULL, REG_OPTION_VOLATILE,
                             READ_CONTROL | WRITE_DAC, NULL, &Scratch, NULL);
     ok(Error == ERROR_SUCCESS, "RegCreateKeyExW returned %lu\n", Error);
     if (Error == ERROR_SUCCESS)
@@ -126,6 +126,6 @@ START_TEST(registry_security)
     if (Scratch)
     {
         RegCloseKey(Scratch);
-        RegDeleteKeyW(HKEY_CURRENT_USER, L"Software\\LiberNTAppSmoke");
+        RegDeleteKeyW(HKEY_CURRENT_USER, L"Software\\NextNTAppSmoke");
     }
 }

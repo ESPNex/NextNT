@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ACPI bus driver
+ * PROJECT:     NextNT ACPI bus driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ACPI thermal zones, active cooling, and processor throttling
  */

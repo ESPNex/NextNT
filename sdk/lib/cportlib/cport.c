@@ -1,7 +1,7 @@
 /*
  * PROJECT:     ReactOS ComPort Library
  * LICENSE:     BSD - See COPYING.ARM in the top level directory
- * PURPOSE:     Provides a serial port library for KDCOM, INIT, and FREELDR
+ * PURPOSE:     Provides a serial port library for KDCOM, INIT, and NEXTLDR
  * COPYRIGHT:   Copyright 2010 ReactOS Portable Systems Group
  *              Copyright 2012-2026 Hermès Bélusca-Maïto <hermes.belusca-maito@reactos.org>
  *
@@ -9,7 +9,7 @@
  * and Kdcom.dll in Windows. It may be that WinDBG depends on some of these quirks.
  *
  * FIXMEs:
- * - Get x64 KDCOM, KDBG, FREELDR, and other current code to use this.
+ * - Get x64 KDCOM, KDBG, NEXTLDR, and other current code to use this.
  */
 
 /* INCLUDES *******************************************************************/

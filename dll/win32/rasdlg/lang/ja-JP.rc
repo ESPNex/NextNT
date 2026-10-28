@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT rasdlg
+ * PROJECT:     NextNT rasdlg
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -74,7 +74,7 @@ BEGIN
     AUTOCHECKBOX "Win 95 サーバー用に古い MS-CHAP バージョンを許可する(&W)", 200, 46, 162, 198, 10, BS_TOP | BS_MULTILINE
     AUTOCHECKBOX "Microsoft CHAP Version 2 (MS-CHAP v2)(&I)", 1492, 28, 176, 200, 10, BS_TOP | BS_MULTILINE
     CONTROL "", -1, "STATIC", SS_LEFTNOWORDWRAP | SS_SUNKEN | WS_GROUP, 28, 189, 208, 1
-    AUTOCHECKBOX "MS-CHAP ベースのプロトコルでは、LiberNT のログオン名とパスワード (ある場合はドメインも) を自動的に使う(&F)", 1549, 28, 195, 213, 24, BS_TOP | BS_MULTILINE
+    AUTOCHECKBOX "MS-CHAP ベースのプロトコルでは、NextNT のログオン名とパスワード (ある場合はドメインも) を自動的に使う(&F)", 1549, 28, 195, 213, 24, BS_TOP | BS_MULTILINE
     DEFPUSHBUTTON "OK", 1, 127, 232, 60, 14
     PUSHBUTTON "キャンセル", 2, 192, 232, 60, 14
 END
@@ -168,7 +168,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_VISIBLE | WS_CAPTION
 CAPTION "自動ダイヤルと切断"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT は、送受信される情報の量に応じて、デバイスを自動的にダイヤルしたり切断したりできます。", 1085, 9, 7, 253, 30
+    LTEXT "NextNT は、送受信される情報の量に応じて、デバイスを自動的にダイヤルしたり切断したりできます。", 1085, 9, 7, 253, 30
     GROUPBOX "自動ダイヤル", -1, 6, 38, 249, 71
     LTEXT "この接続が次の両方の条件を満たしたときに別の回線をダイヤルする:", 1083, 16, 51, 237, 16, NOT WS_GROUP
     LTEXT "最低の利用率(&L):", -1, 16, 73, 100, 8
@@ -631,7 +631,7 @@ BEGIN
     AUTORADIOBUTTON "詳細 (カスタム設定)(&D)", 1541, 14, 102, 198, 8, BS_NOTIFY
     LTEXT "次の方法で ID を確認する(&V):", 1537, 26, 29, 187, 8, NOT WS_GROUP
     COMBOBOX 1178, 26, 40, 184, 78, CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | WS_VSCROLL | NOT WS_TABSTOP
-    AUTOCHECKBOX "LiberNT のログオン名とパスワード (ある場合はドメインも) を自動的に使う(&U)", 1174, 26, 58, 184, 20, BS_TOP | BS_MULTILINE
+    AUTOCHECKBOX "NextNT のログオン名とパスワード (ある場合はドメインも) を自動的に使う(&U)", 1174, 26, 58, 184, 20, BS_TOP | BS_MULTILINE
     AUTOCHECKBOX "データの暗号化が必要 (暗号化しない場合は切断する)(&I)", 1169, 26, 82, 183, 10, BS_TOP | BS_MULTILINE
     LTEXT "これらの設定を使用するには、セキュリティ プロトコルの知識が必要です。", 1539, 15, 114, 134, 20
     PUSHBUTTON "設定(&S)...", 1180, 151, 115, 60, 14
@@ -688,7 +688,7 @@ BEGIN
     GROUPBOX "ダイヤルのオプション", 1289, 7, 2, 213, 64
     AUTOCHECKBOX "接続中に進行状況を表示する(&D)", 1284, 16, 14, 201, 10
     AUTOCHECKBOX "名前、パスワード、証明書などを入力するよう求める(&P)", 1554, 16, 27, 201, 10
-    AUTOCHECKBOX "LiberNT のログオン ドメインを含める(&L)", 1555, 16, 39, 201, 10
+    AUTOCHECKBOX "NextNT のログオン ドメインを含める(&L)", 1555, 16, 39, 201, 10
     AUTOCHECKBOX "電話番号を入力するよう求める(&N)", 1285, 16, 52, 200, 10, BS_TOP | BS_MULTILINE
     GROUPBOX "再ダイヤルのオプション", 1290, 6, 72, 213, 79
     LTEXT "再ダイヤルの回数(&R):", 1300, 16, 87, 123, 8
@@ -886,7 +886,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
 CAPTION "%1 へ接続"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT は、指定されたユーザー名とパスワードを使ってネットワークに接続できませんでした。ユーザー名とパスワードを再入力してください。", 1396, 7, 6, 206, 36
+    LTEXT "NextNT は、指定されたユーザー名とパスワードを使ってネットワークに接続できませんでした。ユーザー名とパスワードを再入力してください。", 1396, 7, 6, 206, 36
     LTEXT "ユーザー名(&U):", 1399, 8, 51, 49, 8
     EDITTEXT 1394, 66, 46, 143, 14, ES_AUTOHSCROLL
     LTEXT "パスワード(&P):", 1397, 8, 70, 49, 8, NOT WS_GROUP
@@ -902,7 +902,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
 CAPTION "%1 へ接続"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT は、指定されたユーザー名とパスワードを使ってネットワークに接続できませんでした。ユーザー名とパスワードを再入力してください。", 1396, 7, 6, 209, 26
+    LTEXT "NextNT は、指定されたユーザー名とパスワードを使ってネットワークに接続できませんでした。ユーザー名とパスワードを再入力してください。", 1396, 7, 6, 209, 26
     LTEXT "ユーザー名(&U):", 1399, 7, 72, 44, 8
     EDITTEXT 1394, 97, 69, 115, 14, ES_AUTOHSCROLL
     LTEXT "パスワード(&P):", 1397, 7, 90, 45, 8, NOT WS_GROUP
@@ -1279,7 +1279,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "新しい接続ウィザード"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "次のテキスト ボックスにサービスの名前を入力してください。テキスト ボックスを空白のままにすると、接続時に LiberNT がサービスを自動的に検出して構成します。", -1, 10, 7, 301, 25
+    LTEXT "次のテキスト ボックスにサービスの名前を入力してください。テキスト ボックスを空白のままにすると、接続時に NextNT がサービスを自動的に検出して構成します。", -1, 10, 7, 301, 25
     LTEXT "サービス名 (オプション)(&S):", -1, 22, 32, 229, 8
     EDITTEXT 1593, 22, 44, 275, 14, ES_AUTOHSCROLL
 END
@@ -1304,7 +1304,7 @@ BEGIN
     AUTORADIOBUTTON "詳細 (カスタム設定)(&D)", 1541, 14, 100, 197, 8, BS_NOTIFY
     LTEXT "次の方法で ID を確認する(&V):", 1537, 26, 29, 183, 8, NOT WS_GROUP
     COMBOBOX 1178, 26, 40, 184, 78, CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | WS_VSCROLL | NOT WS_TABSTOP
-    AUTOCHECKBOX "LiberNT のログオン名とパスワード (ある場合はドメインも) を自動的に使う(&U)", 1174, 26, 59, 182, 20, BS_TOP | BS_MULTILINE
+    AUTOCHECKBOX "NextNT のログオン名とパスワード (ある場合はドメインも) を自動的に使う(&U)", 1174, 26, 59, 182, 20, BS_TOP | BS_MULTILINE
     AUTOCHECKBOX "データの暗号化が必要 (暗号化しない場合は切断する)(&I)", 1169, 26, 83, 182, 10, BS_TOP | BS_MULTILINE
     LTEXT "これらの設定を使用するには、セキュリティ プロトコルの知識が必要です。", 1539, 26, 111, 136, 20
     PUSHBUTTON "設定(&S)...", 1180, 151, 134, 60, 14
@@ -1463,7 +1463,7 @@ BEGIN
     LTEXT "接続先のホスト名または IP アドレス (reactos.org、145.52.0.1 など)(&H):", 1430, 7, 5, 217, 18
     EDITTEXT 1427, 7, 25, 215, 14, ES_AUTOHSCROLL
     GROUPBOX "最初の接続", 1431, 9, 48, 213, 78
-    LTEXT "LiberNT は、この仮想接続を確立しようとする前に、インターネットなどのパブリック ネットワークに最初に接続できます。", 1432, 17, 63, 199, 24
+    LTEXT "NextNT は、この仮想接続を確立しようとする前に、インターネットなどのパブリック ネットワークに最初に接続できます。", 1432, 17, 63, 199, 24
     AUTOCHECKBOX "最初に別の接続をダイヤルする(&D):", 1428, 19, 89, 183, 10
     COMBOBOX 1429, 29, 103, 182, 87, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | NOT WS_TABSTOP
     AUTOCHECKBOX "接続時に通知領域にアイコンを表示する(&W)", 1120, 10, 192, 213, 13
@@ -1477,7 +1477,7 @@ BEGIN
     GROUPBOX "ダイヤルのオプション", 1289, 8, 7, 214, 56
     AUTOCHECKBOX "接続中に進行状況を表示する(&D)", 1284, 16, 17, 199, 10
     AUTOCHECKBOX "名前、パスワード、証明書などを入力するよう求める(&P)", 1554, 16, 32, 199, 10
-    AUTOCHECKBOX "LiberNT のログオン ドメインを含める(&L)", 1555, 16, 47, 178, 10
+    AUTOCHECKBOX "NextNT のログオン ドメインを含める(&L)", 1555, 16, 47, 178, 10
     GROUPBOX "再ダイヤルのオプション", 1290, 8, 68, 214, 89
     LTEXT "再ダイヤルの回数(&R):", 1300, 16, 81, 121, 8
     EDITTEXT 1287, 140, 77, 70, 14, ES_AUTOHSCROLL | ES_NUMBER
@@ -1502,7 +1502,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "新しい接続ウィザード"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT は、仮想接続を確立する前に、インターネットまたはその他のパブリック ネットワークへの初期接続を自動的にダイヤルできます。", -1, 10, 6, 275, 24
+    LTEXT "NextNT は、仮想接続を確立する前に、インターネットまたはその他のパブリック ネットワークへの初期接続を自動的にダイヤルできます。", -1, 10, 6, 275, 24
     AUTORADIOBUTTON "初期接続をダイヤルしない(&D)。", 1509, 32, 31, 271, 10, BS_TOP | BS_MULTILINE | NOT WS_TABSTOP
     AUTORADIOBUTTON "次の初期接続を自動的にダイヤルする(&A):", 1510, 32, 45, 269, 10, BS_TOP | BS_MULTILINE | NOT WS_TABSTOP
     COMBOBOX 1435, 43, 62, 253, 87, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | NOT WS_TABSTOP
@@ -1804,7 +1804,7 @@ BEGIN
     AUTORADIOBUTTON "仮想プライベート接続を許可する(&A)", 7053, 29, 63, 265, 10, BS_TOP | BS_MULTILINE | WS_GROUP
     AUTORADIOBUTTON "仮想プライベート接続を許可しない(&D)", 7054, 29, 78, 265, 10, BS_TOP | BS_MULTILINE | NOT WS_TABSTOP
     LTEXT "このコンピューターへの仮想プライベート接続を許可しますか?", -1, 17, 49, 275, 8
-    LTEXT " VPN 接続を許可すると、LiberNT はこのコンピューターが VPN パケットを送受信できるようにインターネット接続ファイアウォールを変更します。", -1, 10, 25, 293, 25
+    LTEXT " VPN 接続を許可すると、NextNT はこのコンピューターが VPN パケットを送受信できるようにインターネット接続ファイアウォールを変更します。", -1, 10, 25, 293, 25
 END
 
 7055 DIALOGEX 0, 0, 317, 143
@@ -1893,7 +1893,7 @@ BEGIN
     244 "この接続は現在アクティブなため、一部の設定は次回ダイヤルするまで有効になりません。\0"
     245 "すべてのユーザーが使用できる接続はありません。ダイヤルする前にログオンする必要があります。\0"
     246 "電話帳は空です。\n\nエントリを追加するには [OK] を押してください。\0"
-    247 "輸出入の制限により、このバージョンの LiberNT ではデータの暗号化を使用できません。\0"
+    247 "輸出入の制限により、このバージョンの NextNT ではデータの暗号化を使用できません。\0"
     248 "次の画面で X.25 アドレスを入力してください。\0"
     249 "エラー %1: %2\0"
     250 "%1\n\nエラー %2: %3\0"
@@ -2116,7 +2116,7 @@ BEGIN
     501 "VPN サーバーの名前またはアドレスは何ですか?\0"
     502 "要求時のダイヤルを無効にできません。\0"
     503 "パブリック ネットワーク\0"
-    504 "LiberNT は、最初にパブリック ネットワークが接続されていることを確認できます。\0"
+    504 "NextNT は、最初にパブリック ネットワークが接続されていることを確認できます。\0"
     505 "VPN1\0"
     506 "インターネット接続の共有\0"
     507 "ローカル ネットワークがこのダイヤルアップ接続を通してリソースにアクセスできるようにできます。\0"
@@ -2242,8 +2242,8 @@ BEGIN
     1611 "ブロードバンド接続\0"
     1612 "事前共有キーを使用するように選択しましたが、キーが入力されていません。\n事前共有キーを入力してください。\0"
     1613 "資格情報をコミットできません\0"
-    1634 "Windows Management Instrumentation (WMI) サービスが無効になっているため、LiberNT はこの接続またはホーム ネットワークのプロパティを表示できません。\n\nこの接続またはホーム ネットワークのプロパティを構成するには、まず WMI サービスを有効にする必要があります。そのためには、[管理ツール] コントロール パネルで [サービス] をダブルクリックし、[Windows Management Instrumentation] を右クリックして [開始] をクリックしてください。\0"
-    1635 "LiberNT はこの接続のプロパティを表示できません。Windows Management Instrumentation (WMI) の情報が破損している可能性があります。これを修正するには、システムの復元を使って LiberNT を以前の時点 (復元ポイント) に戻してください。システムの復元は、アクセサリの [システム ツール] フォルダーにあります。\0"
+    1634 "Windows Management Instrumentation (WMI) サービスが無効になっているため、NextNT はこの接続またはホーム ネットワークのプロパティを表示できません。\n\nこの接続またはホーム ネットワークのプロパティを構成するには、まず WMI サービスを有効にする必要があります。そのためには、[管理ツール] コントロール パネルで [サービス] をダブルクリックし、[Windows Management Instrumentation] を右クリックして [開始] をクリックしてください。\0"
+    1635 "NextNT はこの接続のプロパティを表示できません。Windows Management Instrumentation (WMI) の情報が破損している可能性があります。これを修正するには、システムの復元を使って NextNT を以前の時点 (復元ポイント) に戻してください。システムの復元は、アクセサリの [システム ツール] フォルダーにあります。\0"
     1646 "着信エコー要求を許可する\0"
     1647 "着信タイムスタンプ要求を許可する\0"
     1648 "着信マスク要求を許可する\0"
@@ -2356,7 +2356,7 @@ BEGIN
     7385 "通信ポート (%s)\0"
     7386 "ネットワーク接続では、ローカル ユーザー マネージャーまたはリモート アクセス ポリシーのコンソールを使って設定された着信接続の特別なオプションの一部は表示されません。着信接続に関する完全で正確な情報を確認するには、これらのコンソールを使用する必要があります。\0"
     7387 "選択したユーザー コールバック モードでは、有効なコールバック番号を入力する必要があります。\0"
-    7388 "操作を完了するには LiberNT を再起動する必要があります。今すぐ再起動しますか?\0"
+    7388 "操作を完了するには NextNT を再起動する必要があります。今すぐ再起動しますか?\0"
     7389 "現在選択されているデバイスには、使用できる構成オプションがありません。\0"
     7390 "無効な範囲\0"
     7391 "着信接続で '%1' を無効にするように要求しました。これを無効にするには、'Server' サービスを停止する必要があります。停止すると、このコンピューター上の共有ディレクトリやプリンターは他のコンピューターから使用できなくなります。'Server' サービスを停止できるシステム コンソールを表示しますか?\r\n\n[コンピューターの管理] で [システム ツール] をクリックし、[サービス] をクリックしてください。右ウィンドウで [Server] を右クリックし、[停止] をクリックしてください。\0"

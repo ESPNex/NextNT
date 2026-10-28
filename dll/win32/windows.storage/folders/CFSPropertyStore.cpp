@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Shell
+ * PROJECT:     NextNT Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     File system item property store
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

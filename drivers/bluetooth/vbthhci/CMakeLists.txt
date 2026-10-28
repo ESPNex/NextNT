@@ -1,5 +1,5 @@
 #
-# PROJECT:     LiberNT Virtual Bluetooth Controller
+# PROJECT:     NextNT Virtual Bluetooth Controller
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Software-only Bluetooth HCI controller build rules
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Test for kernel32!BaseSetLastNTError
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

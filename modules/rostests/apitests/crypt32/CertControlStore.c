@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests CertControlStore change notification on registry stores
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -8,7 +8,7 @@
 #include <apitest.h>
 #include <wincrypt.h>
 
-#define TEST_STORE L"LiberNTControlStoreTest"
+#define TEST_STORE L"NextNTControlStoreTest"
 
 static const BYTE TestCertificate[] =
 {

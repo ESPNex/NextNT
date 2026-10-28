@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT Raspberry Pi 3 VC4 WDDM miniport
+; PROJECT:     NextNT Raspberry Pi 3 VC4 WDDM miniport
 ; LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 ; COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>
 
@@ -7,7 +7,7 @@ Signature="$Windows NT$"
 LayoutFile=layout.inf
 Class=Display
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=08/31/2026,2.0.0.0
 
 [DestinationDirs]
@@ -15,9 +15,9 @@ DefaultDestDir=12
 Rpi3Vc4.Miniport_CopyFiles=12
 
 [Manufacturer]
-%LiberNT%=LiberNT,NTarm64
+%NextNT%=NextNT,NTarm64
 
-[LiberNT.NTarm64]
+[NextNT.NTarm64]
 %Rpi3Vc4.DeviceDesc%=Rpi3Vc4_Install,ACPI\BCM2850
 
 [Rpi3Vc4_Install]
@@ -51,9 +51,9 @@ ServiceBinary=%12%\rpi3vc4.sys
 LoadOrderGroup=Video
 
 [Strings]
-LiberNT="LiberNT"
+NextNT="NextNT"
 Rpi3Vc4.DeviceDesc="Raspberry Pi 3 VC4 Display (WDDM)"
-Rpi3Vc4.ServiceDesc="LiberNT Raspberry Pi 3 VC4 WDDM Driver"
+Rpi3Vc4.ServiceDesc="NextNT Raspberry Pi 3 VC4 WDDM Driver"
 REG_MULTI_SZ=0x00010000
 REG_DWORD=0x00010001
 REG_SZ=0x00000000

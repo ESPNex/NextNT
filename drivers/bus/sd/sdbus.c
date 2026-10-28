@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SD/SDIO/eMMC Bus Driver
+ * PROJECT:     NextNT SD/SDIO/eMMC Bus Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Driver entry, AddDevice, and dispatch routing
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

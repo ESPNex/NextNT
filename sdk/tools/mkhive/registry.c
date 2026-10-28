@@ -697,7 +697,7 @@ RegSetValueExW(
 }
 
 
-// Synced with freeldr/ntldr/registry.c
+// Synced with nextldr/ntldr/registry.c
 static
 VOID
 RepGetValueData(
@@ -718,7 +718,7 @@ RepGetValueData(
     if (DataSize != NULL)
     {
         // NOTE: CmpValueToData doesn't support big data (the function will
-        // bugcheck if so), FreeLdr is not supposed to read such data.
+        // bugcheck if so), NextLdr is not supposed to read such data.
         // If big data is needed, use instead CmpGetValueData.
         // CmpGetValueData(Hive, ValueCell, DataSize, &DataCell, ...);
         DataCell = CmpValueToData(Hive, ValueCell, &DataLength);
@@ -736,7 +736,7 @@ RepGetValueData(
     }
 }
 
-// Similar to RegQueryValue in freeldr/ntldr/registry.c
+// Similar to RegQueryValue in nextldr/ntldr/registry.c
 LONG WINAPI
 RegQueryValueExW(
     IN HKEY hKey,

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ACPI bus driver
+ * PROJECT:     NextNT ACPI bus driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     HAL interrupt services the ACPI driver reaches through the NDK
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

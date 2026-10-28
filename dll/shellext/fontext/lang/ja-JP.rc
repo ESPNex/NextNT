@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT fontext
+ * PROJECT:     NextNT fontext
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -19,7 +19,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_REACTOS_FONTS_FOLDER "LiberNT フォント フォルダー"
+    IDS_REACTOS_FONTS_FOLDER "NextNT フォント フォルダー"
     IDS_INSTALL_OK "フォントは正常にインストールされました。"
     IDS_INSTALL_FAILED "フォントをインストールできませんでした。"
     IDS_CONFIRM_DELETE_FONT "フォントを削除しますか?"

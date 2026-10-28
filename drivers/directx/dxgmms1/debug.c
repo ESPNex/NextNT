@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT DirectX GPU Memory Manager and Scheduler
+ * PROJECT:     NextNT DirectX GPU Memory Manager and Scheduler
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Debug helpers for dxgmms1.sys
- * COPYRIGHT:   Copyright 2024 LiberNT Team
+ * COPYRIGHT:   Copyright 2024 NextNT Team
  */
 
 #include "dxgmms1_private.h"

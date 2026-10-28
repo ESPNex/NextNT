@@ -276,10 +276,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROGRESS_INFO_START "LiberNT försöker att starta följande tjänst"
-    IDS_PROGRESS_INFO_STOP "LiberNT försöker att stoppa följande tjänst"
-    IDS_PROGRESS_INFO_PAUSE "LiberNT försöker att pausa följande tjänst"
-    IDS_PROGRESS_INFO_RESUME "LiberNT försöker att fortsätta följende tjänst"
+    IDS_PROGRESS_INFO_START "NextNT försöker att starta följande tjänst"
+    IDS_PROGRESS_INFO_STOP "NextNT försöker att stoppa följande tjänst"
+    IDS_PROGRESS_INFO_PAUSE "NextNT försöker att pausa följande tjänst"
+    IDS_PROGRESS_INFO_RESUME "NextNT försöker att fortsätta följende tjänst"
     IDS_CREATE_SUCCESS "Tjänsten blev skapad"
     IDS_DELETE_SUCCESS "Tjänsten togs bort"
     IDS_CREATE_REQ "Fält markerade med en\nasterisk är obligatoriska"
@@ -314,7 +314,7 @@ BEGIN
     IDS_HINT_DETAILS " Visa information om varje objekt i ett fönster."
     IDS_HINT_CUST " Anpassa vy."
     IDS_HINT_HELP " Visa hjälpfönstret."
-    IDS_HINT_ABOUT " Om LiberNT tjänster."
+    IDS_HINT_ABOUT " Om NextNT tjänster."
     IDS_HINT_SYS_RESTORE " Återställ fönstret till normal storlek."
     IDS_HINT_SYS_MOVE " Flytta detta fönstret."
     IDS_HINT_SYS_SIZE " Ändra storleken på dette fönstret."
@@ -326,7 +326,7 @@ END
 /* Application title */
 STRINGTABLE
 BEGIN
-    IDS_APPNAME "LiberNT tjänster"
+    IDS_APPNAME "NextNT tjänster"
     IDS_APPAUTHORS "Copyright (C) 2005-2007 by Ged Murphy (gedmurphy@reactos.org)"
 END
 

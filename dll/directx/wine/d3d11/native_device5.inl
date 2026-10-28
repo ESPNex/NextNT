@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Direct3D 11 runtime
+ * PROJECT:     NextNT Direct3D 11 runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Direct3D 11.2 to 11.4 device and context methods
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

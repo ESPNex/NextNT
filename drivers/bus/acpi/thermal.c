@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT ACPI bus driver
+ * PROJECT:     NextNT ACPI bus driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows-compatible ACPI thermal-zone control
- * COPYRIGHT:   Copyright 2026 LiberNT Project
+ * COPYRIGHT:   Copyright 2026 NextNT Project
  */
 
 #include "precomp.h"

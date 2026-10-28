@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT HID over I2C Transport Driver
+ * PROJECT:     NextNT HID over I2C Transport Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     HID minidriver for devices that follow the HID over I2C protocol
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

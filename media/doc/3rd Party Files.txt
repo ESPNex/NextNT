@@ -121,14 +121,14 @@ Path: drivers/directx/powervr/upstream
 Used Version: Linux mainline 6addb4f38
 License: GPL-2.0-only OR MIT (https://spdx.org/licenses/MIT.html)
 URL: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-Modifications: none; built over the LiberNT Linux compatibility layer (sdk/lib/drivers/linux-compat)
+Modifications: none; built over the NextNT Linux compatibility layer (sdk/lib/drivers/linux-compat)
 
 Title: Linux DRM GPU VA manager, execution context, sync objects and GPU scheduler
 Path: sdk/lib/drivers/drm
 Used Version: Linux mainline 6addb4f38
 License: MIT (https://spdx.org/licenses/MIT.html), drm_gpuvm/drm_exec: GPL-2.0-only OR MIT
 URL: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-Modifications: imported drm_gpuvm.c, drm_exec.c, drm_syncobj.c, scheduler/*, the matching include/drm headers and include/uapi/drm/{drm,drm_mode,pvr_drm}.h; spsc_queue.h pointer casts use intptr_t; drm_core.c, drm_gem.c and drm_compat.h are LiberNT code
+Modifications: imported drm_gpuvm.c, drm_exec.c, drm_syncobj.c, scheduler/*, the matching include/drm headers and include/uapi/drm/{drm,drm_mode,pvr_drm}.h; spsc_queue.h pointer casts use intptr_t; drm_core.c, drm_gem.c and drm_compat.h are NextNT code
 
 Title: felix86
 Path: submodules/felix86 (feed)
@@ -136,7 +136,7 @@ Path: dll/win32/amd64emu
 Used Version: 26.10 (git commit 24c158b)
 License: MIT (https://spdx.org/licenses/MIT.html)
 URL: https://github.com/OFFTKP/felix86
-Modifications: submodules/felix86-nt.patch; amd64emu.dll builds the recompiler core (src/felix86/v2, common, hle/cpuid.cpp) with the vendored biscuit (MIT), Zydis and Zycore (MIT), {fmt} (MIT), Berkeley SoftFloat 3e (BSD-3-Clause), Cephes (BSD) and the FEXCore SHMStats header (MIT); the Linux front end is replaced by LiberNT code in dll/win32/amd64emu
+Modifications: submodules/felix86-nt.patch; amd64emu.dll builds the recompiler core (src/felix86/v2, common, hle/cpuid.cpp) with the vendored biscuit (MIT), Zydis and Zycore (MIT), {fmt} (MIT), Berkeley SoftFloat 3e (BSD-3-Clause), Cephes (BSD) and the FEXCore SHMStats header (MIT); the Linux front end is replaced by NextNT code in dll/win32/amd64emu
 
 Title: VirtIO Windows guest driver library
 Path: sdk/lib/drivers/virtio

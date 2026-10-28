@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Explorer
+ * PROJECT:     NextNT Explorer
  * LICENSE:     GPL-3.0-or-later
  * PURPOSE:     Persistent taskbar pin storage helpers
  * COPYRIGHT:   Copyright 2026 Ahmed Arif

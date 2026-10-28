@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT SpacemiT K1 Audio Driver
+ * PROJECT:         NextNT SpacemiT K1 Audio Driver
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         SSPA0 I2S, PDMA and ES8326 codec support
  * COPYRIGHT:       Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

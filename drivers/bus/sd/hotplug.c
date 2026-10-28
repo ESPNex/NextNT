@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SD/SDIO/eMMC Bus Driver
+ * PROJECT:     NextNT SD/SDIO/eMMC Bus Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Card detect ISR, DPC, and worker (hotplug handling)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

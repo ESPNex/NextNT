@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT HID over I2C Transport Driver
+; PROJECT:     NextNT HID over I2C Transport Driver
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
 
@@ -6,7 +6,7 @@
 Signature = "$Windows NT$"
 Class = HIDClass
 ClassGUID = {745a17a0-74d3-11d0-b6fe-00a0c90f57da}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 10/07/2026,1.0.0.0
 
 [DestinationDirs]
@@ -38,7 +38,7 @@ ServiceBinary = %12%\hidi2c.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 StdMfg = "(Standard system devices)"
 HidI2c.DeviceDesc = "I2C HID Device"
-HidI2c.ServiceDesc = "LiberNT HID over I2C Transport Driver"
+HidI2c.ServiceDesc = "NextNT HID over I2C Transport Driver"

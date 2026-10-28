@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Download and installation of a Linux root file system
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

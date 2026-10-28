@@ -3,7 +3,7 @@ FatFs in ReactOS
 
 This directory contains FatFs R0.16 with the upstream patch 2 applied.
 It is the common FAT/exFAT implementation used by the image host tool,
-FreeLdr, and the exFAT filesystem driver. Each consumer supplies only the
+NextLdr, and the exFAT filesystem driver. Each consumer supplies only the
 FatFs media-access and allocation callbacks appropriate to its environment.
 
 Upstream: https://elm-chan.org/fsw/ff/

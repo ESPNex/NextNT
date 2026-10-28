@@ -91,7 +91,7 @@ BOOL is_registered_protocol(LPCWSTR);
 #ifdef __REACTOS__
 BOOL is_direct_builtin_protocol(IUri*);
 #ifdef __REACTOS__
-extern const GUID SID_LiberNTStartNotImplemented;
+extern const GUID SID_NextNTStartNotImplemented;
 #endif
 #endif
 HRESULT register_namespace(IClassFactory*,REFIID,LPCWSTR,BOOL);

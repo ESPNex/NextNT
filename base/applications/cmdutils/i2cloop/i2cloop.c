@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT I2C Loopback Test
+ * PROJECT:     NextNT I2C Loopback Test
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Exercises the Intel I2C2 and I2C3 controllers wired to each other in master and target roles
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

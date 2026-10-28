@@ -1,5 +1,5 @@
 ;
-; PROJECT:     LiberNT SD/SDIO/eMMC Driver Stack
+; PROJECT:     NextNT SD/SDIO/eMMC Driver Stack
 ; LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
 ; PURPOSE:     SD Bus Driver INF — installs on SD Host Controller (PCI Class 08/05)
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -146,8 +146,8 @@ HKR, , TypesSupported, %REG_DWORD%, 7
 ; Strings
 ;
 [Strings]
-ROS                     = "LiberNT"
-DiskName                = "LiberNT SD Bus Driver Installation Disk"
+ROS                     = "NextNT"
+DiskName                = "NextNT SD Bus Driver Installation Disk"
 SDHostClassName         = "SD Host Controllers"
 GenManufacturer         = "(Standard SD Host Controllers)"
 ServiceDesc             = "SD Bus Driver"

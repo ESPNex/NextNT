@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Display Miniport Support Library
+ * PROJECT:     NextNT Display Miniport Support Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Native-style runtime binding between display miniports and dxgkrnl
  */

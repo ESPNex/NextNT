@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     UEFI network stack bring-up for HTTP boot
  */
@@ -722,7 +722,7 @@ static BOOLEAN MnpAnchorConfigured;
 static BOOLEAN MnpAnchorSnpReset;
 
 /*
- * Keep one freeldr-owned MNP child configured for the whole boot. MnpDxe
+ * Keep one nextldr-owned MNP child configured for the whole boot. MnpDxe
  * (re)initializes the NIC when its first child is configured, which resets
  * the RTL8168's programmed MAC to the (all-zero) permanent address, and it
  * shuts the NIC down again when the last child goes away. Configuring this
@@ -780,7 +780,7 @@ UefiNetEnsureMnpAnchor(
     /*
      * MnpStartSnp (run by the first child Configure) does Snp->Start and
      * treats EFI_ALREADY_STARTED as fatal, and MnpDxe does not roll the
-     * configured-children count back on failure. FreeLdr initialized the
+     * configured-children count back on failure. NextLdr initialized the
      * NIC earlier, so put it back into the Stopped state exactly once so
      * that first Configure starts it cleanly instead of erroring.
      */

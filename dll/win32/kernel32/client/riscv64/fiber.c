@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT System Libraries
+ * PROJECT:     NextNT System Libraries
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     RISC-V64 fiber context switch

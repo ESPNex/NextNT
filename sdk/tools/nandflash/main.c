@@ -2,7 +2,7 @@
  * PROJECT:         OMAP3 NAND Flashing Utility
  * LICENSE:         BSD - See COPYING.ARM in the top level directory
  * FILE:            tools/nandflash/main.c
- * PURPOSE:         Flashes OmapLDR, FreeLDR and a Root FS into a NAND image
+ * PURPOSE:         Flashes OmapLDR, NextLDR and a Root FS into a NAND image
  * PROGRAMMERS:     ReactOS Portable Systems Group
  */
 
@@ -15,7 +15,7 @@
 /* File Names */
 PCHAR NandImageName       = "reactos.bin";
 PCHAR LlbImageName        = "./output-arm/boot/armllb/armllb.bin";
-PCHAR BootLdrImageName    = "./output-arm/boot/freeldr/freeldr/freeldr.sys";
+PCHAR BootLdrImageName    = "./output-arm/boot/nextldr/nextldr/nextldr.sys";
 PCHAR FsImageName         = "ramdisk.img";
 PCHAR RamImageName        = "ramdisk.bin";
 
@@ -118,7 +118,7 @@ WriteBootLdr(IN INT NandImageFile)
 {
     INT FileDescriptor;
 
-    /* Open FreeLDR and write it */
+    /* Open NextLDR and write it */
     FileDescriptor = open(BootLdrImageName, O_RDWR);
     WriteToFlash(NandImageFile, FileDescriptor, BootLdrStart, BootLdrEnd);
     close(FileDescriptor);

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (c) 2026 LiberNT contributors
+ * Copyright (c) 2026 NextNT contributors
  * Transport-independent host-side Gaming Input Protocol support.
  */
 #ifndef REACTOS_LIBGIP_H

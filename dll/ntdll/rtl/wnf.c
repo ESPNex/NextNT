@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT User-Mode DLL
+ * PROJECT:     NextNT NT User-Mode DLL
  * PURPOSE:     Windows Notification Facility user-mode entry points
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

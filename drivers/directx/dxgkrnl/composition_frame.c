@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT DirectX Graphics Kernel
+ * PROJECT:     NextNT DirectX Graphics Kernel
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Retained composition frames and context lookup
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

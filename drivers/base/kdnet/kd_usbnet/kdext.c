@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT USB Network Kernel Debugger Extension
+ * PROJECT:     NextNT USB Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     KDNET extensibility module entry point
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

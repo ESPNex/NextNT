@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Win32k graphics engine
+ * PROJECT:     NextNT Win32k graphics engine
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Generic parallelogram bit-block transfers
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

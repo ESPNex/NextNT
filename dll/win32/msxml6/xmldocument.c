@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT MSXML 6.0
+ * PROJECT:     NextNT MSXML 6.0
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Windows.Data.Xml.Dom activation factories, load settings and DOM implementation
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

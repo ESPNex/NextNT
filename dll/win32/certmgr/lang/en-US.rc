@@ -4,7 +4,7 @@ STRINGTABLE
 BEGIN
     IDS_SNAPIN_NAME          "Certificates"
     IDS_SNAPIN_DESCRIPTION   "Browse the certificates stored for your user account."
-    IDS_SNAPIN_PROVIDER      "LiberNT"
+    IDS_SNAPIN_PROVIDER      "NextNT"
     IDS_ROOT_CURRENT_USER    "Certificates - Current User"
     IDS_COLUMN_ISSUED_TO     "Issued To"
     IDS_COLUMN_ISSUED_BY     "Issued By"

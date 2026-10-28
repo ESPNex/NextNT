@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Load the user-mode driver the way the D3D runtime does
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * OpenAdapter10_2 uses D3D10DDIARG_OPENADAPTER and the five-entry
  * D3D10_2DDI_ADAPTERFUNCS table. The Direct3D 9 D3DDDIARG_OPENADAPTER

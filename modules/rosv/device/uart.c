@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VMX Hypervisor Driver
+ * PROJECT:     NextNT VMX Hypervisor Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NS16550A UART emulation (COM1: 0x3F8-0x3FF)
  * COPYRIGHT:   Copyright 2025 Ahmed Arif

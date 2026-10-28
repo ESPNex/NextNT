@@ -157,9 +157,9 @@ BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10, SS_NOPREFIX
-    LTEXT "Copyright 2026 LiberNT Team", IDC_STATIC, 35, 75, 200, 10
+    LTEXT "Copyright 2026 NextNT Team", IDC_STATIC, 35, 75, 200, 10
     LTEXT "", IDC_ABOUT_OTHERSTUFF, 35, 90, 180, 20, SS_NOPREFIX
-    LTEXT "Cette version de LiberNT est enregistrée à :", IDC_ABOUT_REG_TO, 35, 115, 180, 10
+    LTEXT "Cette version de NextNT est enregistrée à :", IDC_ABOUT_REG_TO, 35, 115, 180, 10
     LTEXT "", IDC_ABOUT_REG_USERNAME, 45, 125, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_REG_ORGNAME, 45, 135, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_STATIC, 35, 147, 235, 1, SS_ETCHEDHORZ
@@ -173,7 +173,7 @@ IDD_ABOUT_AUTHORS DIALOGEX 35, 90, 235, 85
 STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT est une réalisation de :", IDC_STATIC, 0, 0, 180, 10
+    LTEXT "NextNT est une réalisation de :", IDC_STATIC, 0, 0, 180, 10
     LISTBOX IDC_ABOUT_AUTHORS_LISTBOX, 0, 10, 165, 75
 END
 
@@ -183,7 +183,7 @@ CAPTION "Exécuter"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "Entrez le nom d'un programme, d'un dossier, d'un document ou d'une ressource Internet, et LiberNT l'ouvrira pour vous.", 12289, 36, 4, 185, 26
+    LTEXT "Entrez le nom d'un programme, d'un dossier, d'un document ou d'une ressource Internet, et NextNT l'ouvrira pour vous.", 12289, 36, 4, 185, 26
     LTEXT "&Ouvrir :", 12305, 7, 39, 26, 10
     CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 36, 37, 184, 100
     DEFPUSHBUTTON "OK", IDOK, 62, 70, 50, 14
@@ -432,7 +432,7 @@ BEGIN
     GROUPBOX "Tâches", -1, 7, 10, 249, 40
     CONTROL "", IDC_FOLDER_OPTIONS_TASKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 20, 21, 20
     AUTORADIOBUTTON "Afficher les tâches habituelles dans les dossiers", IDC_FOLDER_OPTIONS_COMMONTASKS, 40, 20, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "Utiliser les dossiers LiberNT class&iques", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
+    AUTORADIOBUTTON "Utiliser les dossiers NextNT class&iques", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
     GROUPBOX "Parcourir les dossiers", -1, 7, 55, 249, 40, WS_TABSTOP
     CONTROL "", IDC_FOLDER_OPTIONS_FOLDERICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 65, 21, 20
     AUTORADIOBUTTON "Ouvrir tous les dossiers dans la &même fenêtre", IDC_FOLDER_OPTIONS_SAMEWINDOW, 40, 65, 210, 10, WS_TABSTOP | WS_GROUP
@@ -505,7 +505,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_VISIBLE | WS_CLIPSIBLIN
 CAPTION "Exécution automatique"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Sélectionnez un type de contenu, puis choisissez une action que LiberNT réalisera automatiquement quand ce type sera utilisé dans ce périphérique :", 1000, 7, 7, 215, 20
+    LTEXT "Sélectionnez un type de contenu, puis choisissez une action que NextNT réalisera automatiquement quand ce type sera utilisé dans ce périphérique :", 1000, 7, 7, 215, 20
     CONTROL "", 1001, "COMBOBOXEX32", WS_TABSTOP | 0x00000043, 7, 27, 212, 200
     GROUPBOX "Actions", -1, 7, 45, 212, 146
     AUTORADIOBUTTON "Sélectionnez une action à réaliser :", 1005, 14, 54, 202, 10, WS_GROUP
@@ -521,7 +521,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "Ce disque ou dispositif contient plus d'un type de fichiers.", 1001, 32, 7, 191, 20
-    LTEXT "Que voulez-vous que LiberNT fasse ?", 1002, 32, 31, 188, 8
+    LTEXT "Que voulez-vous que NextNT fasse ?", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "OK", IDOK, 96, 186, 60, 14
     PUSHBUTTON "Annuler", IDCANCEL, 160, 186, 60, 14
@@ -533,10 +533,10 @@ CAPTION "Contenu mixte"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT peut réaliser la même action chaque fois que vous insérez un disque ou connectez un dispositif avec ce type de fichiers :", 1001, 30, 7, 193, 20
+    LTEXT "NextNT peut réaliser la même action chaque fois que vous insérez un disque ou connectez un dispositif avec ce type de fichiers :", 1001, 30, 7, 193, 20
     ICON "", 1005, 32, 27, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 28, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
-    LTEXT "Que voulez-vous que LiberNT fasse ?", 1002, 32, 41, 190, 8
+    LTEXT "Que voulez-vous que NextNT fasse ?", 1002, 32, 41, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 55, 188, 112
     AUTOCHECKBOX "Toujours réaliser l'action sélectionnée.", 1004, 32, 171, 190, 10
     DEFPUSHBUTTON "OK", IDOK, 96, 185, 60, 14
@@ -549,8 +549,8 @@ CAPTION "Exécution automatique"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT peut réaliser la même action chaque fois que vous connectez ce dispositif.", 1001, 32, 7, 190, 22
-    LTEXT "Que voulez-vous que LiberNT fasse ?", 1002, 32, 31, 190, 8
+    LTEXT "NextNT peut réaliser la même action chaque fois que vous connectez ce dispositif.", 1001, 32, 7, 190, 22
+    LTEXT "Que voulez-vous que NextNT fasse ?", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "Toujours réaliser l'action sélectionnée", 1004, 32, 143, 190, 8
     DEFPUSHBUTTON "OK", IDOK, 94, 160, 60, 14
@@ -809,7 +809,7 @@ BEGIN
     IDS_RESTART_TITLE "Redémarrer"
     IDS_RESTART_PROMPT "Voulez-vous redémarrer votre ordinateur ?"
     IDS_SHUTDOWN_TITLE "Arrêter"
-    IDS_SHUTDOWN_PROMPT "Voulez-vous fermer la session LiberNT ?"
+    IDS_SHUTDOWN_PROMPT "Voulez-vous fermer la session NextNT ?"
 
     /* Format Dialog Strings */
     IDS_FORMAT_TITLE "Formater un disque logique"
@@ -818,7 +818,7 @@ BEGIN
 
     /* Warning format system drive dialog strings */
     IDS_NO_FORMAT_TITLE "Impossible de formater ce volume"
-    IDS_NO_FORMAT "Ce volume ne peut pas être formaté. Il contient des fichiers systèmes indispensables pour le fonctionnement de LiberNT."
+    IDS_NO_FORMAT "Ce volume ne peut pas être formaté. Il contient des fichiers systèmes indispensables pour le fonctionnement de NextNT."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "Impossible d'afficher la boîte de dialogue pour l'exécution d'un fichier (erreur interne)"
@@ -904,8 +904,8 @@ BEGIN
 
     /* Friendly File Type Names */
     IDS_DIRECTORY "Dossier"
-    IDS_BAT_FILE "Fichier Batch LiberNT"
-    IDS_CMD_FILE "Script de commandes LiberNT"
+    IDS_BAT_FILE "Fichier Batch NextNT"
+    IDS_CMD_FILE "Script de commandes NextNT"
     IDS_COM_FILE "Application DOS"
     IDS_CPL_FILE "Élément du panneau de contrôle"
     IDS_CUR_FILE "Curseur"
@@ -950,7 +950,7 @@ BEGIN
     IDS_DEFAULT_CLUSTER_SIZE "Taille d'allocation par défaut"
     IDS_COPY_OF "Copie de"
 
-    IDS_SHLEXEC_NOASSOC "Aucun programme LiberNT n'est configuré pour ouvrir ce type de fichier."
+    IDS_SHLEXEC_NOASSOC "Aucun programme NextNT n'est configuré pour ouvrir ce type de fichier."
 
     IDS_FILE_DETAILS "Détails concernant l'extension '%s'"
     IDS_FILE_DETAILSADV "Les fichiers avec l'extension '%s' sont de type '%s'. Pour modifier les paramètres qui concernent tous les fichiers '%s', cliquez sur Avancé."
@@ -979,7 +979,7 @@ BEGIN
     IDS_ADVANCED_FOLDER "Fichiers et dossiers"
     IDS_ADVANCED_NET_CRAWLER "Rechercher automatiquement les dossiers et imprimantes partagés"
     IDS_ADVANCED_FOLDER_SIZE_TIP "Afficher les informations concernant la taille des fichiers dans les info-bulles"
-    IDS_ADVANCED_FRIENDLY_TREE "Afficher une vue simple des dossiers dans la liste des dossiers de l'Explorateur LiberNT"
+    IDS_ADVANCED_FRIENDLY_TREE "Afficher une vue simple des dossiers dans la liste des dossiers de l'Explorateur NextNT"
     IDS_ADVANCED_WEB_VIEW_BARRICADE "Afficher le contenu des dossiers système"
     IDS_ADVANCED_SHOW_FULL_PATH_ADDRESS "Afficher le chemin complet dans la barre d'adresse"
     IDS_ADVANCED_SHOW_FULL_PATH "Afficher le chemin complet dans la barre de titre"

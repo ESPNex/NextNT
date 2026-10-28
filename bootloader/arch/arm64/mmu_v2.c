@@ -242,7 +242,7 @@ VOID Arm64EnsureEl1EntryState(VOID);
 #define SCTLR_EL1_I             (1ULL << 12)
 
 /* UEFI memory management integration */
-extern FREELDR_MEMORY_DESCRIPTOR* UefiMemGetMemoryMap(PULONG MaxMemoryMapSize);
+extern NEXTLDR_MEMORY_DESCRIPTOR* UefiMemGetMemoryMap(PULONG MaxMemoryMapSize);
 static BOOLEAN page_tables_initialized = FALSE;
 
 #define ARM64_KSEG0_L0_INDEX      (((ULONGLONG)ARM64_KSEG0_BASE >> 39) & 0x1FFULL)
@@ -439,7 +439,7 @@ Arm64RecordPageTableAllocation(EFI_PHYSICAL_ADDRESS Base, UINTN Pages)
         return;
 
     /*
-     * Post-EBS we cannot touch the freeldr MM page-lookup-table (it lives in
+     * Post-EBS we cannot touch the nextldr MM page-lookup-table (it lives in
      * memory the firmware may have torn down out from under us). Just record
      * the allocation in our local list and let
      * Arm64ApplyDeferredPageTableMemoryTypes() flush it later when the kernel
@@ -491,7 +491,7 @@ Arm64ApplyDeferredPageTableMemoryTypes(VOID)
         return;
 
     /*
-     * Post-EBS: MmSetMemoryType writes to the freeldr page-lookup-table whose
+     * Post-EBS: MmSetMemoryType writes to the nextldr page-lookup-table whose
      * pages may have been reclaimed/torn down by the firmware on EBS, faulting
      * with a synchronous abort. The page-type tracking is an optimization for
      * the kernel's later memory-descriptor walk; skipping it is safe because
@@ -927,7 +927,7 @@ typedef struct _ARM64_MAPPING_REQUEST
 
 typedef struct _ARM64_MAPPING_PLAN
 {
-    FREELDR_MEMORY_DESCRIPTOR *MemoryMap;
+    NEXTLDR_MEMORY_DESCRIPTOR *MemoryMap;
     ULONG DescriptorCount;
     ARM64_MAPPING_REQUEST Requests[ARM64_PLAN_MAX_REQUESTS];
     ULONG RequestCount;
@@ -942,14 +942,14 @@ typedef struct _ARM64_RESERVATION_HINTS
 } ARM64_RESERVATION_HINTS, *PARM64_RESERVATION_HINTS;
 
 static VOID Arm64MappingPlanInit(PARM64_MAPPING_PLAN Plan,
-                                 FREELDR_MEMORY_DESCRIPTOR *Map,
+                                 NEXTLDR_MEMORY_DESCRIPTOR *Map,
                                  ULONG Count);
 static BOOLEAN Arm64MappingPlanApply(ARM64_MAPPING_PLAN *Plan,
                                      ARM64_MAPPING_TARGET Target);
-static UINT64 Arm64MemoryAttributesForDescriptor(const FREELDR_MEMORY_DESCRIPTOR *Descriptor,
+static UINT64 Arm64MemoryAttributesForDescriptor(const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor,
                                                  BOOLEAN IdentityMap);
-static BOOLEAN Arm64DescriptorMapsInKernel(const FREELDR_MEMORY_DESCRIPTOR *Descriptor);
-static BOOLEAN Arm64DescriptorIsSystemMemory(const FREELDR_MEMORY_DESCRIPTOR *Descriptor);
+static BOOLEAN Arm64DescriptorMapsInKernel(const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor);
+static BOOLEAN Arm64DescriptorIsSystemMemory(const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor);
 static BOOLEAN Arm64MappingPlanAddMapping(PARM64_MAPPING_PLAN Plan,
                                           ARM64_MAPPING_TARGET Target,
                                           ULONGLONG VirtualBase,
@@ -1062,7 +1062,7 @@ get_tcr_for_el(
     /* Refresh the cached physical limit while firmware services are usable */
     if (!BootServicesExitedFlag && GlobalSystemTable && GlobalSystemTable->BootServices) {
         ULONG MemoryMapSize;
-        FREELDR_MEMORY_DESCRIPTOR* MemoryMap = UefiMemGetMemoryMap(&MemoryMapSize);
+        NEXTLDR_MEMORY_DESCRIPTOR* MemoryMap = UefiMemGetMemoryMap(&MemoryMapSize);
         if (MemoryMap) {
             max_addr = 0;
             for (ULONG i = 0; i < MemoryMapSize; i++) {
@@ -1076,7 +1076,7 @@ get_tcr_for_el(
     /*
      * Ensure the identity view stays large enough to cover the loader itself.
      * Once Boot Services are gone the firmware map may only expose <=4 GiB,
-     * but FreeLDR may be linked above 4 GiB.  If we shrink T0SZ to 32 bits
+     * but NextLDR may be linked above 4 GiB.  If we shrink T0SZ to 32 bits
      * the write to TCR_EL1 could fault because the current PC sits outside
      * the configured TTBR0 range.  Fold the active PC into the size estimate
      * so we always keep at least the loader region mapped while we transition
@@ -1848,7 +1848,7 @@ Arm64MapEarlyUart(VOID)
 static VOID
 Arm64MappingPlanInit(
     PARM64_MAPPING_PLAN Plan,
-    FREELDR_MEMORY_DESCRIPTOR *Map,
+    NEXTLDR_MEMORY_DESCRIPTOR *Map,
     ULONG Count)
 {
     Plan->MemoryMap = Map;
@@ -1858,7 +1858,7 @@ Arm64MappingPlanInit(
 
 static BOOLEAN
 Arm64DescriptorIsExecutable(
-    const FREELDR_MEMORY_DESCRIPTOR *Descriptor)
+    const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor)
 {
     switch (Descriptor->MemoryType)
     {
@@ -1874,7 +1874,7 @@ Arm64DescriptorIsExecutable(
 
 static UINT64
 Arm64MemoryAttributesForDescriptor(
-    const FREELDR_MEMORY_DESCRIPTOR *Descriptor,
+    const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor,
     BOOLEAN IdentityMap)
 {
     UINT64 attrs;
@@ -1917,7 +1917,7 @@ Arm64MemoryAttributesForDescriptor(
 
 static BOOLEAN
 Arm64DescriptorMapsInKernel(
-    const FREELDR_MEMORY_DESCRIPTOR *Descriptor)
+    const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor)
 {
     switch (Descriptor->MemoryType)
     {
@@ -1947,7 +1947,7 @@ Arm64DescriptorMapsInKernel(
 
 static BOOLEAN
 Arm64DescriptorIsSystemMemory(
-    const FREELDR_MEMORY_DESCRIPTOR *Descriptor)
+    const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor)
 {
     switch (Descriptor->MemoryType)
     {
@@ -1960,7 +1960,7 @@ Arm64DescriptorIsSystemMemory(
 
 static VOID
 Arm64DeriveReservationHints(
-    const FREELDR_MEMORY_DESCRIPTOR *MemoryMap,
+    const NEXTLDR_MEMORY_DESCRIPTOR *MemoryMap,
     ULONG DescriptorCount,
     PARM64_RESERVATION_HINTS Hints)
 {
@@ -1974,7 +1974,7 @@ Arm64DeriveReservationHints(
 
     for (ULONG i = 0; i < DescriptorCount; ++i)
     {
-        const FREELDR_MEMORY_DESCRIPTOR *Descriptor = &MemoryMap[i];
+        const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor = &MemoryMap[i];
         if (!Arm64DescriptorIsSystemMemory(Descriptor))
             continue;
 
@@ -2198,7 +2198,7 @@ Arm64MappingPlanApply(
 
     for (ULONG Index = 0; Index < Plan->DescriptorCount; ++Index)
     {
-        const FREELDR_MEMORY_DESCRIPTOR *Descriptor = &Plan->MemoryMap[Index];
+        const NEXTLDR_MEMORY_DESCRIPTOR *Descriptor = &Plan->MemoryMap[Index];
         UINT64 PhysicalStart = (UINT64)Descriptor->BasePage * PAGE_SIZE;
         UINT64 Size = (UINT64)Descriptor->PageCount * PAGE_SIZE;
         UINT64 Attributes = Arm64MemoryAttributesForDescriptor(Descriptor,
@@ -2469,7 +2469,7 @@ Arm64ApplyImageSectionProtections(VOID)
 static VOID setup_pgtables(VOID)
 {
     ULONG MemoryMapSize;
-    FREELDR_MEMORY_DESCRIPTOR* MemoryMap;
+    NEXTLDR_MEMORY_DESCRIPTOR* MemoryMap;
     ULONG i;
 
     if (!arm64_l0_page_table || !arm64_kernel_l0_table || !arm64_l1_page_tables ||
@@ -2836,7 +2836,7 @@ VOID Arm64EnablePageTables(VOID)
      *
      * On some platforms (e.g., Raspberry Pi 5), the bootloader may be loaded at
      * physical addresses that are not covered by UEFI memory descriptors, or the
-     * memory map may not include the exact region where freeldr code resides.
+     * memory map may not include the exact region where nextldr code resides.
      *
      * This section MUST run BEFORE verification to ensure we don't hang on
      * platforms where the PC is not already mapped by the memory descriptor loop.

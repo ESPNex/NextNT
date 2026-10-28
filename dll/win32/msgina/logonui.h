@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Logon GINA DLL
+ * PROJECT:     NextNT Logon GINA DLL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Full-screen lock, sign-in, unlock and security options screens
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

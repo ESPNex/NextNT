@@ -12,7 +12,7 @@
 #include "toolspage.h"
 #include "srvpage.h"
 #include "startuppage.h"
-#include "freeldrpage.h"
+#include "nextldrpage.h"
 #include "systempage.h"
 #include "generalpage.h"
 
@@ -102,7 +102,7 @@ BOOL OnCreate(HWND hWnd)
     hTabWnd = GetDlgItem(hWnd, IDC_TAB);
     hGeneralPage = CreateDialog(hInst, MAKEINTRESOURCE(IDD_GENERAL_PAGE), hWnd,  GeneralPageWndProc); EnableDialogTheme(hGeneralPage);
     hSystemPage = CreateDialog(hInst, MAKEINTRESOURCE(IDD_SYSTEM_PAGE), hWnd,  SystemPageWndProc); EnableDialogTheme(hSystemPage);
-    hFreeLdrPage = CreateDialog(hInst, MAKEINTRESOURCE(IDD_FREELDR_PAGE), hWnd,  FreeLdrPageWndProc); EnableDialogTheme(hFreeLdrPage);
+    hNextLdrPage = CreateDialog(hInst, MAKEINTRESOURCE(IDD_NEXTLDR_PAGE), hWnd,  NextLdrPageWndProc); EnableDialogTheme(hNextLdrPage);
     hServicesPage = CreateDialog(hInst, MAKEINTRESOURCE(IDD_SERVICES_PAGE), hWnd,  ServicesPageWndProc); EnableDialogTheme(hServicesPage);
     hStartupPage = CreateDialog(hInst, MAKEINTRESOURCE(IDD_STARTUP_PAGE), hWnd,  StartupPageWndProc); EnableDialogTheme(hStartupPage);
     hToolsPage = CreateDialog(hInst, MAKEINTRESOURCE(IDD_TOOLS_PAGE), hWnd,  ToolsPageWndProc); EnableDialogTheme(hToolsPage);
@@ -123,7 +123,7 @@ BOOL OnCreate(HWND hWnd)
     item.pszText = szTemp;
     (void)TabCtrl_InsertItem(hTabWnd, 1, &item);
 
-    LoadString(hInst, IDS_TAB_FREELDR, szTemp, 256);
+    LoadString(hInst, IDS_TAB_NEXTLDR, szTemp, 256);
     memset(&item, 0, sizeof(TCITEM));
     item.mask = TCIF_TEXT;
     item.pszText = szTemp;
@@ -163,7 +163,7 @@ void MsConfig_OnTabWndSelChange(void)
     case 0: //General
         ShowWindow(hGeneralPage, SW_SHOW);
         ShowWindow(hSystemPage, SW_HIDE);
-        ShowWindow(hFreeLdrPage, SW_HIDE);
+        ShowWindow(hNextLdrPage, SW_HIDE);
         ShowWindow(hServicesPage, SW_HIDE);
         ShowWindow(hStartupPage, SW_HIDE);
         ShowWindow(hToolsPage, SW_HIDE);
@@ -174,23 +174,23 @@ void MsConfig_OnTabWndSelChange(void)
         ShowWindow(hSystemPage, SW_SHOW);
         ShowWindow(hToolsPage, SW_HIDE);
         ShowWindow(hStartupPage, SW_HIDE);
-        ShowWindow(hFreeLdrPage, SW_HIDE);
+        ShowWindow(hNextLdrPage, SW_HIDE);
         ShowWindow(hServicesPage, SW_HIDE);
         BringWindowToTop(hSystemPage);
         break;
-    case 2: //Freeldr
+    case 2: //Nextldr
         ShowWindow(hGeneralPage, SW_HIDE);
         ShowWindow(hSystemPage, SW_HIDE);
-        ShowWindow(hFreeLdrPage, SW_SHOW);
+        ShowWindow(hNextLdrPage, SW_SHOW);
         ShowWindow(hServicesPage, SW_HIDE);
         ShowWindow(hStartupPage, SW_HIDE);
         ShowWindow(hToolsPage, SW_HIDE);
-        BringWindowToTop(hFreeLdrPage);
+        BringWindowToTop(hNextLdrPage);
         break;
     case 3: //Services
         ShowWindow(hGeneralPage, SW_HIDE);
         ShowWindow(hSystemPage, SW_HIDE);
-        ShowWindow(hFreeLdrPage, SW_HIDE);
+        ShowWindow(hNextLdrPage, SW_HIDE);
         ShowWindow(hServicesPage, SW_SHOW);
         ShowWindow(hStartupPage, SW_HIDE);
         ShowWindow(hToolsPage, SW_HIDE);
@@ -199,7 +199,7 @@ void MsConfig_OnTabWndSelChange(void)
     case 4: //startup
         ShowWindow(hGeneralPage, SW_HIDE);
         ShowWindow(hSystemPage, SW_HIDE);
-        ShowWindow(hFreeLdrPage, SW_HIDE);
+        ShowWindow(hNextLdrPage, SW_HIDE);
         ShowWindow(hServicesPage, SW_HIDE);
         ShowWindow(hStartupPage, SW_SHOW);
         ShowWindow(hToolsPage, SW_HIDE);
@@ -208,7 +208,7 @@ void MsConfig_OnTabWndSelChange(void)
     case 5: //Tools
         ShowWindow(hGeneralPage, SW_HIDE);
         ShowWindow(hSystemPage, SW_HIDE);
-        ShowWindow(hFreeLdrPage, SW_HIDE);
+        ShowWindow(hNextLdrPage, SW_HIDE);
         ShowWindow(hServicesPage, SW_HIDE);
         ShowWindow(hStartupPage, SW_HIDE);
         ShowWindow(hToolsPage, SW_SHOW);
@@ -314,8 +314,8 @@ MsConfigWndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 DestroyWindow(hServicesPage);
             if (hStartupPage)
                 DestroyWindow(hStartupPage);
-            if (hFreeLdrPage)
-                DestroyWindow(hFreeLdrPage);
+            if (hNextLdrPage)
+                DestroyWindow(hNextLdrPage);
             if (hSystemPage)
                 DestroyWindow(hSystemPage);
             if (hDialogIconBig)

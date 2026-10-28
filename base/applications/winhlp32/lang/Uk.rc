@@ -77,7 +77,7 @@ END
 
 STRINGTABLE
 {
-STID_WINE_HELP, 	"Довідка LiberNT"
+STID_WINE_HELP, 	"Довідка NextNT"
 STID_WHERROR, 		"ПОМИЛКА"
 STID_WARNING,  		"УВАГА"
 STID_INFO,  		"Інформація"

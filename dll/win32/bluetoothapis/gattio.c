@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Bluetooth APIs
+ * PROJECT:     NextNT Bluetooth APIs
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GATT descriptors, writes, reliable writes and value change events
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

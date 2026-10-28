@@ -157,9 +157,9 @@ BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10, SS_NOPREFIX
-    LTEXT "Copyright 2026 LiberNT Team", IDC_STATIC, 35, 75, 200, 10
+    LTEXT "Copyright 2026 NextNT Team", IDC_STATIC, 35, 75, 200, 10
     LTEXT "", IDC_ABOUT_OTHERSTUFF, 35, 90, 180, 20, SS_NOPREFIX
-    LTEXT "Denne LiberNT versjonen er registert til:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
+    LTEXT "Denne NextNT versjonen er registert til:", IDC_ABOUT_REG_TO, 35, 115, 180, 10
     LTEXT "", IDC_ABOUT_REG_USERNAME, 45, 125, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_REG_ORGNAME, 45, 135, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_STATIC, 35, 147, 235, 1, SS_ETCHEDHORZ
@@ -173,7 +173,7 @@ IDD_ABOUT_AUTHORS DIALOGEX 35, 90, 235, 85
 STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "LiberNT ble laget av:", IDC_STATIC, 0, 0, 180, 10
+    LTEXT "NextNT ble laget av:", IDC_STATIC, 0, 0, 180, 10
     LISTBOX IDC_ABOUT_AUTHORS_LISTBOX, 0, 10, 165, 75
 END
 
@@ -432,7 +432,7 @@ BEGIN
     GROUPBOX "Oppgaver", -1, 7, 10, 249, 40
     CONTROL "", IDC_FOLDER_OPTIONS_TASKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 20, 21, 20
     AUTORADIOBUTTON "Vis felles oppgaver i &mapper", IDC_FOLDER_OPTIONS_COMMONTASKS, 40, 20, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "Bruk LiberNT klass&isk mapper", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
+    AUTORADIOBUTTON "Bruk NextNT klass&isk mapper", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
     GROUPBOX "Utforsk mapper", -1, 7, 60, 249, 40, WS_TABSTOP
     CONTROL "", IDC_FOLDER_OPTIONS_FOLDERICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 70, 21, 20
     AUTORADIOBUTTON "Åpne hver mapper i sa&mme vindu", IDC_FOLDER_OPTIONS_SAMEWINDOW, 40, 70, 210, 10, WS_TABSTOP | WS_GROUP
@@ -505,7 +505,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_VISIBLE | WS_CLIPSIBLIN
 CAPTION "Autostart"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "&Velg en innhold type, også velg en handling for LiberNT for å gjennomføre automatisk når denne type er brukt til denne enheten:", 1000, 7, 7, 215, 20
+    LTEXT "&Velg en innhold type, også velg en handling for NextNT for å gjennomføre automatisk når denne type er brukt til denne enheten:", 1000, 7, 7, 215, 20
     CONTROL "", 1001, "COMBOBOXEX32", WS_TABSTOP | 0x00000043, 7, 27, 212, 200
     GROUPBOX "Handlinger", -1, 7, 45, 212, 146
     AUTORADIOBUTTON "Velg en handling for å &utføre:", 1005, 14, 54, 202, 10, WS_GROUP
@@ -521,7 +521,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "Denne disken eller enheten inneholder mere enn en type med innhold.", 1001, 32, 7, 191, 20
-    LTEXT "Hva vil du at LiberNT skal gjøre?", 1002, 32, 31, 188, 8
+    LTEXT "Hva vil du at NextNT skal gjøre?", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "OK", IDOK, 96, 186, 60, 14
     PUSHBUTTON "Avbryt", IDCANCEL, 160, 186, 60, 14
@@ -533,10 +533,10 @@ CAPTION "Mikset innhold"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT kan gjøre den samme handlingen hver gang du setter inn en disk eller kobler til en enhet med denne filtypen:", 1001, 30, 7, 193, 20
+    LTEXT "NextNT kan gjøre den samme handlingen hver gang du setter inn en disk eller kobler til en enhet med denne filtypen:", 1001, 30, 7, 193, 20
     ICON "", 1005, 32, 27, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 28, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
-    LTEXT "Hva vil du at LiberNT skal gjøre?", 1002, 32, 41, 190, 8
+    LTEXT "Hva vil du at NextNT skal gjøre?", 1002, 32, 41, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 55, 188, 112
     AUTOCHECKBOX "Gjør alltid den valgte handlingen.", 1004, 32, 171, 190, 10
     DEFPUSHBUTTON "OK", IDOK, 96, 185, 60, 14
@@ -549,8 +549,8 @@ CAPTION "Autostart"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "LiberNT kan gjøre den samme handlingen hver gang du kobler til en enhet.", 1001, 32, 7, 190, 22
-    LTEXT "&Hva vil du at LiberNT skal gjøre?", 1002, 32, 31, 190, 8
+    LTEXT "NextNT kan gjøre den samme handlingen hver gang du kobler til en enhet.", 1001, 32, 7, 190, 22
+    LTEXT "&Hva vil du at NextNT skal gjøre?", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "&Alltid utfør den valgte handlingen", 1004, 32, 143, 190, 8
     DEFPUSHBUTTON "OK", IDOK, 94, 160, 60, 14
@@ -818,7 +818,7 @@ BEGIN
 
     /* Warning format system drive dialog strings */
     IDS_NO_FORMAT_TITLE "Cannot format this volume"
-    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for LiberNT to run."
+    IDS_NO_FORMAT "This volume cannot be formatted! It contains important system files in order for NextNT to run."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "Unable to display Run File dialog box (internal error)"
@@ -904,8 +904,8 @@ BEGIN
 
     /* Friendly File Type Names */
     IDS_DIRECTORY "Mappe"
-    IDS_BAT_FILE "LiberNT Batch fil"
-    IDS_CMD_FILE "LiberNT Kommando skript"
+    IDS_BAT_FILE "NextNT Batch fil"
+    IDS_CMD_FILE "NextNT Kommando skript"
     IDS_COM_FILE "DOS Applikasjon"
     IDS_CPL_FILE "Kontrollpanel enhet"
     IDS_CUR_FILE "Markør"
@@ -950,7 +950,7 @@ BEGIN
     IDS_DEFAULT_CLUSTER_SIZE "Standard tildelingsstørrelse"
     IDS_COPY_OF "Copy of"
 
-    IDS_SHLEXEC_NOASSOC "Intet LiberNT-program er satt opp til å åpne denne filtypen."
+    IDS_SHLEXEC_NOASSOC "Intet NextNT-program er satt opp til å åpne denne filtypen."
 
     IDS_FILE_DETAILS "Detailjer for '%s' utvidelser"
     IDS_FILE_DETAILSADV "Filer med utvidelser '%s' er av typen '%s'. For å endre innstillingene som er av filen '%s', trykk på avansert."

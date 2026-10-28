@@ -1,10 +1,10 @@
 /*
- * PROJECT:     LiberNT WDDM Null/Software GPU Miniport
+ * PROJECT:     NextNT WDDM Null/Software GPU Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     DriverEntry and core DDI callbacks for softgpu.sys.
  *              Implements a configurable WDDM ABI miniport with a
  *              physical/software engine and a bounded system-RAM segment.
- * COPYRIGHT:   Copyright 2024 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2024 NextNT WDDM Team
  *              Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  *
  * Target device: a platform provider supplies the adapter binding and

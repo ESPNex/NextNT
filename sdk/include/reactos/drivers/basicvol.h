@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Storage
+ * PROJECT:     NextNT Storage
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Unique identifier of a basic volume on an MBR or GPT disk
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

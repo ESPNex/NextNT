@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ACPI WMI Mapping Driver
+ * PROJECT:     NextNT ACPI WMI Mapping Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Maps the WMI data blocks described by ACPI _WDG objects to WMI
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

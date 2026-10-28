@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Helpers to create a writable FAT32 ramdisk image in memory
  * COPYRIGHT:   Copyright 2025 Ahmed Arif <arif.ing@outlook.com>

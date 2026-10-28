@@ -165,7 +165,7 @@ TrapDisplayDumpContext(
     if (!TrapDisplayBegin())
         return;
 
-    TrapDisplayPuts(" ReactOS FreeLDR ARM64 ", TRAP_DISPLAY_HEADER_ATTR);
+    TrapDisplayPuts(" ReactOS NextLDR ARM64 ", TRAP_DISPLAY_HEADER_ATTR);
     TrapDisplayPuts(Title, TRAP_DISPLAY_HEADER_ATTR);
     TrapDisplayPutChar('\n', TRAP_DISPLAY_ATTR);
 
@@ -442,7 +442,7 @@ VOID Arm64HandleSynchronousException(PARM64_CONTEXT Context, ULONGLONG Esr, ULON
     ERR("ARM64 Synchronous Exception: %s (EC=0x%02lx)\n", ExceptionName, ExceptionClass);
     ERR("ESR: 0x%016llx  FAR: 0x%016llx  ELR: 0x%016llx  ISS: 0x%08lx  IL=%u\n",
         Esr, FaultAddr, PC, ISS, (Esr & ESR_ELx_IL) ? 1 : 0);
-    TrapUartPuts("ARM64 FreeLDR Trap: ");
+    TrapUartPuts("ARM64 NextLDR Trap: ");
     TrapUartPuts(ExceptionName);
     TrapUartPuts(" (EC=0x");
     TrapUartPutHex(ExceptionClass, 2);

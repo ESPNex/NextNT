@@ -269,10 +269,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROGRESS_INFO_START "LiberNT запускает службу"
-    IDS_PROGRESS_INFO_STOP "LiberNT останавливает службу"
-    IDS_PROGRESS_INFO_PAUSE "LiberNT приостанавливает службу"
-    IDS_PROGRESS_INFO_RESUME "LiberNT возобновляет службу"
+    IDS_PROGRESS_INFO_START "NextNT запускает службу"
+    IDS_PROGRESS_INFO_STOP "NextNT останавливает службу"
+    IDS_PROGRESS_INFO_PAUSE "NextNT приостанавливает службу"
+    IDS_PROGRESS_INFO_RESUME "NextNT возобновляет службу"
     IDS_CREATE_SUCCESS "Создание службы успешно завершено"
     IDS_DELETE_SUCCESS "Удаление службы успешно завершено"
     IDS_CREATE_REQ "* = обязательные поля"
@@ -307,7 +307,7 @@ BEGIN
     IDS_HINT_DETAILS " Отображение информации о каждом элементе в окне."
     IDS_HINT_CUST " Настройка вида."
     IDS_HINT_HELP " Показать окно справки."
-    IDS_HINT_ABOUT " О Диспетчере служб LiberNT."
+    IDS_HINT_ABOUT " О Диспетчере служб NextNT."
     IDS_HINT_SYS_RESTORE " Восстановить нормальный размер окна."
     IDS_HINT_SYS_MOVE " Переместить это окно."
     IDS_HINT_SYS_SIZE " Изменить размер этого окна."
@@ -319,7 +319,7 @@ END
 /* Application title */
 STRINGTABLE
 BEGIN
-    IDS_APPNAME "Диспетчер служб LiberNT"
+    IDS_APPNAME "Диспетчер служб NextNT"
     IDS_APPAUTHORS "Copyright (C) 2005-2007 by Ged Murphy (gedmurphy@reactos.org)"
 END
 

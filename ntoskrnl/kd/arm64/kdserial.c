@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel
+ * PROJECT:         NextNT Kernel
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:            ntoskrnl/kd/arm64/kdserial.c
  * PURPOSE:         Serial kernel debugger stubs for ARM64
@@ -13,7 +13,7 @@
 
 /*
  * ARM64 KD serial transport over the runtime-detected early UART.
- * FreeLdr detects the UART address and passes it through the loader block;
+ * NextLdr detects the UART address and passes it through the loader block;
  * the kernel early UART layer owns the target-specific address selection.
  */
 BOOLEAN
@@ -29,7 +29,7 @@ KdPortInitializeEx(_Inout_ PCPPORT PortInformation,
     EarlyUartInitialize(0);
 
     /*
-     * Require a driver-known interface, not just a base address. FreeLDR may
+     * Require a driver-known interface, not just a base address. NextLDR may
      * have captured the base from ACPI DBG2 but reported Interface=Unknown;
      * in that case KD must fail cleanly rather than silently swallow output.
      */

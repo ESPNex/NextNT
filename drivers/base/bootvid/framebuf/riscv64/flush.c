@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Generic Framebuffer Boot Video Driver
+ * PROJECT:     NextNT Generic Framebuffer Boot Video Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Make framebuffer writes visible to a non-coherent scanout engine on RISC-V64
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

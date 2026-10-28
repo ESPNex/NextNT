@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Windows Runtime
+ * PROJECT:     NextNT Windows Runtime
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Per-user notification store shared by every process of the user
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -7,7 +7,7 @@
 
 #include "private.h"
 
-static const WCHAR store_root[] = L"Software\\LiberNT\\Notifications";
+static const WCHAR store_root[] = L"Software\\NextNT\\Notifications";
 static LONG store_counter;
 
 INT64 store_now(void)

@@ -171,7 +171,7 @@ LlbBoot(VOID)
     /* Load the OS loader */
     LlbLoadOsLoader();
 
-    /* Jump to the OS Loader (FreeLDR in this case) */
+    /* Jump to the OS Loader (NextLDR in this case) */
     LoaderInit(&ArmBlock);
 }
 

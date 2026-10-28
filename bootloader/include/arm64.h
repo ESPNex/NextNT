@@ -11,9 +11,9 @@
 #define ARM64_PAGE_SIZE     4096
 #define ARM64_PAGE_SHIFT    12
 
-#define FREELDR_BASE        0x0ULL
-#define FREELDR_PE_BASE     0x0ULL
-#define MAX_FREELDR_PE_SIZE 0x02000000ULL
+#define NEXTLDR_BASE        0x0ULL
+#define NEXTLDR_PE_BASE     0x0ULL
+#define MAX_NEXTLDR_PE_SIZE 0x02000000ULL
 
 /* Function and type declarations not needed by assembler */
 #ifndef __ASM__

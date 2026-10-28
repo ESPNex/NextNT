@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SD Bus Client Library
+ * PROJECT:     NextNT SD Bus Client Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     SdBusOpenInterface, SdBusSubmitRequest, SdBusSubmitRequestAsync
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

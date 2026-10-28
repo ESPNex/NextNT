@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Huge page pool and hugetlb page stores backed by large-page sections
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

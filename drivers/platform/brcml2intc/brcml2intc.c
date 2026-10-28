@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Broadcom L2 Interrupt Controller Driver
+ * PROJECT:     NextNT Broadcom L2 Interrupt Controller Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     GpioClx client for Broadcom edge-latched L2 controllers
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

@@ -1,8 +1,8 @@
 /*
- * PROJECT:     LiberNT D3D user-mode driver runtime callbacks
+ * PROJECT:     NextNT D3D user-mode driver runtime callbacks
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Building the D3DDDI_DEVICECALLBACKS a user-mode driver is given
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  */
 
 #pragma once

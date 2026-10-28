@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WinUSB
+ * PROJECT:     NextNT WinUSB
  * LICENSE:     GPL-3.0-only (https://spdx.org/licenses/GPL-3.0-only)
  * PURPOSE:     WinUSB entry points reporting an unsupported device stack
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

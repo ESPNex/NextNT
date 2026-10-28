@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NT User-Mode DLL
+ * PROJECT:     NextNT NT User-Mode DLL
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Preferred user-interface language queries
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif.ing@outlook.com>

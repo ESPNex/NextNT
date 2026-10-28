@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Portable Devices class installer
+ * PROJECT:     NextNT Portable Devices class installer
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Names and registers installed WPD devices after what the device reports
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

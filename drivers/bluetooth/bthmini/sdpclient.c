@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Bluetooth stack
+ * PROJECT:     NextNT Bluetooth stack
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     SDP client connections and searches requested through IOCTL_BTH_SDP_*
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

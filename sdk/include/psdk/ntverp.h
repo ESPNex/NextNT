@@ -154,6 +154,6 @@
 #define VER_COMPANYNAME_STR                 \
     "ReactOS Project"
 #define VER_PRODUCTNAME_STR                 \
-    "LiberNT Operating System"
+    "NextNT Operating System"
 #define VER_LEGALTRADEMARKS_STR             \
     "ReactOS is a registered trademark of ReactOS Deutschland e.V."

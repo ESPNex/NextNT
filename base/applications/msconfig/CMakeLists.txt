@@ -4,7 +4,7 @@ list(APPEND SOURCE
     srvpage.c
     systempage.c
     startuppage.c
-    freeldrpage.c
+    nextldrpage.c
     generalpage.c
     msconfig.c
     precomp.h)

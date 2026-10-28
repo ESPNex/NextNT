@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Direct3D diagnostics
+ * PROJECT:     NextNT Direct3D diagnostics
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Report the Direct3D 11 and 12 feature levels each adapter delivers
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

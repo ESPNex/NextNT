@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT kernel-mode tests
+ * PROJECT:     NextNT kernel-mode tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows Filtering Platform stream callout test, user-mode part
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

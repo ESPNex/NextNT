@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Runtime Library
+ * PROJECT:     NextNT Runtime Library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF
  * PURPOSE:     Native RISC-V64 image lookup and virtual unwind

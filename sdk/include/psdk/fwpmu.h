@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PSDK headers
+ * PROJECT:     NextNT PSDK headers
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows Filtering Platform user-mode management API
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT UEFI Bus Driver
+ * PROJECT:     NextNT UEFI Bus Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Enumerates the firmware resources the EFI System Resource Table describes
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

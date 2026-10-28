@@ -1,7 +1,7 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
- * PURPOSE:     Wayland compositor that shows Linux windows as LiberNT windows
+ * PURPOSE:     Wayland compositor that shows Linux windows as NextNT windows
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  */
 
@@ -954,14 +954,14 @@ void
 SendOutput(WL_RESOURCE *Output)
 {
     WlSend(Output, WL_OUTPUT_EVENT_GEOMETRY, 0, 0, (int32_t)(ScreenWidth * 254 / 960),
-           (int32_t)(ScreenHeight * 254 / 960), 0, "LiberNT", "Desktop", 0);
+           (int32_t)(ScreenHeight * 254 / 960), 0, "NextNT", "Desktop", 0);
     WlSend(Output, WL_OUTPUT_EVENT_MODE, 3, ScreenWidth, ScreenHeight, 60000);
     if (Output->Version >= 2)
         WlSend(Output, WL_OUTPUT_EVENT_SCALE, 1);
     if (Output->Version >= 4)
     {
-        WlSend(Output, WL_OUTPUT_EVENT_NAME, "LiberNT-1");
-        WlSend(Output, WL_OUTPUT_EVENT_DESCRIPTION, "LiberNT desktop");
+        WlSend(Output, WL_OUTPUT_EVENT_NAME, "NextNT-1");
+        WlSend(Output, WL_OUTPUT_EVENT_DESCRIPTION, "NextNT desktop");
     }
     if (Output->Version >= 2)
         WlSend(Output, WL_OUTPUT_EVENT_DONE);

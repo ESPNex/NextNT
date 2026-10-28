@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT ACPI Time and Alarm Control Utility
+ * PROJECT:     NextNT ACPI Time and Alarm Control Utility
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  */
 

@@ -471,7 +471,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* String for Safe Mode */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"LiberNT \u00b7 Development Preview (Target: Windows 11 24H2 %u.%u%s) %wZ-%.*S\n",
+                                     L"NextNT \u00b7 Development Preview (Target: Windows 11 24H2 %u.%u%s) %wZ-%.*S\n",
                                      (VerInfo.dwBuildNumber & 0xFFFF),
                                      (ULONG)VER_PRODUCTBUILD_QFE,
                                      VersionBuffer,
@@ -484,7 +484,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* Multi-string for Normal Mode */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"LiberNT \u00b7 Development Preview\n"
+                                     L"NextNT \u00b7 Development Preview\n"
                                      L"Target: Windows 11 24H2 %u.%u%s\n"
                                      L"Build %wZ-%.*S\n",
                                      (VerInfo.dwBuildNumber & 0xFFFF),
@@ -500,7 +500,7 @@ GetSystemVersionString(OUT PWSTR pwszzVersion,
         /* Fall-back string */
         Status = RtlStringCchPrintfW(pwszzVersion,
                                      cchDest,
-                                     L"LiberNT \u00b7 Development Preview %wZ-%.*S\n",
+                                     L"NextNT \u00b7 Development Preview %wZ-%.*S\n",
                                      &BuildLabString,
                                      ArchLength,
                                      Arch);

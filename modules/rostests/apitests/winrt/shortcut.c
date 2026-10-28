@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Start menu shortcut with an application user model ID for the toast tests
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -24,7 +24,7 @@ CreateAppShortcut(
 
     if (FAILED(SHGetFolderPathW(NULL, CSIDL_PROGRAMS, NULL, 0, Path)))
         return FALSE;
-    wcscat(Path, L"\\LiberNT ApiTest Toast.lnk");
+    wcscat(Path, L"\\NextNT ApiTest Toast.lnk");
     hr = CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, &IID_IShellLinkW, (void **)&Link);
     if (FAILED(hr))
         return FALSE;

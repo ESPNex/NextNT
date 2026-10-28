@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Realtek Bluetooth UART transport
+ * PROJECT:     NextNT Realtek Bluetooth UART transport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Realtek controller identification and patch download
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

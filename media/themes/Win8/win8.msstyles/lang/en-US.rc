@@ -2,12 +2,12 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 STRINGTABLE
 {
-1000, "LiberNT default"
+1000, "NextNT default"
 }
 
 STRINGTABLE
 {
-2000, "LiberNT default"
+2000, "NextNT default"
 }
 
 STRINGTABLE
@@ -26,12 +26,12 @@ STRINGTABLE
 
 STRINGTABLE
 {
-5000, "LiberNT default"
+5000, "NextNT default"
 5001, "Visual Style"
 5002, "ReactOS Project"
 5003, "Flat Windows 8-style theme"
 5004, "Released under GNU/GPL 2.0"
 5005, "https://reactos.org/"
 5006, "1.0"
-5007, "Flat Windows 8 visual style for LiberNT"
+5007, "Flat Windows 8 visual style for NextNT"
 }

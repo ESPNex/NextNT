@@ -50,6 +50,6 @@ kmtest_drv.sys,,,0x10
 kmtest_drv.sys=1
 
 [Strings]
-Provider="LiberNT kernel tests"
+Provider="NextNT kernel tests"
 Device="Kmtest power framework fixture"
 Disk="Kmtest driver package"

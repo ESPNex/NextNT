@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel (ARM64)
+ * PROJECT:         NextNT Kernel (ARM64)
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Minimal interlocked helper shims to satisfy MinGW CRT
  *                  atomics while a real A64 barrier-aware implementation is

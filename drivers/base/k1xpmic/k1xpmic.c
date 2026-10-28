@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SpacemiT K1 PMIC Driver
+ * PROJECT:     NextNT SpacemiT K1 PMIC Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     SpacemiT P1 real-time clock and power key over the K1 I2C controller
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

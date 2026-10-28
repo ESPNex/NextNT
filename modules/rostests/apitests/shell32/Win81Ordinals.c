@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-only (https://spdx.org/licenses/GPL-3.0-only)
  * PURPOSE:     ABI contract tests for the Windows 8.1 shell32 ordinals
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

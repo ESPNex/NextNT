@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT VMXNET3 Ethernet Driver
+ * PROJECT:     NextNT VMXNET3 Ethernet Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VMXNET3 device interface and adapter state
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

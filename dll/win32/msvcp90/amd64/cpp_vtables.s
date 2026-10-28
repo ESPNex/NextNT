@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT msvcp90.dll
+ * PROJECT:     NextNT msvcp90.dll
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     x64 C++ V-tables for MSVC builds
  * COPYRIGHT:   Copyright 2010-2026 Wine team

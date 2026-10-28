@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Display Driver Model
+ * PROJECT:     NextNT Display Driver Model
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private monitor.sys <-> dxgkrnl monitor child request
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -12,7 +12,7 @@
 
 #define RXGK_MONITOR_EDID_MAX_SIZE (128 * 4)
 
-#define RXGK_MONITOR_BRIGHTNESS_EVENT L"LiberNTMonitorBrightnessChanged"
+#define RXGK_MONITOR_BRIGHTNESS_EVENT L"NextNTMonitorBrightnessChanged"
 
 typedef struct _RXGK_MONITOR_DESCRIPTOR
 {

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT RDP console server
+ * PROJECT:     NextNT RDP console server
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     File transfer interface of the RDP console server
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

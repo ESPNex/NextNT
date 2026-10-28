@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PowerVR Rogue WDDM miniport
+ * PROJECT:     NextNT PowerVR Rogue WDDM miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     SpacemiT K1 GPU power domain, clock and reset interface
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

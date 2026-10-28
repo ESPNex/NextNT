@@ -7,8 +7,8 @@ option(LATTEPANDAMU_SUPPORT "Enable the LattePanda Mu board profile" OFF)
 if(LATTEPANDAMU_SUPPORT AND NOT ARCH STREQUAL "amd64")
     message(FATAL_ERROR "The LattePanda Mu profile requires ARCH=amd64")
 endif()
-if(FREELDR_HTTP_BOOT AND NOT (LATTEPANDAMU_SUPPORT OR RPI_SUPPORT))
-    message(FATAL_ERROR "FREELDR_HTTP_BOOT requires a board profile that ships UEFI network drivers")
+if(NEXTLDR_HTTP_BOOT AND NOT (LATTEPANDAMU_SUPPORT OR RPI_SUPPORT))
+    message(FATAL_ERROR "NEXTLDR_HTTP_BOOT requires a board profile that ships UEFI network drivers")
 endif()
 
 #
@@ -16,7 +16,7 @@ endif()
 # DEFAULT_OS names the entry to boot unattended, or is empty to keep the menu's
 # own selection (the flashed image keeps whichever entry the harness chose).
 #
-function(freeldr_ini_add_http_boot SOURCE OUTPUT URL STATIC_IP DEFAULT_OS OPTIONS)
+function(nextldr_ini_add_http_boot SOURCE OUTPUT URL STATIC_IP DEFAULT_OS OPTIONS)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${SOURCE}")
     file(READ "${SOURCE}" _contents)
 
@@ -50,40 +50,40 @@ function(freeldr_ini_add_http_boot SOURCE OUTPUT URL STATIC_IP DEFAULT_OS OPTION
     file(WRITE "${OUTPUT}" "${_contents}")
 endfunction()
 
-set(FREELDR_BOOTCD_INI "${REACTOS_SOURCE_DIR}/boot/bootdata/bootcd.ini")
-set(FREELDR_PREINSTALL_INI "${REACTOS_SOURCE_DIR}/boot/bootdata/preinstall.ini")
-if(FREELDR_HTTP_BOOT)
+set(NEXTLDR_BOOTCD_INI "${REACTOS_SOURCE_DIR}/boot/bootdata/bootcd.ini")
+set(NEXTLDR_PREINSTALL_INI "${REACTOS_SOURCE_DIR}/boot/bootdata/preinstall.ini")
+if(NEXTLDR_HTTP_BOOT)
     # The downloaded image is architecture-specific, so each board profile
     # points at its own copy on the build host.
     if(ARCH STREQUAL "arm64")
-        set(_freeldr_http_boot_default_url "http://10.42.0.1/livecd-arm64.iso")
+        set(_nextldr_http_boot_default_url "http://10.42.0.1/livecd-arm64.iso")
     else()
-        set(_freeldr_http_boot_default_url "http://10.42.0.1/livecd.iso")
+        set(_nextldr_http_boot_default_url "http://10.42.0.1/livecd.iso")
     endif()
-    set(FREELDR_HTTP_BOOT_URL "${_freeldr_http_boot_default_url}" CACHE STRING
-        "URL FreeLdr downloads the live image from")
-    set(FREELDR_HTTP_BOOT_IP "10.42.0.172/24,10.42.0.1" CACHE STRING
-        "Static IPv4 address/prefix[,gateway] for FreeLdr HTTP boot; empty uses DHCP")
-    set(FREELDR_HTTP_BOOT_OPTIONS "" CACHE STRING
+    set(NEXTLDR_HTTP_BOOT_URL "${_nextldr_http_boot_default_url}" CACHE STRING
+        "URL NextLdr downloads the live image from")
+    set(NEXTLDR_HTTP_BOOT_IP "10.42.0.172/24,10.42.0.1" CACHE STRING
+        "Static IPv4 address/prefix[,gateway] for NextLdr HTTP boot; empty uses DHCP")
+    set(NEXTLDR_HTTP_BOOT_OPTIONS "" CACHE STRING
         "Boot options appended to the HTTP boot entry")
-    set(FREELDR_HTTP_BOOT_EXTRA_DRIVERS "" CACHE STRING
+    set(NEXTLDR_HTTP_BOOT_EXTRA_DRIVERS "" CACHE STRING
         "Additional UEFI drivers (.efi paths) copied to EFI/BOOT/drivers, such as a vendor UNDI driver")
 
-    set(FREELDR_BOOTCD_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/bootcd_httpboot.ini")
-    freeldr_ini_add_http_boot("${REACTOS_SOURCE_DIR}/boot/bootdata/bootcd.ini"
-                              "${FREELDR_BOOTCD_INI}"
-                              "${FREELDR_HTTP_BOOT_URL}"
-                              "${FREELDR_HTTP_BOOT_IP}"
+    set(NEXTLDR_BOOTCD_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/bootcd_httpboot.ini")
+    nextldr_ini_add_http_boot("${REACTOS_SOURCE_DIR}/boot/bootdata/bootcd.ini"
+                              "${NEXTLDR_BOOTCD_INI}"
+                              "${NEXTLDR_HTTP_BOOT_URL}"
+                              "${NEXTLDR_HTTP_BOOT_IP}"
                               "HttpBoot"
-                              "${FREELDR_HTTP_BOOT_OPTIONS}")
+                              "${NEXTLDR_HTTP_BOOT_OPTIONS}")
 
-    set(FREELDR_PREINSTALL_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/preinstall_httpboot.ini")
-    freeldr_ini_add_http_boot("${REACTOS_SOURCE_DIR}/boot/bootdata/preinstall.ini"
-                              "${FREELDR_PREINSTALL_INI}"
-                              "${FREELDR_HTTP_BOOT_URL}"
-                              "${FREELDR_HTTP_BOOT_IP}"
+    set(NEXTLDR_PREINSTALL_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/preinstall_httpboot.ini")
+    nextldr_ini_add_http_boot("${REACTOS_SOURCE_DIR}/boot/bootdata/preinstall.ini"
+                              "${NEXTLDR_PREINSTALL_INI}"
+                              "${NEXTLDR_HTTP_BOOT_URL}"
+                              "${NEXTLDR_HTTP_BOOT_IP}"
                               "HttpBoot"
-                              "${FREELDR_HTTP_BOOT_OPTIONS}")
+                              "${NEXTLDR_HTTP_BOOT_OPTIONS}")
 endif()
 
 set(BOOTLOADER_HTTP_BOOT_URL "" CACHE STRING
@@ -92,14 +92,14 @@ set(BOOTLOADER_HTTP_BOOT_IP "" CACHE STRING
     "Static IPv4 address/prefix[,gateway] of the boot manager's HTTP boot entry; empty uses DHCP")
 option(BOOTLOADER_HTTP_BOOT_DEFAULT "Start the boot manager's HTTP boot entry by default" OFF)
 
-set(FREELDR_PREINSTALL_OPTIONS "" CACHE STRING
+set(NEXTLDR_PREINSTALL_OPTIONS "" CACHE STRING
     "Boot options appended to the boot entry of the preinstalled disk image")
-if(FREELDR_PREINSTALL_OPTIONS)
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${FREELDR_PREINSTALL_INI}")
-    file(READ "${FREELDR_PREINSTALL_INI}" _contents)
-    string(REGEX REPLACE "(Options=[^\r\n]*)" "\\1 ${FREELDR_PREINSTALL_OPTIONS}" _contents "${_contents}")
-    set(FREELDR_PREINSTALL_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/preinstall_options.ini")
-    file(CONFIGURE OUTPUT "${FREELDR_PREINSTALL_INI}" CONTENT "${_contents}" @ONLY)
+if(NEXTLDR_PREINSTALL_OPTIONS)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${NEXTLDR_PREINSTALL_INI}")
+    file(READ "${NEXTLDR_PREINSTALL_INI}" _contents)
+    string(REGEX REPLACE "(Options=[^\r\n]*)" "\\1 ${NEXTLDR_PREINSTALL_OPTIONS}" _contents "${_contents}")
+    set(NEXTLDR_PREINSTALL_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/preinstall_options.ini")
+    file(CONFIGURE OUTPUT "${NEXTLDR_PREINSTALL_INI}" CONTENT "${_contents}" @ONLY)
 endif()
 
 # On x86 hal.dll is the UP PIC HAL, unlike the SMP HAL named hal.dll on
@@ -107,7 +107,7 @@ endif()
 # architectures or overriding a HAL explicitly requested by an entry.
 if(ARCH STREQUAL "i386" AND NOT (SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox"))
     foreach(_media BOOTCD PREINSTALL)
-        set(_source "${FREELDR_${_media}_INI}")
+        set(_source "${NEXTLDR_${_media}_INI}")
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_source}")
         file(READ "${_source}" _contents)
         string(REGEX MATCHALL "Options=[^\r\n]*" _options "${_contents}")
@@ -119,29 +119,29 @@ if(ARCH STREQUAL "i386" AND NOT (SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox")
                 string(REPLACE "${_option}" "${_paired}" _contents "${_contents}")
             endif()
         endforeach()
-        set(FREELDR_${_media}_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/${_media}_i386.ini")
-        file(CONFIGURE OUTPUT "${FREELDR_${_media}_INI}" CONTENT "${_contents}" @ONLY)
+        set(NEXTLDR_${_media}_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/${_media}_i386.ini")
+        file(CONFIGURE OUTPUT "${NEXTLDR_${_media}_INI}" CONTENT "${_contents}" @ONLY)
     endforeach()
 endif()
 
 if(SPACEMIT_K1_SUPPORT)
-    set(_source "${FREELDR_PREINSTALL_INI}")
+    set(_source "${NEXTLDR_PREINSTALL_INI}")
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_source}")
     file(READ "${_source}" _contents)
     string(REPLACE "SystemPath=partition(2)\\" "SystemPath=partition(4)\\" _contents "${_contents}")
-    set(FREELDR_PREINSTALL_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/preinstall_spacemit_k1.ini")
-    file(CONFIGURE OUTPUT "${FREELDR_PREINSTALL_INI}" CONTENT "${_contents}" @ONLY)
+    set(NEXTLDR_PREINSTALL_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/preinstall_spacemit_k1.ini")
+    file(CONFIGURE OUTPUT "${NEXTLDR_PREINSTALL_INI}" CONTENT "${_contents}" @ONLY)
 endif()
 
 # The supported Open Firmware machines have too little memory to expand the
 # live image into RAM, so their boot media start the entry that runs from it.
-if(FREELDR_HAS_OFW_BOOT)
-    set(_source "${FREELDR_BOOTCD_INI}")
+if(NEXTLDR_HAS_OFW_BOOT)
+    set(_source "${NEXTLDR_BOOTCD_INI}")
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_source}")
     file(READ "${_source}" _contents)
     string(REGEX REPLACE "DefaultOS=[^\r\n]*" "DefaultOS=LiveImg_Debug" _contents "${_contents}")
-    set(FREELDR_BOOTCD_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/bootcd_ofw.ini")
-    file(CONFIGURE OUTPUT "${FREELDR_BOOTCD_INI}" CONTENT "${_contents}" @ONLY)
+    set(NEXTLDR_BOOTCD_INI "${CMAKE_CURRENT_BINARY_DIR}/bootdata/bootcd_ofw.ini")
+    file(CONFIGURE OUTPUT "${NEXTLDR_BOOTCD_INI}" CONTENT "${_contents}" @ONLY)
 endif()
 
 # EFI platform ID - Used for naming the EFI boot image on supported platforms.
@@ -169,16 +169,16 @@ endif()
 if(DEFINED EFI_PLATFORM_ID AND EXISTS "${REACTOS_SOURCE_DIR}/bootloader/arch/${ARCH}")
     set(BOOTLOADER_UEFI TRUE)
     set(_uefi_loader bootmgfw)
-    if(FREELDR_WIM_RAMDISK)
+    if(NEXTLDR_WIM_RAMDISK)
         set(_uefi_media_store mediawim)
     else()
         set(_uefi_media_store media)
     endif()
     set(_uefi_loader_files
-        -mkdir EFI/LiberNT
-        -mkdir EFI/LiberNT/Boot
-        -add $<TARGET_FILE:winload> EFI/LiberNT/Boot/winload.efi
-        -add ${REACTOS_BINARY_DIR}/bootloader/image/${_uefi_media_store}/BCD EFI/LiberNT/Boot/BCD)
+        -mkdir EFI/NextNT
+        -mkdir EFI/NextNT/Boot
+        -add $<TARGET_FILE:winload> EFI/NextNT/Boot/winload.efi
+        -add ${REACTOS_BINARY_DIR}/bootloader/image/${_uefi_media_store}/BCD EFI/NextNT/Boot/BCD)
     set(_uefi_loader_deps bootmgfw winload bootloader${_uefi_media_store}bcd)
     set(_efisys_sectors 16384)
     set_property(GLOBAL PROPERTY BOOTLOADER_UEFI TRUE)
@@ -196,17 +196,17 @@ if(DEFINED EFI_PLATFORM_ID)
     set(_efisys_depends native-fatten ${_uefi_loader_deps})
     set(_uefi_driver_fatten_options)
     set(_uefi_driver_files)
-    if(FREELDR_HAS_BIOS_BOOT)
-        set(_efisys_boot_options -boot ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/fat.bin)
+    if(NEXTLDR_HAS_BIOS_BOOT)
+        set(_efisys_boot_options -boot ${CMAKE_CURRENT_BINARY_DIR}/nextldr/bootsect/fat.bin)
         list(APPEND _efisys_depends fat)
     endif()
 
-    if(FREELDR_HTTP_BOOT)
+    if(NEXTLDR_HTTP_BOOT)
         set(_uefi_driver_dir "${REACTOS_SOURCE_DIR}/media/boot/uefi_drivers/${ARCH}")
         file(GLOB _uefi_driver_files CONFIGURE_DEPENDS "${_uefi_driver_dir}/*.efi")
-        foreach(_driver ${FREELDR_HTTP_BOOT_EXTRA_DRIVERS})
+        foreach(_driver ${NEXTLDR_HTTP_BOOT_EXTRA_DRIVERS})
             if(NOT EXISTS "${_driver}")
-                message(FATAL_ERROR "FREELDR_HTTP_BOOT_EXTRA_DRIVERS: ${_driver} does not exist")
+                message(FATAL_ERROR "NEXTLDR_HTTP_BOOT_EXTRA_DRIVERS: ${_driver} does not exist")
             endif()
             list(APPEND _uefi_driver_files "${_driver}")
         endforeach()
@@ -240,10 +240,10 @@ endif()
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/empty)
 
 # Retrieve the full paths to the generated boot files.
-if(FREELDR_HAS_BIOS_BOOT)
-    set(_isombr_file  ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/isombr.bin)  # get_target_property(_isombr_file  isombr  LOCATION)
-    set(_isoboot_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/isoboot.bin) # get_target_property(_isoboot_file isoboot LOCATION)
-    set(_isobtrt_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/isobtrt.bin) # get_target_property(_isobtrt_file isobtrt LOCATION)
+if(NEXTLDR_HAS_BIOS_BOOT)
+    set(_isombr_file  ${CMAKE_CURRENT_BINARY_DIR}/nextldr/bootsect/isombr.bin)  # get_target_property(_isombr_file  isombr  LOCATION)
+    set(_isoboot_file ${CMAKE_CURRENT_BINARY_DIR}/nextldr/bootsect/isoboot.bin) # get_target_property(_isoboot_file isoboot LOCATION)
+    set(_isobtrt_file ${CMAKE_CURRENT_BINARY_DIR}/nextldr/bootsect/isobtrt.bin) # get_target_property(_isobtrt_file isobtrt LOCATION)
 endif()
 if(DEFINED EFI_PLATFORM_ID)
     set(_efisys_file  ${CMAKE_CURRENT_BINARY_DIR}/efisys.bin) # get_target_property(_efisys_file  efisys  LOCATION)
@@ -269,7 +269,7 @@ endif()
 set(ISO_SORT_FILE_DATA "\
 ${CMAKE_CURRENT_BINARY_DIR}/empty/boot.catalog 4
 ")
-if(FREELDR_HAS_BIOS_BOOT)
+if(NEXTLDR_HAS_BIOS_BOOT)
     string(APPEND ISO_SORT_FILE_DATA "${_isoboot_file} 3\n${_isobtrt_file} 2\n")
 endif()
 if(DEFINED EFI_PLATFORM_ID)
@@ -278,7 +278,7 @@ endif()
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootfiles.sort ${ISO_SORT_FILE_DATA})
 
 # ISO image identifier names
-set(ISO_MANUFACTURER "LiberNT Project") # For both the publisher and the preparer
+set(ISO_MANUFACTURER "NextNT Project") # For both the publisher and the preparer
 set(ISO_VOLNAME      "ReactOS")         # For both the Volume ID and the Volume set ID
 
 # ISO image options
@@ -313,7 +313,7 @@ endif()
 
 set(ISOHYBRID_DEPENDS)
 set(ISOHYBRID_BOOTCD_COMMAND)
-if(FREELDR_HAS_BIOS_BOOT)
+if(NEXTLDR_HAS_BIOS_BOOT)
     set(ISOHYBRID_DEPENDS isombr native-isohybrid)
     set(ISOHYBRID_BOOTCD_COMMAND
         COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/bootcd.iso)
@@ -477,7 +477,7 @@ add_custom_target(bootcd
     VERBATIM)
 
 
-## LiberNTImg
+## NextNTImg
 # Create the file list
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/preinstall.cmake.lst "")
 # The NTFS image importer requires every entry to map an image path to a host path.
@@ -485,14 +485,14 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/preinstall.cmake.lst "")
 set(_preinstall_boot_partition_file ${CMAKE_CURRENT_BINARY_DIR}/partition.boot.fat)
 set(_preinstall_system_partition_file ${CMAKE_CURRENT_BINARY_DIR}/partition.ntfs)
 set(_preinstall_vhd_partition_file ${CMAKE_CURRENT_BINARY_DIR}/partition.vhd.ntfs)
-set(_preinstall_image_file ${REACTOS_BINARY_DIR}/LiberNT.img)
-set(_preinstall_vhd_file ${REACTOS_BINARY_DIR}/LiberNT.vhd)
-set(_preinstall_vhdx_file ${REACTOS_BINARY_DIR}/LiberNT.vhdx)
+set(_preinstall_image_file ${REACTOS_BINARY_DIR}/NextNT.img)
+set(_preinstall_vhd_file ${REACTOS_BINARY_DIR}/NextNT.vhd)
+set(_preinstall_vhdx_file ${REACTOS_BINARY_DIR}/NextNT.vhdx)
 # Keep ROSBOOT as an active MBR ESP. UEFI discovers it by type, while the BIOS
 # MBR follows the active flag and loads its FAT32 boot sector. The Raspberry Pi
 # 1-3 boot ROM only scans for FAT MBR ids and skips 0xEF, so the Raspberry Pi
 # images mark the same volume as FAT32 LBA instead; UEFI mounts it by content.
-if(RPI_SUPPORT OR ARCH STREQUAL "arm" OR FREELDR_HAS_OFW_BOOT)
+if(RPI_SUPPORT OR ARCH STREQUAL "arm" OR NEXTLDR_HAS_OFW_BOOT)
     set(_preinstall_boot_partition_type 0c)
 else()
     set(_preinstall_boot_partition_type ef)
@@ -746,10 +746,10 @@ math(EXPR _preinstall_vhd_partition_sectors "(${_preinstall_vhd_size_mb} - ${_pr
 set(_preinstall_boot_partition_options)
 set(_preinstall_boot_partition_fs fat)
 set(_preinstall_boot_partition_files
-    -add ${FREELDR_PREINSTALL_INI} freeldr.ini)
+    -add ${NEXTLDR_PREINSTALL_INI} nextldr.ini)
 set(_preinstall_rpi_firmware)
 set(_preinstall_rpi_overlays)
-if(NOT SPACEMIT_K1_SUPPORT AND NOT STARFIVE_JH7110_SUPPORT AND NOT FREELDR_HAS_OFW_BOOT)
+if(NOT SPACEMIT_K1_SUPPORT AND NOT STARFIVE_JH7110_SUPPORT AND NOT NEXTLDR_HAS_OFW_BOOT)
     file(GLOB _preinstall_rpi_firmware ${REACTOS_SOURCE_DIR}/media/boot/rpi/*)
     file(GLOB _preinstall_rpi_overlays ${REACTOS_SOURCE_DIR}/media/boot/rpi/overlays/*)
 endif()
@@ -773,14 +773,14 @@ if(_preinstall_rpi_overlays)
 endif()
 set(_preinstall_partition_deps native-fatten native-ntfsimg
     ${_preinstall_overlay_deps} ${ARM64_BOOT_FILE_DEPS})
-set(_liberntimg_mbr_args)
-set(_liberntimg_deps native-mkdiskimg)
-set(_liberntimg_leading_args)
-set(_liberntimg_boot_partition_args)
-set(_liberntimg_system_partition_args)
+set(_nextntimg_mbr_args)
+set(_nextntimg_deps native-mkdiskimg)
+set(_nextntimg_leading_args)
+set(_nextntimg_boot_partition_args)
+set(_nextntimg_system_partition_args)
 if(SPACEMIT_K1_SUPPORT)
-    list(APPEND _liberntimg_mbr_args -gpt -mbr ${SPACEMIT_K1_BOOTINFO})
-    list(APPEND _liberntimg_leading_args
+    list(APPEND _nextntimg_mbr_args -gpt -mbr ${SPACEMIT_K1_BOOTINFO})
+    list(APPEND _nextntimg_leading_args
         -data ${SPACEMIT_K1_OPENSBI}
         -start ${SPACEMIT_K1_OPENSBI_START}
         -type da
@@ -796,8 +796,8 @@ if(SPACEMIT_K1_SUPPORT)
         -raw ${SPACEMIT_K1_FSBL}
         -at ${SPACEMIT_K1_FSBL_BACKUP_SECTOR})
     set(_preinstall_boot_partition_fs fat32)
-    list(APPEND _liberntimg_boot_partition_args -name bootfs)
-    list(APPEND _liberntimg_system_partition_args -name ReactOS)
+    list(APPEND _nextntimg_boot_partition_args -name bootfs)
+    list(APPEND _nextntimg_system_partition_args -name ReactOS)
     list(APPEND _preinstall_boot_partition_files
         -add ${SPACEMIT_K1_UBOOT_ENV} env_k1-x.txt
         -add ${SPACEMIT_K1_BOOT_SCRIPT} boot.scr
@@ -805,7 +805,7 @@ if(SPACEMIT_K1_SUPPORT)
         -add ${SPACEMIT_K1_RV2_DTB} dtb/x1_orangepi-rv2.dtb)
     list(APPEND _preinstall_partition_deps
         ${SPACEMIT_K1_UBOOT_ENV} ${SPACEMIT_K1_BOOT_SCRIPT} ${SPACEMIT_K1_RV2_DTB})
-    list(APPEND _liberntimg_deps
+    list(APPEND _nextntimg_deps
         ${SPACEMIT_K1_BOOTINFO} ${SPACEMIT_K1_FSBL} ${SPACEMIT_K1_OPENSBI} ${SPACEMIT_K1_UBOOT})
 endif()
 if(STARFIVE_JH7110_SUPPORT)
@@ -817,27 +817,27 @@ if(STARFIVE_JH7110_SUPPORT)
         -add ${STARFIVE_JH7110_UENV} vf2_uEnv.txt)
     list(APPEND _preinstall_partition_deps ${STARFIVE_JH7110_DTB} ${STARFIVE_JH7110_UENV})
 endif()
-macro(libernt_standard_disk_ids)
-    string(UUID _standard_disk NAMESPACE 354fa6e5-5e45-49af-91bf-1fd2754e470a NAME "LiberNT standard disk" TYPE SHA1)
-    libernt_standard_disk_signature(_standard_signature)
-    string(UUID _standard_system NAMESPACE 354fa6e5-5e45-49af-91bf-1fd2754e470a NAME "LiberNT standard system partition" TYPE SHA1)
-    if(";${_liberntimg_mbr_args};" MATCHES ";-gpt;")
-        list(APPEND _liberntimg_mbr_args -diskid ${_standard_disk})
-        list(APPEND _liberntimg_system_partition_args -id ${_standard_system})
-        set_property(GLOBAL PROPERTY LIBERNT_STANDARD_GPT_DISK ${_standard_disk})
-        set_property(GLOBAL PROPERTY LIBERNT_STANDARD_GPT_SYSTEM ${_standard_system})
+macro(nextnt_standard_disk_ids)
+    string(UUID _standard_disk NAMESPACE 354fa6e5-5e45-49af-91bf-1fd2754e470a NAME "NextNT standard disk" TYPE SHA1)
+    nextnt_standard_disk_signature(_standard_signature)
+    string(UUID _standard_system NAMESPACE 354fa6e5-5e45-49af-91bf-1fd2754e470a NAME "NextNT standard system partition" TYPE SHA1)
+    if(";${_nextntimg_mbr_args};" MATCHES ";-gpt;")
+        list(APPEND _nextntimg_mbr_args -diskid ${_standard_disk})
+        list(APPEND _nextntimg_system_partition_args -id ${_standard_system})
+        set_property(GLOBAL PROPERTY NEXTNT_STANDARD_GPT_DISK ${_standard_disk})
+        set_property(GLOBAL PROPERTY NEXTNT_STANDARD_GPT_SYSTEM ${_standard_system})
     else()
-        list(APPEND _liberntimg_mbr_args -signature ${_standard_signature})
+        list(APPEND _nextntimg_mbr_args -signature ${_standard_signature})
     endif()
-    set_property(GLOBAL PROPERTY LIBERNT_STANDARD_SIGNATURE ${_standard_signature})
-    set_property(GLOBAL PROPERTY LIBERNT_STANDARD_SYSTEM_START ${_preinstall_system_partition_start})
-    set_property(GLOBAL PROPERTY LIBERNT_STANDARD_OPTIONS "${FREELDR_PREINSTALL_OPTIONS}")
+    set_property(GLOBAL PROPERTY NEXTNT_STANDARD_SIGNATURE ${_standard_signature})
+    set_property(GLOBAL PROPERTY NEXTNT_STANDARD_SYSTEM_START ${_preinstall_system_partition_start})
+    set_property(GLOBAL PROPERTY NEXTNT_STANDARD_OPTIONS "${NEXTLDR_PREINSTALL_OPTIONS}")
 endmacro()
 
-if(FREELDR_HAS_OFW_BOOT)
+if(NEXTLDR_HAS_OFW_BOOT)
     # The firmware boot partition is advertised as FAT32 LBA (0x0c).
     set(_preinstall_boot_partition_fs fat32)
-    set(_ofw_boot_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/freeldr/ppcboot.bin)
+    set(_ofw_boot_file ${CMAKE_CURRENT_BINARY_DIR}/nextldr/nextldr/ppcboot.bin)
     list(APPEND _preinstall_boot_partition_files -add ${_ofw_boot_file} ppcboot.bin)
     list(APPEND _preinstall_partition_deps ppcboot)
     add_dependencies(bootcd ppcboot)
@@ -847,21 +847,21 @@ if(FREELDR_HAS_OFW_BOOT)
             -add ${REACTOS_BINARY_DIR}/bootloader/bootmgr.bin bootmgr.bin
             -add ${REACTOS_BINARY_DIR}/bootloader/image/standard/BCD Boot/BCD)
         list(APPEND _preinstall_partition_deps bootmgrppc bootloaderstandardbcd)
-        libernt_standard_disk_ids()
+        nextnt_standard_disk_ids()
     endif()
 endif()
-if(FREELDR_HAS_BIOS_BOOT)
-    set(_dosmbr_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/dosmbr.bin)
-    set(_fat32_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/fat32.bin)
-    set(_freeldr_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/freeldr/freeldr.sys)
+if(NEXTLDR_HAS_BIOS_BOOT)
+    set(_dosmbr_file ${CMAKE_CURRENT_BINARY_DIR}/nextldr/bootsect/dosmbr.bin)
+    set(_fat32_file ${CMAKE_CURRENT_BINARY_DIR}/nextldr/bootsect/fat32.bin)
+    set(_nextldr_file ${CMAKE_CURRENT_BINARY_DIR}/nextldr/nextldr/nextldr.sys)
     set(_preinstall_boot_partition_fs fat32)
     list(APPEND _preinstall_boot_partition_options -boot ${_fat32_file})
     list(APPEND _preinstall_boot_partition_files
-        -add ${_freeldr_file} freeldr.sys
+        -add ${_nextldr_file} nextldr.sys
         -add $<TARGET_FILE:rosload> rosload.exe)
-    list(APPEND _preinstall_partition_deps fat32 freeldr rosload)
-    list(APPEND _liberntimg_mbr_args -mbr ${_dosmbr_file})
-    list(APPEND _liberntimg_deps dosmbr)
+    list(APPEND _preinstall_partition_deps fat32 nextldr rosload)
+    list(APPEND _nextntimg_mbr_args -mbr ${_dosmbr_file})
+    list(APPEND _nextntimg_deps dosmbr)
 endif()
 if(DEFINED EFI_PLATFORM_ID)
     list(APPEND _preinstall_boot_partition_files
@@ -871,17 +871,17 @@ if(DEFINED EFI_PLATFORM_ID)
     list(APPEND _preinstall_partition_deps ${_uefi_loader})
     if(BOOTLOADER_UEFI)
         list(APPEND _preinstall_boot_partition_files
-            -mkdir EFI/LiberNT
-            -mkdir EFI/LiberNT/Boot
-            -add $<TARGET_FILE:bootmgfw> EFI/LiberNT/Boot/bootmgfw.efi
-            -add ${REACTOS_BINARY_DIR}/bootloader/image/standard/BCD EFI/LiberNT/Boot/BCD)
+            -mkdir EFI/NextNT
+            -mkdir EFI/NextNT/Boot
+            -add $<TARGET_FILE:bootmgfw> EFI/NextNT/Boot/bootmgfw.efi
+            -add ${REACTOS_BINARY_DIR}/bootloader/image/standard/BCD EFI/NextNT/Boot/BCD)
         list(APPEND _preinstall_partition_deps bootloaderstandardbcd)
         if(BOOTLOADER_HTTP_BOOT_URL)
             list(APPEND _preinstall_boot_partition_files
-                -add $<TARGET_FILE:winload> EFI/LiberNT/Boot/winload.efi)
+                -add $<TARGET_FILE:winload> EFI/NextNT/Boot/winload.efi)
             list(APPEND _preinstall_partition_deps winload)
         endif()
-        libernt_standard_disk_ids()
+        nextnt_standard_disk_ids()
     endif()
     if(_uefi_driver_files)
         list(APPEND _preinstall_boot_partition_files -mkdir EFI/BOOT/drivers)
@@ -910,7 +910,7 @@ add_custom_target(preinstall_partition
         -DPACKAGE_PDBS=${ROSPROFILER_PACKAGE_IMAGE_PDBS}
         -P ${REACTOS_SOURCE_DIR}/boot/pack_rosprofiler_symbols.cmake
     COMMAND native-fatten ${_preinstall_boot_partition_file}
-        -format ${_preinstall_boot_partition_sectors} ${_preinstall_boot_partition_fs} LIBERNTBOOT
+        -format ${_preinstall_boot_partition_sectors} ${_preinstall_boot_partition_fs} NEXTNTBOOT
         ${_preinstall_boot_partition_options}
         ${_preinstall_boot_partition_files}
     COMMAND native-ntfsimg
@@ -919,7 +919,7 @@ add_custom_target(preinstall_partition
         ${_preinstall_system_partition_sectors}
         ${_preinstall_system_partition_start}
         ${_preinstall_ntfs_sectors_per_cluster}
-        LiberNT
+        NextNT
     COMMAND native-ntfsimg
         --addfiles
         ${_preinstall_system_partition_file}
@@ -931,23 +931,23 @@ add_custom_target(preinstall_partition
     DEPENDS ${_preinstall_partition_deps}
     VERBATIM)
 
-add_custom_target(liberntimg
+add_custom_target(nextntimg
     COMMAND ${CMAKE_COMMAND} -E rm -f ${_preinstall_image_file}
     COMMAND native-mkdiskimg
         -o ${_preinstall_image_file}
-        ${_liberntimg_mbr_args}
-        ${_liberntimg_leading_args}
+        ${_nextntimg_mbr_args}
+        ${_nextntimg_leading_args}
         -partition ${_preinstall_boot_partition_file}
         -start ${_preinstall_boot_partition_start}
         -type ${_preinstall_boot_partition_type}
-        ${_liberntimg_boot_partition_args}
+        ${_nextntimg_boot_partition_args}
         -partition ${_preinstall_system_partition_file}
         -start ${_preinstall_system_partition_start}
         -type 07
-        ${_liberntimg_system_partition_args}
-    DEPENDS ${_liberntimg_deps}
+        ${_nextntimg_system_partition_args}
+    DEPENDS ${_nextntimg_deps}
     VERBATIM)
-add_dependencies(liberntimg preinstall_partition)
+add_dependencies(nextntimg preinstall_partition)
 
 if(STARFIVE_JH7110_SUPPORT)
     set(_jh7110_boot_partition_file ${CMAKE_CURRENT_BINARY_DIR}/jh7110-bootfs.img)
@@ -955,7 +955,7 @@ if(STARFIVE_JH7110_SUPPORT)
     add_custom_target(jh7110sdimg
         COMMAND ${CMAKE_COMMAND} -E rm -f ${_jh7110_boot_partition_file} ${_jh7110_sd_image_file}
         COMMAND native-fatten ${_jh7110_boot_partition_file}
-            -format ${STARFIVE_JH7110_BOOT_SECTORS} fat32 LIBERNTSD
+            -format ${STARFIVE_JH7110_BOOT_SECTORS} fat32 NEXTNTSD
             -add ${STARFIVE_JH7110_BOOT_SCRIPT} boot.scr
             -add ${STARFIVE_JH7110_BOOT_SCRIPT_SOURCE} boot.cmd
         COMMAND native-mkdiskimg
@@ -980,21 +980,21 @@ if(STARFIVE_JH7110_SUPPORT)
             ${STARFIVE_JH7110_SPL} ${STARFIVE_JH7110_UBOOT}
             ${STARFIVE_JH7110_BOOT_SCRIPT} ${STARFIVE_JH7110_BOOT_SCRIPT_SOURCE}
         VERBATIM)
-    add_dependencies(liberntimg jh7110sdimg)
+    add_dependencies(nextntimg jh7110sdimg)
 endif()
 
-set(_liberntvhd_layout_args
-    ${_liberntimg_mbr_args}
-    ${_liberntimg_leading_args}
+set(_nextntvhd_layout_args
+    ${_nextntimg_mbr_args}
+    ${_nextntimg_leading_args}
     -partition ${_preinstall_boot_partition_file}
     -start ${_preinstall_boot_partition_start}
     -type ${_preinstall_boot_partition_type}
-    ${_liberntimg_boot_partition_args}
+    ${_nextntimg_boot_partition_args}
     -partition ${_preinstall_vhd_partition_file}
     -start ${_preinstall_system_partition_start}
     -type 07
-    ${_liberntimg_system_partition_args})
-add_custom_target(liberntvhd
+    ${_nextntimg_system_partition_args})
+add_custom_target(nextntvhd
     COMMAND ${CMAKE_COMMAND} -E rm -f ${_preinstall_vhd_file} ${_preinstall_vhdx_file} ${_preinstall_vhd_partition_file}
     COMMAND native-ntfsimg
         --format
@@ -1002,7 +1002,7 @@ add_custom_target(liberntvhd
         ${_preinstall_vhd_partition_sectors}
         ${_preinstall_system_partition_start}
         ${_preinstall_ntfs_sectors_per_cluster}
-        LiberNT
+        NextNT
     COMMAND native-ntfsimg
         --addfiles
         ${_preinstall_vhd_partition_file}
@@ -1011,12 +1011,12 @@ add_custom_target(liberntvhd
         --apply-security
         ${_preinstall_vhd_partition_file}
         ${REACTOS_SOURCE_DIR}/boot/bootdata/filesecurity.txt
-    COMMAND native-mkdiskimg -o ${_preinstall_vhd_file} ${_liberntvhd_layout_args} -vhd
-    COMMAND native-mkdiskimg -o ${_preinstall_vhdx_file} ${_liberntvhd_layout_args} -vhdx
+    COMMAND native-mkdiskimg -o ${_preinstall_vhd_file} ${_nextntvhd_layout_args} -vhd
+    COMMAND native-mkdiskimg -o ${_preinstall_vhdx_file} ${_nextntvhd_layout_args} -vhdx
     COMMAND ${CMAKE_COMMAND} -E rm -f ${_preinstall_vhd_partition_file}
-    DEPENDS ${_liberntimg_deps} native-ntfsimg
+    DEPENDS ${_nextntimg_deps} native-ntfsimg
     VERBATIM)
-add_dependencies(liberntvhd preinstall_partition)
+add_dependencies(nextntvhd preinstall_partition)
 
 
 if(DEFINED EFI_PLATFORM_ID)

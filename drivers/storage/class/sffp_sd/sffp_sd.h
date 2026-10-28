@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SD Function Protocol Driver
+ * PROJECT:     NextNT SD Function Protocol Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Header for sffp_sd.sys - SD memory function protocol driver
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

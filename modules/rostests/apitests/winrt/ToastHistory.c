@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests toast history shared between processes and toast activation user input
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -12,14 +12,14 @@
 #define WIDL_using_Windows_UI_Notifications
 #include <windows.ui.notifications.h>
 
-static const WCHAR ChildAppIdVariable[] = L"LIBERNT_TOAST_HISTORY_APPID";
-static const WCHAR ChildModeVariable[] = L"LIBERNT_TOAST_HISTORY_MODE";
+static const WCHAR ChildAppIdVariable[] = L"NEXTNT_TOAST_HISTORY_APPID";
+static const WCHAR ChildModeVariable[] = L"NEXTNT_TOAST_HISTORY_MODE";
 static const WCHAR HistoryXml[] =
     L"<toast launch=\"history-launch\"><visual><binding template=\"ToastGeneric\">"
-    L"<text>LiberNT history test</text></binding></visual></toast>";
+    L"<text>NextNT history test</text></binding></visual></toast>";
 static const WCHAR InputXml[] =
     L"<toast launch=\"input-launch\"><visual><binding template=\"ToastGeneric\">"
-    L"<text>LiberNT input test</text></binding></visual>"
+    L"<text>NextNT input test</text></binding></visual>"
     L"<actions><input id=\"reply\" type=\"text\"/></actions></toast>";
 
 struct activated_handler
@@ -393,7 +393,7 @@ TestSharedHistory(
     DWORD ExitCode;
     HRESULT hr;
 
-    swprintf(AppId, ARRAYSIZE(AppId), L"LiberNT.ApiTest.ToastHistory.%lu", GetCurrentProcessId());
+    swprintf(AppId, ARRAYSIZE(AppId), L"NextNT.ApiTest.ToastHistory.%lu", GetCurrentProcessId());
     Toast = CreateToast(HistoryXml, L"parent", L"local");
     ok(Toast != NULL, "cannot create the parent toast\n");
     if (!Toast)
@@ -420,7 +420,7 @@ TestSharedHistory(
             {
                 SawChild = TRUE;
                 ok(!wcscmp(Group, L"remote"), "child toast group %ls\n", Group);
-                ok(ContentHasText(Item, L"LiberNT history test"), "child toast content was not kept\n");
+                ok(ContentHasText(Item, L"NextNT history test"), "child toast content was not kept\n");
             }
             else if (!wcscmp(Tag, L"parent"))
             {
@@ -568,7 +568,7 @@ TestSharedSchedule(
     HSTRING Tag;
     HRESULT hr;
 
-    swprintf(AppId, ARRAYSIZE(AppId), L"LiberNT.ApiTest.ToastSchedule%ls.%lu", Registered ? L"Registered" : L"",
+    swprintf(AppId, ARRAYSIZE(AppId), L"NextNT.ApiTest.ToastSchedule%ls.%lu", Registered ? L"Registered" : L"",
              GetCurrentProcessId());
     swprintf(Key, ARRAYSIZE(Key), L"Software\\Classes\\AppUserModelId\\%ls", AppId);
     if (Registered)
@@ -578,8 +578,8 @@ TestSharedSchedule(
             skip("cannot register the schedule test application\n");
             return;
         }
-        RegSetValueExW(Handle, L"DisplayName", 0, REG_SZ, (const BYTE *)L"LiberNT schedule test",
-                       sizeof(L"LiberNT schedule test"));
+        RegSetValueExW(Handle, L"DisplayName", 0, REG_SZ, (const BYTE *)L"NextNT schedule test",
+                       sizeof(L"NextNT schedule test"));
         RegCloseKey(Handle);
     }
     ExitCode = RunChild(AppId, L"schedule");
@@ -697,15 +697,15 @@ TestLocalSchedule(
     HSTRING Id;
     HRESULT hr;
 
-    swprintf(AppId, ARRAYSIZE(AppId), L"LiberNT.ApiTest.ToastLocalSchedule.%lu", GetCurrentProcessId());
+    swprintf(AppId, ARRAYSIZE(AppId), L"NextNT.ApiTest.ToastLocalSchedule.%lu", GetCurrentProcessId());
     swprintf(Key, ARRAYSIZE(Key), L"Software\\Classes\\AppUserModelId\\%ls", AppId);
     if (RegCreateKeyExW(HKEY_CURRENT_USER, Key, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &Handle, NULL))
     {
         skip("cannot register the local schedule test application\n");
         return;
     }
-    RegSetValueExW(Handle, L"DisplayName", 0, REG_SZ, (const BYTE *)L"LiberNT local schedule",
-                   sizeof(L"LiberNT local schedule"));
+    RegSetValueExW(Handle, L"DisplayName", 0, REG_SZ, (const BYTE *)L"NextNT local schedule",
+                   sizeof(L"NextNT local schedule"));
     RegCloseKey(Handle);
     Id = CreateHString(AppId);
     hr = IToastNotificationManagerStatics_CreateToastNotifierWithId(Statics, Id, &Notifier);
@@ -746,7 +746,7 @@ FindPopup(void)
 {
     HWND Window = NULL;
 
-    while ((Window = FindWindowExW(NULL, Window, L"LiberNTToastPopup", NULL)))
+    while ((Window = FindWindowExW(NULL, Window, L"NextNTToastPopup", NULL)))
     {
         if (IsWindowVisible(Window))
             return Window;
@@ -768,14 +768,14 @@ TestUserInput(
     DWORD Start;
     HRESULT hr;
 
-    swprintf(AppId, ARRAYSIZE(AppId), L"LiberNT.ApiTest.ToastInput.%lu", GetCurrentProcessId());
+    swprintf(AppId, ARRAYSIZE(AppId), L"NextNT.ApiTest.ToastInput.%lu", GetCurrentProcessId());
     swprintf(Key, ARRAYSIZE(Key), L"Software\\Classes\\AppUserModelId\\%ls", AppId);
     if (RegCreateKeyExW(HKEY_CURRENT_USER, Key, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &Handle, NULL))
     {
         skip("cannot register the input test application\n");
         return;
     }
-    RegSetValueExW(Handle, L"DisplayName", 0, REG_SZ, (const BYTE *)L"LiberNT input test", sizeof(L"LiberNT input test"));
+    RegSetValueExW(Handle, L"DisplayName", 0, REG_SZ, (const BYTE *)L"NextNT input test", sizeof(L"NextNT input test"));
     RegCloseKey(Handle);
 
     Toast = CreateToast(InputXml, L"input", NULL);
@@ -791,7 +791,7 @@ TestUserInput(
             Sleep(50);
         if (!Popup)
         {
-            skip("no LiberNT toast popup to type into\n");
+            skip("no NextNT toast popup to type into\n");
         }
         else
         {

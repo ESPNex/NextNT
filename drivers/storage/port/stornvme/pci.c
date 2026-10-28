@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Storport NVMe miniport
+ * PROJECT:     NextNT Storport NVMe miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Adapter discovery, resources and Storport entry points
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

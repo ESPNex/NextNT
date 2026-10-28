@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Settings
+ * PROJECT:     NextNT Settings
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     System pages: display, sound, power, storage, multitasking and about
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -47,7 +47,7 @@ static std::wstring
 ProductName()
 {
     std::wstring name = ReadString(HKEY_LOCAL_MACHINE, WINDOWS_NT_KEY, L"ProductName");
-    return name.empty() ? Str(IDS_LIBERNT) : name;
+    return name.empty() ? Str(IDS_NEXTNT) : name;
 }
 
 static void

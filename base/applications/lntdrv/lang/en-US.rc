@@ -2,7 +2,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 IDD_FRAME DIALOGEX 0, 0, 420, 240
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "LiberNT Driver Installer"
+CAPTION "NextNT Driver Installer"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "", IDC_FRAME_TITLE, 120, 10, 290, 14, SS_NOPREFIX
@@ -64,7 +64,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_CAPTION "LiberNT Driver Installer"
+    IDS_CAPTION "NextNT Driver Installer"
     IDS_BACK "&Back"
     IDS_NEXT "&Next"
     IDS_CANCEL "Cancel"
@@ -77,7 +77,7 @@ BEGIN
     IDS_DONE_TITLE "Finished"
     IDS_DONE_SUBTITLE "The result for each device."
     IDS_HISTORY_TITLE "Drivers installed from the catalog"
-    IDS_HISTORY_SUBTITLE "Every change LiberNT Driver Installer made on this PC, newest first."
+    IDS_HISTORY_SUBTITLE "Every change NextNT Driver Installer made on this PC, newest first."
     IDS_COL_DEVICE "Device"
     IDS_COL_VERSION "Version"
     IDS_COL_DRIVER "Driver"
@@ -106,20 +106,20 @@ BEGIN
     IDS_ACTION_ROLLBACK "Roll back"
     IDS_ACTION_REMOVE "Remove"
     IDS_ROLLBACK_CONFIRM "Put back the driver %1 used before (version %2)?"
-    IDS_REMOVE_CONFIRM "Remove the catalog driver from %1? LiberNT then installs the best driver it still has for the device."
+    IDS_REMOVE_CONFIRM "Remove the catalog driver from %1? NextNT then installs the best driver it still has for the device."
     IDS_ACTION_DONE "Done."
     IDS_ACTION_DONE_REBOOT "Done. Restart the PC to finish."
     IDS_ACTION_FAILED "The change failed: %1"
     IDS_HISTORY_WORKING "Working..."
     IDS_ADMIN_REQUIRED "Installing and removing drivers needs administrator rights."
-    IDS_ADMIN_RESTART "Restart LiberNT Driver Installer as an administrator?"
+    IDS_ADMIN_RESTART "Restart NextNT Driver Installer as an administrator?"
     IDS_WORKER_FAILED "Cannot start the worker thread: %1"
     IDS_ERROR_CHECKSUM "The download does not match the checksum published by the catalog."
     IDS_ERROR_SERVER "The Microsoft Update Catalog returned an unexpected answer."
     IDS_ERROR_CANCELLED "Cancelled."
     IDS_ERROR_NOT_BETTER "The driver already installed is a better match for this device."
     IDS_ERROR_NO_COMPAT "The package has no driver for this device on this PC."
-    IDS_ERROR_FORMAT "The Microsoft Update Catalog page has changed and cannot be read. LiberNT Driver Installer needs an update."
+    IDS_ERROR_FORMAT "The Microsoft Update Catalog page has changed and cannot be read. NextNT Driver Installer needs an update."
     IDS_ERROR_PROGRAM "The catalog package is a program, not a driver package. Run it yourself if you trust it."
     IDS_ERROR_ALREADY "This driver is already installed."
     IDS_ERROR_NOT_NEWER "The installed driver is newer than this one."

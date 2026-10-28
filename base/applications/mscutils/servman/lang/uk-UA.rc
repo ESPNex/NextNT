@@ -277,10 +277,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROGRESS_INFO_START "LiberNT намагається запустити наступну службу"
-    IDS_PROGRESS_INFO_STOP "LiberNT намагається зупинити наступну службу"
-    IDS_PROGRESS_INFO_PAUSE "LiberNT намагається призупинити наступну службу"
-    IDS_PROGRESS_INFO_RESUME "LiberNT намагається продовжити наступну службу"
+    IDS_PROGRESS_INFO_START "NextNT намагається запустити наступну службу"
+    IDS_PROGRESS_INFO_STOP "NextNT намагається зупинити наступну службу"
+    IDS_PROGRESS_INFO_PAUSE "NextNT намагається призупинити наступну службу"
+    IDS_PROGRESS_INFO_RESUME "NextNT намагається продовжити наступну службу"
     IDS_CREATE_SUCCESS "Служба успішно створена"
     IDS_DELETE_SUCCESS "Служба успішно видалена"
     IDS_CREATE_REQ "Поля, відмічені зірочкою\nє обов'язковими"
@@ -315,7 +315,7 @@ BEGIN
     IDS_HINT_DETAILS " Показ інформації про кожен елемент у вікні."
     IDS_HINT_CUST " Настройка вигляду."
     IDS_HINT_HELP " Відображення вікна довідки."
-    IDS_HINT_ABOUT " Про програму Диспетчер керування службами LiberNT."
+    IDS_HINT_ABOUT " Про програму Диспетчер керування службами NextNT."
     IDS_HINT_SYS_RESTORE " Відновлення вихідних розмірів вікна."
     IDS_HINT_SYS_MOVE " Зміна розташування вікна."
     IDS_HINT_SYS_SIZE " Зміна розмірів вікна."
@@ -327,7 +327,7 @@ END
 /* Application title */
 STRINGTABLE
 BEGIN
-    IDS_APPNAME "Диспетчер керування службами LiberNT"
+    IDS_APPNAME "Диспетчер керування службами NextNT"
     IDS_APPAUTHORS "Copyright (C) 2005-2007 by Ged Murphy (gedmurphy@reactos.org)"
 END
 

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests for the module path strings of RegInstall
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -22,7 +22,7 @@ ReadProbe(
     DWORD Type, Length = Size;
 
     Value[0] = 0;
-    if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\LiberNTRegInstallProbe", 0, KEY_QUERY_VALUE, &Key) != ERROR_SUCCESS)
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\NextNTRegInstallProbe", 0, KEY_QUERY_VALUE, &Key) != ERROR_SUCCESS)
         return;
     if (RegQueryValueExA(Key, Name, NULL, &Type, (PBYTE)Value, &Length) != ERROR_SUCCESS)
         Value[0] = 0;
@@ -40,7 +40,7 @@ START_TEST(RegInstall)
     SystemRoot[0] = ProgramFiles[0] = 0;
     GetEnvironmentVariableA("SystemRoot", SystemRoot, sizeof(SystemRoot));
     GetEnvironmentVariableA("ProgramFiles", ProgramFiles, sizeof(ProgramFiles));
-    RegDeleteKeyA(HKEY_CURRENT_USER, "Software\\LiberNTRegInstallProbe");
+    RegDeleteKeyA(HKEY_CURRENT_USER, "Software\\NextNTRegInstallProbe");
 
     hr = RegInstall(GetModuleHandleA(NULL), "Probe", NULL);
     ok(hr == S_OK, "RegInstall returned 0x%lx\n", hr);
@@ -54,5 +54,5 @@ START_TEST(RegInstall)
     else
         strcpy(Expected, Module);
     ok(lstrcmpiA(SysModPath, Expected) == 0, "_SYS_MOD_PATH is [%s], expected [%s]\n", SysModPath, Expected);
-    RegDeleteKeyA(HKEY_CURRENT_USER, "Software\\LiberNTRegInstallProbe");
+    RegDeleteKeyA(HKEY_CURRENT_USER, "Software\\NextNTRegInstallProbe");
 }

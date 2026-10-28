@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Shell
+ * PROJECT:     NextNT Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Namespace helpers shared by shell32 and windows.storage
  * COPYRIGHT:   Copyright 1997 Marcus Meissner

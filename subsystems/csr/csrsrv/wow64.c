@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Client/Server Runtime SubSystem
+ * PROJECT:     NextNT Client/Server Runtime SubSystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     WoW64 CSR API message layouts
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

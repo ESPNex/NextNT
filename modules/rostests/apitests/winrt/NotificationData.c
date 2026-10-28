@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests Windows.UI.Notifications.NotificationData and toast data updates
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -13,7 +13,7 @@
 #include <windows.ui.notifications.h>
 
 static const WCHAR DataToastXml[] =
-    L"<toast><visual><binding template=\"ToastGeneric\"><text>LiberNT data test</text>"
+    L"<toast><visual><binding template=\"ToastGeneric\"><text>NextNT data test</text>"
     L"<progress value=\"{progressValue}\" status=\"{progressStatus}\"/></binding></visual></toast>";
 
 static HRESULT
@@ -267,7 +267,7 @@ TestUpdate(
     WCHAR AppId[64];
     HRESULT hr;
 
-    swprintf(AppId, ARRAYSIZE(AppId), L"LiberNT.ApiTest.ToastData.%lu", GetCurrentProcessId());
+    swprintf(AppId, ARRAYSIZE(AppId), L"NextNT.ApiTest.ToastData.%lu", GetCurrentProcessId());
     hr = GetFactory(RuntimeClass_Windows_UI_Notifications_ToastNotificationManager,
                     &IID_IToastNotificationManagerStatics, (void **)&Statics);
     ok(hr == S_OK, "ToastNotificationManager returned hr %#lx\n", hr);

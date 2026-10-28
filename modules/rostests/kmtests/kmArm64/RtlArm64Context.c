@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT
+ * PROJECT:     NextNT
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Preserve the current ARM64 PCR across context restoration
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

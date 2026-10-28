@@ -1,5 +1,5 @@
 #
-# PROJECT:     LiberNT MediaTek RT2770 USB Wi-Fi driver package
+# PROJECT:     NextNT MediaTek RT2770 USB Wi-Fi driver package
 # LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 # PURPOSE:     Prebuilt MediaTek netr28ux 5.1.38.0 x64 driver installed in-box
 # COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

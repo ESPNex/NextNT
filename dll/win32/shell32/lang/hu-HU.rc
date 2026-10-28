@@ -157,9 +157,9 @@ BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10, SS_NOPREFIX
-    LTEXT "Copyright 2026 LiberNT Team", IDC_STATIC, 35, 75, 200, 10
+    LTEXT "Copyright 2026 NextNT Team", IDC_STATIC, 35, 75, 200, 10
     LTEXT "", IDC_ABOUT_OTHERSTUFF, 35, 90, 180, 20, SS_NOPREFIX
-    LTEXT "A LiberNT ezen verziója az alábbi névre van regisztrálva:", IDC_ABOUT_REG_TO, 35, 115, 207, 10
+    LTEXT "A NextNT ezen verziója az alábbi névre van regisztrálva:", IDC_ABOUT_REG_TO, 35, 115, 207, 10
     LTEXT "", IDC_ABOUT_REG_USERNAME, 45, 125, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_ABOUT_REG_ORGNAME, 45, 135, 180, 10, SS_NOPREFIX
     LTEXT "", IDC_STATIC, 35, 147, 235, 1, SS_ETCHEDHORZ
@@ -173,7 +173,7 @@ IDD_ABOUT_AUTHORS DIALOGEX 35, 90, 235, 85
 STYLE DS_SHELLFONT | WS_CHILD
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "A LiberNT készítői:", IDC_STATIC, 0, 0, 180, 10
+    LTEXT "A NextNT készítői:", IDC_STATIC, 0, 0, 180, 10
     LISTBOX IDC_ABOUT_AUTHORS_LISTBOX, 0, 10, 165, 75
 END
 
@@ -183,7 +183,7 @@ CAPTION "Futtatás"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "Írja be egy program, mappa vagy dokumentum nevét, vagy egy internet címet és a LiberNT megnyitja azt.", 12289, 36, 11, 185, 18
+    LTEXT "Írja be egy program, mappa vagy dokumentum nevét, vagy egy internet címet és a NextNT megnyitja azt.", 12289, 36, 11, 185, 18
     LTEXT "&Megnyitás:", 12305, 7, 39, 35, 10
     CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 46, 37, 174, 100
     DEFPUSHBUTTON "OK", IDOK, 62, 70, 50, 14
@@ -432,7 +432,7 @@ BEGIN
     GROUPBOX "Feladatok", -1, 7, 10, 249, 40
     CONTROL "", IDC_FOLDER_OPTIONS_TASKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 20, 21, 20
     AUTORADIOBUTTON "Gyakori műveletek megjelenítése a &mappákban", IDC_FOLDER_OPTIONS_COMMONTASKS, 40, 20, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "&Klasszikus LiberNT mappák használata", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
+    AUTORADIOBUTTON "&Klasszikus NextNT mappák használata", IDC_FOLDER_OPTIONS_CLASSICFOLDERS, 40, 32, 210, 10
     GROUPBOX "Mappák böngészése", -1, 7, 60, 249, 40, WS_TABSTOP
     CONTROL "", IDC_FOLDER_OPTIONS_FOLDERICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 70, 21, 20
     AUTORADIOBUTTON "Minden mappát &ugyanabban az ablakban nyisson meg", IDC_FOLDER_OPTIONS_SAMEWINDOW, 40, 70, 210, 10, WS_TABSTOP | WS_GROUP
@@ -505,7 +505,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_VISIBLE | WS_CLIPSIBLIN
 CAPTION "Automatikus lejátszás"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "&Válasszon ki egy tartalomtípust, majd jelölje ki hogy a LiberNT milyen műveletet végezzen el amikor ez a típus kerül az eszközbe:", 1000, 7, 7, 215, 20
+    LTEXT "&Válasszon ki egy tartalomtípust, majd jelölje ki hogy a NextNT milyen műveletet végezzen el amikor ez a típus kerül az eszközbe:", 1000, 7, 7, 215, 20
     CONTROL "", 1001, "COMBOBOXEX32", WS_TABSTOP | 0x00000043, 7, 27, 212, 200
     GROUPBOX "Műveletek", -1, 7, 45, 212, 146
     AUTORADIOBUTTON "Válasszon ki egy &műveletet:", 1005, 14, 54, 202, 10, WS_GROUP
@@ -521,7 +521,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
     LTEXT "Ezen a lemezen vagy eszközön többféle típusú tartalom van.", 1001, 32, 7, 191, 20
-    LTEXT "Mit tegyen a LiberNT?", 1002, 32, 31, 188, 8
+    LTEXT "Mit tegyen a NextNT?", 1002, 32, 31, 188, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 188, 139
     DEFPUSHBUTTON "OK", IDOK, 96, 186, 60, 14
     PUSHBUTTON "Mégse", IDCANCEL, 160, 186, 60, 14
@@ -533,10 +533,10 @@ CAPTION "Vegyes tartalom"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "A LiberNT minden alkalommal, amikor ilyen típusú fájlt tartalmazó lemezt helyez be vagy eszközhöz kapcsolódik, ugyanazt a műveletet el tudja végezni:", 1001, 30, 7, 193, 24
+    LTEXT "A NextNT minden alkalommal, amikor ilyen típusú fájlt tartalmazó lemezt helyez be vagy eszközhöz kapcsolódik, ugyanazt a műveletet el tudja végezni:", 1001, 30, 7, 193, 24
     ICON "", 1005, 32, 31, 11, 10, SS_REALSIZECONTROL
     EDITTEXT 1006, 49, 32, 177, 14, ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
-    LTEXT "Mit tegyen a LiberNT?", 1002, 32, 45, 190, 8
+    LTEXT "Mit tegyen a NextNT?", 1002, 32, 45, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 59, 188, 108
     AUTOCHECKBOX "Mindig hajtsa végre a kijelölt műveletet", 1004, 32, 171, 190, 10
     DEFPUSHBUTTON "OK", IDOK, 96, 185, 60, 14
@@ -549,8 +549,8 @@ CAPTION "Automatikus lejátszás"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", 1000, 5, 7, 21, 20
-    LTEXT "A LiberNT minden alkalommal, amikor csatlakoztatja ezt az eszközt el tudja végezni ugyanazt a műveletet.", 1001, 32, 7, 192, 22
-    LTEXT "&Mit tegyen a LiberNT?", 1002, 32, 31, 190, 8
+    LTEXT "A NextNT minden alkalommal, amikor csatlakoztatja ezt az eszközt el tudja végezni ugyanazt a műveletet.", 1001, 32, 7, 192, 22
+    LTEXT "&Mit tegyen a NextNT?", 1002, 32, 31, 190, 8
     CONTROL "", 1003, "SYSLISTVIEW32", WS_BORDER | WS_TABSTOP | 0x0000C04D, 32, 43, 187, 96
     AUTOCHECKBOX "&Mindig hajtsa végre a kijelölt műveletet", 1004, 32, 143, 190, 8
     DEFPUSHBUTTON "OK", IDOK, 94, 160, 60, 14
@@ -817,7 +817,7 @@ BEGIN
 
     /* Warning format system drive dialog strings */
     IDS_NO_FORMAT_TITLE "Nem lehet formázni ezt a kötetet"
-    IDS_NO_FORMAT "Nem lehet formázni ezt a kötetet! Fontos rendszerfájlokat tartalmaz, ami a LiberNT futtatásához szükséges."
+    IDS_NO_FORMAT "Nem lehet formázni ezt a kötetet! Fontos rendszerfájlokat tartalmaz, ami a NextNT futtatásához szükséges."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "A futtatás párbeszédpanelt nem sikerült megjeleníteni (belső hiba)"
@@ -903,8 +903,8 @@ BEGIN
 
     /* Friendly File Type Names */
     IDS_DIRECTORY "Mappa"
-    IDS_BAT_FILE "LiberNT kötegfájl"
-    IDS_CMD_FILE "LiberNT parancsfájl"
+    IDS_BAT_FILE "NextNT kötegfájl"
+    IDS_CMD_FILE "NextNT parancsfájl"
     IDS_COM_FILE "DOS alkalmazás"
     IDS_CPL_FILE "Vezérlőpultelem"
     IDS_CUR_FILE "Kurzor"
@@ -949,7 +949,7 @@ BEGIN
     IDS_DEFAULT_CLUSTER_SIZE "Alapértelmezett foglalási méret"
     IDS_COPY_OF "Másolat"
 
-    IDS_SHLEXEC_NOASSOC "Ehhez a fájltípushoz nincs LiberNT program társítva."
+    IDS_SHLEXEC_NOASSOC "Ehhez a fájltípushoz nincs NextNT program társítva."
 
     IDS_FILE_DETAILS "'%s' kiterjesztés részletei"
     IDS_FILE_DETAILSADV "A(z) '%s' kiterjesztésű fájlok típusa '%s'. Az összes '%s' típusú fájlt érintő beállítás megváltoztatásához kattintson a Haladó gombra."

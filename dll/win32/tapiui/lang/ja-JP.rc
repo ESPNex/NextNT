@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT tapiui
+ * PROJECT:     NextNT tapiui
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -284,7 +284,7 @@ CAPTION "所在地情報"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL 302, 302, "STATIC", SS_BITMAP, 10, 10, 88, 155
-    LTEXT "電話またはモデムで接続する前に、LiberNT には現在の所在地に関する次の情報が必要です。", 2000, 107, 15, 188, 25
+    LTEXT "電話またはモデムで接続する前に、NextNT には現在の所在地に関する次の情報が必要です。", 2000, 107, 15, 188, 25
     LTEXT "現在の国/地域(&W)", -1, 107, 43, 189, 10
     COMBOBOX 1006, 107, 55, 180, 200, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
     LTEXT "現在の市外局番(&C)", -1, 107, 74, 189, 10
@@ -305,7 +305,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL 302, 302, "STATIC", SS_BITMAP, 0, 0, 88, 155
-    LTEXT "電話またはモデムで接続する前に、LiberNT には現在の所在地に関する次の情報が必要です。", 2000, 95, 2, 188, 25
+    LTEXT "電話またはモデムで接続する前に、NextNT には現在の所在地に関する次の情報が必要です。", 2000, 95, 2, 188, 25
     LTEXT "現在の国/地域(&W)", -1, 95, 30, 188, 10
     COMBOBOX 1006, 95, 41, 177, 68, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
     LTEXT "現在の市外局番(&C)", -1, 95, 61, 188, 10
@@ -319,7 +319,7 @@ END
 
 500 DIALOGEX 0, 0, 235, 88
 STYLE DS_SHELLFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUPWINDOW | WS_CAPTION
-CAPTION "LiberNT エクスプローラー"
+CAPTION "NextNT エクスプローラー"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON 504, 501, 13, 14, 21, 20
@@ -413,7 +413,7 @@ BEGIN
     80 "この市外局番の規則を削除しますか?"
     81 "ダイヤルする番号を入力する必要があります。"
     82 "入力されたテレホン カード名は既に使用されています。一意の名前を入力してください。"
-    83 "LiberNT には、ダイヤルする所在地の電話情報が必要です。この情報を入力せずにキャンセルすると、このプログラムはダイヤル時に正しく動作しない可能性があります。また、一部のアプリケーションは、このダイアログ ボックスをキャンセルするとすぐに再表示します。\nキャンセルしますか?"
+    83 "NextNT には、ダイヤルする所在地の電話情報が必要です。この情報を入力せずにキャンセルすると、このプログラムはダイヤル時に正しく動作しない可能性があります。また、一部のアプリケーションは、このダイアログ ボックスをキャンセルするとすぐに再表示します。\nキャンセルしますか?"
     84 "キャンセルの確認"
     85 "現在の所在地"
     86 "<インストールできるサービス プロバイダーはありません>"

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests select, event selection, accept and a bulk transfer on loopback sockets in either bitness
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

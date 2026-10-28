@@ -1,7 +1,7 @@
 /*
  * PROJECT:     FreeLoader ARM64
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
- * FILE:        boot/freeldr/freeldr/arch/uefi/arm64/early_uart.c
+ * FILE:        boot/nextldr/nextldr/arch/uefi/arm64/early_uart.c
  * PURPOSE:     ARM64 early UART discovery via ACPI SPCR and DBG2.
  * COPYRIGHT:   Copyright 2025 Ahmed Arif (arif.ing@outlook.com)
  *

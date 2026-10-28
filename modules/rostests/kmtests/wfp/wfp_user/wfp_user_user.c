@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT kernel-mode tests
+ * PROJECT:     NextNT kernel-mode tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows Filtering Platform user-mode management test
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -166,8 +166,8 @@ AddCallout(
     *Id = 0;
     ZeroMemory(&Callout, sizeof(Callout));
     Callout.calloutKey = *Key;
-    Callout.displayData.name = L"LiberNT WFP user test callout";
-    Callout.displayData.description = L"LiberNT WFP user test callout";
+    Callout.displayData.name = L"NextNT WFP user test callout";
+    Callout.displayData.description = L"NextNT WFP user test callout";
     Callout.applicableLayer = *Layer;
     return FwpmCalloutAdd0(Engine, &Callout, NULL, Id);
 }
@@ -188,8 +188,8 @@ AddFilter(
     ZeroMemory(&Filter, sizeof(Filter));
     ZeroMemory(Conditions, sizeof(Conditions));
     Filter.layerKey = *Layer;
-    Filter.displayData.name = L"LiberNT WFP user test filter";
-    Filter.displayData.description = L"LiberNT WFP user test filter";
+    Filter.displayData.name = L"NextNT WFP user test filter";
+    Filter.displayData.description = L"NextNT WFP user test filter";
     Filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
     Filter.action.calloutKey = *CalloutKey;
     Filter.subLayerKey = WFPUSER_SUBLAYER;
@@ -255,7 +255,7 @@ TestFilters(
     DWORD Error;
 
     ZeroMemory(&Session, sizeof(Session));
-    Session.displayData.name = L"LiberNT WFP user test session";
+    Session.displayData.name = L"NextNT WFP user test session";
     Session.flags = FWPM_SESSION_FLAG_DYNAMIC;
     Error = FwpmEngineOpen0(NULL, RPC_C_AUTHN_WINNT, NULL, &Session, &Dynamic);
     ok_eq_hex(Error, ERROR_SUCCESS);
@@ -302,8 +302,8 @@ TestFilters(
 
     ZeroMemory(&SubLayer, sizeof(SubLayer));
     SubLayer.subLayerKey = WFPUSER_SUBLAYER;
-    SubLayer.displayData.name = L"LiberNT WFP user test sublayer";
-    SubLayer.displayData.description = L"LiberNT WFP user test sublayer";
+    SubLayer.displayData.name = L"NextNT WFP user test sublayer";
+    SubLayer.displayData.description = L"NextNT WFP user test sublayer";
     Error = FwpmSubLayerAdd0(Dynamic, &SubLayer, NULL);
     ok_eq_hex(Error, ERROR_SUCCESS);
     Error = FwpmSubLayerAdd0(Dynamic, &SubLayer, NULL);
@@ -380,8 +380,8 @@ TestCleanup(
 
     ZeroMemory(&Provider, sizeof(Provider));
     Provider.providerKey = WFPUSER_PROVIDER;
-    Provider.displayData.name = L"LiberNT WFP user test provider";
-    Provider.displayData.description = L"LiberNT WFP user test provider";
+    Provider.displayData.name = L"NextNT WFP user test provider";
+    Provider.displayData.description = L"NextNT WFP user test provider";
     Error = FwpmProviderAdd0(Engine, &Provider, NULL);
     ok_eq_hex(Error, ERROR_SUCCESS);
     Error = FwpmProviderAdd0(Engine, &Provider, NULL);

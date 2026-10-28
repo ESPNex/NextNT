@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT diskpart
+ * PROJECT:     NextNT diskpart
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Japanese resource file
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -10,7 +10,7 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 /* Basic application information */
 STRINGTABLE
 BEGIN
-    IDS_APP_HEADER "LiberNT DiskPart"
+    IDS_APP_HEADER "NextNT DiskPart"
     IDS_APP_USAGE "\nディスク パーティション分割インタープリター。\n\n\
 使用法: DISKPART [/S filename] [/T timeout] [/?]\n\n\
 /S filename\t指定されたスクリプトを実行します。\n\

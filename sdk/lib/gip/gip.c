@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (c) 2026 LiberNT contributors
+ * Copyright (c) 2026 NextNT contributors
  * MS-GIPUSB framing, host receive engine and device command codecs.
  */
 #include <gip.h>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Driver Database Generator
+ * PROJECT:     NextNT Driver Database Generator
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Builds the in-box HKLM\SYSTEM\DriverDatabase registry INF from driver INF files
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

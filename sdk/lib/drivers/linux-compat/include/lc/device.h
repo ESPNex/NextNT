@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux kernel compatibility library
+ * PROJECT:     NextNT Linux kernel compatibility library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Linux device model, platform devices, IRQs, clocks, runtime PM and firmware
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

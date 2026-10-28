@@ -226,13 +226,13 @@ endmenu
 
 menu "Boot options"
 
-config FREELDR_HTTP_BOOT
+config NEXTLDR_HTTP_BOOT
     prompt "UEFI HTTP boot"
     type bool
     default n
     depends PROFILE_AMD64=lattepandamu || PROFILE_ARM64=profile_raspberry
     help
-      Build the FreeLdr UEFI HTTP boot path: FreeLdr downloads the live
+      Build the NextLdr UEFI HTTP boot path: NextLdr downloads the live
       image over HTTP and boots it as a ramdisk. It becomes the zero-timeout
       default boot entry, and the board's UEFI network drivers are packaged
       onto the boot media.
@@ -254,7 +254,7 @@ config BOOTLOADER_HTTP_BOOT_URL
     default ""
     depends ARCH!=ppc
     help
-      Adds a "LiberNT (HTTP boot)" entry to the boot manager of the disk
+      Adds a "NextNT (HTTP boot)" entry to the boot manager of the disk
       image. Its loader takes an address from DHCP on the firmware's
       network adapter, downloads the live image from this http:// URL,
       whose host is an IPv4 address, and starts it as a RAM disk. Empty
@@ -367,7 +367,7 @@ config ENABLE_MESA_LLVMPIPE
       Package the LLVMpipe OpenGL ICD (mesa_llvmpipe.dll, the software
       OpenGL driver) and the Lavapipe Vulkan ICD. Configure downloads the
       prebuilt, SHA-256-pinned mesa-llvmpipe release payload from the
-      LiberNT GitHub releases; on ARM64 its OpenGL ICD is an ARM64X image
+      NextNT GitHub releases; on ARM64 its OpenGL ICD is an ARM64X image
       that also serves x64 applications. mesa_gallium.dll keeps the V3D and
       VC4 hardware drivers and softpipe. opengl32.dll is not replaced.
 
@@ -539,7 +539,7 @@ config ENABLE_RP1GEM_BENCHMARK
     type bool
     default n
     depends PROFILE_ARM64=profile_raspberry
-    depends FREELDR_HTTP_BOOT=y
+    depends NEXTLDR_HTTP_BOOT=y
     help
       Run one 30-second TCP stream in each direction against the HTTP boot
       host before reporting boot-test completion.

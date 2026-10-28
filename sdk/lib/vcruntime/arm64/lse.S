@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT vcruntime library
+ * PROJECT:     NextNT vcruntime library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     ARM64 outline atomic helpers selecting LSE at run time
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

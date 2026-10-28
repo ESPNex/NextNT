@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Pool Allocator
+ * PROJECT:     NextNT Pool Allocator
  * FILE:        ntoskrnl/nvs/pool/env/km/poolkm.h
  * PURPOSE:     Kernel environment for the pool allocator
  *

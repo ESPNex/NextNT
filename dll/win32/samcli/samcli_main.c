@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT samcli.dll
+ * PROJECT:     NextNT samcli.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Security accounts manager client forwarders to netapi32
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

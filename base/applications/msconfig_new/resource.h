@@ -9,13 +9,13 @@
 /* Page & dialog IDs */
 #define IDD_GENERAL_PAGE                200
 #define IDD_SYSTEM_PAGE                 201
-#define IDD_FREELDR_PAGE                202
+#define IDD_NEXTLDR_PAGE                202
 #define IDD_SERVICES_PAGE               203
 #define IDD_STARTUP_PAGE                204
 #define IDD_TOOLS_PAGE                  205
 #define IDD_FILE_EXTRACT_DIALOG         206
 #define IDD_FIND_DIALOG                 207
-#define IDD_FREELDR_ADVANCED_PAGE       208
+#define IDD_NEXTLDR_ADVANCED_PAGE       208
 #define IDD_REQUIRED_SERVICES_DISABLING_DIALOG 209
 
 /* General page controls */
@@ -45,8 +45,8 @@
 #define IDC_BTN_SYSTEM_DISABLE_ALL      1226
 #define IDC_BTN_SYSTEM_DELETE           1227
 
-/* FreeLdr page controls */
-#define IDS_TAB_FREELDR                 2002
+/* NextLdr page controls */
+#define IDS_TAB_NEXTLDR                 2002
 #define IDS_TAB_BOOT                    2003
 #define IDC_LIST_BOX                    1010
 #define IDC_BTN_CHECK_BOOT_PATH         1011

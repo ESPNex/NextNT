@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT SDK
+ * PROJECT:     NextNT SDK
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Direct3D 12 user-mode driver interface, version 0110 tables
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

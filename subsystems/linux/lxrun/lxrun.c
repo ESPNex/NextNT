@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Starts a Linux program through the lxcore driver
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -119,7 +119,7 @@ wmain(
 
     if (Launch.Flags & LX_CREATE_BOOT)
     {
-        LxEnvSet(&Launch.Env, "container=libernt");
+        LxEnvSet(&Launch.Env, "container=nextnt");
         LxEnvSet(&Launch.Env, "TERM=linux");
     }
 

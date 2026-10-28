@@ -1,4 +1,4 @@
-; PROJECT:     LiberNT SpacemiT K1 Audio Driver
+; PROJECT:     NextNT SpacemiT K1 Audio Driver
 ; LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
 ; COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
 
@@ -6,7 +6,7 @@
 Signature="$Windows NT$"
 Class=MEDIA
 ClassGuid={4d36e96c-e325-11ce-bfc1-08002be10318}
-Provider=%LiberNT%
+Provider=%NextNT%
 DriverVer=08/28/2026,1.0.0.0
 
 [DestinationDirs]
@@ -14,7 +14,7 @@ DefaultDestDir=12
 K1xAudio.CopyFiles=12
 
 [Manufacturer]
-%LiberNT%=K1xAudioModels,NTRISCV64
+%NextNT%=K1xAudioModels,NTRISCV64
 
 [K1xAudioModels.NTRISCV64]
 %K1xAudio.DeviceDesc%=K1xAudio_Install,FDT\spacemit_k1x-audio
@@ -76,12 +76,12 @@ HKR,,FriendlyName,,%K1xAudio.TopologyName%
 k1xaudio.sys=1
 
 [Strings]
-LiberNT="LiberNT"
+NextNT="NextNT"
 K1xAudio.DeviceDesc="SpacemiT K1 Audio"
-K1xAudio.ServiceDesc="LiberNT SpacemiT K1 Audio Driver"
+K1xAudio.ServiceDesc="NextNT SpacemiT K1 Audio Driver"
 K1xAudio.WaveName="SpacemiT K1 Audio Wave"
 K1xAudio.TopologyName="SpacemiT K1 Audio Topology"
-DiskName="LiberNT Installation Media"
+DiskName="NextNT Installation Media"
 Proxy.CLSID="{17CCA71B-ECD7-11D0-B908-00A0C9223196}"
 KSCATEGORY_AUDIO="{6994AD04-93EF-11D0-A3CC-00A0C9223196}"
 KSCATEGORY_RENDER="{65E8773E-8F56-11D0-A3B9-00A0C9223196}"

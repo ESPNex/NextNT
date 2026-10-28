@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NetIO driver
+ * PROJECT:     NextNT NetIO driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Private management interface between fwpuclnt.dll and the WFP filter engine
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

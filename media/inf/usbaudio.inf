@@ -8,7 +8,7 @@ Signature  = "$Windows NT$"
 LayoutFile = layout.inf
 Class      = MEDIA
 ClassGUID  = {4d36e96c-e325-11ce-bfc1-08002be10318}
-Provider   = %LiberNT%
+Provider   = %NextNT%
 DriverVer  = 10/02/2005,1.00.0.0
 
 [DestinationDirs]
@@ -45,7 +45,7 @@ LoadOrderGroup = Base
 
 [Strings]
 ; Non-localizable
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 
 ; Localizable
 GenericMfg = "(Generic USB Audio devices)"

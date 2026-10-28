@@ -7,4 +7,4 @@ To facilitate sharing between different enviornments, you need to link an envior
 - `ntfslib_new`: A portable NTFS library
 - `ntfslib_new_km`: Extensions to use `ntfslib_new`in Kernelmode.
 - `ntfslib_new_um`: Extensions to use `ntfslib_new` in Usermode.
-- `ntfslib_new_fl`: Extensions to use `ntfslib_new` in FreeLdr code. (planned, not implemented yet)
+- `ntfslib_new_fl`: Extensions to use `ntfslib_new` in NextLdr code. (planned, not implemented yet)

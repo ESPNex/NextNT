@@ -139,7 +139,7 @@ AddService = serenum, , serenum_Service_Inst
 
 [Strings]
 ; Non-localizable
-ReactOS = "LiberNT Project"
+ReactOS = "NextNT Project"
 
 ; Localizable
 PortsClassName = "Serial and parallel ports"

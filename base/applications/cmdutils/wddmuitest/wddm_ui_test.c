@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT WDDM UI presentation diagnostics
+ * PROJECT:     NextNT WDDM UI presentation diagnostics
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Exercise popup-menu, cursor and overlapping-WGL presentation
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>

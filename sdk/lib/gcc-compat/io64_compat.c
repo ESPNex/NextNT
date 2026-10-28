@@ -2,7 +2,7 @@
  * PROJECT:     GCC C++ support library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     64-bit file offset shims for GCC 16 libstdc++
- * COPYRIGHT:   Copyright 2026 LiberNT Team
+ * COPYRIGHT:   Copyright 2026 NextNT Team
  *
  * GCC 16's libstdc++ uses the mingw-w64 POSIX-style large-file wrappers.
  * Redirect them to the equivalent MSVCRT entry points exported by ReactOS.

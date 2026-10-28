@@ -58,7 +58,7 @@ AddService = , 0x00000002
 
 [Strings]
 ; Non-localizable
-ReactOS = "LiberNT Project"
+ReactOS = "NextNT Project"
 
 ; Localizable
 FDCClassName = "Floppy disk controllers"

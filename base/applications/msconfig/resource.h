@@ -5,9 +5,9 @@
 #define IDD_SERVICES_PAGE         103
 #define IDD_GENERAL_PAGE          104
 #define IDD_STARTUP_PAGE          105
-#define IDD_FREELDR_PAGE          106
+#define IDD_NEXTLDR_PAGE          106
 #define IDD_SYSTEM_PAGE           107
-#define IDD_FREELDR_ADVANCED_PAGE 108
+#define IDD_NEXTLDR_ADVANCED_PAGE 108
 
 #define IDC_TAB                       1001
 #define IDC_BTN_APPLY                 1002
@@ -71,7 +71,7 @@
 
 #define IDS_TAB_TOOLS    2001
 #define IDS_TAB_SYSTEM   2002
-#define IDS_TAB_FREELDR  2003
+#define IDS_TAB_NEXTLDR  2003
 #define IDS_TAB_STARTUP  2004
 #define IDS_TAB_SERVICES 2005
 #define IDS_TAB_GENERAL  2006

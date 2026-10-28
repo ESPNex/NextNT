@@ -43,7 +43,7 @@ ServiceBinary = %12%\uefi.sys
 
 [Strings]
 ; Non-localizable
-ReactOS = "LiberNT Project"
+ReactOS = "NextNT Project"
 
 ; Localizable
 GenericMfg = "(Generic system devices)"

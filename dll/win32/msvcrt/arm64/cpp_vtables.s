@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT msvcrt.dll
+ * PROJECT:     NextNT msvcrt.dll
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ARM64 C++ V-tables for MSVC builds
  * COPYRIGHT:   Copyright 2000-2024 Wine team

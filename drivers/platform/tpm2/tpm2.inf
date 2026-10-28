@@ -2,7 +2,7 @@
 Signature = "$Windows NT$"
 Class = SecurityDevices
 ClassGUID = {D94EE5D8-D189-4994-83D2-F68D7D41B0E6}
-Provider = %LiberNT%
+Provider = %NextNT%
 DriverVer = 08/04/2026,1.0.0.0
 
 [ControlFlags]
@@ -12,9 +12,9 @@ ExcludeFromSelect = *
 DefaultDestDir = 12
 
 [Manufacturer]
-%LiberNT% = LiberNT
+%NextNT% = NextNT
 
-[LiberNT]
+[NextNT]
 %Tpm2.DeviceDesc% = Tpm2_Inst,ACPI\MSFT0101
 
 [Tpm2_Inst.NT]
@@ -35,6 +35,6 @@ ServiceBinary = %12%\tpm2.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
-LiberNT = "LiberNT Project"
+NextNT = "NextNT Project"
 Tpm2.DeviceDesc = "Trusted Platform Module 2.0"
-Tpm2.ServiceDesc = "LiberNT TPM 2.0 Driver"
+Tpm2.ServiceDesc = "NextNT TPM 2.0 Driver"

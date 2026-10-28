@@ -1,11 +1,11 @@
 /*
- * PROJECT:     LiberNT D3DKMT API Tests
+ * PROJECT:     NextNT D3DKMT API Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     In-depth D3DKMT allocation-feature coverage: standard allocations,
  *              the CreateAllocation flags matrix, allocation priority get/set,
  *              residency + property update, video-memory reservation / queued
  *              limit, and the WDDM 2.0 destroy/lock/unlock-2 contracts.
- * COPYRIGHT:   Copyright 2026 LiberNT WDDM Team
+ * COPYRIGHT:   Copyright 2026 NextNT WDDM Team
  *
  * Goes deeper than d3dkmt_alloc.c (NULL contract), vidmm_test.c (basic
  * lifecycle) and d3dkmt_surface.c (alloc2 NULL contract), which already exist.

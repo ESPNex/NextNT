@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT LAN95xx USB Network Kernel Debugger Extension
+ * PROJECT:     NextNT LAN95xx USB Network Kernel Debugger Extension
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     Polled Synopsys DWC2 host controller in buffer DMA mode
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT API tests
+ * PROJECT:     NextNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Tests that TEXTMETRIC uses OS/2 win metrics whether or not USE_TYPO_METRICS is set
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 5 WDDM miniport
+ * PROJECT:     NextNT Raspberry Pi 5 WDDM miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Full-WDDM render/memory/scheduling DDIs: adapter caps and
  *              the VRAM segment, device/context/allocation objects, the

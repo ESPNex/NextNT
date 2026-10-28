@@ -11,7 +11,7 @@ if(ARM64EC_RUNTIME)
     return()
 endif()
 
-set(_payload_name "libernt-ffmpeg-${FFMPEG_PAYLOAD_RELEASE}-${ARCH}.zip")
+set(_payload_name "nextnt-ffmpeg-${FFMPEG_PAYLOAD_RELEASE}-${ARCH}.zip")
 set(_payload_dir "${CMAKE_CURRENT_BINARY_DIR}/ffmpeg-payload")
 set(_payload_extract "${_payload_dir}/${FFMPEG_PAYLOAD_RELEASE}")
 file(MAKE_DIRECTORY "${_payload_dir}")
@@ -34,7 +34,7 @@ else()
         file(SHA256 "${_payload_zip}" _payload_have_hash)
     endif()
     if(NOT _payload_have_hash STREQUAL _payload_hash)
-        set(_payload_url "https://github.com/LiberNT/LiberNT/releases/download/ffmpeg-${FFMPEG_PAYLOAD_RELEASE}/${_payload_name}")
+        set(_payload_url "https://github.com/espnex/nextnt/releases/download/ffmpeg-${FFMPEG_PAYLOAD_RELEASE}/${_payload_name}")
         message(STATUS "Downloading ${_payload_url}")
         file(DOWNLOAD "${_payload_url}" "${_payload_zip}"
             EXPECTED_HASH SHA256=${_payload_hash}

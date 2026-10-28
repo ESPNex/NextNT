@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT logoncli.dll
+ * PROJECT:     NextNT logoncli.dll
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Net logon client forwarders to netapi32
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

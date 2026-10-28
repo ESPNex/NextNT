@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT New Device Installer Unit Tests
+ * PROJECT:     NextNT New Device Installer Unit Tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  */
 

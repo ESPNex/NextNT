@@ -27,7 +27,7 @@ HKLM
                         val NameString = s 'Certificates'
                         val NameStringIndirect = s '@certmgr.dll,-288'
                         val NodeType = s '{53D6AB16-2488-11d1-A28C-00C04FB94F17}'
-                        val Provider = s 'LiberNT'
+                        val Provider = s 'NextNT'
                         NodeTypes
                         {
                             {53D6AB16-2488-11d1-A28C-00C04FB94F17}

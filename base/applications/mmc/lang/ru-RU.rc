@@ -40,6 +40,6 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_APPTITLE "Консоль управления LiberNT"
+    IDS_APPTITLE "Консоль управления NextNT"
     IDS_CONSOLETITLE "Консоль%1!u!"
 END

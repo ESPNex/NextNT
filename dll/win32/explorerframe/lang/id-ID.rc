@@ -91,7 +91,7 @@ BEGIN
     END
     POPUP "&Bantuan", FCIDM_MENU_HELP
     BEGIN
-        MENUITEM "&Tentang LiberNT", IDM_HELP_ABOUT
+        MENUITEM "&Tentang NextNT", IDM_HELP_ABOUT
     END
 END
 
@@ -345,8 +345,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PARSE_ADDR_ERR_TITLE "Penjelajah LiberNT"
-    IDS_PARSE_ADDR_ERR_TEXT "Penjelajah LiberNT tidak menemukan '%1'. Cek pengejaannya dan coba lagi."
+    IDS_PARSE_ADDR_ERR_TITLE "Penjelajah NextNT"
+    IDS_PARSE_ADDR_ERR_TEXT "Penjelajah NextNT tidak menemukan '%1'. Cek pengejaannya dan coba lagi."
 END
 
 STRINGTABLE

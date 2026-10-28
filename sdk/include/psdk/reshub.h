@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Resource Hub public interface
+ * PROJECT:     NextNT Resource Hub public interface
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Windows-compatible connection property query ABI
  */

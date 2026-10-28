@@ -49,7 +49,7 @@ ndisuio.sys
 
 [Strings]
 ; Non-localizable
-ReactOS = "LiberNT Project"
+ReactOS = "NextNT Project"
 
 ; Localizable
 NDISUIO_DisplayName = "NDIS Usermode I/O Protocol"

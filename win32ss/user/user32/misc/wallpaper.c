@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT user32
+ * PROJECT:     NextNT user32
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     Desktop wallpaper decoding for image formats win32k cannot load
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

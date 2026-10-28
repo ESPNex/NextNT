@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT NDIS library
+ * PROJECT:     NextNT NDIS library
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * FILE:        drivers/network/ndis/ndis/60oid.c
  * PURPOSE:     Legacy OID dispatcher for NDIS 6 adapters.

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Linux Subsystem
+ * PROJECT:     NextNT Linux Subsystem
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Per-user cache of the icons of Linux applications
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
@@ -23,8 +23,8 @@
 #include "../include/lxappid.h"
 #include "lxwinhost.h"
 
-#define LX_CACHE_KEY            L"Software\\LiberNT\\Linux\\IconCache"
-#define LX_CACHE_MUTEX          L"Local\\LiberNT.Linux.IconCache"
+#define LX_CACHE_KEY            L"Software\\NextNT\\Linux\\IconCache"
+#define LX_CACHE_MUTEX          L"Local\\NextNT.Linux.IconCache"
 #define LX_CACHE_MAX_ENTRIES    512
 #define LX_CACHE_MAX_FILE       (4 * 1024 * 1024)
 #define LX_FILETIME_HOUR        (3600ULL * 10000000ULL)
@@ -806,7 +806,7 @@ LxIconCacheInitialize(
     {
         return;
     }
-    _snwprintf(LxCacheDirectory, ARRAYSIZE(LxCacheDirectory), L"%s\\LiberNT\\Linux\\IconCache", LocalAppData);
+    _snwprintf(LxCacheDirectory, ARRAYSIZE(LxCacheDirectory), L"%s\\NextNT\\Linux\\IconCache", LocalAppData);
     LxCacheDirectory[ARRAYSIZE(LxCacheDirectory) - 1] = UNICODE_NULL;
     if ((SHCreateDirectoryExW(NULL, LxCacheDirectory, NULL) != ERROR_SUCCESS) &&
         (GetFileAttributesW(LxCacheDirectory) == INVALID_FILE_ATTRIBUTES))

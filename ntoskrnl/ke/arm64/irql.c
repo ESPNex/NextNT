@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT Kernel (ARM64)
+ * PROJECT:         NextNT Kernel (ARM64)
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:         Interrupt request level management for ARM64
  * COPYRIGHT:       Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Virtual Native 802.11 (dot11) Miniport
+ * PROJECT:     NextNT Virtual Native 802.11 (dot11) Miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Driver entry and NDIS 6.20 miniport lifecycle
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Boot Loader
+ * PROJECT:     NextNT Boot Loader
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Logo of a detected Windows installation, read from its own boot resources
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

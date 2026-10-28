@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT PSDK
+ * PROJECT:     NextNT PSDK
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Memory management API set
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

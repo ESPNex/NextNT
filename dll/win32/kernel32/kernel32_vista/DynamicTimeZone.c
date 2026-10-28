@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Win32 Base API
+ * PROJECT:     NextNT Win32 Base API
  * LICENSE:     GPL-3.0-only (https://spdx.org/licenses/GPL-3.0-only)
  * PURPOSE:     Dynamic time zone information
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif193@gmail.com>

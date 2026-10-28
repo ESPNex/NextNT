@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Wine Mono payload
+ * PROJECT:     NextNT Wine Mono payload
  * LICENSE:     MIT (https://spdx.org/licenses/MIT)
  * PURPOSE:     Windows Runtime projection for assemblies that reference the Windows metadata
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

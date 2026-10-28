@@ -1,5 +1,5 @@
 /*
- * PROJECT:         LiberNT TPM 2.0 driver interface
+ * PROJECT:         NextNT TPM 2.0 driver interface
  * LICENSE:         GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  */
 

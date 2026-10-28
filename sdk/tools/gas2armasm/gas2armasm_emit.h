@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT host tools
+ * PROJECT:     NextNT host tools
  * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
  * PURPOSE:     armasm64 emission + ARM64 SEH unwind synthesis for gas2armasm
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>

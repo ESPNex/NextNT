@@ -1,13 +1,13 @@
 /*
- * PROJECT:     LiberNT USB RNDIS Network Driver
+ * PROJECT:     NextNT USB RNDIS Network Driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     NDIS 6.x Compatibility Layer
  * COPYRIGHT:       2026 Ahmed ARIF (arif.ing@outlook.com)
  *
  * This header provides NDIS 6.x API declarations and compatibility
- * definitions that may be missing from LiberNT headers.
+ * definitions that may be missing from NextNT headers.
  *
- * When LiberNT fully supports NDIS 6.x, this file can be removed.
+ * When NextNT fully supports NDIS 6.x, this file can be removed.
  */
 
 #pragma once

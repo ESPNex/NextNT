@@ -1,5 +1,5 @@
 /*
- * PROJECT:     LiberNT Raspberry Pi 5 WDDM miniport
+ * PROJECT:     NextNT Raspberry Pi 5 WDDM miniport
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     VideoCore firmware property mailbox (bcm2835-mbox) — clock
  *              control and firmware identification for the V3D bring-up.
