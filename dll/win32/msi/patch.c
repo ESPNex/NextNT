@@ -414,6 +414,10 @@ struct patch_offset_list
 static struct patch_offset_list *patch_offset_list_create( void )
 {
     struct patch_offset_list *pos = malloc( sizeof(struct patch_offset_list) );
+#ifdef __REACTOS__
+    if (!pos)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     list_init( &pos->files );
     list_init( &pos->patches );
     pos->count = pos->max = 0;
@@ -459,6 +463,10 @@ static void patch_offset_get_filepatches( MSIDATABASE *db, UINT last_sequence, s
     while (MSI_ViewFetch( view, &rec ) == ERROR_SUCCESS)
     {
         struct patch_offset *po = malloc( sizeof(struct patch_offset) );
+#ifdef __REACTOS__
+        if (!po)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
         po->name     = msi_dup_record_field( rec, 1 );
         po->sequence = MSI_RecordGetInteger( rec, 2 );
@@ -496,6 +504,10 @@ static void patch_offset_get_files( MSIDATABASE *db, UINT last_sequence, struct 
         if (attributes & msidbFileAttributesPatchAdded)
         {
             struct patch_offset *po = malloc( sizeof(struct patch_offset) );
+#ifdef __REACTOS__
+            if (!po)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
             po->name     = msi_dup_record_field( rec, 1 );
             po->sequence = MSI_RecordGetInteger( rec, 8 );

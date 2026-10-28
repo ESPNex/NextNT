@@ -120,6 +120,10 @@ UINT msi_schedule_action( MSIPACKAGE *package, UINT script, const WCHAR *action 
     if (count != 0) newbuf = realloc( package->script_actions[script],
                                       package->script_actions_count[script] * sizeof(WCHAR *) );
     else newbuf = malloc( sizeof(WCHAR *) );
+#ifdef __REACTOS__
+    if (!newbuf)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     newbuf[count] = wcsdup( action );
     package->script_actions[script] = newbuf;
@@ -138,6 +142,10 @@ UINT msi_register_unique_action( MSIPACKAGE *package, const WCHAR *action )
     if (count != 0) newbuf = realloc( package->unique_actions,
                                       package->unique_actions_count * sizeof(WCHAR *) );
     else newbuf = malloc( sizeof(WCHAR *) );
+#ifdef __REACTOS__
+    if (!newbuf)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     newbuf[count] = wcsdup( action );
     package->unique_actions = newbuf;
@@ -335,6 +343,10 @@ static void file_running_action(MSIPACKAGE* package, HANDLE Handle,
     struct running_action *action;
 
     action = malloc( sizeof(*action) );
+#ifdef __REACTOS__
+    if (!action)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     action->handle = Handle;
     action->process = process;
@@ -1915,6 +1927,10 @@ void ACTION_FinishCustomActions(const MSIPACKAGE* package)
 
     handle_count = list_count( &pending_custom_actions );
     wait_handles = malloc( handle_count * sizeof(HANDLE) );
+#ifdef __REACTOS__
+    if (!wait_handles)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     handle_count = 0;
     LIST_FOR_EACH_ENTRY_SAFE( info, cursor, &pending_custom_actions, custom_action_info, entry )

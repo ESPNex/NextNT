@@ -324,6 +324,10 @@ static void convert_reg_value( DWORD regType, const BYTE *value, DWORD sz, WCHAR
             {
                 /* escape leading pound with another */
                 *appValue = malloc(sz + sizeof(WCHAR));
+#ifdef __REACTOS__
+                if (!*appValue)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                 (*appValue)[0] = '#';
                 lstrcpyW(*appValue + 1, (LPCWSTR)value);
             }

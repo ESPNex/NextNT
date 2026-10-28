@@ -3262,6 +3262,10 @@ static UINT *record_to_row( const struct table_view *tv, MSIRECORD *rec )
     UINT i, r, *data;
 
     data = malloc( tv->num_cols * sizeof (UINT) );
+#ifdef __REACTOS__
+    if (!data)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     for( i=0; i<tv->num_cols; i++ )
     {
         data[i] = 0;

@@ -709,6 +709,10 @@ static HRESULT create_list_enumerator(struct list_object *list, void **ppObj)
     TRACE("(%p, %p)\n", list, ppObj);
 
     object = malloc(sizeof(*object));
+#ifdef __REACTOS__
+    if (!object)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     /* Set all the VTable references */
     object->IEnumVARIANT_iface.lpVtbl = &ListEnumerator_Vtbl;

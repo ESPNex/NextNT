@@ -769,6 +769,10 @@ UINT ACTION_RegisterClassInfo(MSIPACKAGE *package)
             size += lstrlenW(cls->Argument)+1;
 
         argument = malloc( size * sizeof(WCHAR) );
+#ifdef __REACTOS__
+        if (!argument)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         lstrcpyW( argument, file->TargetPath );
 
         if (cls->Argument)
@@ -1158,6 +1162,10 @@ static UINT register_verb(MSIPACKAGE *package, LPCWSTR progid,
      size += 4;
 
      command = calloc(size, sizeof(WCHAR));
+#ifdef __REACTOS__
+     if (!command)
+         RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
      lstrcpyW(command,advertise);
      if (verb->Argument)
@@ -1278,6 +1286,10 @@ UINT ACTION_RegisterExtensionInfo(MSIPACKAGE *package)
             msi_reg_set_val_str( hkey, NULL, progid );
 
             newkey = malloc( wcslen(progid) * sizeof(WCHAR) + sizeof(L"\\ShellNew") );
+#ifdef __REACTOS__
+            if (!newkey)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
             lstrcpyW(newkey, progid);
             lstrcatW(newkey, L"\\ShellNew");

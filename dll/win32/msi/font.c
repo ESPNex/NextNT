@@ -224,6 +224,10 @@ static WCHAR *font_name_from_file( MSIPACKAGE *package, const WCHAR *filename )
             return NULL;
         }
         ret = malloc( wcslen( name ) * sizeof(WCHAR) + sizeof( L" (TrueType)" ) );
+#ifdef __REACTOS__
+        if (!ret)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         lstrcpyW( ret, name );
         lstrcatW( ret, L" (TrueType)" );
         free( name );
@@ -309,6 +313,10 @@ static UINT ITERATE_RegisterFonts(MSIRECORD *row, LPVOID param)
     /* the UI chunk */
     uirow = MSI_CreateRecord( 1 );
     uipath = wcsdup( file->TargetPath );
+#ifdef __REACTOS__
+    if (!uipath)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     p = wcsrchr(uipath,'\\');
     if (p) p++;
     else p = uipath;
@@ -390,6 +398,10 @@ static UINT ITERATE_UnregisterFonts( MSIRECORD *row, LPVOID param )
     /* the UI chunk */
     uirow = MSI_CreateRecord( 1 );
     uipath = wcsdup( file->TargetPath );
+#ifdef __REACTOS__
+    if (!uipath)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     p = wcsrchr( uipath,'\\' );
     if (p) p++;
     else p = uipath;

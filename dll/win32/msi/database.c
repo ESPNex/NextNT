@@ -78,6 +78,10 @@ void append_storage_to_db( MSIDATABASE *db, IStorage *stg )
     MSITRANSFORM *t;
 
     t = malloc( sizeof *t );
+#ifdef __REACTOS__
+    if (!t)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     t->stg = stg;
     IStorage_AddRef( stg );
     list_add_head( &db->transforms, &t->entry );

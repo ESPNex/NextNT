@@ -584,6 +584,10 @@ UINT WINAPI MsiSourceListGetInfoW( LPCWSTR szProduct, LPCWSTR szUserSid,
         }
 
         source = malloc(size);
+#ifdef __REACTOS__
+        if (!source)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         RegQueryValueExW(sourcekey, INSTALLPROPERTY_LASTUSEDSOURCEW,
                          0, 0, (LPBYTE)source, &size);
 
@@ -1092,6 +1096,10 @@ UINT WINAPI MsiSourceListAddSourceExW( const WCHAR *szProduct, const WCHAR *szUs
     {
         size = lstrlenW(szSource) + 2;
         source = malloc(size * sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!source)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         lstrcpyW(source, szSource);
         lstrcatW(source, postfix);
     }
@@ -1226,6 +1234,10 @@ UINT WINAPI MsiSourceListAddMediaDiskW( const WCHAR *szProduct, const WCHAR *szU
 
     size *= sizeof(WCHAR);
     buffer = malloc(size);
+#ifdef __REACTOS__
+    if (!buffer)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     *buffer = '\0';
 
     if (szVolumeLabel) lstrcpyW(buffer, szVolumeLabel);

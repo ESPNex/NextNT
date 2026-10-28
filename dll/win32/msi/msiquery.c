@@ -150,6 +150,10 @@ UINT WINAPIV MSI_OpenQuery( MSIDATABASE *db, MSIQUERY **view, LPCWSTR fmt, ... )
     {
         va_list va;
         query = malloc(size * sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!query)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         va_start(va, fmt);
         res = vswprintf(query, size, fmt, va);
         va_end(va);
@@ -215,6 +219,10 @@ MSIRECORD * WINAPIV MSI_QueryGetRecord( MSIDATABASE *db, LPCWSTR fmt, ... )
     {
         va_list va;
         query = malloc(size * sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!query)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         va_start(va, fmt);
         res = vswprintf(query, size, fmt, va);
         va_end(va);

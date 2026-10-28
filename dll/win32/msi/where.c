@@ -792,6 +792,10 @@ static struct join_table **ordertables( MSIWHEREVIEW *wv )
     struct join_table *table, **tables;
 
     tables = calloc(wv->table_count + 1, sizeof(*tables));
+#ifdef __REACTOS__
+    if (!tables)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     if (wv->cond)
     {
@@ -848,6 +852,10 @@ static UINT WHERE_execute( struct tagMSIVIEW *view, MSIRECORD *record )
     ordered_tables = ordertables( wv );
 
     rows = malloc(wv->table_count * sizeof(*rows));
+#ifdef __REACTOS__
+    if (!rows)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     for (i = 0; i < wv->table_count; i++)
         rows[i] = INVALID_ROW_INDEX;
 

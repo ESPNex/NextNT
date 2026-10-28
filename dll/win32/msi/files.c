@@ -588,6 +588,10 @@ UINT ACTION_InstallFiles(MSIPACKAGE *package)
 
     schedule_install_files(package);
     mi = calloc(1, sizeof(MSIMEDIAINFO));
+#ifdef __REACTOS__
+    if (!mi)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     LIST_FOR_EACH_ENTRY( file, &package->files, MSIFILE, entry )
     {
@@ -1236,6 +1240,10 @@ static WCHAR *get_duplicate_filename( MSIPACKAGE *package, MSIRECORD *row, const
     {
         WCHAR *p;
         dst_path = wcsdup( src );
+#ifdef __REACTOS__
+        if (!dst_path)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         p = wcsrchr( dst_path, '\\' );
         if (p) *p = 0;
     }
