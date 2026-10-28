@@ -243,7 +243,6 @@ AsixSubmitUrbAsync(
 {
     PIRP Irp;
     PIO_STACK_LOCATION IoStack;
-    NTSTATUS Status;
 
     *IrpSlot = NULL;
 
@@ -263,18 +262,9 @@ AsixSubmitUrbAsync(
     AsixIncrementPendingIo(Adapter);
     *IrpSlot = Irp;
 
-    Status = IoCallDriver(Adapter->LowerDeviceObject, Irp);
-    if (!NT_SUCCESS(Status) && Status != STATUS_PENDING)
-    {
-        if (*IrpSlot == Irp)
-        {
-            *IrpSlot = NULL;
-            IoFreeIrp(Irp);
-            AsixDecrementPendingIo(Adapter);
-        }
-    }
+    IoCallDriver(Adapter->LowerDeviceObject, Irp);
 
-    return Status;
+    return STATUS_PENDING;
 }
 
 static
