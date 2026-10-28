@@ -382,10 +382,18 @@ static LONG WINTRUST_WriteSingleUsageEntry(LPCSTR OID,
     /* Turn OID into a wide-character string */
     Len = MultiByteToWideChar( CP_ACP, 0, OID, -1, NULL, 0 );
     OIDW = malloc( Len * sizeof(WCHAR) );
+#ifdef __REACTOS__
+    if (!OIDW)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     MultiByteToWideChar( CP_ACP, 0, OID, -1, OIDW, Len );
 
     /* Allocate the needed space for UsageKey */
     UsageKey = malloc((wcslen(Trust) + wcslen(Usages) + Len) * sizeof(WCHAR));
+#ifdef __REACTOS__
+    if (!UsageKey)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     /* Create the key string */
     lstrcpyW(UsageKey, Trust);
     lstrcatW(UsageKey, Usages);
