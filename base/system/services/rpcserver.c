@@ -1018,8 +1018,8 @@ Int_EnumDependentServicesW(HKEY hServicesKey,
                     }
 
                     /* Determine state the service is in */
-                    if (lpCurrentService->Status.dwCurrentState == SERVICE_STOPPED)
-                        dwCurrentServiceState = SERVICE_INACTIVE;
+                    dwCurrentServiceState = (lpCurrentService->Status.dwCurrentState == SERVICE_STOPPED) ?
+                                            SERVICE_INACTIVE : SERVICE_ACTIVE;
 
                     /* If the ServiceState matches that requested or searching for SERVICE_STATE_ALL */
                     if ((dwCurrentServiceState == dwServiceState) ||
@@ -1058,7 +1058,7 @@ Int_EnumDependentServicesW(HKEY hServicesKey,
                 dwDependServiceStrPtr += (DWORD)(wcslen(lpszValueBuf + dwDependServiceStrPtr) + 1);
             }
         }
-        else if (*pcbBytesNeeded)
+        else
         {
             dwError = ERROR_SUCCESS;
         }
@@ -2937,7 +2937,7 @@ REnumDependentServicesW(
 
     /* Check access rights */
     if (!RtlAreAllAccessesGranted(hSvc->Handle.DesiredAccess,
-                                  SC_MANAGER_ENUMERATE_SERVICE))
+                                  SERVICE_ENUMERATE_DEPENDENTS))
     {
         DPRINT("Insufficient access rights! 0x%lx\n",
                hSvc->Handle.DesiredAccess);
@@ -3966,7 +3966,7 @@ REnumDependentServicesA(
 
     /* Check access rights */
     if (!RtlAreAllAccessesGranted(hSvc->Handle.DesiredAccess,
-                                  SC_MANAGER_ENUMERATE_SERVICE))
+                                  SERVICE_ENUMERATE_DEPENDENTS))
     {
         DPRINT("Insufficient access rights! 0x%lx\n",
                hSvc->Handle.DesiredAccess);
