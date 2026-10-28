@@ -65,6 +65,7 @@ typedef struct _MAP_STATE
 typedef struct _IRQ_STATE
 {
     BOOL Started;
+    ULONG Status;
     ULONG Problem;
     CONFIGRET AllocResult;
     ULONG Count;
@@ -137,8 +138,41 @@ static const SCENARIO Scenarios[] =
     { "cleanup", -1, 0, 0, 0, KindMessage, RawZero, TransActive },
 };
 
+static const SCENARIO LineScenarios[] =
+{
+    { "line none", -1, 0, 0, 0, KindLine, RawZero, TransActive },
+    { "line machine default", 0, 0, 0, 0, KindLine, RawZero, TransActive },
+    { "line all close", 1, 0, 0, 0, KindLine, RawZero, TransActive },
+    { "line one close", 2, 0, 0, 0, KindLine, RawZero, TransOneClose },
+    { "line one close again", 2, 0, 0, 0, KindLine, RawZero, TransOneClose },
+    { "line all in machine", 3, 0, 0, 0, KindLine, RawZero, TransActive },
+    { "line specified", 4, 0, 0, 0, KindLine, RawZero, TransActive },
+    { "line spread", 5, 0, 0, 0, KindLine, RawZero, TransActive },
+    { "line steered", 6, 0, 0, 0, KindLine, RawZero, TransActive },
+    { "line invalid policy", 7, 0, 0, 0, KindNotStarted, RawZero, TransActive },
+    { "line machine default override", 0, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line all close override", 1, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line one close override", 2, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line one close two processors", 2, REG_BINARY, 0x6, 1, KindLine, RawZero, TransOverride },
+    { "line all in machine override", 3, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line specified override", 4, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line specified two processors", 4, REG_BINARY, 0x6, 1, KindLine, RawZero, TransOverride },
+    { "line specified absent processor", 4, REG_BINARY, 0x100, 2, KindLine, RawZero, TransOverride },
+    { "line specified partly absent", 4, REG_BINARY, 0x102, 2, KindLine, RawZero, TransOverride },
+    { "line spread override", 5, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line steered override", 6, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line invalid policy override", 7, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line invalid policy two processors", 7, REG_BINARY, 0x6, 1, KindLine, RawZero, TransOverride },
+    { "line invalid policy absent processor", 7, REG_BINARY, 0x100, 2, KindLine, RawZero, TransOverride },
+    { "line override only", -1, REG_BINARY, 0x2, 1, KindLine, RawZero, TransOverride },
+    { "line override only absent processor", -1, REG_BINARY, 0x100, 2, KindLine, RawZero, TransOverride },
+    { "line machine default absent processor", 0, REG_BINARY, 0x100, 2, KindLine, RawZero, TransOverride },
+    { "line none again", -1, 0, 0, 0, KindLine, RawZero, TransActive },
+};
+
 static WCHAR InstanceId[MAX_DEVICE_ID_LEN];
 static WCHAR PolicyPath[MAX_PATH * 2];
+static WCHAR MsiPath[MAX_PATH * 2];
 static DEVINST DevInst;
 static LONG LastOneCloseCpu = -1;
 
@@ -208,12 +242,10 @@ static LONG ApplyScenario(const SCENARIO *Scenario)
     return Error;
 }
 
-static void RestartDevice(void)
+static void WaitDevice(void)
 {
     ULONG Status, Problem, Try;
 
-    ok_int(CM_Disable_DevNode(DevInst, CM_DISABLE_UI_NOT_OK), CR_SUCCESS);
-    ok_int(CM_Enable_DevNode(DevInst, 0), CR_SUCCESS);
     for (Try = 0; Try < 50; Try++)
     {
         if (CM_Get_DevNode_Status(&Status, &Problem, DevInst, 0) == CR_SUCCESS &&
@@ -223,6 +255,13 @@ static void RestartDevice(void)
         }
         Sleep(200);
     }
+}
+
+static void RestartDevice(void)
+{
+    ok_int(CM_Disable_DevNode(DevInst, CM_DISABLE_UI_NOT_OK), CR_SUCCESS);
+    ok_int(CM_Enable_DevNode(DevInst, 0), CR_SUCCESS);
+    WaitDevice();
 }
 
 static void ReadMap(PCWSTR PdoName, PCWSTR Suffix, MAP_STATE *Map)
@@ -278,7 +317,14 @@ static void ReadState(IRQ_STATE *State)
 
     ZeroMemory(State, sizeof(*State));
     CM_Get_DevNode_Status(&Status, &State->Problem, DevInst, 0);
+    State->Status = Status;
     State->Started = (Status & DN_STARTED) != 0;
+    Size = sizeof(PdoName);
+    if (CM_Get_DevNode_Registry_PropertyW(DevInst, CM_DRP_PHYSICAL_DEVICE_OBJECT_NAME, &Type, PdoName, &Size, 0) == CR_SUCCESS)
+    {
+        ReadMap(PdoName, L".Raw", &State->Raw);
+        ReadMap(PdoName, L".Translated", &State->Translated);
+    }
     State->AllocResult = CM_Get_First_Log_Conf(&Conf, DevInst, ALLOC_LOG_CONF);
     if (State->AllocResult != CR_SUCCESS)
         return;
@@ -303,12 +349,42 @@ static void ReadState(IRQ_STATE *State)
     if (Res != Conf)
         CM_Free_Res_Des_Handle(Res);
     CM_Free_Log_Conf_Handle(Conf);
+}
 
-    Size = sizeof(PdoName);
-    if (CM_Get_DevNode_Registry_PropertyW(DevInst, CM_DRP_PHYSICAL_DEVICE_OBJECT_NAME, &Type, PdoName, &Size, 0) != CR_SUCCESS)
-        return;
-    ReadMap(PdoName, L".Raw", &State->Raw);
-    ReadMap(PdoName, L".Translated", &State->Translated);
+static BOOL SameMap(const MAP_STATE *Map1, const MAP_STATE *Map2)
+{
+    ULONG i;
+
+    if (Map1->Present != Map2->Present || Map1->Count != Map2->Count)
+        return FALSE;
+    for (i = 0; i < Map1->Count; i++)
+    {
+        if (Map1->Flags[i] != Map2->Flags[i] || Map1->Affinity[i] != Map2->Affinity[i])
+            return FALSE;
+    }
+    return TRUE;
+}
+
+static LONG SetMsiSupported(DWORD Value, PDWORD OldValue)
+{
+    HKEY Key;
+    LONG Error;
+    DWORD Type, Size = sizeof(*OldValue);
+
+    Error = RegCreateKeyExW(HKEY_LOCAL_MACHINE, MsiPath, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &Key, NULL);
+    if (Error != ERROR_SUCCESS)
+        return Error;
+    if (OldValue && (RegQueryValueExW(Key, L"MSISupported", NULL, &Type, (PBYTE)OldValue, &Size) != ERROR_SUCCESS ||
+                     Type != REG_DWORD))
+    {
+        *OldValue = MAXDWORD;
+    }
+    if (Value == MAXDWORD)
+        Error = RegDeleteValueW(Key, L"MSISupported");
+    else
+        Error = RegSetValueExW(Key, L"MSISupported", 0, REG_DWORD, (const BYTE *)&Value, sizeof(Value));
+    RegCloseKey(Key);
+    return Error;
 }
 
 static ULONG ProcessorCount(ULONG64 Active)
@@ -423,8 +499,8 @@ static void CheckMessages(const SCENARIO *Scenario, const IRQ_STATE *Baseline, c
     }
 }
 
-static void CheckScenario(const SCENARIO *Scenario, const IRQ_STATE *Baseline, const IRQ_STATE *State,
-                          BOOL PolicyKey, ULONG64 Active)
+static void CheckScenario(const SCENARIO *Scenario, const IRQ_STATE *Baseline, const IRQ_STATE *Previous,
+                          const IRQ_STATE *State, BOOL PolicyKey, ULONG64 Active)
 {
     EXPECT_KIND Kind = Scenario->Kind;
     EXPECT_TRANS Trans = Scenario->Trans;
@@ -435,16 +511,26 @@ static void CheckScenario(const SCENARIO *Scenario, const IRQ_STATE *Baseline, c
         Kind = KindLine;
         Trans = TransActive;
     }
+    if (Kind == KindLine && Trans == TransOverride && (Scenario->Override & ~Active))
+    {
+        Trans = TransActive;
+        if (Scenario->Policy >= 7)
+            Kind = KindNotStarted;
+    }
 
     if (Kind == KindNotStarted)
     {
         ok(!State->Started, "%s: device started\n", Scenario->Name);
         ok_long(State->Problem, CM_PROB_NORMAL_CONFLICT);
+        ok((State->Status & DN_NEED_RESTART) != 0, "%s: status 0x%lx without DN_NEED_RESTART\n", Scenario->Name, State->Status);
         ok_long(State->AllocResult, CR_NO_MORE_LOG_CONF);
+        ok(SameMap(&State->Raw, &Previous->Raw) && SameMap(&State->Translated, &Previous->Translated),
+           "%s: the resource map changed after a failed start\n", Scenario->Name);
         return;
     }
 
     ok(State->Started, "%s: device not started, problem %lu\n", Scenario->Name, State->Problem);
+    ok(!(State->Status & DN_NEED_RESTART), "%s: status 0x%lx with DN_NEED_RESTART\n", Scenario->Name, State->Status);
     ok_long(State->AllocResult, CR_SUCCESS);
     if (Kind == KindMessage)
     {
@@ -457,8 +543,15 @@ static void CheckScenario(const SCENARIO *Scenario, const IRQ_STATE *Baseline, c
     if (State->Count != 1)
         return;
     ok(State->Affinity[0] == LINE_RAW_AFFINITY, "%s: line affinity 0x%I64x\n", Scenario->Name, State->Affinity[0]);
-    ok(State->Raw.Count == 1 && State->Raw.Flags[0] == 0, "%s: %lu raw map interrupts, flags 0x%x\n",
-       Scenario->Name, State->Raw.Count, State->Raw.Count ? State->Raw.Flags[0] : 0);
+    ok(State->Raw.Count == 1 && State->Raw.Flags[0] == 0 && State->Raw.Affinity[0] == LINE_RAW_AFFINITY,
+       "%s: %lu raw map interrupts, flags 0x%x, affinity 0x%I64x\n", Scenario->Name, State->Raw.Count,
+       State->Raw.Count ? State->Raw.Flags[0] : 0, State->Raw.Count ? State->Raw.Affinity[0] : 0);
+    if (Trans == TransOneClose)
+    {
+        ok(State->Translated.Count == 1, "%s: %lu translated map interrupts\n", Scenario->Name, State->Translated.Count);
+        CheckOneClose(Scenario, &State->Translated, Active);
+        return;
+    }
     Expected = Trans == TransOverride ? Scenario->Override : Active;
     ok(State->Translated.Count == 1 && State->Translated.Affinity[0] == Expected,
        "%s: %lu translated map interrupts, affinity 0x%I64x, expected 0x%I64x\n", Scenario->Name,
@@ -468,9 +561,11 @@ static void CheckScenario(const SCENARIO *Scenario, const IRQ_STATE *Baseline, c
 START_TEST(InterruptAffinityPolicy)
 {
     static const SCENARIO NoKey = { "no policy key", -1, 0, 0, 0, KindMessage, RawZero, TransActive };
-    IRQ_STATE Baseline, State;
+    static const SCENARIO Invalid = { "need restart", 7, 0, 0, 0, KindNotStarted, RawZero, TransActive };
+    IRQ_STATE Baseline, Previous, State;
     SYSTEM_INFO Info;
     ULONG64 Active;
+    DWORD OldMsi;
     LONG Error;
     ULONG i;
 
@@ -482,6 +577,9 @@ START_TEST(InterruptAffinityPolicy)
 
     StringCchPrintfW(PolicyPath, _countof(PolicyPath),
                      L"SYSTEM\\CurrentControlSet\\Enum\\%s\\Device Parameters\\Interrupt Management\\Affinity Policy",
+                     InstanceId);
+    StringCchPrintfW(MsiPath, _countof(MsiPath),
+                     L"SYSTEM\\CurrentControlSet\\Enum\\%s\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties",
                      InstanceId);
     GetSystemInfo(&Info);
     Active = Info.dwActiveProcessorMask;
@@ -509,18 +607,76 @@ START_TEST(InterruptAffinityPolicy)
         ok(Baseline.Alloc[i] == Baseline.Alloc[i - 1] - 1, "Token %lu is 0x%lx after 0x%lx\n",
            i, Baseline.Alloc[i], Baseline.Alloc[i - 1]);
     }
-    CheckScenario(&NoKey, &Baseline, &Baseline, FALSE, Active);
+    CheckScenario(&NoKey, &Baseline, &Baseline, &Baseline, FALSE, Active);
 
+    Previous = Baseline;
     for (i = 0; i < _countof(Scenarios); i++)
     {
         ok_long(ApplyScenario(&Scenarios[i]), ERROR_SUCCESS);
         RestartDevice();
         ReadState(&State);
-        CheckScenario(&Scenarios[i], &Baseline, &State, TRUE, Active);
+        CheckScenario(&Scenarios[i], &Baseline, &Previous, &State, TRUE, Active);
+        Previous = State;
+    }
+
+    ok_int(CM_Disable_DevNode(DevInst, CM_DISABLE_UI_NOT_OK), CR_SUCCESS);
+    ReadState(&State);
+    ok_long(State.Problem, CM_PROB_DISABLED);
+    ok_long(State.AllocResult, CR_NO_MORE_LOG_CONF);
+    ok(SameMap(&State.Raw, &Previous.Raw) && SameMap(&State.Translated, &Previous.Translated),
+       "The resource map changed when the device was disabled\n");
+    ok_int(CM_Enable_DevNode(DevInst, 0), CR_SUCCESS);
+    WaitDevice();
+    ReadState(&Previous);
+    ok(Previous.Started, "The device did not start again, problem %lu\n", Previous.Problem);
+
+    ok_long(ApplyScenario(&Invalid), ERROR_SUCCESS);
+    RestartDevice();
+    ReadState(&State);
+    CheckScenario(&Invalid, &Baseline, &Previous, &State, TRUE, Active);
+    ok_int(CM_Setup_DevNode(DevInst, CM_SETUP_DEVNODE_READY), CR_SUCCESS);
+    Sleep(1000);
+    ReadState(&State);
+    ok(!State.Started && State.Problem == CM_PROB_NORMAL_CONFLICT && (State.Status & DN_NEED_RESTART),
+       "CM_Setup_DevNode changed the device: status 0x%lx, problem %lu\n", State.Status, State.Problem);
+    ok_int(CM_Disable_DevNode(DevInst, CM_DISABLE_UI_NOT_OK), CR_SUCCESS);
+    ReadState(&State);
+    ok(State.Problem == CM_PROB_DISABLED && (State.Status & DN_NEED_RESTART),
+       "Disabled device: status 0x%lx, problem %lu\n", State.Status, State.Problem);
+    ok_long(ApplyScenario(&Scenarios[0]), ERROR_SUCCESS);
+    ok_int(CM_Enable_DevNode(DevInst, 0), CR_SUCCESS);
+    WaitDevice();
+    ReadState(&State);
+    ok(State.Started && !(State.Status & DN_NEED_RESTART),
+       "Enabled device: status 0x%lx, problem %lu\n", State.Status, State.Problem);
+
+    ok_long(ApplyScenario(&Invalid), ERROR_SUCCESS);
+    RestartDevice();
+    ok_long(ApplyScenario(&Scenarios[0]), ERROR_SUCCESS);
+    ok_int(CM_Setup_DevNode(DevInst, CM_SETUP_DEVNODE_READY), CR_SUCCESS);
+    Sleep(1000);
+    ReadState(&State);
+    ok(!State.Started && State.Problem == CM_PROB_NORMAL_CONFLICT && (State.Status & DN_NEED_RESTART),
+       "CM_Setup_DevNode restarted the device: status 0x%lx, problem %lu\n", State.Status, State.Problem);
+
+    Error = SetMsiSupported(0, &OldMsi);
+    ok_long(Error, ERROR_SUCCESS);
+    if (Error == ERROR_SUCCESS)
+    {
+        LastOneCloseCpu = -1;
+        for (i = 0; i < _countof(LineScenarios); i++)
+        {
+            ok_long(ApplyScenario(&LineScenarios[i]), ERROR_SUCCESS);
+            RestartDevice();
+            ReadState(&State);
+            CheckScenario(&LineScenarios[i], &Baseline, &Previous, &State, TRUE, Active);
+            Previous = State;
+        }
+        ok_long(SetMsiSupported(OldMsi, NULL), ERROR_SUCCESS);
     }
 
     ok_long(RegDeleteKeyW(HKEY_LOCAL_MACHINE, PolicyPath), ERROR_SUCCESS);
     RestartDevice();
     ReadState(&State);
-    CheckScenario(&NoKey, &Baseline, &State, FALSE, Active);
+    CheckScenario(&NoKey, &Baseline, &Previous, &State, FALSE, Active);
 }
