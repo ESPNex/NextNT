@@ -60,6 +60,10 @@ static BOOL wglUseFontBitmaps_common( HDC hdc, DWORD first, DWORD count, DWORD l
             HeapFree(GetProcessHeap(), 0, gl_bitmap);
             bitmap = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
             gl_bitmap = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
+            if (!bitmap || !gl_bitmap) {
+                ret = FALSE;
+                break;
+            }
         }
         if (unicode)
             ret = (GetGlyphOutlineW(hdc, glyph, GGO_BITMAP, &gm, size, bitmap, &identity) != GDI_ERROR);
