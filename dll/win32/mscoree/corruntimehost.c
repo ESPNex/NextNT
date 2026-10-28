@@ -117,6 +117,10 @@ struct clrclass_data
 
 static HRESULT RuntimeHost_GetIUnknownForObject(RuntimeHost *This, MonoObject *obj, IUnknown **ppUnk);
 
+#ifdef __REACTOS__
+static void RuntimeHost_InitializeDomainManager(RuntimeHost *This, MonoDomain *domain);
+#endif
+
 static HRESULT RuntimeHost_GetDefaultDomain(RuntimeHost *This, const WCHAR *config_path, MonoDomain **result)
 {
     WCHAR exe_config[MAX_PATH];
@@ -124,6 +128,9 @@ static HRESULT RuntimeHost_GetDefaultDomain(RuntimeHost *This, const WCHAR *conf
     char *base_dirA, *config_pathA, *slash;
     HRESULT res=S_OK;
     static BOOL configured_domain;
+#ifdef __REACTOS__
+    BOOL configured_now = FALSE;
+#endif
 
     *result = get_root_domain();
 
@@ -164,12 +171,20 @@ static HRESULT RuntimeHost_GetDefaultDomain(RuntimeHost *This, const WCHAR *conf
 
     free(config_pathA);
     free(base_dirA);
+#ifdef __REACTOS__
+    configured_now = TRUE;
+#endif
 
 end:
 
     configured_domain = TRUE;
 
     LeaveCriticalSection(&This->lock);
+
+#ifdef __REACTOS__
+    if (configured_now)
+        RuntimeHost_InitializeDomainManager(This, *result);
+#endif
 
     return res;
 }
@@ -821,8 +836,21 @@ static HRESULT WINAPI CLRRuntimeHost_SetHostControl(ICLRRuntimeHost* iface,
 static HRESULT WINAPI CLRRuntimeHost_GetCLRControl(ICLRRuntimeHost* iface,
     ICLRControl **pCLRControl)
 {
+#ifdef __REACTOS__
+    RuntimeHost *This = impl_from_ICLRRuntimeHost( iface );
+
+    TRACE("(%p,%p)\n", iface, pCLRControl);
+
+    if (!pCLRControl)
+        return E_POINTER;
+
+    *pCLRControl = &This->ICLRControl_iface;
+    ICLRControl_AddRef(*pCLRControl);
+    return S_OK;
+#else
     FIXME("(%p,%p)\n", iface, pCLRControl);
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT WINAPI CLRRuntimeHost_UnloadAppDomain(ICLRRuntimeHost* iface,
@@ -937,6 +965,132 @@ static HRESULT WINAPI CLRRuntimeHost_ExecuteInDefaultAppDomain(ICLRRuntimeHost* 
 
     return hr;
 }
+
+#ifdef __REACTOS__
+static inline RuntimeHost *impl_from_ICLRControl( ICLRControl *iface )
+{
+    return CONTAINING_RECORD(iface, RuntimeHost, ICLRControl_iface);
+}
+
+static HRESULT WINAPI CLRControl_QueryInterface(ICLRControl *iface, REFIID riid, void **ppvObject)
+{
+    TRACE("%p %s %p\n", iface, debugstr_guid(riid), ppvObject);
+
+    if (!ppvObject)
+        return E_POINTER;
+
+    if (IsEqualGUID(riid, &IID_ICLRControl) || IsEqualGUID(riid, &IID_IUnknown))
+    {
+        *ppvObject = iface;
+        ICLRControl_AddRef(iface);
+        return S_OK;
+    }
+
+    *ppvObject = NULL;
+    return E_NOINTERFACE;
+}
+
+static ULONG WINAPI CLRControl_AddRef(ICLRControl *iface)
+{
+    RuntimeHost *This = impl_from_ICLRControl( iface );
+    return ICorRuntimeHost_AddRef(&This->ICorRuntimeHost_iface);
+}
+
+static ULONG WINAPI CLRControl_Release(ICLRControl *iface)
+{
+    RuntimeHost *This = impl_from_ICLRControl( iface );
+    return ICorRuntimeHost_Release(&This->ICorRuntimeHost_iface);
+}
+
+static HRESULT WINAPI CLRControl_GetCLRManager(ICLRControl *iface, REFIID riid, void **ppObject)
+{
+    FIXME("(%p,%s,%p): no CLR manager\n", iface, debugstr_guid(riid), ppObject);
+
+    if (!ppObject)
+        return E_POINTER;
+
+    *ppObject = NULL;
+    return E_NOINTERFACE;
+}
+
+static HRESULT WINAPI CLRControl_SetAppDomainManagerType(ICLRControl *iface,
+    LPCWSTR appDomainManagerAssembly, LPCWSTR appDomainManagerType)
+{
+    RuntimeHost *This = impl_from_ICLRControl( iface );
+    WCHAR *assembly, *type;
+
+    TRACE("(%p,%s,%s)\n", iface, debugstr_w(appDomainManagerAssembly), debugstr_w(appDomainManagerType));
+
+    if (!appDomainManagerAssembly || !appDomainManagerType)
+        return E_POINTER;
+
+    assembly = wcsdup(appDomainManagerAssembly);
+    type = wcsdup(appDomainManagerType);
+    if (!assembly || !type)
+    {
+        free(assembly);
+        free(type);
+        return E_OUTOFMEMORY;
+    }
+
+    EnterCriticalSection(&This->lock);
+    free(This->domain_manager_assembly);
+    free(This->domain_manager_type);
+    This->domain_manager_assembly = assembly;
+    This->domain_manager_type = type;
+    LeaveCriticalSection(&This->lock);
+
+    return S_OK;
+}
+
+static const struct ICLRControlVtbl CLRControlVtbl =
+{
+    CLRControl_QueryInterface,
+    CLRControl_AddRef,
+    CLRControl_Release,
+    CLRControl_GetCLRManager,
+    CLRControl_SetAppDomainManagerType
+};
+
+static void RuntimeHost_InitializeDomainManager(RuntimeHost *This, MonoDomain *domain)
+{
+    char *assemblyA = NULL, *typeA = NULL;
+    MonoDomain *prev_domain;
+    MonoObject *dummy;
+    void *attach_cookie;
+    void *args[2];
+    HRESULT hr;
+
+    EnterCriticalSection(&This->lock);
+    if (This->domain_manager_assembly && This->domain_manager_type)
+    {
+        assemblyA = WtoA(This->domain_manager_assembly);
+        typeA = WtoA(This->domain_manager_type);
+    }
+    LeaveCriticalSection(&This->lock);
+
+    if (!assemblyA || !typeA)
+    {
+        free(assemblyA);
+        free(typeA);
+        return;
+    }
+
+    prev_domain = mono_threads_attach_coop(domain, &attach_cookie);
+
+    args[0] = mono_string_new(domain, assemblyA);
+    args[1] = mono_string_new(domain, typeA);
+    hr = RuntimeHost_Invoke(This, NULL, "System", "AppDomain", "InitializeDomainManager",
+        NULL, args, 2, &dummy);
+    if (FAILED(hr))
+        ERR("Could not create the application domain manager %s from %s, hr=%lx\n", typeA, assemblyA, hr);
+
+    mono_threads_detach_coop(prev_domain, &attach_cookie);
+
+    free(assemblyA);
+    free(typeA);
+}
+#endif
 
 static const struct ICLRRuntimeHostVtbl CLRHostVtbl =
 {
@@ -1645,6 +1799,11 @@ HRESULT RuntimeHost_Construct(CLRRuntimeInfo *runtime_version, RuntimeHost** res
 
     This->ICorRuntimeHost_iface.lpVtbl = &corruntimehost_vtbl;
     This->ICLRRuntimeHost_iface.lpVtbl = &CLRHostVtbl;
+#ifdef __REACTOS__
+    This->ICLRControl_iface.lpVtbl = &CLRControlVtbl;
+    This->domain_manager_assembly = NULL;
+    This->domain_manager_type = NULL;
+#endif
 
     This->ref = 1;
     This->version = runtime_version;

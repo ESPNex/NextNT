@@ -75,6 +75,11 @@ struct RuntimeHost
 {
     ICorRuntimeHost ICorRuntimeHost_iface;
     ICLRRuntimeHost ICLRRuntimeHost_iface;
+#ifdef __REACTOS__
+    ICLRControl ICLRControl_iface;
+    WCHAR *domain_manager_assembly;
+    WCHAR *domain_manager_type;
+#endif
     CLRRuntimeInfo *version;
     CRITICAL_SECTION lock;
     LONG ref;
