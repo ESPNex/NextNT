@@ -2,6 +2,7 @@
 #pragma once
 
 extern POBJECT_TYPE WmipGuidObjectType;
+extern GENERIC_MAPPING WmipGenericMapping;
 
 #define GUID_STRING_LENGTH 36
 
@@ -151,3 +152,34 @@ WmipAllocateInstanceIds(
     _In_ LPCGUID Guid,
     _In_ ULONG InstanceCount,
     _Out_ PULONG FirstInstanceId);
+
+NTSTATUS
+NTAPI
+EtwpInitializeRegistrations(VOID);
+
+NTSTATUS
+EtwpRegisterGuid(
+    _In_reads_bytes_opt_(InBufferLen) PVOID InBuffer,
+    _In_ ULONG InBufferLen,
+    _Out_writes_bytes_opt_(OutBufferLen) PVOID OutBuffer,
+    _In_ ULONG OutBufferLen,
+    _Out_opt_ PULONG ReturnSize,
+    _In_ KPROCESSOR_MODE PreviousMode);
+
+NTSTATUS
+EtwpEnumTraceGuidList(
+    _In_reads_bytes_opt_(InBufferLen) PVOID InBuffer,
+    _In_ ULONG InBufferLen,
+    _Out_writes_bytes_opt_(OutBufferLen) PVOID OutBuffer,
+    _In_ ULONG OutBufferLen,
+    _Out_opt_ PULONG ReturnSize,
+    _In_ KPROCESSOR_MODE PreviousMode);
+
+NTSTATUS
+EtwpGetTraceGuidInfo(
+    _In_reads_bytes_opt_(InBufferLen) PVOID InBuffer,
+    _In_ ULONG InBufferLen,
+    _Out_writes_bytes_opt_(OutBufferLen) PVOID OutBuffer,
+    _In_ ULONG OutBufferLen,
+    _Out_opt_ PULONG ReturnSize,
+    _In_ KPROCESSOR_MODE PreviousMode);

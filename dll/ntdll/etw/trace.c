@@ -17,6 +17,7 @@ typedef struct _ETW_CLASSIC_PROVIDER
 {
     LIST_ENTRY Entry;
     TRACEHANDLE Handle;
+    HANDLE RegistrationHandle;
     GUID ControlGuid;
     WMIDPREQUEST Callback;
     PVOID Context;
@@ -33,6 +34,10 @@ EtwpRegisterClassicProvider(WMIDPREQUEST Callback, PVOID Context, LPCGUID Contro
                             PTRACEHANDLE RegistrationHandle)
 {
     ETW_CLASSIC_PROVIDER *Provider;
+    ETW_REGISTER_GUID_INFO Info;
+    ULONG64 Handle;
+    ULONG ReturnSize;
+    NTSTATUS Status;
     ULONG i;
 
     if (!Callback || !ControlGuid || !RegistrationHandle || (GuidCount && !TraceGuidReg))
@@ -50,6 +55,17 @@ EtwpRegisterClassicProvider(WMIDPREQUEST Callback, PVOID Context, LPCGUID Contro
     Provider->Context = Context;
     for (i = 0; i < GuidCount; ++i)
         Provider->ClassGuids[i] = *TraceGuidReg[i].Guid;
+
+    RtlZeroMemory(&Info, sizeof(Info));
+    Info.Guid = *ControlGuid;
+    Info.Flags = ETW_REGISTRATION_FLAG_LEGACY;
+    Status = NtTraceControl(EtwRegisterGuidsCode, &Info, sizeof(Info), &Handle, sizeof(Handle), &ReturnSize);
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, Provider);
+        return RtlNtStatusToDosError(Status);
+    }
+    Provider->RegistrationHandle = (HANDLE)(ULONG_PTR)Handle;
 
     RtlAcquireSRWLockExclusive(&EtwpClassicLock);
     Provider->Handle = ++EtwpNextClassicHandle;
@@ -141,6 +157,7 @@ EtwUnregisterTraceGuids(
         {
             RemoveEntryList(Entry);
             RtlReleaseSRWLockExclusive(&EtwpClassicLock);
+            NtClose(Provider->RegistrationHandle);
             RtlFreeHeap(RtlGetProcessHeap(), 0, Provider);
             return ERROR_SUCCESS;
         }

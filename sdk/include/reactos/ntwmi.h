@@ -61,8 +61,22 @@ typedef enum _ETWTRACECONTROLCODE
     EtwStopLoggerCode = 2,
     EtwQueryLoggerCode = 3,
     EtwUpdateLoggerCode = 4,
-    EtwFlushLoggerCode = 5
+    EtwFlushLoggerCode = 5,
+    EtwRegisterGuidsCode = 15,
+    EtwEnumTraceGuidListCode = 21,
+    EtwGetTraceGuidInfoCode = 22
 } ETWTRACECONTROLCODE;
+
+#define ETW_REGISTRATION_FLAG_LEGACY        0x00000001
+
+#define ETW_ENUM_GUIDS_CURRENT_PROCESS      0x00000001
+
+typedef struct _ETW_REGISTER_GUID_INFO
+{
+    GUID Guid;
+    ULONG Flags;
+    ULONG Reserved;
+} ETW_REGISTER_GUID_INFO, *PETW_REGISTER_GUID_INFO;
 
 typedef struct _WMI_TRACE_PACKET
 {

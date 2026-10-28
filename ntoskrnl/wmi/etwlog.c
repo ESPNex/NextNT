@@ -9,6 +9,7 @@
 #define INITGUID
 #define _WMIKM_
 #include <ntwmi.h>
+#include "wmip.h"
 
 #define NDEBUG
 #include <debug.h>
@@ -1250,6 +1251,13 @@ NtTraceControl(
     NTSTATUS Status;
 
     PAGED_CODE();
+
+    if (FunctionCode == EtwRegisterGuidsCode)
+        return EtwpRegisterGuid(InBuffer, InBufferLen, OutBuffer, OutBufferLen, ReturnSize, PreviousMode);
+    if (FunctionCode == EtwEnumTraceGuidListCode)
+        return EtwpEnumTraceGuidList(InBuffer, InBufferLen, OutBuffer, OutBufferLen, ReturnSize, PreviousMode);
+    if (FunctionCode == EtwGetTraceGuidInfoCode)
+        return EtwpGetTraceGuidInfo(InBuffer, InBufferLen, OutBuffer, OutBufferLen, ReturnSize, PreviousMode);
 
     if (FunctionCode < EtwStartLoggerCode || FunctionCode > EtwFlushLoggerCode)
     {

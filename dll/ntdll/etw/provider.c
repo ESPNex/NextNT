@@ -8,11 +8,13 @@
 #include <ntdll.h>
 
 #include <evntprov.h>
+#include <ntwmi.h>
 #include <ndk/sefuncs.h>
 
 typedef struct _ETW_USER_PROVIDER
 {
     LIST_ENTRY Entry;
+    HANDLE RegistrationHandle;
     GUID ProviderId;
     PENABLECALLBACK EnableCallback;
     PVOID CallbackContext;
@@ -161,12 +163,26 @@ EtwEventRegister(
     _Out_ PREGHANDLE RegHandle)
 {
     PETW_USER_PROVIDER Provider;
+    ETW_REGISTER_GUID_INFO Info;
+    ULONG64 Handle;
+    ULONG ReturnSize;
+    NTSTATUS Status;
 
     if (!ProviderId || !RegHandle || (!EnableCallback && CallbackContext)) return ERROR_INVALID_PARAMETER;
 
     Provider = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*Provider));
     if (!Provider) return ERROR_NOT_ENOUGH_MEMORY;
 
+    RtlZeroMemory(&Info, sizeof(Info));
+    Info.Guid = *ProviderId;
+    Status = NtTraceControl(EtwRegisterGuidsCode, &Info, sizeof(Info), &Handle, sizeof(Handle), &ReturnSize);
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, Provider);
+        return RtlNtStatusToDosError(Status);
+    }
+
+    Provider->RegistrationHandle = (HANDLE)(ULONG_PTR)Handle;
     Provider->ProviderId = *ProviderId;
     Provider->EnableCallback = EnableCallback;
     Provider->CallbackContext = CallbackContext;
@@ -262,6 +278,7 @@ EtwEventUnregister(
 
     RemoveEntryList(&Provider->Entry);
     RtlReleaseSRWLockExclusive(&EtwpProviderLock);
+    NtClose(Provider->RegistrationHandle);
     if (Provider->ProviderTraits) RtlFreeHeap(RtlGetProcessHeap(), 0, Provider->ProviderTraits);
     RtlFreeHeap(RtlGetProcessHeap(), 0, Provider);
     return ERROR_SUCCESS;

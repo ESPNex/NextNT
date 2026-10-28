@@ -70,6 +70,13 @@ WmiInitialize(
         return FALSE;
     }
 
+    Status = EtwpInitializeRegistrations();
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("EtwpInitializeRegistrations() failed: 0x%lx\n", Status);
+        return FALSE;
+    }
+
     /* Create the WMI driver */
     Status = IoCreateDriver(&DriverName, WmipDriverEntry);
     if (!NT_SUCCESS(Status))
