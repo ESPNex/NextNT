@@ -78,7 +78,11 @@ static void create_uia_node_safearray(VARIANT *in, VARIANT *out)
     LONG i, idx, lbound, elems;
     HUIANODE node;
     SAFEARRAY *sa;
+#ifdef __REACTOS__
+    HRESULT hr = S_OK;
+#else
     HRESULT hr;
+#endif
 
     if (FAILED(get_safearray_bounds(V_ARRAY(in), &lbound, &elems)))
         return;
@@ -102,10 +106,16 @@ static void create_uia_node_safearray(VARIANT *in, VARIANT *out)
             break;
 
         hr = UiaNodeFromProvider(elprov, &node);
+#ifdef __REACTOS__
+        IRawElementProviderSimple_Release(elprov);
+        if (FAILED(hr))
+            break;
+#else
         if (FAILED(hr))
             break;
 
         IRawElementProviderSimple_Release(elprov);
+#endif
         hr = SafeArrayPutElement(sa, &i, &node);
         if (FAILED(hr))
             break;
