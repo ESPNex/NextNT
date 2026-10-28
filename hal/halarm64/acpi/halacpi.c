@@ -421,7 +421,7 @@ HalpAcpiInitializeGenericBlock(
 
     RtlZeroMemory(&Gas, sizeof(Gas));
 
-    BitWidth = Length ? (UCHAR)(Length * 8) : DefaultBitWidth;
+    BitWidth = Length ? (UCHAR)min((ULONG)Length * 8, 255) : DefaultBitWidth;
     if (BitWidth == 0)
     {
         BitWidth = DefaultBitWidth;
@@ -451,11 +451,6 @@ HalpAcpiInitializeGenericBlock(
     {
         RtlZeroMemory(TargetGas, sizeof(*TargetGas));
         return FALSE;
-    }
-
-    if (Gas.BitWidth > 255)
-    {
-        Gas.BitWidth = 255;
     }
 
     *TargetGas = Gas;
