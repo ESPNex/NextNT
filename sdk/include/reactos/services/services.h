@@ -41,6 +41,20 @@ typedef struct _SCM_REPLY_PACKET
     DWORD dwError;
 } SCM_REPLY_PACKET, *PSCM_REPLY_PACKET;
 
+typedef struct _ENUM_SERVICE_STATUS_WIRE
+{
+    DWORD dwServiceNameOffset;
+    DWORD dwDisplayNameOffset;
+    SERVICE_STATUS ServiceStatus;
+} ENUM_SERVICE_STATUS_WIRE, *LPENUM_SERVICE_STATUS_WIRE;
+
+typedef struct _ENUM_SERVICE_STATUS_PROCESS_WIRE
+{
+    DWORD dwServiceNameOffset;
+    DWORD dwDisplayNameOffset;
+    SERVICE_STATUS_PROCESS ServiceStatusProcess;
+} ENUM_SERVICE_STATUS_PROCESS_WIRE, *LPENUM_SERVICE_STATUS_PROCESS_WIRE;
+
 #endif /* __SERVICES_SERVICES_H__ */
 
 /* EOF */

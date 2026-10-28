@@ -946,6 +946,75 @@ DeleteService(SC_HANDLE hService)
 }
 
 
+static LPBYTE
+ScmAllocEnumWireBuffer(LPVOID lpServices,
+                       DWORD cbBufSize,
+                       SIZE_T NativeSize,
+                       SIZE_T WireSize,
+                       LPDWORD lpWireSize)
+{
+    DWORD dwWireSize = 0;
+
+    if (lpServices != NULL)
+        dwWireSize = (DWORD)(((ULONGLONG)cbBufSize * WireSize) / NativeSize);
+
+    *lpWireSize = dwWireSize;
+    return HeapAlloc(GetProcessHeap(), 0, max(dwWireSize, (DWORD)WireSize));
+}
+
+static DWORD
+ScmEnumNativeBytesNeeded(DWORD dwWireBytes,
+                         SIZE_T NativeSize,
+                         SIZE_T WireSize)
+{
+    return (DWORD)(((ULONGLONG)dwWireBytes * NativeSize + WireSize - 1) / WireSize);
+}
+
+static VOID
+ScmExpandEnumBuffer(LPBYTE lpWire,
+                    LPBYTE lpNative,
+                    DWORD dwCount,
+                    SIZE_T WireSize,
+                    SIZE_T NativeSize,
+                    SIZE_T StatusOffset,
+                    SIZE_T StatusSize,
+                    BOOL bUnicode)
+{
+    SIZE_T StringStart = (SIZE_T)dwCount * WireSize;
+    SIZE_T StringEnd = StringStart;
+    SIZE_T Shift = (SIZE_T)dwCount * (NativeSize - WireSize);
+    SIZE_T End;
+    PDWORD Offsets;
+    LPBYTE Entry;
+    DWORD i, j;
+
+    for (i = 0; i < dwCount; i++)
+    {
+        Offsets = (PDWORD)(lpWire + i * WireSize);
+        for (j = 0; j < 2; j++)
+        {
+            if (bUnicode)
+                End = Offsets[j] + (wcslen((LPCWSTR)(lpWire + Offsets[j])) + 1) * sizeof(WCHAR);
+            else
+                End = Offsets[j] + strlen((LPCSTR)(lpWire + Offsets[j])) + 1;
+            if (End > StringEnd)
+                StringEnd = End;
+        }
+    }
+
+    memcpy(lpNative + dwCount * NativeSize, lpWire + StringStart, StringEnd - StringStart);
+
+    for (i = 0; i < dwCount; i++)
+    {
+        Offsets = (PDWORD)(lpWire + i * WireSize);
+        Entry = lpNative + i * NativeSize;
+        ((LPBYTE *)Entry)[0] = lpNative + Offsets[0] + Shift;
+        ((LPBYTE *)Entry)[1] = lpNative + Offsets[1] + Shift;
+        memcpy(Entry + StatusOffset, lpWire + i * WireSize + 2 * sizeof(DWORD), StatusSize);
+    }
+}
+
+
 /**********************************************************************
  *  EnumDependentServicesA
  *
@@ -959,33 +1028,27 @@ EnumDependentServicesA(SC_HANDLE hService,
                        LPDWORD pcbBytesNeeded,
                        LPDWORD lpServicesReturned)
 {
-    ENUM_SERVICE_STATUSA ServiceStatus;
-    LPENUM_SERVICE_STATUSA lpStatusPtr;
-    DWORD dwBufferSize;
+    LPBYTE lpWire;
+    DWORD dwWireSize;
     DWORD dwError = 0;
-    DWORD dwCount;
 
     TRACE("EnumDependentServicesA(%p %lu %p %lu %p %p)\n",
           hService, dwServiceState, lpServices, cbBufSize,
           pcbBytesNeeded, lpServicesReturned);
 
-    if (lpServices == NULL || cbBufSize < sizeof(ENUM_SERVICE_STATUSA))
+    lpWire = ScmAllocEnumWireBuffer(lpServices, cbBufSize, sizeof(ENUM_SERVICE_STATUSA), sizeof(ENUM_SERVICE_STATUS_WIRE), &dwWireSize);
+    if (lpWire == NULL)
     {
-        lpStatusPtr = &ServiceStatus;
-        dwBufferSize = sizeof(ENUM_SERVICE_STATUSA);
-    }
-    else
-    {
-        lpStatusPtr = lpServices;
-        dwBufferSize = cbBufSize;
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
     RpcTryExcept
     {
         dwError = REnumDependentServicesA((SC_RPC_HANDLE)hService,
                                           dwServiceState,
-                                          (LPBYTE)lpStatusPtr,
-                                          dwBufferSize,
+                                          lpWire,
+                                          dwWireSize,
                                           pcbBytesNeeded,
                                           lpServicesReturned);
     }
@@ -997,19 +1060,14 @@ EnumDependentServicesA(SC_HANDLE hService,
 
     if (dwError == ERROR_SUCCESS || dwError == ERROR_MORE_DATA)
     {
-        for (dwCount = 0; dwCount < *lpServicesReturned; dwCount++)
-        {
-            if (lpStatusPtr->lpServiceName)
-                lpStatusPtr->lpServiceName =
-                    (LPSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpServiceName);
-
-            if (lpStatusPtr->lpDisplayName)
-                lpStatusPtr->lpDisplayName =
-                    (LPSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpDisplayName);
-
-            lpStatusPtr++;
-        }
+        *pcbBytesNeeded = ScmEnumNativeBytesNeeded(*pcbBytesNeeded, sizeof(ENUM_SERVICE_STATUSA), sizeof(ENUM_SERVICE_STATUS_WIRE));
+        if (lpServices != NULL)
+            ScmExpandEnumBuffer(lpWire, (LPBYTE)lpServices, *lpServicesReturned,
+                                sizeof(ENUM_SERVICE_STATUS_WIRE), sizeof(ENUM_SERVICE_STATUSA),
+                                FIELD_OFFSET(ENUM_SERVICE_STATUSA, ServiceStatus), sizeof(SERVICE_STATUS), FALSE);
     }
+
+    HeapFree(GetProcessHeap(), 0, lpWire);
 
     if (dwError != ERROR_SUCCESS)
     {
@@ -1037,33 +1095,27 @@ EnumDependentServicesW(SC_HANDLE hService,
                        LPDWORD pcbBytesNeeded,
                        LPDWORD lpServicesReturned)
 {
-    ENUM_SERVICE_STATUSW ServiceStatus;
-    LPENUM_SERVICE_STATUSW lpStatusPtr;
-    DWORD dwBufferSize;
+    LPBYTE lpWire;
+    DWORD dwWireSize;
     DWORD dwError = 0;
-    DWORD dwCount;
 
     TRACE("EnumDependentServicesW(%p %lu %p %lu %p %p)\n",
           hService, dwServiceState, lpServices, cbBufSize,
           pcbBytesNeeded, lpServicesReturned);
 
-    if (lpServices == NULL || cbBufSize < sizeof(ENUM_SERVICE_STATUSW))
+    lpWire = ScmAllocEnumWireBuffer(lpServices, cbBufSize, sizeof(ENUM_SERVICE_STATUSW), sizeof(ENUM_SERVICE_STATUS_WIRE), &dwWireSize);
+    if (lpWire == NULL)
     {
-        lpStatusPtr = &ServiceStatus;
-        dwBufferSize = sizeof(ENUM_SERVICE_STATUSW);
-    }
-    else
-    {
-        lpStatusPtr = lpServices;
-        dwBufferSize = cbBufSize;
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
     RpcTryExcept
     {
         dwError = REnumDependentServicesW((SC_RPC_HANDLE)hService,
                                           dwServiceState,
-                                          (LPBYTE)lpStatusPtr,
-                                          dwBufferSize,
+                                          lpWire,
+                                          dwWireSize,
                                           pcbBytesNeeded,
                                           lpServicesReturned);
     }
@@ -1075,19 +1127,14 @@ EnumDependentServicesW(SC_HANDLE hService,
 
     if (dwError == ERROR_SUCCESS || dwError == ERROR_MORE_DATA)
     {
-        for (dwCount = 0; dwCount < *lpServicesReturned; dwCount++)
-        {
-            if (lpStatusPtr->lpServiceName)
-                lpStatusPtr->lpServiceName =
-                    (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpServiceName);
-
-            if (lpStatusPtr->lpDisplayName)
-                lpStatusPtr->lpDisplayName =
-                    (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpDisplayName);
-
-            lpStatusPtr++;
-        }
+        *pcbBytesNeeded = ScmEnumNativeBytesNeeded(*pcbBytesNeeded, sizeof(ENUM_SERVICE_STATUSW), sizeof(ENUM_SERVICE_STATUS_WIRE));
+        if (lpServices != NULL)
+            ScmExpandEnumBuffer(lpWire, (LPBYTE)lpServices, *lpServicesReturned,
+                                sizeof(ENUM_SERVICE_STATUS_WIRE), sizeof(ENUM_SERVICE_STATUSW),
+                                FIELD_OFFSET(ENUM_SERVICE_STATUSW, ServiceStatus), sizeof(SERVICE_STATUS), TRUE);
     }
+
+    HeapFree(GetProcessHeap(), 0, lpWire);
 
     if (dwError != ERROR_SUCCESS)
     {
@@ -1118,11 +1165,9 @@ EnumServiceGroupW(SC_HANDLE hSCManager,
                   LPDWORD lpResumeHandle,
                   LPCWSTR lpGroup)
 {
-    ENUM_SERVICE_STATUSW ServiceStatus;
-    LPENUM_SERVICE_STATUSW lpStatusPtr;
-    DWORD dwBufferSize;
+    LPBYTE lpWire;
+    DWORD dwWireSize;
     DWORD dwError = 0;
-    DWORD dwCount;
 
     TRACE("EnumServiceGroupW(%p %lu %lu %p %lu %p %p %p %s)\n",
           hSCManager, dwServiceType, dwServiceState, lpServices,
@@ -1141,15 +1186,11 @@ EnumServiceGroupW(SC_HANDLE hSCManager,
         return FALSE;
     }
 
-    if (lpServices == NULL || cbBufSize < sizeof(ENUM_SERVICE_STATUSW))
+    lpWire = ScmAllocEnumWireBuffer(lpServices, cbBufSize, sizeof(ENUM_SERVICE_STATUSW), sizeof(ENUM_SERVICE_STATUS_WIRE), &dwWireSize);
+    if (lpWire == NULL)
     {
-        lpStatusPtr = &ServiceStatus;
-        dwBufferSize = sizeof(ENUM_SERVICE_STATUSW);
-    }
-    else
-    {
-        lpStatusPtr = lpServices;
-        dwBufferSize = cbBufSize;
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
     RpcTryExcept
@@ -1159,8 +1200,8 @@ EnumServiceGroupW(SC_HANDLE hSCManager,
             dwError = REnumServicesStatusW((SC_RPC_HANDLE)hSCManager,
                                            dwServiceType,
                                            dwServiceState,
-                                           (LPBYTE)lpStatusPtr,
-                                           dwBufferSize,
+                                           lpWire,
+                                           dwWireSize,
                                            pcbBytesNeeded,
                                            lpServicesReturned,
                                            lpResumeHandle);
@@ -1170,8 +1211,8 @@ EnumServiceGroupW(SC_HANDLE hSCManager,
             dwError = REnumServiceGroupW((SC_RPC_HANDLE)hSCManager,
                                          dwServiceType,
                                          dwServiceState,
-                                         (LPBYTE)lpStatusPtr,
-                                         dwBufferSize,
+                                         lpWire,
+                                         dwWireSize,
                                          pcbBytesNeeded,
                                          lpServicesReturned,
                                          lpResumeHandle,
@@ -1186,19 +1227,14 @@ EnumServiceGroupW(SC_HANDLE hSCManager,
 
     if (dwError == ERROR_SUCCESS || dwError == ERROR_MORE_DATA)
     {
-        for (dwCount = 0; dwCount < *lpServicesReturned; dwCount++)
-        {
-            if (lpStatusPtr->lpServiceName)
-                lpStatusPtr->lpServiceName =
-                    (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpServiceName);
-
-            if (lpStatusPtr->lpDisplayName)
-                lpStatusPtr->lpDisplayName =
-                    (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpDisplayName);
-
-            lpStatusPtr++;
-        }
+        *pcbBytesNeeded = ScmEnumNativeBytesNeeded(*pcbBytesNeeded, sizeof(ENUM_SERVICE_STATUSW), sizeof(ENUM_SERVICE_STATUS_WIRE));
+        if (lpServices != NULL)
+            ScmExpandEnumBuffer(lpWire, (LPBYTE)lpServices, *lpServicesReturned,
+                                sizeof(ENUM_SERVICE_STATUS_WIRE), sizeof(ENUM_SERVICE_STATUSW),
+                                FIELD_OFFSET(ENUM_SERVICE_STATUSW, ServiceStatus), sizeof(SERVICE_STATUS), TRUE);
     }
+
+    HeapFree(GetProcessHeap(), 0, lpWire);
 
     if (dwError != ERROR_SUCCESS)
     {
@@ -1228,11 +1264,9 @@ EnumServicesStatusA(SC_HANDLE hSCManager,
                     LPDWORD lpServicesReturned,
                     LPDWORD lpResumeHandle)
 {
-    ENUM_SERVICE_STATUSA ServiceStatus;
-    LPENUM_SERVICE_STATUSA lpStatusPtr;
-    DWORD dwBufferSize;
+    LPBYTE lpWire;
+    DWORD dwWireSize;
     DWORD dwError = 0;
-    DWORD dwCount;
 
     TRACE("EnumServicesStatusA(%p %lu %lu %p %lu %p %p %p)\n",
           hSCManager, dwServiceType, dwServiceState, lpServices,
@@ -1250,15 +1284,11 @@ EnumServicesStatusA(SC_HANDLE hSCManager,
         return FALSE;
     }
 
-    if (lpServices == NULL || cbBufSize < sizeof(ENUM_SERVICE_STATUSA))
+    lpWire = ScmAllocEnumWireBuffer(lpServices, cbBufSize, sizeof(ENUM_SERVICE_STATUSA), sizeof(ENUM_SERVICE_STATUS_WIRE), &dwWireSize);
+    if (lpWire == NULL)
     {
-        lpStatusPtr = &ServiceStatus;
-        dwBufferSize = sizeof(ENUM_SERVICE_STATUSA);
-    }
-    else
-    {
-        lpStatusPtr = lpServices;
-        dwBufferSize = cbBufSize;
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
     RpcTryExcept
@@ -1266,8 +1296,8 @@ EnumServicesStatusA(SC_HANDLE hSCManager,
         dwError = REnumServicesStatusA((SC_RPC_HANDLE)hSCManager,
                                        dwServiceType,
                                        dwServiceState,
-                                       (LPBYTE)lpStatusPtr,
-                                       dwBufferSize,
+                                       lpWire,
+                                       dwWireSize,
                                        pcbBytesNeeded,
                                        lpServicesReturned,
                                        lpResumeHandle);
@@ -1280,19 +1310,14 @@ EnumServicesStatusA(SC_HANDLE hSCManager,
 
     if (dwError == ERROR_SUCCESS || dwError == ERROR_MORE_DATA)
     {
-        for (dwCount = 0; dwCount < *lpServicesReturned; dwCount++)
-        {
-            if (lpStatusPtr->lpServiceName)
-                lpStatusPtr->lpServiceName =
-                    (LPSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpServiceName);
-
-            if (lpStatusPtr->lpDisplayName)
-                lpStatusPtr->lpDisplayName =
-                    (LPSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpDisplayName);
-
-            lpStatusPtr++;
-        }
+        *pcbBytesNeeded = ScmEnumNativeBytesNeeded(*pcbBytesNeeded, sizeof(ENUM_SERVICE_STATUSA), sizeof(ENUM_SERVICE_STATUS_WIRE));
+        if (lpServices != NULL)
+            ScmExpandEnumBuffer(lpWire, (LPBYTE)lpServices, *lpServicesReturned,
+                                sizeof(ENUM_SERVICE_STATUS_WIRE), sizeof(ENUM_SERVICE_STATUSA),
+                                FIELD_OFFSET(ENUM_SERVICE_STATUSA, ServiceStatus), sizeof(SERVICE_STATUS), FALSE);
     }
+
+    HeapFree(GetProcessHeap(), 0, lpWire);
 
     if (dwError != ERROR_SUCCESS)
     {
@@ -1322,11 +1347,9 @@ EnumServicesStatusW(SC_HANDLE hSCManager,
                     LPDWORD lpServicesReturned,
                     LPDWORD lpResumeHandle)
 {
-    ENUM_SERVICE_STATUSW ServiceStatus;
-    LPENUM_SERVICE_STATUSW lpStatusPtr;
-    DWORD dwBufferSize;
+    LPBYTE lpWire;
+    DWORD dwWireSize;
     DWORD dwError = 0;
-    DWORD dwCount;
 
     TRACE("EnumServicesStatusW(%p %lu %lu %p %lu %p %p %p)\n",
           hSCManager, dwServiceType, dwServiceState, lpServices,
@@ -1344,15 +1367,11 @@ EnumServicesStatusW(SC_HANDLE hSCManager,
         return FALSE;
     }
 
-    if (lpServices == NULL || cbBufSize < sizeof(ENUM_SERVICE_STATUSW))
+    lpWire = ScmAllocEnumWireBuffer(lpServices, cbBufSize, sizeof(ENUM_SERVICE_STATUSW), sizeof(ENUM_SERVICE_STATUS_WIRE), &dwWireSize);
+    if (lpWire == NULL)
     {
-        lpStatusPtr = &ServiceStatus;
-        dwBufferSize = sizeof(ENUM_SERVICE_STATUSW);
-    }
-    else
-    {
-        lpStatusPtr = lpServices;
-        dwBufferSize = cbBufSize;
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
     RpcTryExcept
@@ -1360,8 +1379,8 @@ EnumServicesStatusW(SC_HANDLE hSCManager,
         dwError = REnumServicesStatusW((SC_RPC_HANDLE)hSCManager,
                                        dwServiceType,
                                        dwServiceState,
-                                       (LPBYTE)lpStatusPtr,
-                                       dwBufferSize,
+                                       lpWire,
+                                       dwWireSize,
                                        pcbBytesNeeded,
                                        lpServicesReturned,
                                        lpResumeHandle);
@@ -1374,19 +1393,14 @@ EnumServicesStatusW(SC_HANDLE hSCManager,
 
     if (dwError == ERROR_SUCCESS || dwError == ERROR_MORE_DATA)
     {
-        for (dwCount = 0; dwCount < *lpServicesReturned; dwCount++)
-        {
-            if (lpStatusPtr->lpServiceName)
-                lpStatusPtr->lpServiceName =
-                    (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpServiceName);
-
-            if (lpStatusPtr->lpDisplayName)
-                lpStatusPtr->lpDisplayName =
-                    (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpDisplayName);
-
-            lpStatusPtr++;
-        }
+        *pcbBytesNeeded = ScmEnumNativeBytesNeeded(*pcbBytesNeeded, sizeof(ENUM_SERVICE_STATUSW), sizeof(ENUM_SERVICE_STATUS_WIRE));
+        if (lpServices != NULL)
+            ScmExpandEnumBuffer(lpWire, (LPBYTE)lpServices, *lpServicesReturned,
+                                sizeof(ENUM_SERVICE_STATUS_WIRE), sizeof(ENUM_SERVICE_STATUSW),
+                                FIELD_OFFSET(ENUM_SERVICE_STATUSW, ServiceStatus), sizeof(SERVICE_STATUS), TRUE);
     }
+
+    HeapFree(GetProcessHeap(), 0, lpWire);
 
     if (dwError != ERROR_SUCCESS)
     {
@@ -1418,11 +1432,9 @@ EnumServicesStatusExA(SC_HANDLE hSCManager,
                       LPDWORD lpResumeHandle,
                       LPCSTR pszGroupName)
 {
-    ENUM_SERVICE_STATUS_PROCESSA ServiceStatus;
-    LPENUM_SERVICE_STATUS_PROCESSA lpStatusPtr;
-    DWORD dwBufferSize;
+    LPBYTE lpWire;
+    DWORD dwWireSize;
     DWORD dwError = 0;
-    DWORD dwCount;
 
     TRACE("EnumServicesStatusExA(%p %lu %lu %p %lu %p %p %p %s)\n",
           hSCManager, dwServiceType, dwServiceState, lpServices,
@@ -1447,15 +1459,11 @@ EnumServicesStatusExA(SC_HANDLE hSCManager,
         return FALSE;
     }
 
-    if (lpServices == NULL || cbBufSize < sizeof(ENUM_SERVICE_STATUS_PROCESSA))
+    lpWire = ScmAllocEnumWireBuffer(lpServices, cbBufSize, sizeof(ENUM_SERVICE_STATUS_PROCESSA), sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE), &dwWireSize);
+    if (lpWire == NULL)
     {
-        lpStatusPtr = &ServiceStatus;
-        dwBufferSize = sizeof(ENUM_SERVICE_STATUS_PROCESSA);
-    }
-    else
-    {
-        lpStatusPtr = (LPENUM_SERVICE_STATUS_PROCESSA)lpServices;
-        dwBufferSize = cbBufSize;
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
     RpcTryExcept
@@ -1464,8 +1472,8 @@ EnumServicesStatusExA(SC_HANDLE hSCManager,
                                          InfoLevel,
                                          dwServiceType,
                                          dwServiceState,
-                                         (LPBYTE)lpStatusPtr,
-                                         dwBufferSize,
+                                         lpWire,
+                                         dwWireSize,
                                          pcbBytesNeeded,
                                          lpServicesReturned,
                                          lpResumeHandle,
@@ -1479,22 +1487,14 @@ EnumServicesStatusExA(SC_HANDLE hSCManager,
 
     if (dwError == ERROR_SUCCESS || dwError == ERROR_MORE_DATA)
     {
-        if (InfoLevel == SC_ENUM_PROCESS_INFO)
-        {
-            for (dwCount = 0; dwCount < *lpServicesReturned; dwCount++)
-            {
-                if (lpStatusPtr->lpServiceName)
-                    lpStatusPtr->lpServiceName =
-                        (LPSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpServiceName);
-
-                if (lpStatusPtr->lpDisplayName)
-                    lpStatusPtr->lpDisplayName =
-                        (LPSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpDisplayName);
-
-                lpStatusPtr++;
-            }
-        }
+        *pcbBytesNeeded = ScmEnumNativeBytesNeeded(*pcbBytesNeeded, sizeof(ENUM_SERVICE_STATUS_PROCESSA), sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE));
+        if (lpServices != NULL)
+            ScmExpandEnumBuffer(lpWire, (LPBYTE)lpServices, *lpServicesReturned,
+                                sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE), sizeof(ENUM_SERVICE_STATUS_PROCESSA),
+                                FIELD_OFFSET(ENUM_SERVICE_STATUS_PROCESSA, ServiceStatusProcess), sizeof(SERVICE_STATUS_PROCESS), FALSE);
     }
+
+    HeapFree(GetProcessHeap(), 0, lpWire);
 
     if (dwError != ERROR_SUCCESS)
     {
@@ -1526,11 +1526,9 @@ EnumServicesStatusExW(SC_HANDLE hSCManager,
                       LPDWORD lpResumeHandle,
                       LPCWSTR pszGroupName)
 {
-    ENUM_SERVICE_STATUS_PROCESSW ServiceStatus;
-    LPENUM_SERVICE_STATUS_PROCESSW lpStatusPtr;
-    DWORD dwBufferSize;
+    LPBYTE lpWire;
+    DWORD dwWireSize;
     DWORD dwError = 0;
-    DWORD dwCount;
 
     TRACE("EnumServicesStatusExW(%p %lu %lu %p %lu %p %p %p %s)\n",
           hSCManager, dwServiceType, dwServiceState, lpServices,
@@ -1555,15 +1553,11 @@ EnumServicesStatusExW(SC_HANDLE hSCManager,
         return FALSE;
     }
 
-    if (lpServices == NULL || cbBufSize < sizeof(ENUM_SERVICE_STATUS_PROCESSW))
+    lpWire = ScmAllocEnumWireBuffer(lpServices, cbBufSize, sizeof(ENUM_SERVICE_STATUS_PROCESSW), sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE), &dwWireSize);
+    if (lpWire == NULL)
     {
-        lpStatusPtr = &ServiceStatus;
-        dwBufferSize = sizeof(ENUM_SERVICE_STATUS_PROCESSW);
-    }
-    else
-    {
-        lpStatusPtr = (LPENUM_SERVICE_STATUS_PROCESSW)lpServices;
-        dwBufferSize = cbBufSize;
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
     RpcTryExcept
@@ -1572,8 +1566,8 @@ EnumServicesStatusExW(SC_HANDLE hSCManager,
                                          InfoLevel,
                                          dwServiceType,
                                          dwServiceState,
-                                         (LPBYTE)lpStatusPtr,
-                                         dwBufferSize,
+                                         lpWire,
+                                         dwWireSize,
                                          pcbBytesNeeded,
                                          lpServicesReturned,
                                          lpResumeHandle,
@@ -1587,22 +1581,14 @@ EnumServicesStatusExW(SC_HANDLE hSCManager,
 
     if (dwError == ERROR_SUCCESS || dwError == ERROR_MORE_DATA)
     {
-        if (InfoLevel == SC_ENUM_PROCESS_INFO)
-        {
-            for (dwCount = 0; dwCount < *lpServicesReturned; dwCount++)
-            {
-                if (lpStatusPtr->lpServiceName)
-                    lpStatusPtr->lpServiceName =
-                        (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpServiceName);
-
-                if (lpStatusPtr->lpDisplayName)
-                    lpStatusPtr->lpDisplayName =
-                        (LPWSTR)((ULONG_PTR)lpServices + (ULONG_PTR)lpStatusPtr->lpDisplayName);
-
-                lpStatusPtr++;
-            }
-        }
+        *pcbBytesNeeded = ScmEnumNativeBytesNeeded(*pcbBytesNeeded, sizeof(ENUM_SERVICE_STATUS_PROCESSW), sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE));
+        if (lpServices != NULL)
+            ScmExpandEnumBuffer(lpWire, (LPBYTE)lpServices, *lpServicesReturned,
+                                sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE), sizeof(ENUM_SERVICE_STATUS_PROCESSW),
+                                FIELD_OFFSET(ENUM_SERVICE_STATUS_PROCESSW, ServiceStatusProcess), sizeof(SERVICE_STATUS_PROCESS), TRUE);
     }
+
+    HeapFree(GetProcessHeap(), 0, lpWire);
 
     if (dwError != ERROR_SUCCESS)
     {

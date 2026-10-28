@@ -1031,7 +1031,7 @@ Int_EnumDependentServicesW(HKEY hServicesKey,
                         dwRequiredSize += (DWORD)((wcslen(lpCurrentService->lpDisplayName) + 1) * sizeof(WCHAR));
 
                         /* Add the size for service name and display name pointers */
-                        dwRequiredSize += (2 * sizeof(PVOID));
+                        dwRequiredSize += (2 * sizeof(DWORD));
 
                         /* increase the BytesNeeded size */
                         *pcbBytesNeeded = *pcbBytesNeeded + dwRequiredSize;
@@ -2918,7 +2918,7 @@ REnumDependentServicesW(
     PSERVICE_HANDLE hSvc;
     PSERVICE lpService = NULL;
     PSERVICE *lpServicesArray = NULL;
-    LPENUM_SERVICE_STATUSW lpServicesPtr = NULL;
+    LPENUM_SERVICE_STATUS_WIRE lpServicesPtr = NULL;
     LPWSTR lpStr;
 
     *pcbBytesNeeded = 0;
@@ -2995,8 +2995,8 @@ REnumDependentServicesW(
         goto Done;
     }
 
-    lpServicesPtr = (LPENUM_SERVICE_STATUSW)lpServices;
-    lpStr = (LPWSTR)(lpServices + (dwServicesReturned * sizeof(ENUM_SERVICE_STATUSW)));
+    lpServicesPtr = (LPENUM_SERVICE_STATUS_WIRE)lpServices;
+    lpStr = (LPWSTR)(lpServices + (dwServicesReturned * sizeof(ENUM_SERVICE_STATUS_WIRE)));
 
     /* Copy EnumDepenedentService to Buffer */
     for (dwServiceCount = 0; dwServiceCount < dwServicesReturned; dwServiceCount++)
@@ -3010,12 +3010,12 @@ REnumDependentServicesW(
 
         /* Copy display name */
         wcscpy(lpStr, lpService->lpDisplayName);
-        lpServicesPtr->lpDisplayName = (LPWSTR)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
+        lpServicesPtr->dwDisplayNameOffset = (DWORD)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
         lpStr += (wcslen(lpService->lpDisplayName) + 1);
 
         /* Copy service name */
         wcscpy(lpStr, lpService->lpServiceName);
-        lpServicesPtr->lpServiceName = (LPWSTR)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
+        lpServicesPtr->dwServiceNameOffset = (DWORD)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
         lpStr += (wcslen(lpService->lpServiceName) + 1);
 
         lpServicesPtr++;
@@ -3947,7 +3947,7 @@ REnumDependentServicesA(
     PSERVICE_HANDLE hSvc;
     PSERVICE lpService = NULL;
     PSERVICE *lpServicesArray = NULL;
-    LPENUM_SERVICE_STATUSA lpServicesPtr = NULL;
+    LPENUM_SERVICE_STATUS_WIRE lpServicesPtr = NULL;
     LPSTR lpStr;
 
     *pcbBytesNeeded = 0;
@@ -4029,8 +4029,8 @@ REnumDependentServicesA(
         goto Done;
     }
 
-    lpServicesPtr = (LPENUM_SERVICE_STATUSA)lpServices;
-    lpStr = (LPSTR)(lpServices + (dwServicesReturned * sizeof(ENUM_SERVICE_STATUSA)));
+    lpServicesPtr = (LPENUM_SERVICE_STATUS_WIRE)lpServices;
+    lpStr = (LPSTR)(lpServices + (dwServicesReturned * sizeof(ENUM_SERVICE_STATUS_WIRE)));
 
     /* Copy EnumDepenedentService to Buffer */
     for (dwServiceCount = 0; dwServiceCount < dwServicesReturned; dwServiceCount++)
@@ -4051,7 +4051,7 @@ REnumDependentServicesA(
                             (int)wcslen(lpService->lpDisplayName),
                             0,
                             0);
-        lpServicesPtr->lpDisplayName = (LPSTR)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
+        lpServicesPtr->dwDisplayNameOffset = (DWORD)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
         lpStr += strlen(lpStr) + 1;
 
         /* Copy service name */
@@ -4063,7 +4063,7 @@ REnumDependentServicesA(
                             (int)wcslen(lpService->lpServiceName),
                             0,
                             0);
-        lpServicesPtr->lpServiceName = (LPSTR)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
+        lpServicesPtr->dwServiceNameOffset = (DWORD)((ULONG_PTR)lpStr - (ULONG_PTR)lpServices);
         lpStr += strlen(lpStr) + 1;
 
         lpServicesPtr++;
@@ -4096,9 +4096,9 @@ REnumServicesStatusA(
     LPBOUNDED_DWORD_256K lpServicesReturned,
     LPBOUNDED_DWORD_256K lpResumeHandle)
 {
-    LPENUM_SERVICE_STATUSW lpStatusPtrW = NULL;
-    LPENUM_SERVICE_STATUSW lpStatusPtrIncrW;
-    LPENUM_SERVICE_STATUSA lpStatusPtrA = NULL;
+    LPENUM_SERVICE_STATUS_WIRE lpStatusPtrW = NULL;
+    LPENUM_SERVICE_STATUS_WIRE lpStatusPtrIncrW;
+    LPENUM_SERVICE_STATUS_WIRE lpStatusPtrA = NULL;
     LPWSTR lpStringPtrW;
     LPSTR lpStringPtrA;
     DWORD dwError;
@@ -4135,11 +4135,11 @@ REnumServicesStatusA(
         goto Done;
 
     lpStatusPtrIncrW = lpStatusPtrW;
-    lpStatusPtrA = (LPENUM_SERVICE_STATUSA)lpBuffer;
+    lpStatusPtrA = (LPENUM_SERVICE_STATUS_WIRE)lpBuffer;
     lpStringPtrA = (LPSTR)((ULONG_PTR)lpBuffer +
-                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUSA));
+                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUS_WIRE));
     lpStringPtrW = (LPWSTR)((ULONG_PTR)lpStatusPtrW +
-                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUSW));
+                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUS_WIRE));
 
     for (dwServiceCount = 0; dwServiceCount < *lpServicesReturned; dwServiceCount++)
     {
@@ -4153,7 +4153,7 @@ REnumServicesStatusA(
                             0,
                             0);
 
-        lpStatusPtrA->lpServiceName = (LPSTR)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
+        lpStatusPtrA->dwServiceNameOffset = (DWORD)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
         lpStringPtrA += wcslen(lpStringPtrW) + 1;
         lpStringPtrW += wcslen(lpStringPtrW) + 1;
 
@@ -4167,7 +4167,7 @@ REnumServicesStatusA(
                             0,
                             0);
 
-        lpStatusPtrA->lpDisplayName = (LPSTR)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
+        lpStatusPtrA->dwDisplayNameOffset = (DWORD)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
         lpStringPtrA += wcslen(lpStringPtrW) + 1;
         lpStringPtrW += wcslen(lpStringPtrW) + 1;
 
@@ -4951,7 +4951,7 @@ REnumServiceGroupW(
     DWORD dwServiceCount;
     DWORD dwSize;
     DWORD dwLastResumeCount = 0;
-    LPENUM_SERVICE_STATUSW lpStatusPtr;
+    LPENUM_SERVICE_STATUS_WIRE lpStatusPtr;
     LPWSTR lpStringPtr;
 
     DPRINT("REnumServiceGroupW() called\n");
@@ -5046,7 +5046,7 @@ REnumServiceGroupW(
             }
         }
 
-        dwSize = sizeof(ENUM_SERVICE_STATUSW) +
+        dwSize = sizeof(ENUM_SERVICE_STATUS_WIRE) +
                  (DWORD)((wcslen(CurrentService->lpServiceName) + 1) * sizeof(WCHAR)) +
                  (DWORD)((wcslen(CurrentService->lpDisplayName) + 1) * sizeof(WCHAR));
 
@@ -5100,7 +5100,7 @@ REnumServiceGroupW(
             }
         }
 
-        dwRequiredSize += (sizeof(ENUM_SERVICE_STATUSW) +
+        dwRequiredSize += (sizeof(ENUM_SERVICE_STATUS_WIRE) +
                            (DWORD)((wcslen(CurrentService->lpServiceName) + 1) * sizeof(WCHAR)) +
                            (DWORD)((wcslen(CurrentService->lpDisplayName) + 1) * sizeof(WCHAR)));
 
@@ -5115,9 +5115,9 @@ REnumServiceGroupW(
     *lpServicesReturned = dwServiceCount;
     *pcbBytesNeeded = dwRequiredSize;
 
-    lpStatusPtr = (LPENUM_SERVICE_STATUSW)lpBuffer;
+    lpStatusPtr = (LPENUM_SERVICE_STATUS_WIRE)lpBuffer;
     lpStringPtr = (LPWSTR)((ULONG_PTR)lpBuffer +
-                           dwServiceCount * sizeof(ENUM_SERVICE_STATUSW));
+                           dwServiceCount * sizeof(ENUM_SERVICE_STATUS_WIRE));
 
     dwRequiredSize = 0;
     for (ServiceEntry = &lpService->ServiceListEntry;
@@ -5153,7 +5153,7 @@ REnumServiceGroupW(
             }
         }
 
-        dwSize = sizeof(ENUM_SERVICE_STATUSW) +
+        dwSize = sizeof(ENUM_SERVICE_STATUS_WIRE) +
                  (DWORD)((wcslen(CurrentService->lpServiceName) + 1) * sizeof(WCHAR)) +
                  (DWORD)((wcslen(CurrentService->lpDisplayName) + 1) * sizeof(WCHAR));
 
@@ -5162,12 +5162,12 @@ REnumServiceGroupW(
 
         /* Copy the service name */
         wcscpy(lpStringPtr, CurrentService->lpServiceName);
-        lpStatusPtr->lpServiceName = (LPWSTR)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
+        lpStatusPtr->dwServiceNameOffset = (DWORD)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
         lpStringPtr += (wcslen(CurrentService->lpServiceName) + 1);
 
         /* Copy the display name */
         wcscpy(lpStringPtr, CurrentService->lpDisplayName);
-        lpStatusPtr->lpDisplayName = (LPWSTR)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
+        lpStatusPtr->dwDisplayNameOffset = (DWORD)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
         lpStringPtr += (wcslen(CurrentService->lpDisplayName) + 1);
 
         /* Copy the status information */
@@ -6204,9 +6204,9 @@ REnumServicesStatusExA(
     LPBOUNDED_DWORD_256K lpResumeIndex,
     LPCSTR pszGroupName)
 {
-    LPENUM_SERVICE_STATUS_PROCESSW lpStatusPtrW = NULL;
-    LPENUM_SERVICE_STATUS_PROCESSW lpStatusPtrIncrW;
-    LPENUM_SERVICE_STATUS_PROCESSA lpStatusPtrA = NULL;
+    LPENUM_SERVICE_STATUS_PROCESS_WIRE lpStatusPtrW = NULL;
+    LPENUM_SERVICE_STATUS_PROCESS_WIRE lpStatusPtrIncrW;
+    LPENUM_SERVICE_STATUS_PROCESS_WIRE lpStatusPtrA = NULL;
     LPWSTR lpStringPtrW;
     LPSTR lpStringPtrA;
     LPWSTR pszGroupNameW = NULL;
@@ -6265,11 +6265,11 @@ REnumServicesStatusExA(
         goto Done;
 
     lpStatusPtrIncrW = lpStatusPtrW;
-    lpStatusPtrA = (LPENUM_SERVICE_STATUS_PROCESSA)lpBuffer;
+    lpStatusPtrA = (LPENUM_SERVICE_STATUS_PROCESS_WIRE)lpBuffer;
     lpStringPtrA = (LPSTR)((ULONG_PTR)lpBuffer +
-                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUS_PROCESSA));
+                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE));
     lpStringPtrW = (LPWSTR)((ULONG_PTR)lpStatusPtrW +
-                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUS_PROCESSW));
+                  *lpServicesReturned * sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE));
 
     for (dwServiceCount = 0; dwServiceCount < *lpServicesReturned; dwServiceCount++)
     {
@@ -6283,7 +6283,7 @@ REnumServicesStatusExA(
                             0,
                             0);
 
-        lpStatusPtrA->lpServiceName = (LPSTR)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
+        lpStatusPtrA->dwServiceNameOffset = (DWORD)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
         lpStringPtrA += wcslen(lpStringPtrW) + 1;
         lpStringPtrW += wcslen(lpStringPtrW) + 1;
 
@@ -6297,7 +6297,7 @@ REnumServicesStatusExA(
                             0,
                             0);
 
-        lpStatusPtrA->lpDisplayName = (LPSTR)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
+        lpStatusPtrA->dwDisplayNameOffset = (DWORD)((ULONG_PTR)lpStringPtrA - (ULONG_PTR)lpBuffer);
         lpStringPtrA += wcslen(lpStringPtrW) + 1;
         lpStringPtrW += wcslen(lpStringPtrW) + 1;
 
@@ -6353,7 +6353,7 @@ REnumServicesStatusExW(
     DWORD dwServiceCount;
     DWORD dwSize;
     DWORD dwLastResumeCount = 0;
-    LPENUM_SERVICE_STATUS_PROCESSW lpStatusPtr;
+    LPENUM_SERVICE_STATUS_PROCESS_WIRE lpStatusPtr;
     LPWSTR lpStringPtr;
 
     DPRINT("REnumServicesStatusExW() called\n");
@@ -6451,7 +6451,7 @@ REnumServicesStatusExW(
             }
         }
 
-        dwSize = sizeof(ENUM_SERVICE_STATUS_PROCESSW) +
+        dwSize = sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE) +
                  (DWORD)((wcslen(CurrentService->lpServiceName) + 1) * sizeof(WCHAR)) +
                  (DWORD)((wcslen(CurrentService->lpDisplayName) + 1) * sizeof(WCHAR));
 
@@ -6508,7 +6508,7 @@ REnumServicesStatusExW(
             }
         }
 
-        dwRequiredSize += (sizeof(ENUM_SERVICE_STATUS_PROCESSW) +
+        dwRequiredSize += (sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE) +
                            (DWORD)((wcslen(CurrentService->lpServiceName) + 1) * sizeof(WCHAR)) +
                            (DWORD)((wcslen(CurrentService->lpDisplayName) + 1) * sizeof(WCHAR)));
 
@@ -6530,9 +6530,9 @@ REnumServicesStatusExW(
         goto Done;
     }
 
-    lpStatusPtr = (LPENUM_SERVICE_STATUS_PROCESSW)lpBuffer;
+    lpStatusPtr = (LPENUM_SERVICE_STATUS_PROCESS_WIRE)lpBuffer;
     lpStringPtr = (LPWSTR)((ULONG_PTR)lpBuffer +
-                           dwServiceCount * sizeof(ENUM_SERVICE_STATUS_PROCESSW));
+                           dwServiceCount * sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE));
 
     dwRequiredSize = 0;
     for (ServiceEntry = &lpService->ServiceListEntry;
@@ -6568,7 +6568,7 @@ REnumServicesStatusExW(
             }
         }
 
-        dwSize = sizeof(ENUM_SERVICE_STATUS_PROCESSW) +
+        dwSize = sizeof(ENUM_SERVICE_STATUS_PROCESS_WIRE) +
                  (DWORD)((wcslen(CurrentService->lpServiceName) + 1) * sizeof(WCHAR)) +
                  (DWORD)((wcslen(CurrentService->lpDisplayName) + 1) * sizeof(WCHAR));
 
@@ -6577,13 +6577,13 @@ REnumServicesStatusExW(
             /* Copy the service name */
             wcscpy(lpStringPtr,
                    CurrentService->lpServiceName);
-            lpStatusPtr->lpServiceName = (LPWSTR)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
+            lpStatusPtr->dwServiceNameOffset = (DWORD)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
             lpStringPtr += (wcslen(CurrentService->lpServiceName) + 1);
 
             /* Copy the display name */
             wcscpy(lpStringPtr,
                    CurrentService->lpDisplayName);
-            lpStatusPtr->lpDisplayName = (LPWSTR)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
+            lpStatusPtr->dwDisplayNameOffset = (DWORD)((ULONG_PTR)lpStringPtr - (ULONG_PTR)lpBuffer);
             lpStringPtr += (wcslen(CurrentService->lpDisplayName) + 1);
 
             /* Copy the status information */
