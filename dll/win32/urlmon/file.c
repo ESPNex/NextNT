@@ -437,6 +437,10 @@ HRESULT FileProtocol_Construct(IUnknown *outer, LPVOID *ppobj)
     URLMON_LockModule();
 
     ret = malloc(sizeof(FileProtocol));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IUnknown_inner.lpVtbl = &FileProtocolUnkVtbl;
     ret->IInternetProtocolEx_iface.lpVtbl = &FileProtocolExVtbl;

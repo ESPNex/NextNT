@@ -157,6 +157,10 @@ static const IEnumFORMATETCVtbl EnumFORMATETCVtbl = {
 static IEnumFORMATETC *EnumFORMATETC_Create(UINT cfmtetc, const FORMATETC *rgfmtetc, UINT it)
 {
     EnumFORMATETC *ret = malloc(sizeof(EnumFORMATETC));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     URLMON_LockModule();
 

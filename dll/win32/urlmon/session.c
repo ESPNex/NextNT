@@ -128,6 +128,10 @@ HRESULT register_namespace(IClassFactory *cf, REFIID clsid, LPCWSTR protocol, BO
     name_space *new_name_space;
 
     new_name_space = malloc(sizeof(name_space));
+#ifdef __REACTOS__
+    if (!new_name_space)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     if(!urlmon_protocol)
         IClassFactory_AddRef(cf);
@@ -403,6 +407,10 @@ static HRESULT WINAPI InternetSession_RegisterMimeFilter(IInternetSession *iface
     TRACE("(%p %s %s)\n", pCF, debugstr_guid(rclsid), debugstr_w(pwzType));
 
     filter = malloc(sizeof(mime_filter));
+#ifdef __REACTOS__
+    if (!filter)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     IClassFactory_AddRef(pCF);
     filter->cf = pCF;

@@ -1384,6 +1384,10 @@ HRESULT SecManagerImpl_Construct(IUnknown *pUnkOuter, LPVOID *ppobj)
 
     TRACE("(%p,%p)\n",pUnkOuter,ppobj);
     This = malloc(sizeof(*This));
+#ifdef __REACTOS__
+    if (!This)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     /* Initialize the virtual function table. */
     This->IInternetSecurityManagerEx2_iface.lpVtbl = &VT_SecManagerImpl;
@@ -1968,6 +1972,10 @@ static const IInternetZoneManagerEx2Vtbl ZoneMgrImplVtbl = {
 HRESULT ZoneMgrImpl_Construct(IUnknown *pUnkOuter, LPVOID *ppobj)
 {
     ZoneMgrImpl *ret = calloc(1, sizeof(ZoneMgrImpl));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     TRACE("(%p %p)\n", pUnkOuter, ppobj);
     ret->IInternetZoneManagerEx2_iface.lpVtbl = &ZoneMgrImplVtbl;

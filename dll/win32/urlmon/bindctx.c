@@ -952,6 +952,10 @@ HRESULT WINAPI CreateAsyncBindCtxEx(IBindCtx *ibind, DWORD options,
     }
 
     ret = malloc(sizeof(AsyncBindCtx));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IBindCtx_iface.lpVtbl = &AsyncBindCtxVtbl;
     ret->ref = 1;

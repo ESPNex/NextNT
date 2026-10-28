@@ -318,6 +318,10 @@ HRESULT GopherProtocol_Construct(IUnknown *pUnkOuter, LPVOID *ppobj)
     URLMON_LockModule();
 
     ret = calloc(1, sizeof(GopherProtocol));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->base.vtbl = &AsyncProtocolVtbl;
     ret->IInternetProtocol_iface.lpVtbl = &GopherProtocolVtbl;

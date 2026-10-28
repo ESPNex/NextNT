@@ -252,6 +252,10 @@ HRESULT MimeFilter_Construct(IUnknown *pUnkOuter, LPVOID *ppobj)
     URLMON_LockModule();
 
     ret = calloc(1, sizeof(MimeFilter));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IInternetProtocol_iface.lpVtbl = &MimeFilterProtocolVtbl;
     ret->IInternetProtocolSink_iface.lpVtbl = &InternetProtocolSinkVtbl;

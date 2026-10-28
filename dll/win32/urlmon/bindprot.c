@@ -1370,6 +1370,10 @@ static HRESULT WINAPI BPInternetProtocolSink_ReportProgress(IInternetProtocolSin
         on_progress_task_t *task;
 
         task = malloc(sizeof(on_progress_task_t));
+#ifdef __REACTOS__
+        if (!task)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
         task->status_code = ulStatusCode;
         task->status_text = wcsdup(szStatusText);
@@ -1530,6 +1534,10 @@ static const IServiceProviderVtbl ServiceProviderVtbl = {
 HRESULT create_binding_protocol(BindProtocol **protocol)
 {
     BindProtocol *ret = calloc(1, sizeof(BindProtocol));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IInternetProtocolEx_iface.lpVtbl   = &BindProtocolVtbl;
     ret->IInternetBindInfo_iface.lpVtbl     = &InternetBindInfoVtbl;

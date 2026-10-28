@@ -211,6 +211,10 @@ static LPWSTR get_mime_clsid(LPCWSTR mime, CLSID *clsid)
 
     len = lstrlenW(mime)+1;
     key_name = malloc(sizeof(mime_keyW) + len * sizeof(WCHAR));
+#ifdef __REACTOS__
+    if (!key_name)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     memcpy(key_name, mime_keyW, sizeof(mime_keyW));
     lstrcpyW(key_name + ARRAY_SIZE(mime_keyW), mime);
 
@@ -430,6 +434,10 @@ static const IUnknownVtbl StgMedUnkVtbl = {
 static stgmed_buf_t *create_stgmed_buf(IInternetProtocolEx *protocol)
 {
     stgmed_buf_t *ret = malloc(sizeof(*ret));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IUnknown_iface.lpVtbl = &StgMedUnkVtbl;
     ret->ref = 1;
@@ -736,6 +744,10 @@ typedef struct {
 static stgmed_obj_t *create_stgmed_stream(stgmed_buf_t *buf)
 {
     ProtocolStream *ret = malloc(sizeof(ProtocolStream));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->stgmed_obj.vtbl = &stgmed_stream_vtbl;
     ret->IStream_iface.lpVtbl = &ProtocolStreamVtbl;
@@ -789,6 +801,10 @@ static const stgmed_obj_vtbl stgmed_file_vtbl = {
 static stgmed_obj_t *create_stgmed_file(stgmed_buf_t *buf)
 {
     stgmed_file_obj_t *ret = malloc(sizeof(*ret));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->stgmed_obj.vtbl = &stgmed_file_vtbl;
 
@@ -1501,6 +1517,10 @@ static HRESULT Binding_Create(IMoniker *mon, Binding *binding_ctx, IUri *uri, IB
     URLMON_LockModule();
 
     ret = calloc(1, sizeof(Binding));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IBinding_iface.lpVtbl = &BindingVtbl;
     ret->IInternetProtocolSink_iface.lpVtbl = &InternetProtocolSinkVtbl;

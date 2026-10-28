@@ -471,6 +471,10 @@ HRESULT FtpProtocol_Construct(IUnknown *outer, void **ppv)
     URLMON_LockModule();
 
     ret = calloc(1, sizeof(FtpProtocol));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->base.vtbl = &AsyncProtocolVtbl;
     ret->IUnknown_inner.lpVtbl            = &FtpProtocolUnkVtbl;
