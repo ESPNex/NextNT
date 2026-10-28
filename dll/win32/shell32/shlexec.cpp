@@ -1142,13 +1142,25 @@ static UINT SHELL_FindExecutable(LPCWSTR lpPath, LPCWSTR lpFile, LPCWSTR lpVerb,
         if (retval > 32)
         {
             DWORD finishedLen;
+            CHeapPtr<WCHAR, CLocalAllocator> argified;
+            LPWSTR target = lpResult;
             SHELL_ArgifyW(lpResult, resultLen, command, xlpFile, pidl, args, &finishedLen, lpPath);
             if (finishedLen > resultLen)
-                ERR("Argify buffer not large enough.. truncated\n");
-            /* Remove double quotation marks and command line arguments */
-            if (*lpResult == '"')
             {
-                WCHAR *p = lpResult;
+                if (argified.Allocate(finishedLen))
+                {
+                    target = argified;
+                    SHELL_ArgifyW(target, finishedLen, command, xlpFile, pidl, args, &finishedLen, lpPath);
+                }
+                else
+                {
+                    ERR("Argify buffer not large enough.. truncated\n");
+                }
+            }
+            /* Remove double quotation marks and command line arguments */
+            if (*target == '"')
+            {
+                WCHAR *p = target;
                 while (*(p + 1) != '"')
                 {
                     *p = *(p + 1);
@@ -1159,11 +1171,13 @@ static UINT SHELL_FindExecutable(LPCWSTR lpPath, LPCWSTR lpFile, LPCWSTR lpVerb,
             else
             {
                 /* Truncate on first space */
-                WCHAR *p = lpResult;
+                WCHAR *p = target;
                 while (*p != ' ' && *p != '\0')
                     p++;
                 *p = '\0';
             }
+            if (target != lpResult)
+                StringCchCopyW(lpResult, resultLen, target);
         }
     }
     else /* Check win.ini */
@@ -1432,7 +1446,9 @@ static UINT_PTR execute_from_key(LPCWSTR key, LPCWSTR lpFile, WCHAR *env,
                                  SHELL_ExecuteW32 execfunc,
                                  LPSHELLEXECUTEINFOW psei, LPSHELLEXECUTEINFOW psei_out)
 {
-    WCHAR cmd[256], param[1024], ddeexec[256];
+    WCHAR cmd[256], paramBuffer[1024], ddeexec[256];
+    LPWSTR param = paramBuffer;
+    CHeapPtr<WCHAR, CLocalAllocator> paramAlloc;
     DWORD cmdlen = sizeof(cmd), ddeexeclen = sizeof(ddeexec);
     UINT_PTR retval = SE_ERR_NOASSOC;
     DWORD resultLen;
@@ -1454,10 +1470,21 @@ static UINT_PTR execute_from_key(LPCWSTR key, LPCWSTR lpFile, WCHAR *env,
         if (cmdlen >= ARRAY_SIZE(cmd))
             cmdlen = ARRAY_SIZE(cmd) - 1;
         cmd[cmdlen] = '\0';
-        SHELL_ArgifyW(param, ARRAY_SIZE(param), cmd, lpFile, (LPITEMIDLIST)psei->lpIDList, szCommandline, &resultLen,
+        SHELL_ArgifyW(param, ARRAY_SIZE(paramBuffer), cmd, lpFile, (LPITEMIDLIST)psei->lpIDList, szCommandline, &resultLen,
                       (psei->lpDirectory && *psei->lpDirectory) ? psei->lpDirectory : NULL);
-        if (resultLen > ARRAY_SIZE(param))
-            ERR("Argify buffer not large enough, truncating\n");
+        if (resultLen > ARRAY_SIZE(paramBuffer))
+        {
+            if (paramAlloc.Allocate(resultLen))
+            {
+                param = paramAlloc;
+                SHELL_ArgifyW(param, resultLen, cmd, lpFile, (LPITEMIDLIST)psei->lpIDList, szCommandline, &resultLen,
+                              (psei->lpDirectory && *psei->lpDirectory) ? psei->lpDirectory : NULL);
+            }
+            else
+            {
+                ERR("Argify buffer not large enough, truncating\n");
+            }
+        }
     }
 
     /* Get the parameters needed by the application
