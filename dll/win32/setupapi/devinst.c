@@ -676,6 +676,7 @@ CreateDeviceInfo(
                                list->hMachine);
     if (cr != CR_SUCCESS)
     {
+        HeapFree(GetProcessHeap(), 0, deviceInfo);
         SetLastError(GetErrorCodeFromCrCode(cr));
         return FALSE;
     }
