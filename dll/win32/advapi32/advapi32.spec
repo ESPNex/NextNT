@@ -225,6 +225,7 @@
 @ stdcall EnumServicesStatusW(long long long ptr long ptr ptr ptr)
 @ stdcall -version=0x502 EnumerateTraceGuids(ptr long ptr) ntdll.EtwEnumerateTraceGuids
 @ stdcall -stub -version=0x600+ EnumerateTraceGuids(ptr long ptr) # EtwEnumerateTraceGuids
+@ stdcall -version=0x600+ EnumerateTraceGuidsEx(long ptr long ptr long ptr) sechost.EnumerateTraceGuidsEx
 @ stdcall EqualDomainSid(ptr ptr ptr) kernelbase.EqualDomainSid
 @ stdcall EqualPrefixSid(ptr ptr) kernelbase.EqualPrefixSid
 @ stdcall EqualSid(ptr ptr) kernelbase.EqualSid
