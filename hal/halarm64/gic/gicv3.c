@@ -415,3 +415,36 @@ HalpGicv3RegisterCpu(
     DPRINT("[arm64][GICv3] Registered CPU %lu with MPIDR 0x%llx (online CPUs: %ld)\n",
             CpuIndex, Mpidr, HalpGicOnlineCpuCount);
 }
+
+VOID
+HalpGicv3RouteSpi(
+    _In_ ULONG IntId,
+    _In_ ULONG Cpu)
+{
+    ULONGLONG Mpidr;
+    ULONG Bit = 1u << (IntId % 32);
+    ULONG Offset = (IntId / 32) * 4;
+    ULONG Wait;
+    BOOLEAN Enabled;
+
+    if (!HalpGicv3GetMpidrForCpu(Cpu, &Mpidr))
+        return;
+
+    Enabled = (*HalpMmio((ULONG_PTR)HalpGicdBase, GICD_ISENABLER + Offset) & Bit) != 0;
+    if (Enabled)
+    {
+        *HalpMmio((ULONG_PTR)HalpGicdBase, GICD_ICENABLER + Offset) = Bit;
+        ARM64_DSB(SY);
+        for (Wait = 0; Wait < 1000000 && (*HalpMmio((ULONG_PTR)HalpGicdBase, GICD_CTLR) & GICD_CTLR_RWP); Wait++)
+            KeStallExecutionProcessor(1);
+    }
+
+    HalpMmioWrite64((ULONG_PTR)HalpGicdBase, GICD_IROUTER + (IntId * 8), HalpArm64IrouterFromMpidr(Mpidr));
+    ARM64_DSB(SY);
+
+    if (Enabled)
+    {
+        *HalpMmio((ULONG_PTR)HalpGicdBase, GICD_ISENABLER + Offset) = Bit;
+        ARM64_DSB(SY);
+    }
+}

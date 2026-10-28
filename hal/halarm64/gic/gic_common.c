@@ -896,6 +896,32 @@ HalpGicSetInterruptPriority(
     ARM64_DSB(SY);
 }
 
+VOID
+HalpGicRouteSpi(
+    _In_ ULONG IntId,
+    _In_ KAFFINITY Processors)
+{
+    ULONG Count = 0, Index, Cpu;
+
+    if (HalpArm64InterruptController || IntId < 32 || IntId >= 1020 || Processors == 0)
+        return;
+
+    for (Cpu = 0; Cpu < sizeof(KAFFINITY) * 8; Cpu++)
+        Count += (ULONG)((Processors >> Cpu) & 1);
+
+    Index = (IntId - 32) % Count;
+    for (Cpu = 0; Cpu < sizeof(KAFFINITY) * 8; Cpu++)
+    {
+        if (((Processors >> Cpu) & 1) && Index-- == 0)
+            break;
+    }
+
+    if (HalpGicUseSysRegs)
+        HalpGicv3RouteSpi(IntId, Cpu);
+    else
+        HalpGicv2RouteSpi(IntId, Cpu);
+}
+
 /*
  * SMP boot diagnostics (/SMPDIAG): read the live GIC priority/enable/pending/
  * active state of an SGI or PPI on the current CPU, so the kernel idle probe can

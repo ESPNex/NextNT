@@ -65,6 +65,8 @@
 @ stdcall -arch=arm64 HalRequestDebugWakeIpi(long)
 @ stdcall -arch=arm64 HalArm64DbgGicState(long ptr ptr ptr ptr)
 @ stdcall -arch=arm64 HalArm64ProfileSample(long)
+@ stdcall -arch=arm64 HalArm64ConnectInterrupt(long)
+@ stdcall -arch=arm64 HalArm64DisconnectInterrupt(long)
 @ stdcall -arch=!arm64 HalRequestIpi(long)
 @ stdcall -arch=arm64 HalRequestIpi(long ptr)
 @ fastcall HalRequestSoftwareInterrupt(long)

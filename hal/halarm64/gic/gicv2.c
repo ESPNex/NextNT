@@ -29,12 +29,7 @@
 
 #include "gic_internal.h"
 
-#define HALP_GICV2_SPI_BASE 32
-#define HALP_GICV2_SPI_MAX 1020
-#define HALP_GICV2_SPI_COUNT (HALP_GICV2_SPI_MAX - HALP_GICV2_SPI_BASE)
-
 static UCHAR HalpGicv2CpuTarget[MAXIMUM_PROCESSORS];
-static UCHAR HalpGicv2SpiCpu[HALP_GICV2_SPI_COUNT];
 
 /*
  * ============================================================================
@@ -312,71 +307,22 @@ HalpGicv2RegisterCpuTarget(
            CpuTarget);
 }
 
-/* Called with HalpArm64VectorLock held; the first assignment remains stable. */
-BOOLEAN
-HalpGicv2ConfigureSpiAffinity(
+VOID
+HalpGicv2RouteSpi(
     _In_ ULONG IntId,
-    _Out_ PKAFFINITY Affinity)
+    _In_ ULONG Cpu)
 {
-    ULONG CandidateCpu[MAXIMUM_PROCESSORS];
-    ULONG CandidateCount = 0;
-    ULONG ProcessorCount;
-    ULONG Cpu;
-    ULONG SelectedCpu;
-    ULONG Index;
     UCHAR CpuTarget;
-    BOOLEAN NewAssignment = FALSE;
 
-    if (!Affinity)
-        return FALSE;
+    if (Cpu >= MAXIMUM_PROCESSORS)
+        return;
 
-    *Affinity = 0;
-    if (IntId < HALP_GICV2_SPI_BASE || IntId >= HALP_GICV2_SPI_MAX)
-        return FALSE;
-
-    Index = IntId - HALP_GICV2_SPI_BASE;
-    if (HalpGicv2SpiCpu[Index] != 0)
-    {
-        SelectedCpu = HalpGicv2SpiCpu[Index] - 1;
-    }
-    else
-    {
-        ProcessorCount = KeNumberProcessors;
-        if (ProcessorCount > MAXIMUM_PROCESSORS)
-            ProcessorCount = MAXIMUM_PROCESSORS;
-        if (ProcessorCount > sizeof(KAFFINITY) * 8)
-            ProcessorCount = sizeof(KAFFINITY) * 8;
-
-        ARM64_DMB(ISHLD);
-        for (Cpu = 0; Cpu < ProcessorCount; Cpu++)
-        {
-            CpuTarget = HalpGicv2CpuTarget[Cpu];
-            if (CpuTarget != 0 && (CpuTarget & (CpuTarget - 1)) == 0)
-                CandidateCpu[CandidateCount++] = Cpu;
-        }
-
-        if (CandidateCount == 0)
-            return FALSE;
-
-        SelectedCpu = CandidateCpu[Index % CandidateCount];
-        HalpGicv2SpiCpu[Index] = (UCHAR)(SelectedCpu + 1);
-        NewAssignment = TRUE;
-    }
-
-    CpuTarget = HalpGicv2CpuTarget[SelectedCpu];
-    if (CpuTarget == 0)
-        return FALSE;
+    ARM64_DMB(ISHLD);
+    CpuTarget = HalpGicv2CpuTarget[Cpu];
+    if (CpuTarget == 0 || (CpuTarget & (CpuTarget - 1)) != 0)
+        return;
 
     HalpGicv2SetSpiTarget(IntId, CpuTarget);
-    *Affinity = (KAFFINITY)1 << SelectedCpu;
-    if (NewAssignment)
-    {
-        DPRINT("[arm64][GICv2] SPI %lu assigned to CPU %lu target 0x%02x\n",
-               IntId,
-               SelectedCpu,
-               CpuTarget);
-    }
-    return TRUE;
 }
 
 /*
@@ -395,8 +341,6 @@ HalpInitGicv2SpiTargets(
     ULONG i;
     ULONG TargetWord;
     UCHAR BootTarget;
-
-    RtlZeroMemory(HalpGicv2SpiCpu, sizeof(HalpGicv2SpiCpu));
 
     /* The boot processor's target bit is implementation-defined. */
     BootTarget = HalpGicv2CpuTarget[0];

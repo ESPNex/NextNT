@@ -49,6 +49,7 @@
  * ============================================================================
  */
 #define GICD_CTLR           0x000
+#define GICD_CTLR_RWP       0x80000000
 #define GICD_TYPER          0x004
 #define GICD_IIDR           0x008
 #define GICD_IGROUPR        0x080
@@ -1109,10 +1110,10 @@ VOID
 HalpGicv2RegisterCpuTarget(
     _In_ ULONG ProcessorNumber);
 
-BOOLEAN
-HalpGicv2ConfigureSpiAffinity(
+VOID
+HalpGicv2RouteSpi(
     _In_ ULONG IntId,
-    _Out_ PKAFFINITY Affinity);
+    _In_ ULONG Cpu);
 
 VOID
 HalpInitGicv2SpiTargets(
@@ -1142,6 +1143,11 @@ VOID
 HalpGicv3SendSgi(
     _In_ KAFFINITY TargetSet,
     _In_ ULONG SgiId);
+
+VOID
+HalpGicv3RouteSpi(
+    _In_ ULONG IntId,
+    _In_ ULONG Cpu);
 
 /*
  * ============================================================================
@@ -1563,6 +1569,11 @@ VOID
 HalpGicSetInterruptPriority(
     _In_ ULONG IntId,
     _In_ ULONG Priority);
+
+VOID
+HalpGicRouteSpi(
+    _In_ ULONG IntId,
+    _In_ KAFFINITY Processors);
 
 /*
  * ============================================================================

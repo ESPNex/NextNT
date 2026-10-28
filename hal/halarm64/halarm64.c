@@ -2221,6 +2221,7 @@ typedef struct _HALP_ARM64_INTERRUPT_STATE
     BOOLEAN Enabled;
     BOOLEAN EdgeTriggered;
     ULONG Deferred;
+    KAFFINITY Processors;
 } HALP_ARM64_INTERRUPT_STATE, *PHALP_ARM64_INTERRUPT_STATE;
 
 static HALP_ARM64_INTERRUPT_STATE HalpArm64PpiState[MAXIMUM_PROCESSORS][16];
@@ -3590,6 +3591,44 @@ HalClearSoftwareInterrupt(
 
 VOID
 NTAPI
+HalArm64ConnectInterrupt(
+    _In_ ULONG Vector)
+{
+    ULONG64 Daif;
+    PHALP_ARM64_INTERRUPT_STATE State;
+
+    if (Vector < 32 || Vector >= 1020 || HalpSecondaryIsIntId(Vector))
+        return;
+
+    Daif = HalpArm64LockInterruptState();
+    State = HalpArm64GetInterruptState(KeGetCurrentProcessorNumber(), Vector);
+    State->Processors |= (KAFFINITY)1 << KeGetCurrentProcessorNumber();
+    if (State->Enabled)
+        HalpGicRouteSpi(Vector, State->Processors);
+    HalpArm64UnlockInterruptState(Daif);
+}
+
+VOID
+NTAPI
+HalArm64DisconnectInterrupt(
+    _In_ ULONG Vector)
+{
+    ULONG64 Daif;
+    PHALP_ARM64_INTERRUPT_STATE State;
+
+    if (Vector < 32 || Vector >= 1020 || HalpSecondaryIsIntId(Vector))
+        return;
+
+    Daif = HalpArm64LockInterruptState();
+    State = HalpArm64GetInterruptState(KeGetCurrentProcessorNumber(), Vector);
+    State->Processors &= ~((KAFFINITY)1 << KeGetCurrentProcessorNumber());
+    if (State->Enabled && State->Processors != 0)
+        HalpGicRouteSpi(Vector, State->Processors);
+    HalpArm64UnlockInterruptState(Daif);
+}
+
+VOID
+NTAPI
 HalDisableSystemInterrupt(
     _In_ ULONG Vector,
     _In_ KIRQL Irql)
@@ -3700,6 +3739,7 @@ HalEnableSystemInterrupt(
     UCHAR priority;
     BOOLEAN EdgeTriggered;
     ULONG64 Daif;
+    ULONG Cpu;
     PHALP_ARM64_INTERRUPT_STATE State;
 
     if (Vector < 16)
@@ -3744,11 +3784,14 @@ HalEnableSystemInterrupt(
 
     /* PPIs and SPIs: set trigger mode, priority, then enable. */
     Daif = HalpArm64LockInterruptState();
-    State = HalpArm64GetInterruptState(KeGetCurrentProcessorNumber(), Vector);
+    Cpu = KeGetCurrentProcessorNumber();
+    State = HalpArm64GetInterruptState(Cpu, Vector);
     State->Enabled = TRUE;
     State->EdgeTriggered = EdgeTriggered;
     HalpArm64ProgramGicTrigger(Vector, EdgeTriggered);
     HalpGicSetInterruptPriority(Vector, priority);
+    if (Vector >= 32)
+        HalpGicRouteSpi(Vector, State->Processors ? State->Processors : (KAFFINITY)1 << Cpu);
     if (State->Deferred == 0)
         HalpGicEnableInterrupt(Vector);
     HalpArm64UnlockInterruptState(Daif);
@@ -5512,7 +5555,6 @@ HalGetInterruptVector(
     ULONG Vector;
     KIRQL DeviceIrql;
     KIRQL OldIrql = PASSIVE_LEVEL;
-    KAFFINITY Gicv2Affinity = 0;
     UCHAR IntPolarity = 0;
     UCHAR IntTrigger = 0;
     PHALP_ARM64_INT_OVERRIDE_ENTRY Override;
@@ -5659,9 +5701,6 @@ HalGetInterruptVector(
             /* Already allocated - return existing IRQL for consistency */
             DeviceIrql = HalpArm64IntIdToIrql[Vector];
         }
-
-        if (!HalpGicUseSysRegs && Vector >= HAL_ARM64_SPI_BASE)
-            HalpGicv2ConfigureSpiAffinity(Vector, &Gicv2Affinity);
         KeReleaseSpinLock(&HalpArm64VectorLock, OldIrql);
     }
 
@@ -5684,8 +5723,9 @@ HalGetInterruptVector(
         }
         else
         {
-            *Affinity = Gicv2Affinity ? Gicv2Affinity :
-                        (HalpDefaultInterruptAffinity ? HalpDefaultInterruptAffinity : 1);
+            *Affinity = HalpArm64InterruptController ?
+                        (HalpDefaultInterruptAffinity ? HalpDefaultInterruptAffinity : 1) :
+                        KeQueryActiveProcessors();
         }
     }
 
