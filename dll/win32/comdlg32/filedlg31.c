@@ -415,6 +415,10 @@ static LRESULT FD31_DirListDblClick( const FD31_DATA *lfs )
   lRet = SendDlgItemMessageW(hWnd, lst2, LB_GETCURSEL, 0, 0);
   if (lRet == LB_ERR) return TRUE;
   pstr = malloc(BUFFILEALLOC);
+#ifdef __REACTOS__
+  if (!pstr)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   SendDlgItemMessageW(hWnd, lst2, LB_GETTEXT, lRet,
 		     (LPARAM)pstr);
   lstrcpyW( tmpstr, pstr );
@@ -621,6 +625,10 @@ static LRESULT FD31_DiskChange( const FD31_DATA *lfs )
     if (lRet == LB_ERR)
         return 0;
     pstr = malloc(BUFFILEALLOC);
+#ifdef __REACTOS__
+    if (!pstr)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     SendDlgItemMessageW(hWnd, cmb2, CB_GETLBTEXT, lRet,
                          (LPARAM)pstr);
     wsprintfW(diskname, L"%c:", pstr[2]);
@@ -782,6 +790,10 @@ static void FD31_MapOfnStructA(const OPENFILENAMEA *ofnA, LPOPENFILENAMEW ofnW, 
         LoadStringW(COMDLG32_hInstance, open ? IDS_OPEN_FILE : IDS_SAVE_AS, buf, ARRAY_SIZE(buf));
         len = lstrlenW(buf)+1;
         title_tmp = malloc(len * sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!title_tmp)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         memcpy(title_tmp, buf, len * sizeof(WCHAR));
         ofnW->lpstrTitle = title_tmp;
     }
@@ -936,6 +948,10 @@ static PFD31_DATA FD31_AllocPrivate(LPARAM lParam, UINT dlgType, BOOL IsUnicode)
             if (lfs->ofnA->lpfnHook)
                 lfs->hook = TRUE;
         lfs->ofnW = calloc(1, lfs->ofnA->lStructSize);
+#ifdef __REACTOS__
+        if (!lfs->ofnW)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         lfs->ofnW->lStructSize = lfs->ofnA->lStructSize;
         FD31_MapOfnStructA(lfs->ofnA, lfs->ofnW, lfs->open);
     }

@@ -377,6 +377,10 @@ static INT PRINTDLG_SetUpPrinterListComboA(HWND hDlg, UINT id, LPCSTR name)
     LPPRINTER_INFO_2A pi;
     EnumPrintersA(PRINTER_ENUM_LOCAL, NULL, 2, NULL, 0, &needed, &num);
     pi = malloc(needed);
+#ifdef __REACTOS__
+    if (!pi)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     EnumPrintersA(PRINTER_ENUM_LOCAL, NULL, 2, (LPBYTE)pi, needed, &needed,
 		  &num);
 
@@ -413,6 +417,10 @@ static INT PRINTDLG_SetUpPrinterListComboW(HWND hDlg, UINT id, LPCWSTR name)
     LPPRINTER_INFO_2W pi;
     EnumPrintersW(PRINTER_ENUM_LOCAL, NULL, 2, NULL, 0, &needed, &num);
     pi = malloc(needed);
+#ifdef __REACTOS__
+    if (!pi)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     EnumPrintersW(PRINTER_ENUM_LOCAL, NULL, 2, (LPBYTE)pi, needed, &needed,
 		  &num);
 
@@ -827,6 +835,10 @@ static BOOL PRINTDLG_SetUpPaperComboBoxA(HWND hDlg,
 
     Names = malloc(NrOfEntries * sizeof(char) * NamesSize);
     Words = malloc(NrOfEntries * sizeof(WORD));
+#ifdef __REACTOS__
+    if (!Words)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     DeviceCapabilitiesA(PrinterName, PortName, fwCapability_Names, Names, dm);
     NrOfEntries = DeviceCapabilitiesA(PrinterName, PortName,
 				      fwCapability_Words, (LPSTR)Words, dm);
@@ -937,6 +949,10 @@ static BOOL PRINTDLG_SetUpPaperComboBoxW(HWND hDlg,
 
     Names = malloc(NrOfEntries * sizeof(WCHAR) * NamesSize);
     Words = malloc(NrOfEntries * sizeof(WORD));
+#ifdef __REACTOS__
+    if (!Words)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     DeviceCapabilitiesW(PrinterName, PortName, fwCapability_Names, Names, dm);
     NrOfEntries = DeviceCapabilitiesW(PrinterName, PortName,
                                       fwCapability_Words, Words, dm);
@@ -1126,6 +1142,10 @@ static BOOL PRINTDLG_ChangePrinterA(HWND hDlg, char *name, PRINT_PTRA *PrintStru
 	return FALSE;
     }
     dm_tmp = malloc(dmSize);
+#ifdef __REACTOS__
+    if (!dm_tmp)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     dmSize = DocumentPropertiesA(0, 0, name, dm_tmp, NULL,
 				 DM_OUT_BUFFER);
     if(lppd->hDevMode)
@@ -1335,6 +1355,10 @@ static BOOL PRINTDLG_ChangePrinterW(HWND hDlg, WCHAR *name,
 	return FALSE;
     }
     dm_tmp = malloc(dmSize);
+#ifdef __REACTOS__
+    if (!dm_tmp)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     dmSize = DocumentPropertiesW(0, 0, name, dm_tmp, NULL,
 				 DM_OUT_BUFFER);
     if(lppd->hDevMode)
@@ -2363,10 +2387,18 @@ BOOL WINAPI PrintDlgA(LPPRINTDLGA lppd)
 
 	GetPrinterA(hprn, 2, NULL, 0, &needed);
 	pbuf = malloc(needed);
+#ifdef __REACTOS__
+	if (!pbuf)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	GetPrinterA(hprn, 2, (LPBYTE)pbuf, needed, &needed);
 
 	GetPrinterDriverA(hprn, NULL, 3, NULL, 0, &needed);
 	dbuf = malloc(needed);
+#ifdef __REACTOS__
+	if (!dbuf)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	if (!GetPrinterDriverA(hprn, NULL, 3, (LPBYTE)dbuf, needed, &needed)) {
 	    ERR("GetPrinterDriverA failed, le %ld, fix your config for printer %s!\n",
 	        GetLastError(),pbuf->pPrinterName);
@@ -2409,6 +2441,10 @@ BOOL WINAPI PrintDlgA(LPPRINTDLGA lppd)
 	}
 
 	PrintStructures = calloc(1, sizeof(PRINT_PTRA));
+#ifdef __REACTOS__
+	if (!PrintStructures)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	PrintStructures->lpPrintDlg = lppd;
 
 	/* and create & process the dialog .
@@ -2499,10 +2535,18 @@ BOOL WINAPI PrintDlgW(LPPRINTDLGW lppd)
 
 	GetPrinterW(hprn, 2, NULL, 0, &needed);
 	pbuf = malloc(needed);
+#ifdef __REACTOS__
+	if (!pbuf)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	GetPrinterW(hprn, 2, (LPBYTE)pbuf, needed, &needed);
 
 	GetPrinterDriverW(hprn, NULL, 3, NULL, 0, &needed);
 	dbuf = malloc(needed);
+#ifdef __REACTOS__
+	if (!dbuf)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	if (!GetPrinterDriverW(hprn, NULL, 3, (LPBYTE)dbuf, needed, &needed)) {
 	    ERR("GetPrinterDriverA failed, le %ld, fix your config for printer %s!\n",
 	        GetLastError(),debugstr_w(pbuf->pPrinterName));
@@ -2545,6 +2589,10 @@ BOOL WINAPI PrintDlgW(LPPRINTDLGW lppd)
 	}
 
 	PrintStructures = calloc(1, sizeof(PRINT_PTRW));
+#ifdef __REACTOS__
+	if (!PrintStructures)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	PrintStructures->lpPrintDlg = lppd;
 
 	/* and create & process the dialog .
@@ -2919,6 +2967,10 @@ static DEVMODEW *pagesetup_get_devmode(const pagesetup_data *data)
         /* We make a copy even in the unicode case because the ptr
            may get passed back to us in pagesetup_set_devmode. */
         ret = malloc(dm->dmSize + dm->dmDriverExtra);
+#ifdef __REACTOS__
+        if (!ret)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         memcpy(ret, dm, dm->dmSize + dm->dmDriverExtra);
     }
     else

@@ -1209,6 +1209,10 @@ static INT_PTR CALLBACK FormatCharDlgProcA(HWND hDlg, UINT uMsg, WPARAM wParam, 
         SetPropW(hDlg, strWineFontData_a, (HANDLE)lParam);
 
         lpcfw = malloc(sizeof(*lpcfw));
+#ifdef __REACTOS__
+        if (!lpcfw)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         memcpy(lpcfw, lpcfa, sizeof(CHOOSEFONTA));
         lpcfw->lpLogFont = malloc(sizeof(*lpcfw->lpLogFont));
         memcpy(lpcfw->lpLogFont, lpcfa->lpLogFont, sizeof(LOGFONTA));

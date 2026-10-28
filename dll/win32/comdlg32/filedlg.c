@@ -541,6 +541,10 @@ static void init_filedlg_infoW(OPENFILENAMEW *ofn, FileOpenDlgInfos *info)
     {
         INT cchExt = lstrlenW(ofn->lpstrDefExt);
         LPWSTR pszExt = malloc((cchExt + 1) * sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!pszExt)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         lstrcpyW(pszExt, ofn->lpstrDefExt);
         info->defext = pszExt;
     }
@@ -765,6 +769,10 @@ int COMDLG32_SplitFileNames(LPWSTR lpstrEdit, UINT nStrLen, LPWSTR *lpstrFileLis
 	/* we might get single filename without any '"',
 	 * so we need nStrLen + terminating \0 + end-of-list \0 */
 	*lpstrFileList = malloc((nStrLen + 2) * sizeof(WCHAR));
+#ifdef __REACTOS__
+	if (!*lpstrFileList)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	*sizeUsed = 0;
 
 	/* build delimited file list from filenames */
@@ -3845,6 +3853,10 @@ static void FILEDLG95_LOOKIN_Init(HWND hwndCombo)
   HDC hdc;
   TEXTMETRICW tm;
   LookInInfos *liInfos = calloc(1, sizeof(*liInfos));
+#ifdef __REACTOS__
+  if (!liInfos)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
   TRACE("%p\n", hwndCombo);
 
@@ -4081,6 +4093,10 @@ static int FILEDLG95_LOOKIN_AddItem(HWND hwnd,LPITEMIDLIST pidl, int iInsertId)
     return -1;
 
   tmpFolder = calloc(1, sizeof(*tmpFolder));
+#ifdef __REACTOS__
+  if (!tmpFolder)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   tmpFolder->m_iIndent = 0;
 
   /* Calculate the indentation of the item in the lookin*/
@@ -4408,6 +4424,10 @@ static int FILEDLG95_FILENAME_GetFileNames (HWND hwnd, LPWSTR * lpstrFileList, U
 	/* get the filenames from the filename control */
 	nStrLen = GetWindowTextLengthW( fodInfos->DlgInfos.hwndFileName );
 	lpstrEdit = malloc( (nStrLen+1)*sizeof(WCHAR) );
+#ifdef __REACTOS__
+	if (!lpstrEdit)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	GetWindowTextW( fodInfos->DlgInfos.hwndFileName, lpstrEdit, nStrLen+1);
 
 	TRACE("nStrLen=%u str=%s\n", nStrLen, debugstr_w(lpstrEdit));

@@ -864,6 +864,10 @@ static LRESULT CC_WMInitDialog( HWND hDlg, WPARAM wParam, LPARAM lParam )
    }
 
    lpp = calloc(1, sizeof(*lpp));
+#ifdef __REACTOS__
+   if (!lpp)
+       RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
    lpp->lpcc = cc;
    lpp->hwndSelf = hDlg;
 
@@ -1359,6 +1363,10 @@ BOOL WINAPI ChooseColorA( LPCHOOSECOLORA lpChCol )
   BOOL ret;
 
   CHOOSECOLORW *lpcc = calloc(1, sizeof(*lpcc));
+#ifdef __REACTOS__
+  if (!lpcc)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   lpcc->lStructSize = sizeof(*lpcc);
   lpcc->hwndOwner = lpChCol->hwndOwner;
   lpcc->hInstance = lpChCol->hInstance;

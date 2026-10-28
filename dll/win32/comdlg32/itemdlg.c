@@ -685,6 +685,10 @@ static HRESULT on_default_action(FileDialogImpl *This)
     TRACE("Acting on %d file(s).\n", file_count);
 
     pidla = malloc(sizeof(LPITEMIDLIST) * file_count);
+#ifdef __REACTOS__
+    if (!pidla)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     open_action = ONOPEN_OPEN;
     fn_iter = files;
 
@@ -2686,6 +2690,10 @@ static HRESULT WINAPI IFileDialog2_fnAdvise(IFileDialog2 *iface, IFileDialogEven
         return E_INVALIDARG;
 
     client = malloc(sizeof(events_client));
+#ifdef __REACTOS__
+    if (!client)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     client->pfde = pfde;
     client->cookie = ++This->events_next_cookie;
 

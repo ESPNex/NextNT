@@ -163,6 +163,10 @@ IShellBrowser * IShellBrowserImpl_Construct(HWND hwndOwner)
     IShellBrowserImpl *sb;
 
     sb = malloc(sizeof(*sb));
+#ifdef __REACTOS__
+    if (!sb)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     /* Initialisation of the member variables */
     sb->ref=1;
