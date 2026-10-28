@@ -184,6 +184,105 @@ HRESULT wpd_delete_items(wpd_folder *folder, UINT count, PCUITEMID_CHILD_ARRAY i
     return hr;
 }
 
+static BOOL selection_is_files(IDataObject *data)
+{
+    PCUITEMID_CHILD *items;
+    PIDLIST_ABSOLUTE parent;
+    STGMEDIUM medium;
+    BOOL files;
+    UINT count, i;
+
+    if (FAILED(items_from_data(data, &parent, &items, &count, &medium)))
+        return FALSE;
+    files = count != 0;
+    for (i = 0; i < count && files; i++)
+    {
+        const wpd_item *item = wpd_item_from_pidl(items[i]);
+
+        files = item && item->kind == WPD_KIND_FILE;
+    }
+    CoTaskMemFree(items);
+    GlobalUnlock(medium.hGlobal);
+    ReleaseStgMedium(&medium);
+    return files;
+}
+
+static HRESULT open_file(wpd_device *device, HWND hwnd, const wpd_item *item)
+{
+    WCHAR path[MAX_PATH];
+    IStream *stream;
+    DWORD optimal = 0, written;
+    ULONG read;
+    HANDLE file;
+    BYTE *buffer;
+    HRESULT hr;
+
+    if (!GetTempPathW(ARRAY_SIZE(path), path) || !PathAppendW(path, L"WPDNSE"))
+        return E_FAIL;
+    CreateDirectoryW(path, NULL);
+    if (!PathAppendW(path, PathFindFileNameW(wpd_item_string(item, WPD_STR_FILE))))
+        return E_FAIL;
+    hr = IPortableDeviceResources_GetStream(device->resources, wpd_item_string(item, WPD_STR_ID), &WPD_RESOURCE_DEFAULT,
+                                            STGM_READ, &optimal, &stream);
+    if (FAILED(hr))
+        return hr;
+    file = CreateFileW(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        IStream_Release(stream);
+        return HRESULT_FROM_WIN32(GetLastError());
+    }
+    if (!optimal)
+        optimal = 0x40000;
+    buffer = HeapAlloc(GetProcessHeap(), 0, optimal);
+    hr = buffer ? S_OK : E_OUTOFMEMORY;
+    while (SUCCEEDED(hr))
+    {
+        read = 0;
+        hr = IStream_Read(stream, buffer, optimal, &read);
+        if (FAILED(hr) || !read)
+            break;
+        if (!WriteFile(file, buffer, read, &written, NULL) || written != read)
+            hr = HRESULT_FROM_WIN32(GetLastError());
+    }
+    HeapFree(GetProcessHeap(), 0, buffer);
+    CloseHandle(file);
+    IStream_Release(stream);
+    if (FAILED(hr))
+        return hr;
+    if ((INT_PTR)ShellExecuteW(hwnd, NULL, path, NULL, NULL, SW_SHOWNORMAL) <= 32)
+        return E_FAIL;
+    return S_OK;
+}
+
+static HRESULT open_items(wpd_folder *folder, HWND hwnd, IDataObject *data)
+{
+    PCUITEMID_CHILD *items;
+    PIDLIST_ABSOLUTE parent;
+    STGMEDIUM medium;
+    wpd_device *device;
+    UINT count, i;
+    HRESULT hr;
+
+    hr = wpd_get_device(folder->pnp_id, &device);
+    if (FAILED(hr))
+        return hr;
+    hr = items_from_data(data, &parent, &items, &count, &medium);
+    if (FAILED(hr))
+        return hr;
+    for (i = 0; i < count && SUCCEEDED(hr); i++)
+    {
+        const wpd_item *item = wpd_item_from_pidl(items[i]);
+
+        if (item && item->kind == WPD_KIND_FILE)
+            hr = open_file(device, hwnd, item);
+    }
+    CoTaskMemFree(items);
+    GlobalUnlock(medium.hGlobal);
+    ReleaseStgMedium(&medium);
+    return hr;
+}
+
 HRESULT CALLBACK wpd_menu_callback(IShellFolder *iface, HWND hwnd, IDataObject *data, UINT msg, WPARAM wparam, LPARAM lparam)
 {
     wpd_folder *folder = wpd_folder_from_shellfolder(iface);
@@ -197,10 +296,38 @@ HRESULT CALLBACK wpd_menu_callback(IShellFolder *iface, HWND hwnd, IDataObject *
     switch (msg)
     {
         case DFM_MERGECONTEXTMENU:
+        {
+            QCMINFO *info = (QCMINFO *)lparam;
+            WCHAR text[64];
+
+            if (!info || !selection_is_files(data) || info->idCmdFirst > info->idCmdLast)
+                return S_OK;
+            LoadStringW(wpdshext_instance, IDS_MENU_OPEN, text, ARRAY_SIZE(text));
+            InsertMenuW(info->hmenu, info->indexMenu, MF_BYPOSITION | MF_STRING, info->idCmdFirst, text);
+            if (!(wparam & CMF_NODEFAULT))
+                SetMenuDefaultItem(info->hmenu, info->idCmdFirst, FALSE);
+            info->idCmdFirst++;
             return S_OK;
+        }
+        case DFM_MAPCOMMANDNAME:
+            if (lparam && !lstrcmpiW((const WCHAR *)lparam, L"open") && selection_is_files(data))
+            {
+                *(int *)wparam = 0;
+                return S_OK;
+            }
+            return E_NOTIMPL;
+        case DFM_GETVERBW:
+            if (LOWORD(wparam) == 0 && lparam && HIWORD(wparam))
+            {
+                lstrcpynW((WCHAR *)lparam, L"open", HIWORD(wparam));
+                return S_OK;
+            }
+            return E_NOTIMPL;
         case DFM_INVOKECOMMAND:
             if (wparam == DFM_CMD_PROPERTIES)
                 return S_OK;
+            if (wparam == 0 && folder)
+                return open_items(folder, hwnd, data);
             if (wparam != DFM_CMD_DELETE || !folder)
                 return S_FALSE;
             hr = items_from_data(data, &parent, &items, &count, &medium);

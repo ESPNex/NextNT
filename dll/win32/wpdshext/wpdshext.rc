@@ -63,4 +63,5 @@ BEGIN
     IDS_CONFIRM_DELETE_ONE      "Are you sure you want to permanently delete this item?"
     IDS_CONFIRM_DELETE_MANY     "Are you sure you want to permanently delete these %u items?"
     IDS_CONFIRM_DELETE_TITLE    "Delete"
+    IDS_MENU_OPEN               "&Open"
 END

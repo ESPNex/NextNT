@@ -44,6 +44,7 @@
 #define IDS_CONFIRM_DELETE_ONE      630
 #define IDS_CONFIRM_DELETE_MANY     631
 #define IDS_CONFIRM_DELETE_TITLE    632
+#define IDS_MENU_OPEN               633
 
 #define IDI_DEVICE_GENERIC          701
 #define IDI_DEVICE_CAMERA           702
