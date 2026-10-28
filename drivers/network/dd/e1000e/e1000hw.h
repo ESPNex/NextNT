@@ -408,7 +408,7 @@ C_ASSERT(sizeof(E1000_TRANSMIT_DESCRIPTOR) == 16);
 #define E1000_CTRL_RFCE             (1 << 27)   /* Receive Flow Control Enable */
 #define E1000_CTRL_TFCE             (1 << 28)   /* Transmit Flow Control Enable */
 #define E1000_CTRL_VME              (1 << 30)   /* VLAN Mode Enable */
-#define E1000_CTRL_PHY_RST          (1 << 31)   /* PHY Reset */
+#define E1000_CTRL_PHY_RST          (1U << 31)  /* PHY Reset */
 
 
 /* E1000_REG_STATUS */
