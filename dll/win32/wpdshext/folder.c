@@ -623,6 +623,28 @@ static HRESULT WINAPI folder_GetAttributesOf(IShellFolder2 *iface, UINT count, P
     return S_OK;
 }
 
+static HRESULT create_item_menu(wpd_folder *folder, HWND hwnd, UINT count, PCUITEMID_CHILD_ARRAY items, void **out)
+{
+    HKEY key = NULL;
+    UINT keys = 0, i;
+    BOOL containers = count != 0;
+    HRESULT hr;
+
+    for (i = 0; i < count && containers; i++)
+    {
+        const wpd_item *item = wpd_item_from_pidl(items[i]);
+
+        containers = item && wpd_item_is_container(item);
+    }
+    if (containers && !RegOpenKeyExW(HKEY_CLASSES_ROOT, L"Folder", 0, KEY_READ, &key))
+        keys = 1;
+    hr = CDefFolderMenu_Create2(folder->pidl, hwnd, count, items, (IShellFolder *)&folder->IShellFolder2_iface,
+                                wpd_menu_callback, keys, keys ? &key : NULL, (IContextMenu **)out);
+    if (key)
+        RegCloseKey(key);
+    return hr;
+}
+
 static HRESULT WINAPI folder_GetUIObjectOf(IShellFolder2 *iface, HWND hwnd, UINT count, PCUITEMID_CHILD_ARRAY items,
                                            REFIID iid, UINT *reserved, void **out)
 {
@@ -641,8 +663,7 @@ static HRESULT WINAPI folder_GetUIObjectOf(IShellFolder2 *iface, HWND hwnd, UINT
     if ((IsEqualIID(iid, &IID_IExtractIconW) || IsEqualIID(iid, &IID_IExtractIconA)) && count == 1)
         return wpd_extract_icon_create(item, iid, out);
     if (IsEqualIID(iid, &IID_IContextMenu))
-        return CDefFolderMenu_Create2(folder->pidl, hwnd, count, items, (IShellFolder *)&folder->IShellFolder2_iface,
-                                      wpd_menu_callback, 0, NULL, (IContextMenu **)out);
+        return create_item_menu(folder, hwnd, count, items, out);
     if (IsEqualIID(iid, &IID_IDataObject))
         return wpd_data_object_create(folder, count, items, iid, out);
     if (IsEqualIID(iid, &IID_IDropTarget) && count == 1 && wpd_item_is_container(item))
