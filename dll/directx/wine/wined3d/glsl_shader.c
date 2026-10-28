@@ -10566,6 +10566,10 @@ static void set_glsl_shader_program(const struct wined3d_context_gl *context_gl,
 
     /* Create the entry */
     entry = malloc(sizeof(*entry));
+#ifdef __REACTOS__
+    if (!entry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     entry->id = program_id;
     entry->vs.id = vs_id;
     entry->hs.id = hs_id;

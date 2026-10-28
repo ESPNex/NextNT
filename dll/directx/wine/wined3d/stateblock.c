@@ -465,6 +465,10 @@ static void stateblock_init_lights(struct wined3d_stateblock *stateblock, const 
     RB_FOR_EACH_ENTRY(src_light, src_tree, struct wined3d_light_info, entry)
     {
         struct wined3d_light_info *dst_light = malloc(sizeof(*dst_light));
+#ifdef __REACTOS__
+        if (!dst_light)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
         *dst_light = *src_light;
         rb_put(dst_tree, (void *)(ULONG_PTR)dst_light->OriginalIndex, &dst_light->entry);

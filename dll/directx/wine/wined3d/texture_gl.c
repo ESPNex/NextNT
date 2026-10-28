@@ -3118,6 +3118,10 @@ void wined3d_texture_gl_set_compatible_renderbuffer(struct wined3d_texture_gl *t
         gl_info->fbo_ops.glRenderbufferStorage(GL_RENDERBUFFER, format_gl->internal, width, height);
 
         entry = malloc(sizeof(*entry));
+#ifdef __REACTOS__
+        if (!entry)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         entry->width = width;
         entry->height = height;
         entry->id = renderbuffer;

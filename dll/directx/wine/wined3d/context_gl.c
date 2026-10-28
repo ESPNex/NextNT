@@ -578,6 +578,10 @@ static struct fbo_entry *wined3d_context_gl_create_fbo_entry(const struct wined3
     struct fbo_entry *entry;
 
     entry = malloc(sizeof(*entry));
+#ifdef __REACTOS__
+    if (!entry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     wined3d_context_gl_generate_fbo_key(context_gl, &entry->key,
             render_targets, depth_stencil, color_location, ds_location);
     entry->flags = 0;
@@ -2291,6 +2295,10 @@ void wined3d_context_gl_destroy(struct wined3d_context_gl *context_gl)
         /* Make a copy of gl_info for wined3d_context_gl_cleanup() use, the
          * one in wined3d_adapter may go away in the meantime. */
         gl_info = malloc(sizeof(*gl_info));
+#ifdef __REACTOS__
+        if (!gl_info)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         *gl_info = *context_gl->gl_info;
         context_gl->gl_info = gl_info;
         context_gl->c.destroyed = 1;
