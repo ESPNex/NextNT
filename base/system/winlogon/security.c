@@ -118,8 +118,10 @@ CreateWinstaSecurity(
     SECURITY_DESCRIPTOR AbsoluteSd;
     PSECURITY_DESCRIPTOR RelativeSd = NULL;
     PSID WinlogonSid = NULL, AdminsSid = NULL, NetworkServiceSid = NULL; /* NetworkServiceSid is a HACK, see the comment below for information */
-    DWORD DaclSize;
-    PACL Dacl = NULL;
+    PSID LowLabelSid = NULL;
+    SID_IDENTIFIER_AUTHORITY MandatoryLabelAuthority = {SECURITY_MANDATORY_LABEL_AUTHORITY};
+    DWORD DaclSize, SaclSize;
+    PACL Dacl = NULL, Sacl = NULL;
 
     /* Create the Winlogon SID */
     if (!AllocateAndInitializeSid(&NtAuthority,
@@ -298,6 +300,37 @@ CreateWinstaSecurity(
         goto Quit;
     }
 
+    if (!AllocateAndInitializeSid(&MandatoryLabelAuthority,
+                                  1,
+                                  SECURITY_MANDATORY_LOW_RID,
+                                  0, 0, 0, 0, 0, 0, 0,
+                                  &LowLabelSid))
+    {
+        ERR("CreateWinstaSecurity(): Failed to create the low label SID (error code %lu)\n", GetLastError());
+        goto Quit;
+    }
+
+    SaclSize = sizeof(ACL) + sizeof(SYSTEM_MANDATORY_LABEL_ACE) - sizeof(DWORD) + GetLengthSid(LowLabelSid);
+    Sacl = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, SaclSize);
+    if (Sacl == NULL)
+    {
+        ERR("CreateWinstaSecurity(): Failed to allocate memory buffer for SACL!\n");
+        goto Quit;
+    }
+
+    if (!InitializeAcl(Sacl, SaclSize, ACL_REVISION) ||
+        !AddMandatoryAce(Sacl, ACL_REVISION, 0, SYSTEM_MANDATORY_LABEL_NO_WRITE_UP, LowLabelSid))
+    {
+        ERR("CreateWinstaSecurity(): Failed to set up the low label (error code %lu)\n", GetLastError());
+        goto Quit;
+    }
+
+    if (!SetSecurityDescriptorSacl(&AbsoluteSd, TRUE, Sacl, FALSE))
+    {
+        ERR("CreateWinstaSecurity(): Failed to set up SACL to absolute security descriptor (error code %lu)\n", GetLastError());
+        goto Quit;
+    }
+
     /* Convert it to self-relative format */
     RelativeSd = ConvertToSelfRelative(&AbsoluteSd);
     if (RelativeSd == NULL)
@@ -327,6 +360,16 @@ Quit:
         FreeSid(NetworkServiceSid);
     }
     /* END HACK */
+
+    if (LowLabelSid != NULL)
+    {
+        FreeSid(LowLabelSid);
+    }
+
+    if (Sacl != NULL)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, Sacl);
+    }
 
     if (Dacl != NULL)
     {
