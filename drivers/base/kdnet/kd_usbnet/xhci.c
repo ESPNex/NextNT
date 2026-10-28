@@ -16,6 +16,7 @@
 #define XHCI_CONNECT_WAIT       1000
 #define XHCI_CONNECT_STABLE     200
 #define XHCI_POWER_WAIT         20000
+#define XHCI_RESUME_RECOVERY    10000
 #define XHCI_RECOVERY_WAIT      10000
 
 ULONG
@@ -128,6 +129,33 @@ XhciQueueTrb(
     return Address;
 }
 
+BOOLEAN
+XhciSharedLinkReady(
+    _In_ PUSBNET_ADAPTER Adapter)
+{
+    PUCHAR Register = Adapter->Operational + XHCI_OP_PORTSC(Adapter->Share.Port);
+    PUCHAR Doorbell = Adapter->Doorbells + Adapter->Device->Slot * sizeof(ULONG);
+    ULONG Port;
+
+    if (XhciRead(Adapter->Operational + XHCI_OP_USBSTS) & XHCI_USBSTS_HALTED)
+        return FALSE;
+
+    Port = XhciRead(Register);
+    if (!(Port & XHCI_PORT_ENABLED) || (Port & XHCI_PORT_LINK_STATE_MASK))
+        return FALSE;
+
+    if (Port & XHCI_PORT_LINK_CHANGE)
+    {
+        XhciStall(XHCI_RESUME_RECOVERY);
+        XhciWrite(Register, (Port & XHCI_PORT_PRESERVE_MASK) | XHCI_PORT_LINK_CHANGE);
+        KeMemoryBarrier();
+        XhciWrite(Doorbell, Adapter->BulkIn.Dci);
+        XhciWrite(Doorbell, Adapter->BulkOut.Dci);
+    }
+
+    return TRUE;
+}
+
 VOID
 XhciRing(
     _In_ PUSBNET_ADAPTER Adapter,
@@ -196,7 +224,7 @@ XhciHandleEvent(
         return;
     }
 
-    if (Type != TRB_TRANSFER_EVENT)
+    if (Type != TRB_TRANSFER_EVENT || (Code >= XHCI_CC_STOPPED && Code <= XHCI_CC_STOPPED_SHORT))
         return;
 
     Endpoint = XhciFindEndpoint(Adapter, Event[3] >> TRB_SLOT_SHIFT, (Event[3] >> TRB_ENDPOINT_SHIFT) & 0x1F);
@@ -216,9 +244,15 @@ XhciHandleEvent(
     }
 }
 
+static
 VOID
-XhciProcessEvents(
-    _In_ PUSBNET_ADAPTER Adapter)
+XhciProcessRing(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ PULONG Events,
+    _In_ ULONG64 Physical,
+    _Inout_ PULONG Dequeue,
+    _Inout_ PULONG Cycle,
+    _In_ ULONG Interrupter)
 {
     volatile ULONG *Slot;
     ULONG Event[4];
@@ -226,9 +260,9 @@ XhciProcessEvents(
 
     for (;;)
     {
-        Slot = Adapter->Events + Adapter->EventDequeue * 4;
+        Slot = Events + *Dequeue * 4;
         Event[3] = Slot[3];
-        if ((Event[3] & TRB_CYCLE) != Adapter->EventCycle)
+        if ((Event[3] & TRB_CYCLE) != *Cycle)
             break;
 
         KeMemoryBarrier();
@@ -237,10 +271,10 @@ XhciProcessEvents(
         Event[2] = Slot[2];
         XhciHandleEvent(Adapter, Event);
 
-        if (++Adapter->EventDequeue == USBNET_RING_TRBS)
+        if (++*Dequeue == USBNET_RING_TRBS)
         {
-            Adapter->EventDequeue = 0;
-            Adapter->EventCycle ^= TRB_CYCLE;
+            *Dequeue = 0;
+            *Cycle ^= TRB_CYCLE;
         }
 
         Consumed = TRUE;
@@ -248,8 +282,24 @@ XhciProcessEvents(
 
     if (Consumed)
     {
-        XhciWrite64(Adapter->Runtime + XHCI_RT_ERDP,
-                    (Adapter->EventsPhysical + Adapter->EventDequeue * USBNET_TRB_SIZE) | XHCI_ERDP_BUSY);
+        XhciWrite64(Adapter->Runtime + Interrupter * XHCI_RT_INTERRUPTER_SIZE + XHCI_RT_ERDP,
+                    (Physical + *Dequeue * USBNET_TRB_SIZE) | XHCI_ERDP_BUSY);
+    }
+}
+
+VOID
+XhciProcessEvents(
+    _In_ PUSBNET_ADAPTER Adapter)
+{
+    if (Adapter->Shared)
+    {
+        XhciProcessRing(Adapter, Adapter->SharedEvents, Adapter->SharedEventsPhysical,
+                        &Adapter->SharedEventDequeue, &Adapter->SharedEventCycle, USBNET_SHARED_INTERRUPTER);
+    }
+    else
+    {
+        XhciProcessRing(Adapter, Adapter->Events, Adapter->EventsPhysical, &Adapter->EventDequeue,
+                        &Adapter->EventCycle, 0);
     }
 }
 
@@ -261,6 +311,9 @@ XhciCommand(
     _In_ ULONG Control)
 {
     ULONG i;
+
+    if (Adapter->Shared)
+        return STATUS_DEVICE_BUSY;
 
     Adapter->CommandDone = FALSE;
     Adapter->CommandCompletion = 0;
@@ -336,6 +389,37 @@ XhciReset(
     return STATUS_SUCCESS;
 }
 
+static
+VOID
+XhciInitializeEventRing(
+    _In_ PUCHAR Interrupter,
+    _Out_writes_(4) PULONG Erst,
+    _Out_writes_(USBNET_RING_TRBS * 4) PULONG Events,
+    _Out_ PULONG64 Physical,
+    _Out_ PULONG Dequeue,
+    _Out_ PULONG Cycle)
+{
+    ULONG i, Value;
+
+    for (i = 0; i < USBNET_RING_TRBS * 4; i++)
+        ((volatile ULONG *)Events)[i] = 0;
+
+    *Physical = XhciPhysical(Events);
+    *Dequeue = 0;
+    *Cycle = TRB_CYCLE;
+    Erst[0] = (ULONG)*Physical;
+    Erst[1] = (ULONG)(*Physical >> 32);
+    Erst[2] = USBNET_RING_TRBS;
+    Erst[3] = 0;
+    KeMemoryBarrier();
+
+    XhciWrite(Interrupter + XHCI_RT_IMAN, 1);
+    Value = XhciRead(Interrupter + XHCI_RT_ERSTSZ);
+    XhciWrite(Interrupter + XHCI_RT_ERSTSZ, (Value & 0xFFFF0000) | 1);
+    XhciWrite64(Interrupter + XHCI_RT_ERDP, *Physical);
+    XhciWrite64(Interrupter + XHCI_RT_ERSTBA, XhciPhysical(Erst));
+}
+
 NTSTATUS
 XhciInitialize(
     _In_ PUSBNET_ADAPTER Adapter)
@@ -353,6 +437,7 @@ XhciInitialize(
     Adapter->Doorbells = Registers + (XhciRead(Registers + XHCI_CAP_DBOFF) & ~0x3);
     Adapter->MaxSlots = min(Params1 & 0xFF, USBNET_MAX_SLOTS);
     Adapter->MaxPorts = Params1 >> 24;
+    Adapter->Interrupters = XHCI_HCS1_INTERRUPTERS(Params1);
     Adapter->ContextSize = (Capabilities & XHCI_HCC_CONTEXT_64) ? 64 : 32;
     Adapter->Scratchpads = (((Params2 >> 21) & 0x1F) << 5) | ((Params2 >> 27) & 0x1F);
 
@@ -388,23 +473,14 @@ XhciInitialize(
     XhciInitializeRing(&Adapter->Command, Adapter->Command.Trbs);
     XhciWrite64(Operational + XHCI_OP_CRCR, Adapter->Command.Physical | TRB_CYCLE);
 
-    for (i = 0; i < USBNET_RING_TRBS * 4; i++)
-        ((volatile ULONG *)Adapter->Events)[i] = 0;
-
-    Adapter->EventsPhysical = XhciPhysical(Adapter->Events);
-    Adapter->EventDequeue = 0;
-    Adapter->EventCycle = TRB_CYCLE;
-    Adapter->Erst[0] = (ULONG)Adapter->EventsPhysical;
-    Adapter->Erst[1] = (ULONG)(Adapter->EventsPhysical >> 32);
-    Adapter->Erst[2] = USBNET_RING_TRBS;
-    Adapter->Erst[3] = 0;
-    KeMemoryBarrier();
-
-    XhciWrite(Runtime + XHCI_RT_IMAN, 1);
-    Value = XhciRead(Runtime + XHCI_RT_ERSTSZ);
-    XhciWrite(Runtime + XHCI_RT_ERSTSZ, (Value & 0xFFFF0000) | 1);
-    XhciWrite64(Runtime + XHCI_RT_ERDP, Adapter->EventsPhysical);
-    XhciWrite64(Runtime + XHCI_RT_ERSTBA, XhciPhysical(Adapter->Erst));
+    XhciInitializeEventRing(Runtime, Adapter->Erst, Adapter->Events, &Adapter->EventsPhysical,
+                            &Adapter->EventDequeue, &Adapter->EventCycle);
+    if (Adapter->Interrupters > USBNET_SHARED_INTERRUPTER)
+    {
+        XhciInitializeEventRing(Runtime + USBNET_SHARED_INTERRUPTER * XHCI_RT_INTERRUPTER_SIZE, Adapter->SharedErst,
+                                Adapter->SharedEvents, &Adapter->SharedEventsPhysical,
+                                &Adapter->SharedEventDequeue, &Adapter->SharedEventCycle);
+    }
 
     XhciWrite(Operational + XHCI_OP_USBCMD, XHCI_USBCMD_RUN);
     if (!XhciWaitRegister(Operational + XHCI_OP_USBSTS, XHCI_USBSTS_HALTED, 0, XHCI_HALT_WAIT))
@@ -436,7 +512,9 @@ XhciHalt(
     if (!Adapter->Operational)
         return;
 
-    XhciReset(Adapter);
+    if (!Adapter->Shared)
+        XhciReset(Adapter);
+
     Adapter->Running = FALSE;
 }
 
@@ -483,11 +561,14 @@ XhciResetPort(
     ULONG Value, Neutral, i;
 
     *Speed = 0;
+    if (Adapter->Shared)
+        return STATUS_DEVICE_BUSY;
+
     Value = XhciRead(Register);
     if (!(Value & XHCI_PORT_CONNECTED))
         return STATUS_NO_SUCH_DEVICE;
 
-    Neutral = Value & (XHCI_PORT_POWER | XHCI_PORT_INDICATOR | XHCI_PORT_WAKE_MASK);
+    Neutral = Value & XHCI_PORT_PRESERVE_MASK;
     XhciWrite(Register, Neutral | (Value & XHCI_PORT_CHANGE_MASK));
 
     XhciWrite(Register, Neutral | XHCI_PORT_RESET);
@@ -523,4 +604,53 @@ XhciPortAlive(
 
     return (Value & (XHCI_PORT_CONNECTED | XHCI_PORT_ENABLED)) == (XHCI_PORT_CONNECTED | XHCI_PORT_ENABLED) &&
            !(Value & XHCI_PORT_CONNECT_CHANGE);
+}
+
+BOOLEAN
+XhciPortChanged(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Port)
+{
+    ULONG Value = XhciRead(Adapter->Operational + XHCI_OP_PORTSC(Port));
+
+    return !(Value & XHCI_PORT_CONNECTED) || (Value & XHCI_PORT_CONNECT_CHANGE);
+}
+
+VOID
+XhciShareController(
+    _In_ PUSBNET_ADAPTER Adapter)
+{
+    PKD_USB_SHARE Share = &Adapter->Share;
+    PUSBNET_DEVICE Device;
+    ULONG Tier;
+
+    if (Adapter->Interrupters <= USBNET_SHARED_INTERRUPTER)
+        return;
+
+    Share->Signature = KD_USB_SHARE_SIGNATURE;
+    Share->Size = sizeof(*Share);
+    Share->Port = Adapter->Devices[0].Port;
+    Share->Interrupter = USBNET_SHARED_INTERRUPTER;
+    Share->SlotCount = 0;
+    for (Tier = 0; Tier <= Adapter->Tier && Tier < KD_USB_SHARE_MAX_SLOTS; Tier++)
+    {
+        Device = &Adapter->Devices[Tier];
+        if (!Device->Slot)
+            continue;
+
+        Share->Slots[Share->SlotCount] = Device->Slot;
+        Share->DeviceContexts[Share->SlotCount] = Adapter->Dcbaa[Device->Slot];
+        Share->ContextAddresses[Share->SlotCount] = (ULONG64)(ULONG_PTR)Device->Context;
+        Share->Endpoints[Share->SlotCount] = Device != Adapter->Device ? 0 :
+                                             (1UL << Adapter->BulkIn.Dci) | (1UL << Adapter->BulkOut.Dci);
+        Share->SlotCount++;
+    }
+
+    Share->Dcbaa = XhciPhysical(Adapter->Dcbaa);
+    Share->ScratchpadArray = Adapter->Dcbaa[0];
+    Adapter->Shared = TRUE;
+    Adapter->KdNet->Device->OemData = Share;
+    Adapter->KdNet->Device->OemDataLength = sizeof(*Share);
+    UsbNetTrace("USB debugger: sharing the controller with the OS, root port %lu and %lu slot(s) stay with the "
+                "debugger\n", Share->Port, Share->SlotCount);
 }

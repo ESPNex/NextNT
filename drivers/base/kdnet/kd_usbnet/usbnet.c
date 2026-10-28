@@ -10,6 +10,8 @@
 #define USBNET_TX_WAIT          50
 #define USBNET_RECONNECT_MASK   0x3F
 #define USBNET_REGISTER_SPACE   0x1000
+#define USBNET_SHARED_ERST      (2048 + 64)
+#define USBNET_SHARED_EVENTS    (3 * USBNET_RING_SIZE)
 
 static
 ULONG
@@ -39,6 +41,7 @@ UsbNetLayout(
     Adapter->Dcbaa = (PULONG64)Page;
     Adapter->ScratchpadArray = (PULONG64)(Page + 1024);
     Adapter->Erst = (PULONG)(Page + 2048);
+    Adapter->SharedErst = (PULONG)(Page + USBNET_SHARED_ERST);
     Page += PAGE_SIZE;
     Adapter->Command.Trbs = (PULONG)Page;
     Adapter->Events = (PULONG)(Page + USBNET_RING_SIZE);
@@ -47,6 +50,7 @@ UsbNetLayout(
     Page += PAGE_SIZE;
     Adapter->BulkOut.Ring.Trbs = (PULONG)Page;
     Adapter->Devices[0].Context = Page + USBNET_RING_SIZE;
+    Adapter->SharedEvents = (PULONG)(Page + USBNET_SHARED_EVENTS);
     Page += PAGE_SIZE;
     Adapter->InputContext = Page;
     Page += PAGE_SIZE;
@@ -139,12 +143,16 @@ UsbNetInitializeController(
     if (NT_SUCCESS(Status))
         Status = UsbFindFunction(Adapter);
 
+    if (!NT_SUCCESS(Status) && (Adapter->PhonePort || Status == STATUS_DEVICE_NOT_CONNECTED))
+        Status = UsbWaitForTethering(Adapter);
+
     if (!NT_SUCCESS(Status))
     {
         XhciHalt(Adapter);
         return Status;
     }
 
+    XhciShareController(Adapter);
     UsbNetSetLink(Adapter, TRUE);
     return STATUS_SUCCESS;
 }
@@ -167,6 +175,14 @@ UsbNetRecover(
     _In_ PUSBNET_ENDPOINT Endpoint)
 {
     UCHAR Completion = Endpoint->Completion;
+
+    if (Adapter->Shared)
+    {
+        if (Completion != XHCI_CC_TIMEOUT)
+            UsbNetSetLink(Adapter, FALSE);
+
+        return;
+    }
 
     if (!UsbPathAlive(Adapter))
     {
@@ -195,6 +211,9 @@ UsbNetReconnect(
     ULONG Port, Value;
     NTSTATUS Status;
     BOOLEAN Changed = FALSE;
+
+    if (Adapter->Shared)
+        return;
 
     for (Port = 1; Port <= Adapter->MaxPorts; Port++)
     {
@@ -259,6 +278,9 @@ UsbNetGetRxPacket(
             *Length = Adapter->RxFrameLength;
             return STATUS_SUCCESS;
         }
+
+        if (Adapter->Shared && !XhciSharedLinkReady(Adapter))
+            return STATUS_IO_TIMEOUT;
 
         if (!Adapter->RxActive)
         {
@@ -329,7 +351,7 @@ UsbNetSendTxPacket(
     if (!(Handle & TRANSMIT_HANDLE) || Index >= USBNET_TX_COUNT || Length > USBNET_MAX_FRAME)
         return STATUS_INVALID_PARAMETER;
 
-    if (!Adapter->LinkUp)
+    if (!Adapter->LinkUp || (Adapter->Shared && !XhciSharedLinkReady(Adapter)))
         return STATUS_IO_TIMEOUT;
 
     Buffer = Adapter->TxBuffers + Index * PAGE_SIZE;

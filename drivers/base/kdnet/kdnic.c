@@ -6,6 +6,7 @@
  */
 
 #include "kdnet.h"
+#include <drivers/kdusbshare.h>
 
 typedef NTSTATUS
 (NTAPI *PKDNET_INITIALIZE_LIBRARY)(
@@ -634,6 +635,24 @@ KdpStartPlatformDevice(
 
 static
 VOID
+KdpPublishUsbShare(
+    _In_ PKD_USB_SHARE Share)
+{
+    UNICODE_STRING KeyName = RTL_CONSTANT_STRING(KD_USB_SHARE_KEY_PATH);
+    UNICODE_STRING ValueName = RTL_CONSTANT_STRING(KD_USB_SHARE_VALUE);
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    HANDLE Key;
+
+    InitializeObjectAttributes(&ObjectAttributes, &KeyName, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+    if (!NT_SUCCESS(ZwCreateKey(&Key, KEY_SET_VALUE, &ObjectAttributes, 0, NULL, REG_OPTION_VOLATILE, NULL)))
+        return;
+
+    ZwSetValueKey(Key, &ValueName, 0, REG_BINARY, Share, sizeof(*Share));
+    ZwClose(Key);
+}
+
+static
+VOID
 KdpReserveDevice(VOID)
 {
     UNICODE_STRING Services = RTL_CONSTANT_STRING(
@@ -645,6 +664,14 @@ KdpReserveDevice(VOID)
     HANDLE Parent, Key;
     NTSTATUS Status;
     ULONG Value, i;
+    PKD_USB_SHARE Share = KdNicDevice.OemData;
+
+    if (KdNicDevice.NameSpace == KdNameSpacePCI && Share && KdNicDevice.OemDataLength == sizeof(*Share) &&
+        Share->Signature == KD_USB_SHARE_SIGNATURE)
+    {
+        KdpPublishUsbShare(Share);
+        return;
+    }
 
     if (KdNicDevice.NameSpace == KdNameSpacePCI)
         Names[0] = L"PCI";

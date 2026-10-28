@@ -295,17 +295,18 @@ XhciDeviceControl(
     Endpoint->Residual = 0;
     Endpoint->Completion = 0;
     Endpoint->DataTrb = 0;
-    Endpoint->FirstTrb = XhciQueueTrb(&Endpoint->Ring, Setup, 8,
+    Endpoint->FirstTrb = XhciQueueTrb(&Endpoint->Ring, Setup, XhciTransferStatus(Adapter, 8),
                                       (TRB_SETUP << TRB_TYPE_SHIFT) | TRB_IMMEDIATE |
                                       (Transfer << TRB_TRANSFER_SHIFT));
     if (Length)
     {
-        Endpoint->DataTrb = XhciQueueTrb(&Endpoint->Ring, XhciPhysical(Adapter->Control), Length,
+        Endpoint->DataTrb = XhciQueueTrb(&Endpoint->Ring, XhciPhysical(Adapter->Control),
+                                         XhciTransferStatus(Adapter, Length),
                                          (TRB_DATA << TRB_TYPE_SHIFT) |
                                          (In ? TRB_DIRECTION_IN | TRB_SHORT_PACKET : 0));
     }
 
-    Endpoint->LastTrb = XhciQueueTrb(&Endpoint->Ring, 0, 0,
+    Endpoint->LastTrb = XhciQueueTrb(&Endpoint->Ring, 0, XhciTransferStatus(Adapter, 0),
                                      (TRB_STATUS << TRB_TYPE_SHIFT) | TRB_IOC |
                                      (Length && In ? 0 : TRB_DIRECTION_IN));
     XhciRing(Adapter, Device->Slot, Endpoint->Dci);
@@ -352,11 +353,13 @@ XhciQueueBulk(
     Endpoint->Done = FALSE;
     Endpoint->Residual = 0;
     Endpoint->Completion = 0;
-    Endpoint->FirstTrb = XhciQueueTrb(&Endpoint->Ring, XhciPhysical(Buffer), Length, Control);
+    Endpoint->FirstTrb = XhciQueueTrb(&Endpoint->Ring, XhciPhysical(Buffer), XhciTransferStatus(Adapter, Length),
+                                      Control);
     Endpoint->DataTrb = Endpoint->FirstTrb;
     Endpoint->LastTrb = Endpoint->FirstTrb;
     if (Terminate)
-        Endpoint->LastTrb = XhciQueueTrb(&Endpoint->Ring, 0, 0, (TRB_NORMAL << TRB_TYPE_SHIFT) | TRB_IOC);
+        Endpoint->LastTrb = XhciQueueTrb(&Endpoint->Ring, 0, XhciTransferStatus(Adapter, 0),
+                                         (TRB_NORMAL << TRB_TYPE_SHIFT) | TRB_IOC);
 
     XhciRing(Adapter, Adapter->Device->Slot, Endpoint->Dci);
 }

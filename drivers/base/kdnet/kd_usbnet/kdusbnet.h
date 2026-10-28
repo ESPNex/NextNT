@@ -12,6 +12,7 @@
 #include <kdnetextensibility.h>
 #include <usb100.h>
 #include <usb200.h>
+#include <drivers/kdusbshare.h>
 
 #define XHCI_CAP_LENGTH             0x00
 #define XHCI_CAP_HCSPARAMS1         0x04
@@ -33,6 +34,7 @@
 #define XHCI_RT_ERSTSZ              0x28
 #define XHCI_RT_ERSTBA              0x30
 #define XHCI_RT_ERDP                0x38
+#define XHCI_RT_INTERRUPTER_SIZE    0x20
 
 #define XHCI_USBCMD_RUN             0x00000001
 #define XHCI_USBCMD_RESET           0x00000002
@@ -41,6 +43,7 @@
 #define XHCI_HCC_CONTEXT_64         0x00000004
 #define XHCI_HCC_PORT_POWER         0x00000008
 #define XHCI_HCC_XECP_SHIFT         16
+#define XHCI_HCS1_INTERRUPTERS(Params) (((Params) >> 8) & 0x7FF)
 #define XHCI_ERDP_BUSY              0x00000008
 #define XHCI_PAGESIZE_4K            0x00000001
 
@@ -53,14 +56,17 @@
 #define XHCI_PORT_CONNECTED         0x00000001
 #define XHCI_PORT_ENABLED           0x00000002
 #define XHCI_PORT_RESET             0x00000010
+#define XHCI_PORT_LINK_STATE_MASK   0x000001E0
 #define XHCI_PORT_POWER             0x00000200
 #define XHCI_PORT_SPEED_SHIFT       10
 #define XHCI_PORT_SPEED_MASK        0x0000000F
 #define XHCI_PORT_INDICATOR         0x0000C000
 #define XHCI_PORT_CONNECT_CHANGE    0x00020000
 #define XHCI_PORT_RESET_CHANGE      0x00200000
+#define XHCI_PORT_LINK_CHANGE       0x00400000
 #define XHCI_PORT_CHANGE_MASK       0x00FE0000
 #define XHCI_PORT_WAKE_MASK         0x0E000000
+#define XHCI_PORT_PRESERVE_MASK     (XHCI_PORT_POWER | XHCI_PORT_INDICATOR | XHCI_PORT_WAKE_MASK)
 
 #define XHCI_SPEED_FULL             1
 #define XHCI_SPEED_LOW              2
@@ -84,6 +90,7 @@
 #define TRB_SLOT_SHIFT              24
 #define TRB_CODE_SHIFT              24
 #define TRB_LENGTH_MASK             0x00FFFFFF
+#define TRB_INTERRUPTER_SHIFT       22
 
 #define TRB_NORMAL                  1
 #define TRB_SETUP                   2
@@ -108,6 +115,9 @@
 #define XHCI_CC_SUCCESS             1
 #define XHCI_CC_STALL               6
 #define XHCI_CC_SHORT_PACKET        13
+#define XHCI_CC_STOPPED             26
+#define XHCI_CC_STOPPED_LENGTH      27
+#define XHCI_CC_STOPPED_SHORT       28
 #define XHCI_CC_TIMEOUT             0xFF
 
 #define EP_TYPE_BULK_OUT            2
@@ -135,6 +145,11 @@
 #define USBNET_MAX_FRAME            1514
 #define USBNET_MIN_FRAME            14
 #define USBNET_PAD_FRAME            60
+#define USBNET_SHARED_INTERRUPTER   1
+#define USBNET_PHONE_GONE           10000
+#define USBNET_PHONE_REMIND         10000
+#define USBNET_PHONE_STEP           100
+#define USBNET_PHONE_SETTLE         200
 
 #define USB_HUB_CLASS_IN            0xA0
 #define USB_HUB_CLASS_OUT           0x20
@@ -295,6 +310,16 @@ typedef struct _USBNET_ADAPTER
     ULONG64 EventsPhysical;
     ULONG EventDequeue;
     ULONG EventCycle;
+    ULONG Interrupters;
+    PULONG SharedErst;
+    PULONG SharedEvents;
+    ULONG64 SharedEventsPhysical;
+    ULONG SharedEventDequeue;
+    ULONG SharedEventCycle;
+    BOOLEAN Shared;
+    ULONG WaitPort;
+    ULONG PhonePort;
+    KD_USB_SHARE Share;
     ULONG64 CommandTrb;
     UCHAR CommandCompletion;
     UCHAR CommandSlot;
@@ -324,6 +349,17 @@ typedef struct _USBNET_ADAPTER
 } USBNET_ADAPTER, *PUSBNET_ADAPTER;
 
 extern PKDNET_EXTENSIBILITY_IMPORTS KdNetExtensibilityImports;
+
+FORCEINLINE
+ULONG
+XhciTransferStatus(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Length)
+{
+    return Length | ((Adapter->Shared ? USBNET_SHARED_INTERRUPTER : 0) << TRB_INTERRUPTER_SHIFT);
+}
+
+#define UsbNetTrace(...) KdNetExtensibilityImports->KdNetDbgPrintf(__VA_ARGS__)
 
 FORCEINLINE
 USHORT
@@ -366,6 +402,10 @@ UsbNetPut32(
 ULONG
 XhciRead(
     _In_ PUCHAR Register);
+
+BOOLEAN
+XhciSharedLinkReady(
+    _In_ PUSBNET_ADAPTER Adapter);
 
 VOID
 XhciWrite(
@@ -436,6 +476,15 @@ BOOLEAN
 XhciPortAlive(
     _In_ PUSBNET_ADAPTER Adapter,
     _In_ ULONG Port);
+
+BOOLEAN
+XhciPortChanged(
+    _In_ PUSBNET_ADAPTER Adapter,
+    _In_ ULONG Port);
+
+VOID
+XhciShareController(
+    _In_ PUSBNET_ADAPTER Adapter);
 
 NTSTATUS
 XhciAddressDevice(
@@ -510,6 +559,10 @@ XhciWaitEndpoint(
 
 NTSTATUS
 UsbFindFunction(
+    _In_ PUSBNET_ADAPTER Adapter);
+
+NTSTATUS
+UsbWaitForTethering(
     _In_ PUSBNET_ADAPTER Adapter);
 
 VOID
