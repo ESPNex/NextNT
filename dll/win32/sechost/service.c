@@ -1616,6 +1616,10 @@ static DWORD WINAPI service_thread( void *arg )
         WCHAR **argv, *p;
 
         argv = malloc( (argc + 1) * sizeof(*argv) );
+#ifdef __REACTOS__
+        if (!argv)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         for (argc = 0, p = str; *p; p += wcslen( p ) + 1)
             argv[argc++] = p;
         argv[argc] = NULL;
@@ -1633,6 +1637,10 @@ static DWORD WINAPI service_thread( void *arg )
         WideCharToMultiByte(CP_ACP,0, str, len, strA, lenA, NULL, NULL);
 
         argv = malloc( (argc + 1) * sizeof(*argv) );
+#ifdef __REACTOS__
+        if (!argv)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         for (argc = 0, p = strA; *p; p += strlen( p ) + 1)
             argv[argc++] = p;
         argv[argc] = NULL;
@@ -1709,6 +1717,10 @@ static DWORD WINAPI service_control_dispatcher( void *arg )
         {
             data_size = info.total_size - FIELD_OFFSET(service_start_info,data);
             data = malloc( data_size );
+#ifdef __REACTOS__
+            if (!data)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             r = ReadFile( disp->pipe, data, data_size, &count, NULL );
             if (!r)
             {
@@ -1838,6 +1850,10 @@ static BOOL service_run_main_thread(void)
     HANDLE wait_handles[MAXIMUM_WAIT_OBJECTS];
     UINT wait_services[MAXIMUM_WAIT_OBJECTS];
     struct dispatcher_data *disp = malloc( sizeof(*disp) );
+#ifdef __REACTOS__
+    if (!disp)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     disp->manager = OpenSCManagerW( NULL, NULL, SC_MANAGER_CONNECT );
     if (!disp->manager)
@@ -1942,6 +1958,10 @@ BOOL WINAPI DECLSPEC_HOTPATCH StartServiceCtrlDispatcherA( const SERVICE_TABLE_E
         DWORD len = MultiByteToWideChar( CP_ACP, 0, servent[i].lpServiceName, -1, NULL, 0 );
         DWORD sz = FIELD_OFFSET( struct service_data, name[len] );
         info = calloc( 1, sz );
+#ifdef __REACTOS__
+        if (!info)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         MultiByteToWideChar( CP_ACP, 0, servent[i].lpServiceName, -1, info->name, len );
         info->proc.a = servent[i].lpServiceProc;
         info->unicode = FALSE;
@@ -1981,6 +2001,10 @@ BOOL WINAPI DECLSPEC_HOTPATCH StartServiceCtrlDispatcherW( const SERVICE_TABLE_E
         DWORD len = wcslen( servent[i].lpServiceName ) + 1;
         DWORD sz = FIELD_OFFSET( struct service_data, name[len] );
         info = calloc( 1, sz );
+#ifdef __REACTOS__
+        if (!info)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         wcscpy( info->name, servent[i].lpServiceName );
         info->proc.w = servent[i].lpServiceProc;
         info->unicode = TRUE;
