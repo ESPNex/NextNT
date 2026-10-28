@@ -1054,6 +1054,10 @@ void Slicer::evalStream(primStream* pStream)
   k=0;
 /*  TrimVertex X;*/
   TrimVertex *trimVert =/*&X*/  (TrimVertex*)malloc(sizeof(TrimVertex));
+#ifdef __REACTOS__
+  if (!trimVert)
+    abort();
+#endif
   trimVert -> nuid = 0;//???
   Real* vertices = pStream->get_vertices(); //for efficiency
   for(i=0; i<pStream->get_n_prims(); i++)
