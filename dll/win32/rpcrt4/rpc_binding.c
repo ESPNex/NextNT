@@ -84,6 +84,10 @@ LPWSTR RPCRT4_strndupW(LPCWSTR src, INT slen)
   if (slen == -1) slen = lstrlenW(src);
   len = slen;
   s = malloc((len + 1) * sizeof(WCHAR));
+#ifdef __REACTOS__
+  if (!s)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   memcpy(s, src, len*sizeof(WCHAR));
   s[len] = 0;
   return s;
@@ -94,6 +98,10 @@ static RPC_STATUS RPCRT4_AllocBinding(RpcBinding** Binding, BOOL server)
   RpcBinding* NewBinding;
 
   NewBinding = calloc(1, sizeof(RpcBinding));
+#ifdef __REACTOS__
+  if (!NewBinding)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   NewBinding->refs = 1;
   NewBinding->server = server;
 

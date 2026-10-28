@@ -1324,6 +1324,10 @@ static void write_proc_func_header(ITypeInfo *typeinfo, FUNCDESC *desc,
     {
         unsigned int len, count = stack_size / sizeof(void *);
         unsigned char *params = malloc( count );
+#ifdef __REACTOS__
+        if (!params)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
         count = fill_params_array( typeinfo, desc, params, count );
         len = compress_params_array( params, count );

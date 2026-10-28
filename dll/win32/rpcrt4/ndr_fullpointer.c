@@ -35,6 +35,10 @@ PFULL_PTR_XLAT_TABLES WINAPI NdrFullPointerXlatInit(ULONG NumberOfPointers,
 {
     ULONG NumberOfBuckets;
     FULL_PTR_XLAT_TABLES *pXlatTables = malloc(sizeof(*pXlatTables));
+#ifdef __REACTOS__
+    if (!pXlatTables)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     TRACE("(%ld, %d)\n", NumberOfPointers, XlatSide);
 
@@ -164,6 +168,10 @@ int WINAPI NdrFullPointerQueryPointer(PFULL_PTR_XLAT_TABLES pXlatTables,
         }
 
     XlatTableEntry = malloc(sizeof(*XlatTableEntry));
+#ifdef __REACTOS__
+    if (!XlatTableEntry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     XlatTableEntry->Next = pXlatTables->PointerToRefId.XlatTable[Hash & pXlatTables->PointerToRefId.HashMask];
     XlatTableEntry->Pointer = pPointer;
     XlatTableEntry->RefId = *pRefId = pXlatTables->NextRefId++;
@@ -225,6 +233,10 @@ void WINAPI NdrFullPointerInsertRefId(PFULL_PTR_XLAT_TABLES pXlatTables,
         Hash = (Hash * 3) ^ ((unsigned char *)&pPointer)[i];
 
     XlatTableEntry = malloc(sizeof(*XlatTableEntry));
+#ifdef __REACTOS__
+    if (!XlatTableEntry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     XlatTableEntry->Next = pXlatTables->PointerToRefId.XlatTable[Hash & pXlatTables->PointerToRefId.HashMask];
     XlatTableEntry->Pointer = pPointer;
     XlatTableEntry->RefId = RefId;

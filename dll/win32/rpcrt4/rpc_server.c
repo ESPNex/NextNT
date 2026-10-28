@@ -992,6 +992,10 @@ RPC_STATUS WINAPI RpcServerInqBindings( RPC_BINDING_VECTOR** BindingVector )
   if (count) {
     /* export bindings */
     *BindingVector = malloc(sizeof(RPC_BINDING_VECTOR) + sizeof(RPC_BINDING_HANDLE) * (count - 1));
+#ifdef __REACTOS__
+    if (!*BindingVector)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     (*BindingVector)->Count = count;
     count = 0;
     LIST_FOR_EACH_ENTRY(ps, &protseqs, RpcServerProtseq, entry) {
@@ -1281,6 +1285,10 @@ RPC_STATUS WINAPI RpcServerRegisterIf3( RPC_IF_HANDLE IfSpec, UUID* MgrTypeUuid,
   TRACE(" interpreter info: %p\n", If->InterpreterInfo);
 
   sif = calloc(1, sizeof(RpcServerInterface));
+#ifdef __REACTOS__
+  if (!sif)
+      RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
   sif->If           = If;
   if (MgrTypeUuid) {
     sif->MgrTypeUuid = *MgrTypeUuid;
@@ -1477,6 +1485,10 @@ RPC_STATUS WINAPI RpcObjectSetType( UUID* ObjUuid, UUID* TypeUuid )
       return RPC_S_ALREADY_REGISTERED;
     /* ... otherwise create a new one and add it in. */
     map = malloc(sizeof(RpcObjTypeMap));
+#ifdef __REACTOS__
+    if (!map)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     map->Object = *ObjUuid;
     map->Type = *TypeUuid;
     map->next = NULL;

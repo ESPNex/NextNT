@@ -803,6 +803,10 @@ RPC_STATUS RPCRT4_SendWithAuth(RpcConnection *Connection, RpcPktHdr *Header,
     }
 
     pkt = calloc(1, Header->common.frag_len);
+#ifdef __REACTOS__
+    if (!pkt)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     memcpy(pkt, Header, hdr_size);
 
