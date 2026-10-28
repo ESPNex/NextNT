@@ -1,0 +1,27 @@
+diff --git a/mcs/class/corlib/System/AppDomain.cs b/mcs/class/corlib/System/AppDomain.cs
+index ed2c28c9ac..ec6eb3eeff 100644
+--- a/mcs/class/corlib/System/AppDomain.cs
++++ b/mcs/class/corlib/System/AppDomain.cs
+@@ -1512,6 +1512,22 @@ public bool IsFullyTrusted {
+ 		public AppDomainManager DomainManager {
+ 			get { return (AppDomainManager)_domain_manager; }
+ 		}
++
++		internal static void InitializeDomainManager (string assemblyName, string typeName)
++		{
++			AppDomain domain = CurrentDomain;
++
++			if (domain._domain_manager != null)
++				return;
++
++			AppDomainSetup setup = domain.SetupInformationNoCopy;
++			setup.AppDomainManagerAssembly = assemblyName;
++			setup.AppDomainManagerType = typeName;
++
++			AppDomainManager manager = (AppDomainManager) Activator.CreateInstance (assemblyName, typeName).Unwrap ();
++			domain._domain_manager = manager;
++			manager.InitializeNewDomain (domain.SetupInformation);
++		}
+ #else
+ 		[Obsolete ("AppDomain.DomainManager is not supported on this platform.", true)]
+ 		public AppDomainManager DomainManager {
