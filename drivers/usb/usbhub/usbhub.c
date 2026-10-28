@@ -5133,7 +5133,9 @@ USBH_PdoSetCapabilities(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension)
 
     RtlCopyMemory(PortExtension->Capabilities.DeviceState,
                   HubExtension->DeviceState,
-                  (PowerSystemMaximum + 2) * sizeof(POWER_STATE));
+                  sizeof(PortExtension->Capabilities.DeviceState));
+    PortExtension->Capabilities.SystemWake = HubExtension->SystemWake;
+    PortExtension->Capabilities.DeviceWake = HubExtension->DeviceWake;
 
     PortExtension->Capabilities.DeviceState[1] = PowerDeviceD0;
 
