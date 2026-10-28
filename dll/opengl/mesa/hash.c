@@ -160,6 +160,10 @@ void HashInsert(struct HashTable *table, GLuint key, void *data)
 
    /* alloc and insert new table entry */
    entry = (struct HashEntry *) calloc(sizeof(struct HashEntry), 1);
+#ifdef __REACTOS__
+   if (!entry)
+       abort();
+#endif
    entry->Key = key;
    entry->Data = data;
    entry->Next = table->Table[pos];

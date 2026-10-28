@@ -419,6 +419,10 @@ static Node *alloc_instruction( GLcontext *ctx, OpCode opcode, GLint argcount )
 static Node *make_empty_list( void )
 {
    Node *n = (Node *) malloc( sizeof(Node) );
+#ifdef __REACTOS__
+   if (!n)
+       abort();
+#endif
    n[0].opcode = OPCODE_END_OF_LIST;
    return n;
 }

@@ -148,6 +148,10 @@ void gl_PushAttrib( GLcontext* ctx, GLbitfield mask )
       struct gl_enable_attrib *attr;
       GLuint i;
       attr = MALLOC_STRUCT( gl_enable_attrib );
+#ifdef __REACTOS__
+      if (!attr)
+          abort();
+#endif
       /* Copy enable flags from all other attributes into the enable struct. */
       attr->AlphaTest = ctx->Color.AlphaEnabled;
       attr->AutoNormal = ctx->Eval.AutoNormal;
