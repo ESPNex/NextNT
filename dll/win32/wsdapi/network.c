@@ -163,6 +163,10 @@ static BOOL send_udp_multicast_of_type(char *data, int length, int max_initial_d
 
         /* Set up the thread parameters */
         send_params = malloc(sizeof(*send_params));
+#ifdef __REACTOS__
+        if (!send_params)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
         send_params->data = malloc(length);
         memcpy(send_params->data, data, length);
@@ -348,6 +352,10 @@ static DWORD WINAPI listening_thread(LPVOID params)
     char *buffer;
 
     buffer = malloc(RECEIVE_BUFFER_SIZE);
+#ifdef __REACTOS__
+    if (!buffer)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     address_len = parameter->ipv6 ? sizeof(SOCKADDR_IN6) : sizeof(SOCKADDR_IN);
 
     while (parameter->impl->publisherStarted)
@@ -466,6 +474,10 @@ static int start_listening(IWSDiscoveryPublisherImpl *impl, SOCKADDR_STORAGE *bi
 
     /* Allocate memory for thread parameters */
     parameter = malloc(sizeof(*parameter));
+#ifdef __REACTOS__
+    if (!parameter)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     parameter->impl = impl;
     parameter->listening_socket = s;
