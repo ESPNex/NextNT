@@ -4187,6 +4187,10 @@ static void fontname_tokenize(struct list *tokens, const WCHAR *nameW)
     while (*ptr)
     {
         struct name_token *token = malloc(sizeof(*token));
+#ifdef __REACTOS__
+        if (!token)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         token->ptr = ptr;
         token->len = 0;
         token->fulllen = 0;
@@ -4771,6 +4775,10 @@ HRESULT create_font_collection(IDWriteFactory7 *factory, IDWriteFontFileEnumerat
 
         /* add to scanned list */
         fileenum = malloc(sizeof(*fileenum));
+#ifdef __REACTOS__
+        if (!fileenum)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         fileenum->file = file;
         list_add_tail(&scannedfiles, &fileenum->entry);
 

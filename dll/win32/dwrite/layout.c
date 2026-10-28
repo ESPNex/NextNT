@@ -2094,6 +2094,10 @@ static struct reorder_entry * layout_reorder_append_run(struct reorder_entry *li
     struct reorder_entry *entry;
 
     entry = malloc(sizeof(*entry));
+#ifdef __REACTOS__
+    if (!entry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     entry->run = run;
     entry->next = NULL;
 
@@ -2113,6 +2117,10 @@ static struct reorder_entry * layout_reorder_prepend_run(struct reorder_entry *l
     struct reorder_entry *entry;
 
     entry = malloc(sizeof(*entry));
+#ifdef __REACTOS__
+    if (!entry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     entry->run = run;
     entry->next = list;
 

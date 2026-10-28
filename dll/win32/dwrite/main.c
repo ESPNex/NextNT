@@ -1645,6 +1645,10 @@ static HRESULT create_system_path_list(WCHAR ***ret, unsigned int *ret_count)
                     WCHAR *ptrW;
 
                     ptrW = malloc((MAX_PATH + wcslen(value)) * sizeof(WCHAR));
+#ifdef __REACTOS__
+                    if (!ptrW)
+                        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                     GetWindowsDirectoryW(ptrW, MAX_PATH);
                     wcscat(ptrW, L"\\fonts\\");
                     wcscat(ptrW, value);

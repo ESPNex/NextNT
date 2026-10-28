@@ -2410,6 +2410,10 @@ static BOOL opentype_decode_namerecord(const struct dwrite_fonttable *table, uns
             {
                 DWORD len = MultiByteToWideChar(codepage, 0, name, length, NULL, 0);
                 name_string = malloc(sizeof(WCHAR) * (len+1));
+#ifdef __REACTOS__
+                if (!name_string)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                 MultiByteToWideChar(codepage, 0, name, length, name_string, len);
                 name_string[len] = 0;
             }
