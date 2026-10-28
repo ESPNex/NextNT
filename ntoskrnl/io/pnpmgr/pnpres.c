@@ -546,20 +546,22 @@ IopInterruptPolicyAffinity(
     _Out_ PKAFFINITY Affinity)
 {
     KAFFINITY Targeted;
+    BOOLEAN Valid;
 
     *Affinity = Allowed;
     if (!(IoDesc->Flags & CM_RESOURCE_INTERRUPT_POLICY_INCLUDED))
         return TRUE;
 
     Targeted = IoDesc->u.Interrupt.TargetedProcessors;
+    Valid = Targeted != 0 && !(Targeted & ~KeQueryActiveProcessors());
     if (IoDesc->u.Interrupt.AffinityPolicy > IrqPolicyAllProcessorsInMachineWhenSteered)
-        return !Message && Targeted != 0;
+        return !Message && Valid;
 
-    if (IoDesc->u.Interrupt.AffinityPolicy != IrqPolicySpecifiedProcessors || Targeted == 0)
+    if (!Message || IoDesc->u.Interrupt.AffinityPolicy != IrqPolicySpecifiedProcessors || Targeted == 0)
         return TRUE;
 
-    if (Targeted & ~KeQueryActiveProcessors())
-        return !Message;
+    if (!Valid)
+        return FALSE;
 
     *Affinity = Targeted;
     return TRUE;
@@ -615,10 +617,9 @@ IopCountMessageDescriptors(
 }
 
 static
-KAFFINITY
-IopRawMessageAffinity(
-    _In_ PDEVICE_NODE DeviceNode,
-    _In_ KAFFINITY Translated)
+PIO_RESOURCE_DESCRIPTOR
+IopFindInterruptPolicy(
+    _In_ PDEVICE_NODE DeviceNode)
 {
     PIO_RESOURCE_REQUIREMENTS_LIST Requirements = DeviceNode->ResourceRequirements;
     PIO_RESOURCE_LIST List;
@@ -626,7 +627,7 @@ IopRawMessageAffinity(
     ULONG ListIndex, Index;
 
     if (!Requirements)
-        return 0;
+        return NULL;
 
     List = &Requirements->List[0];
     for (ListIndex = 0; ListIndex < Requirements->AlternativeLists; ListIndex++)
@@ -634,19 +635,54 @@ IopRawMessageAffinity(
         for (Index = 0; Index < List->Count; Index++)
         {
             Descriptor = &List->Descriptors[Index];
-            if (Descriptor->Type != CmResourceTypeInterrupt ||
-                !(Descriptor->Flags & CM_RESOURCE_INTERRUPT_POLICY_INCLUDED))
+            if (Descriptor->Type == CmResourceTypeInterrupt &&
+                (Descriptor->Flags & CM_RESOURCE_INTERRUPT_POLICY_INCLUDED))
             {
-                continue;
+                return Descriptor;
             }
-
-            if (Descriptor->u.Interrupt.AffinityPolicy == IrqPolicySpreadMessagesAcrossAllProcessors)
-                return Translated;
-            return Descriptor->u.Interrupt.TargetedProcessors;
         }
         List = (PIO_RESOURCE_LIST)(List->Descriptors + List->Count);
     }
-    return 0;
+    return NULL;
+}
+
+static
+KAFFINITY
+IopRawMessageAffinity(
+    _In_ PDEVICE_NODE DeviceNode,
+    _In_ KAFFINITY Translated)
+{
+    PIO_RESOURCE_DESCRIPTOR Descriptor = IopFindInterruptPolicy(DeviceNode);
+
+    if (!Descriptor)
+        return 0;
+
+    if (Descriptor->u.Interrupt.AffinityPolicy == IrqPolicySpreadMessagesAcrossAllProcessors)
+        return Translated;
+    return Descriptor->u.Interrupt.TargetedProcessors;
+}
+
+static
+KAFFINITY
+IopLineInterruptAffinity(
+    _In_ PDEVICE_NODE DeviceNode,
+    _In_ KAFFINITY Available)
+{
+    PIO_RESOURCE_DESCRIPTOR Descriptor = IopFindInterruptPolicy(DeviceNode);
+    KAFFINITY Targeted, Affinity;
+
+    if (!Descriptor)
+        return Available;
+
+    Targeted = Descriptor->u.Interrupt.TargetedProcessors;
+    if (Targeted != 0 && !(Targeted & ~KeQueryActiveProcessors()))
+        Affinity = Targeted;
+    else if (Descriptor->u.Interrupt.AffinityPolicy == IrqPolicyOneCloseProcessor)
+        Affinity = IopActiveProcessorAffinity(IopNextOneCloseProcessor++);
+    else
+        return Available;
+
+    return (Affinity & Available) ? (Affinity & Available) : Available;
 }
 
 static
@@ -2216,6 +2252,7 @@ IopTranslateDeviceResources(
                   &Irql,
                   &DescriptorTranslated->u.Interrupt.Affinity);
                DescriptorTranslated->u.Interrupt.Level = Irql;
+               DescriptorTranslated->u.Interrupt.Affinity = IopLineInterruptAffinity(DeviceNode, DescriptorTranslated->u.Interrupt.Affinity);
                if (!DescriptorTranslated->u.Interrupt.Vector)
                {
                    Status = STATUS_UNSUCCESSFUL;
