@@ -618,10 +618,6 @@ static LPSTR convert_file_list(LPCSTR FileList, DWORD *dwNumFiles)
 
     /* convert the colons to double-null termination */
     temp = szConvertedList;
-#ifdef __REACTOS__
-    if (!temp)
-        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
-#endif
     while (*temp)
     {
         if (*temp == ':')
