@@ -2389,7 +2389,11 @@ static UINT record_stream_name( const struct table_view *tv, MSIRECORD *rec, WCH
             name[p] = '.';
         p++;
 
+#ifdef __REACTOS__
+        l = (name && *len > p ? *len - p : 0);
+#else
         l = (*len > p ? *len - p : 0);
+#endif
         r = MSI_RecordGetStringW( rec, i + 1, name ? name + p : NULL, &l );
         if (r != ERROR_SUCCESS)
             return r;

@@ -961,6 +961,10 @@ static void swap_columns( column_info **cols, column_info *A, int idx )
         ptr = ptr->next;
     }
 
+#ifdef __REACTOS__
+    if( !B )
+        return;
+#endif
     if( preB ) preB->next = A;
     if( preA ) preA->next = B;
     ptr = A->next;

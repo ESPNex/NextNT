@@ -875,7 +875,11 @@ UINT ready_media( MSIPACKAGE *package, BOOL compressed, MSIMEDIAINFO *mi )
             lstrcpyW( mi->sourcedir, temppath );
             PathAddBackslashW( mi->sourcedir );
             free( mi->cabinet );
+#ifdef __REACTOS__
+            mi->cabinet = wcsdup( p ? p + 1 : temppath );
+#else
             mi->cabinet = wcsdup( p + 1 );
+#endif
 
             free( url );
             return ERROR_SUCCESS;

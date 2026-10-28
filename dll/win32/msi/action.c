@@ -1579,7 +1579,11 @@ static BOOL process_state_property(MSIPACKAGE* package, int level,
 
             while (ptr)
             {
+#ifdef __REACTOS__
+                int len = ptr2 ? ptr2 - ptr : 0;
+#else
                 int len = ptr2 - ptr;
+#endif
 
                 if ((ptr2 && lstrlenW(feature->Feature) == len && !wcsncmp(ptr, feature->Feature, len))
                     || (!ptr2 && !wcscmp(ptr, feature->Feature)))
