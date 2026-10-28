@@ -55,6 +55,10 @@ static wstring get_mountdev_name(const nt_handle& h ) {
     size_t mdnsize = offsetof(MOUNTDEV_NAME, Name[0]) + mdn.NameLength;
 
     mdn2 = (MOUNTDEV_NAME*)malloc(mdnsize);
+#ifdef __REACTOS__
+    if (!mdn2)
+        return L"";
+#endif
 
     Status = NtDeviceIoControlFile(h, nullptr, nullptr, nullptr, &iosb, IOCTL_MOUNTDEV_QUERY_DEVICE_NAME,
                                    nullptr, 0, mdn2, (ULONG)mdnsize);
@@ -96,6 +100,12 @@ static void find_devices(HWND hwnd, const GUID* guid, const mountmgr& mm, vector
             SetupDiGetDeviceInterfaceDetailW(h, &did, nullptr, 0, &size, nullptr);
 
             detail = (SP_DEVICE_INTERFACE_DETAIL_DATA_W*)malloc(size);
+#ifdef __REACTOS__
+            if (!detail) {
+                index++;
+                continue;
+            }
+#endif
             memset(detail, 0, size);
 
             detail->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);

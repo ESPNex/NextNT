@@ -585,6 +585,10 @@ static void create_subvol(const wstring& fn) {
 
     size_t bcslen = offsetof(btrfs_create_subvol, name[0]) + (file.length() * sizeof(WCHAR));
     bcs = (btrfs_create_subvol*)malloc(bcslen);
+#ifdef __REACTOS__
+    if (!bcs)
+        return;
+#endif
 
     bcs->readonly = false;
     bcs->posix = false;
@@ -592,6 +596,9 @@ static void create_subvol(const wstring& fn) {
     memcpy(bcs->name, file.c_str(), bcs->namelen);
 
     NtFsControlFile(h, nullptr, nullptr, nullptr, &iosb, FSCTL_BTRFS_CREATE_SUBVOL, bcs, (ULONG)bcslen, nullptr, 0);
+#ifdef __REACTOS__
+    free(bcs);
+#endif
 }
 
 extern "C" void CALLBACK CreateSubvolW(HWND hwnd, HINSTANCE hinst, LPWSTR lpszCmdLine, int nCmdShow) {
@@ -630,6 +637,10 @@ static void create_snapshot2(const wstring& source, const wstring& fn) {
 
     size_t bcslen = offsetof(btrfs_create_snapshot, name[0]) + (file.length() * sizeof(WCHAR));
     bcs = (btrfs_create_snapshot*)malloc(bcslen);
+#ifdef __REACTOS__
+    if (!bcs)
+        return;
+#endif
 
     bcs->readonly = false;
     bcs->posix = false;
@@ -638,6 +649,9 @@ static void create_snapshot2(const wstring& source, const wstring& fn) {
     bcs->subvol = src;
 
     NtFsControlFile(h, nullptr, nullptr, nullptr, &iosb, FSCTL_BTRFS_CREATE_SNAPSHOT, bcs, (ULONG)bcslen, nullptr, 0);
+#ifdef __REACTOS__
+    free(bcs);
+#endif
 }
 
 extern "C" void CALLBACK CreateSnapshotW(HWND hwnd, HINSTANCE hinst, LPWSTR lpszCmdLine, int nCmdShow) {

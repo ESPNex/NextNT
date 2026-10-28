@@ -43,6 +43,10 @@ DWORD BtrfsSend::Thread() {
             try {
                 size_t bss_size = offsetof(btrfs_send_subvol, clones[0]) + (clones.size() * sizeof(HANDLE));
                 bss = (btrfs_send_subvol*)malloc(bss_size);
+#ifdef __REACTOS__
+                if (!bss)
+                    throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
                 memset(bss, 0, bss_size);
 
                 if (incremental) {
@@ -582,6 +586,10 @@ static void send_subvol(const wstring& subvol, const wstring& file, const wstrin
         try {
             size_t bss_size = offsetof(btrfs_send_subvol, clones[0]) + (clones.size() * sizeof(HANDLE));
             bss = (btrfs_send_subvol*)malloc(bss_size);
+#ifdef __REACTOS__
+            if (!bss)
+                throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
             memset(bss, 0, bss_size);
 
             if (parent != L"") {

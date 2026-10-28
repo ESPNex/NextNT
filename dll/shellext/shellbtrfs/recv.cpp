@@ -106,6 +106,10 @@ void BtrfsRecv::cmd_subvol(HWND hwnd, btrfs_send_command* cmd, uint8_t* data, co
 
     size_t bcslen = offsetof(btrfs_create_subvol, name[0]) + (nameu.length() * sizeof(WCHAR));
     bcs = (btrfs_create_subvol*)malloc(bcslen);
+#ifdef __REACTOS__
+    if (!bcs)
+        throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
     bcs->readonly = true;
     bcs->posix = true;
@@ -132,6 +136,9 @@ void BtrfsRecv::cmd_subvol(HWND hwnd, btrfs_send_command* cmd, uint8_t* data, co
         throw string_error(IDS_RECV_CANT_OPEN_PATH, subvolpath.c_str(), GetLastError(), format_message(GetLastError()).c_str());
 
     Status = NtFsControlFile(master, nullptr, nullptr, nullptr, &iosb, FSCTL_BTRFS_RESERVE_SUBVOL, bcs, (ULONG)bcslen, nullptr, 0);
+#ifdef __REACTOS__
+    free(bcs);
+#endif
     if (!NT_SUCCESS(Status))
         throw string_error(IDS_RECV_RESERVE_SUBVOL_FAILED, Status, format_ntstatus(Status).c_str());
 
@@ -237,6 +244,10 @@ void BtrfsRecv::cmd_snapshot(HWND hwnd, btrfs_send_command* cmd, uint8_t* data, 
 
         bcslen = offsetof(btrfs_create_snapshot, name[0]) + (nameu.length() * sizeof(WCHAR));
         bcs = (btrfs_create_snapshot*)malloc(bcslen);
+#ifdef __REACTOS__
+        if (!bcs)
+            throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
         bcs->readonly = true;
         bcs->posix = true;
@@ -265,6 +276,9 @@ void BtrfsRecv::cmd_snapshot(HWND hwnd, btrfs_send_command* cmd, uint8_t* data, 
         throw string_error(IDS_RECV_CANT_OPEN_PATH, subvolpath.c_str(), GetLastError(), format_message(GetLastError()).c_str());
 
     Status = NtFsControlFile(master, nullptr, nullptr, nullptr, &iosb, FSCTL_BTRFS_RESERVE_SUBVOL, bcs, (ULONG)bcslen, nullptr, 0);
+#ifdef __REACTOS__
+    free(bcs);
+#endif
     if (!NT_SUCCESS(Status))
         throw string_error(IDS_RECV_RESERVE_SUBVOL_FAILED, Status, format_ntstatus(Status).c_str());
 
@@ -331,6 +345,10 @@ void BtrfsRecv::cmd_mkfile(HWND hwnd, btrfs_send_command* cmd, uint8_t* data) {
 
     size_t bmnsize = sizeof(btrfs_mknod) - sizeof(WCHAR) + (nameu.length() * sizeof(WCHAR));
     bmn = (btrfs_mknod*)malloc(bmnsize);
+#ifdef __REACTOS__
+    if (!bmn)
+        throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
     bmn->inode = *inode;
 
@@ -367,6 +385,10 @@ void BtrfsRecv::cmd_mkfile(HWND hwnd, btrfs_send_command* cmd, uint8_t* data) {
             throw string_error(IDS_RECV_PATH_TOO_LONG, funcname);
 
         rdb = (REPARSE_DATA_BUFFER*)malloc(rdblen);
+#ifdef __REACTOS__
+        if (!rdb)
+            throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
         rdb->ReparseTag = IO_REPARSE_TAG_SYMLINK;
         rdb->ReparseDataLength = (uint16_t)(rdblen - offsetof(REPARSE_DATA_BUFFER, SymbolicLinkReparseBuffer));

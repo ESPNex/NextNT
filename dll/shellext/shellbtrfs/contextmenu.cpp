@@ -191,6 +191,10 @@ static bool get_volume_path_parent(const WCHAR* fn, WCHAR* volpath, ULONG volpat
         return GetVolumePathNameW(fn, volpath, volpathlen);
 
     p = (WCHAR*)malloc((f - fn + 1) * sizeof(WCHAR));
+#ifdef __REACTOS__
+    if (!p)
+        return false;
+#endif
     memcpy(p, fn, (f - fn) * sizeof(WCHAR));
     p[f - fn] = 0;
 
@@ -511,6 +515,10 @@ static void create_snapshot(HWND hwnd, const wstring& fn) {
             size_t namelen = name.length() * sizeof(WCHAR);
 
             auto bcs = (btrfs_create_snapshot*)malloc(sizeof(btrfs_create_snapshot) - 1 + namelen);
+#ifdef __REACTOS__
+            if (!bcs)
+                throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
             bcs->readonly = false;
             bcs->posix = false;
             bcs->subvol = h;
@@ -519,6 +527,9 @@ static void create_snapshot(HWND hwnd, const wstring& fn) {
 
             Status = NtFsControlFile(h2, nullptr, nullptr, nullptr, &iosb, FSCTL_BTRFS_CREATE_SNAPSHOT, bcs,
                                      (ULONG)(sizeof(btrfs_create_snapshot) - 1 + namelen), nullptr, 0);
+#ifdef __REACTOS__
+            free(bcs);
+#endif
 
             if (!NT_SUCCESS(Status))
                 throw ntstatus_error(Status);
@@ -613,6 +624,10 @@ void BtrfsContextMenu::reflink_copy(HWND hwnd, const WCHAR* fn, const WCHAR* dir
         }
 
         bcs = (btrfs_create_snapshot*)malloc(sizeof(btrfs_create_snapshot) - sizeof(WCHAR) + (destname.length() * sizeof(WCHAR)));
+#ifdef __REACTOS__
+        if (!bcs)
+            throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
         bcs->subvol = source;
         bcs->namelen = (uint16_t)(destname.length() * sizeof(WCHAR));
         memcpy(bcs->name, destname.c_str(), destname.length() * sizeof(WCHAR));
@@ -642,6 +657,10 @@ void BtrfsContextMenu::reflink_copy(HWND hwnd, const WCHAR* fn, const WCHAR* dir
 
         size_t bmnsize = offsetof(btrfs_mknod, name[0]) + (wcslen(name) * sizeof(WCHAR));
         bmn = (btrfs_mknod*)malloc(bmnsize);
+#ifdef __REACTOS__
+        if (!bmn)
+            throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
         bmn->inode = 0;
         bmn->type = bii.type;
@@ -866,6 +885,10 @@ void BtrfsContextMenu::reflink_copy(HWND hwnd, const WCHAR* fn, const WCHAR* dir
                             // We can get away with this because our streams are guaranteed to be below 64 KB -
                             // don't do this on NTFS!
                             data = (uint8_t*)malloc(stream_size);
+#ifdef __REACTOS__
+                            if (!data)
+                                throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
                             if (!ReadFile(stream, data, stream_size, &bytesret, nullptr)) {
                                 free(data);
@@ -1068,6 +1091,10 @@ HRESULT __stdcall BtrfsContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO picia) {
 
                 size_t bcslen = offsetof(btrfs_create_subvol, name[0]) + (name.length() * sizeof(WCHAR));
                 bcs = (btrfs_create_subvol*)malloc(bcslen);
+#ifdef __REACTOS__
+                if (!bcs)
+                    throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
                 bcs->readonly = false;
                 bcs->posix = false;
@@ -1346,6 +1373,10 @@ static void reflink_copy2(const wstring& srcfn, const wstring& destdir, const ws
 
         size_t bcslen = offsetof(btrfs_create_snapshot, name[0]) + (destname.length() * sizeof(WCHAR));
         bcs = (btrfs_create_snapshot*)malloc(bcslen);
+#ifdef __REACTOS__
+        if (!bcs)
+            throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
         bcs->subvol = source;
         bcs->namelen = (uint16_t)(destname.length() * sizeof(WCHAR));
         memcpy(bcs->name, destname.c_str(), destname.length() * sizeof(WCHAR));
@@ -1375,6 +1406,10 @@ static void reflink_copy2(const wstring& srcfn, const wstring& destdir, const ws
 
         size_t bmnsize = offsetof(btrfs_mknod, name[0]) + (destname.length() * sizeof(WCHAR));
         bmn = (btrfs_mknod*)malloc(bmnsize);
+#ifdef __REACTOS__
+        if (!bmn)
+            throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
         bmn->inode = 0;
         bmn->type = bii.type;
@@ -1557,6 +1592,10 @@ static void reflink_copy2(const wstring& srcfn, const wstring& destdir, const ws
                             // We can get away with this because our streams are guaranteed to be below 64 KB -
                             // don't do this on NTFS!
                             data = (uint8_t*)malloc(stream_size);
+#ifdef __REACTOS__
+                            if (!data)
+                                throw last_error(ERROR_NOT_ENOUGH_MEMORY);
+#endif
 
                             if (!ReadFile(stream, data, stream_size, &bytesret, nullptr)) {
                                 free(data);
