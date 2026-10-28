@@ -3765,7 +3765,24 @@ InterfacePciDevicePresentEx(
 
     if (Parameters->Flags & PCI_USE_LOCAL_DEVICE)
     {
-        return CheckPciDevice(&DeviceExtension->PciDevice->PciConfig, Parameters);
+        ULONG DeviceNumber = DeviceExtension->PciDevice->SlotNumber.u.bits.DeviceNumber;
+
+        KeAcquireSpinLock(&MyFdoDeviceExtension->DeviceListLock, &OldIrql);
+        for (CurrentEntry = MyFdoDeviceExtension->DeviceListHead.Flink;
+             !Found && CurrentEntry != &MyFdoDeviceExtension->DeviceListHead;
+             CurrentEntry = CurrentEntry->Flink)
+        {
+            PciDevice = CONTAINING_RECORD(CurrentEntry, PCI_DEVICE, ListEntry);
+
+            if (PciDevice->SlotNumber.u.bits.DeviceNumber == DeviceNumber &&
+                CheckPciDevice(&PciDevice->PciConfig, Parameters))
+            {
+                Found = TRUE;
+            }
+        }
+        KeReleaseSpinLock(&MyFdoDeviceExtension->DeviceListLock, OldIrql);
+
+        return Found;
     }
 
     KeAcquireSpinLock(&DriverExtension->BusListLock, &OldIrql);
