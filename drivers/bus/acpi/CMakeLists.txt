@@ -206,6 +206,7 @@ list(APPEND ACPI_SOURCE
     osl.c
     acpienum.c
     eval.c
+    ged.c
     interface.c
     opregion.c
     pnp.c

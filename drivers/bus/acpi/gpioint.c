@@ -1,7 +1,7 @@
 /*
  * PROJECT:     LiberNT ACPI bus driver
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
- * PURPOSE:     Secondary interrupt (GpioInt) vector allocation through the HAL
+ * PURPOSE:     HAL interrupt services the ACPI driver reaches through the NDK
  * COPYRIGHT:   Copyright 2026 Ahmed Arif <arif193@gmail.com>
  */
 
@@ -34,4 +34,21 @@ BuspAllocateSecondaryGsiv(
     Status = HalAllocateGsivForSecondaryInterrupt(OwnerName.Buffer, OwnerName.Length, Gsiv);
     RtlFreeAnsiString(&OwnerName);
     return Status;
+}
+
+VOID
+BuspMaskInterrupt(
+    _In_ ULONG Vector,
+    _In_ KIRQL Irql)
+{
+    HalDisableSystemInterrupt(Vector, Irql);
+}
+
+VOID
+BuspUnmaskInterrupt(
+    _In_ ULONG Vector,
+    _In_ KIRQL Irql,
+    _In_ KINTERRUPT_MODE Mode)
+{
+    HalEnableSystemInterrupt(Vector, Irql, Mode);
 }
