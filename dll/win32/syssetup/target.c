@@ -45,6 +45,9 @@ typedef struct _TARGET_REGISTRATION
     PVOID DefaultContext;
 } TARGET_REGISTRATION, *PTARGET_REGISTRATION;
 
+#define LIVE_CONFIG_PATH L"\\\\?\\GLOBALROOT\\SystemRoot\\System32\\config\\"
+#define LIVE_SAVE_SUFFIX L".lntsave"
+
 static HANDLE hTargetDosDevices = NULL;
 static HANDLE hTargetDriveLink = NULL;
 
@@ -925,19 +928,16 @@ RelocateTargetRegistry(
 }
 
 static DWORD
-SaveTargetHive(
-    _In_ PTARGET_SETTINGS Settings,
+SaveHive(
     _In_ PCWSTR LiveKeyName,
-    _In_ PCWSTR FileName)
+    _In_ PCWSTR Path)
 {
-    WCHAR Path[MAX_PATH];
     UNICODE_STRING KeyName, NtPath;
     OBJECT_ATTRIBUTES ObjectAttributes;
     IO_STATUS_BLOCK IoStatusBlock;
     HANDLE KeyHandle = NULL, FileHandle = NULL;
     NTSTATUS Status;
 
-    StringCchPrintfW(Path, ARRAYSIZE(Path), L"%s\\System32\\config\\%s", Settings->SystemRoot, FileName);
     if (!RtlDosPathNameToNtPathName_U(Path, &NtPath, NULL, NULL))
         return ERROR_PATH_NOT_FOUND;
 
@@ -972,6 +972,55 @@ SaveTargetHive(
         DPRINT1("Saving %S to %S failed (Status 0x%08lx)\n", LiveKeyName, Path, Status);
 
     return RtlNtStatusToDosError(Status);
+}
+
+static DWORD
+SaveTargetHive(
+    _In_ PTARGET_SETTINGS Settings,
+    _In_ PCWSTR LiveKeyName,
+    _In_ PCWSTR FileName)
+{
+    WCHAR Path[MAX_PATH];
+
+    StringCchPrintfW(Path, ARRAYSIZE(Path), L"%s\\System32\\config\\%s", Settings->SystemRoot, FileName);
+    return SaveHive(LiveKeyName, Path);
+}
+
+static BOOL
+SaveLiveSecurityHives(VOID)
+{
+    BOOL Saved;
+
+    pSetupEnablePrivilege(L"SeBackupPrivilege", TRUE);
+    Saved = SaveHive(L"\\Registry\\Machine\\SAM", LIVE_CONFIG_PATH L"SAM" LIVE_SAVE_SUFFIX) == ERROR_SUCCESS &&
+            SaveHive(L"\\Registry\\Machine\\SECURITY", LIVE_CONFIG_PATH L"SECURITY" LIVE_SAVE_SUFFIX) == ERROR_SUCCESS;
+    pSetupEnablePrivilege(L"SeBackupPrivilege", FALSE);
+
+    return Saved;
+}
+
+static VOID
+ScheduleLiveSecurityRestore(VOID)
+{
+    static const PCWSTR Hives[] = { L"SAM", L"SECURITY" };
+    static const PCWSTR Logs[] = { L".LOG", L".LOG1", L".LOG2" };
+    WCHAR Hive[MAX_PATH], Saved[MAX_PATH], Log[MAX_PATH];
+    ULONG i, j;
+
+    for (i = 0; i < ARRAYSIZE(Hives); i++)
+    {
+        StringCchPrintfW(Hive, ARRAYSIZE(Hive), LIVE_CONFIG_PATH L"%s", Hives[i]);
+        StringCchPrintfW(Saved, ARRAYSIZE(Saved), L"%s" LIVE_SAVE_SUFFIX, Hive);
+        if (!MoveFileExW(Saved, Hive, MOVEFILE_REPLACE_EXISTING | MOVEFILE_DELAY_UNTIL_REBOOT))
+            DPRINT1("Restoring %S at the next start failed (Error %lu)\n", Hive, GetLastError());
+
+        for (j = 0; j < ARRAYSIZE(Logs); j++)
+        {
+            StringCchPrintfW(Log, ARRAYSIZE(Log), L"%s%s", Hive, Logs[j]);
+            if (GetFileAttributesW(Log) != INVALID_FILE_ATTRIBUTES)
+                MoveFileExW(Log, NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+        }
+    }
 }
 
 static DWORD
@@ -1084,8 +1133,8 @@ CreateTargetBootStatusData(
     return Success ? ERROR_SUCCESS : GetLastError();
 }
 
-DWORD
-InstallTargetSystem(VOID)
+static DWORD
+ConfigureTargetSystem(VOID)
 {
     TARGET_SETTINGS Settings;
     WCHAR LiveRoot[MAX_PATH];
@@ -1194,4 +1243,18 @@ InstallTargetSystem(VOID)
     RelocateTargetRegistry(LiveRoot, Settings.SystemRoot);
 
     return SaveTargetSecurityHives(&Settings);
+}
+
+DWORD
+InstallTargetSystem(VOID)
+{
+    BOOL Saved;
+    DWORD Error;
+
+    Saved = SaveLiveSecurityHives();
+    Error = ConfigureTargetSystem();
+    if (Saved)
+        ScheduleLiveSecurityRestore();
+
+    return Error;
 }
