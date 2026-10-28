@@ -194,10 +194,6 @@ done:
 static void remove_quotes( WCHAR *str )
 {
     WCHAR *p = str;
-#ifdef __REACTOS__
-    if (!p)
-        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
-#endif
     int len = lstrlenW( str );
 
     while ((p = wcschr( p, '"' )))
@@ -247,6 +243,10 @@ UINT msi_parse_command_line( MSIPACKAGE *package, LPCWSTR szCommandLine,
 
         num_quotes = 0;
         val = malloc( (wcslen( ptr2 ) + 1) * sizeof(WCHAR) );
+#ifdef __REACTOS__
+        if (!val)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         len = parse_prop( ptr2, val, &num_quotes );
         if (num_quotes % 2)
         {
