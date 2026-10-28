@@ -1487,7 +1487,10 @@ void BtrfsChangeDriveLetter::do_change(HWND hwndDlg) {
 #ifndef __REACTOS__
             throw runtime_error("Volume path was not root of drive.");
 #else
+        {
             error_message(nullptr, "Volume path was not root of drive.");
+            return;
+        }
 #endif
 
         mountmgr mm;
@@ -1500,7 +1503,10 @@ void BtrfsChangeDriveLetter::do_change(HWND hwndDlg) {
 #ifndef __REACTOS__
                 throw runtime_error("Error finding device name.");
 #else
+            {
                 error_message(nullptr, "Error finding device name.");
+                return;
+            }
 #endif
 
             dev_name = v[0].device_name;

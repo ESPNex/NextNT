@@ -56,10 +56,17 @@ void set_dpi_aware() {
 
     SetProcessDpiAwareness = (_SetProcessDpiAwareness)GetProcAddress(shcore, "SetProcessDpiAwareness");
 
+#ifdef __REACTOS__
+    if (SetProcessDpiAwareness)
+        SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+
+    FreeLibrary(shcore);
+#else
     if (!SetProcessDpiAwareness)
         return;
 
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+#endif
 }
 
 void format_size(uint64_t size, wstring& s, bool show_bytes) {
