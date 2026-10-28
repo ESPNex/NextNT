@@ -1019,6 +1019,10 @@ static INT_PTR CALLBACK hyperlink_dlgproc(HWND hwnd, UINT msg, WPARAM wparam, LP
                     item = SendMessageW((HWND)lparam, CB_GETCURSEL, 0, 0);
                     len = SendMessageW((HWND)lparam, CB_GETLBTEXTLEN, item, 0);
                     type = malloc((len + 1) * sizeof(WCHAR));
+#ifdef __REACTOS__
+                    if (!type)
+                        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                     SendMessageW((HWND)lparam, CB_GETLBTEXT, item, (LPARAM)type);
 
                     if (!wcscmp(type, L"(other)"))
@@ -1027,6 +1031,10 @@ static INT_PTR CALLBACK hyperlink_dlgproc(HWND hwnd, UINT msg, WPARAM wparam, LP
                     /* get current URL */
                     len = GetWindowTextLengthW(hwndURL);
                     url = malloc((len + lstrlenW(type) + 3) * sizeof(WCHAR));
+#ifdef __REACTOS__
+                    if (!url)
+                        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                     GetWindowTextW(hwndURL, url, len + 1);
 
                     /* strip off old protocol */

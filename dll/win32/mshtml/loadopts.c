@@ -155,6 +155,10 @@ static HRESULT WINAPI HtmlLoadOptions_SetOption(IHtmlLoadOptions *iface, DWORD d
 
     if(!iter) {
         iter = malloc(sizeof(load_opt));
+#ifdef __REACTOS__
+        if (!iter)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         iter->next = This->opts;
         This->opts = iter;
 

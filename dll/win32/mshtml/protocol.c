@@ -317,6 +317,10 @@ static HRESULT create_protocol_instance(const IInternetProtocolVtbl *protocol_vt
     }
 
     protocol = calloc(1, sizeof(InternetProtocol));
+#ifdef __REACTOS__
+    if (!protocol)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     protocol->IUnknown_inner.lpVtbl = &ProtocolUnkVtbl;
     protocol->IInternetProtocol_iface.lpVtbl = protocol_vtbl;
     protocol->outer = outer ? outer : &protocol->IUnknown_inner;

@@ -407,6 +407,10 @@ HRESULT set_moniker(HTMLOuterWindow *window, IMoniker *mon, IUri *nav_uri, IBind
             docobj_task_t *task;
 
             task = malloc(sizeof(docobj_task_t));
+#ifdef __REACTOS__
+            if (!task)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             task->doc = doc_obj;
             hres = push_task(&task->header, set_progress_proc, set_progress_destr, doc_obj->task_magic);
             if(FAILED(hres)) {
@@ -419,6 +423,10 @@ HRESULT set_moniker(HTMLOuterWindow *window, IMoniker *mon, IUri *nav_uri, IBind
             window->load_flags = BINDING_REFRESH;
 
         download_task = malloc(sizeof(download_proc_task_t));
+#ifdef __REACTOS__
+        if (!download_task)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         download_task->doc = doc_obj;
         download_task->set_download = set_download;
         download_task->url = url;

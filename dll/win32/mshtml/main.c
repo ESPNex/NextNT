@@ -549,6 +549,10 @@ static const IClassFactoryVtbl HTMLClassFactoryVtbl = {
 static HRESULT ClassFactory_Create(REFIID riid, void **ppv, CreateInstanceFunc fnCreateInstance)
 {
     ClassFactory *ret = malloc(sizeof(ClassFactory));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     HRESULT hres;
 
     ret->IClassFactory_iface.lpVtbl = &HTMLClassFactoryVtbl;
