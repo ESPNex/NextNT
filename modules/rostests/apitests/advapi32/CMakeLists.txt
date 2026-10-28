@@ -4,6 +4,7 @@ list(APPEND SOURCE
     CopySid.c
     CreateService.c
     DuplicateTokenEx.c
+    EnumerateTraceGuidsEx.c
     eventlog.c
     Hash.c
     HKEY_CLASSES_ROOT.c

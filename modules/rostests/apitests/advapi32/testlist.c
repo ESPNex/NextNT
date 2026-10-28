@@ -6,6 +6,7 @@ extern void func_AddMandatoryAce(void);
 extern void func_CopySid(void);
 extern void func_CreateService(void);
 extern void func_DuplicateTokenEx(void);
+extern void func_EnumerateTraceGuidsEx(void);
 extern void func_eventlog_supp(void);
 extern void func_Hash(void);
 extern void func_HKEY_CLASSES_ROOT(void);
@@ -37,6 +38,7 @@ const struct test winetest_testlist[] =
     { "CopySid", func_CopySid },
     { "CreateService", func_CreateService },
     { "DuplicateTokenEx", func_DuplicateTokenEx },
+    { "EnumerateTraceGuidsEx", func_EnumerateTraceGuidsEx },
     { "eventlog_supp", func_eventlog_supp },
     { "Hash", func_Hash },
     { "HKEY_CLASSES_ROOT", func_HKEY_CLASSES_ROOT },
