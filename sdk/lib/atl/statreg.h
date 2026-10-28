@@ -257,7 +257,6 @@ private:
         DWORD len;
         LPWSTR regstrw;
         LPSTR regstra;
-        LRESULT lres;
         HRESULT hResult;
 
         file = CreateFileW(fileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
@@ -266,15 +265,18 @@ private:
             filelen = GetFileSize(file, NULL);
             regstra = reinterpret_cast<LPSTR>(HeapAlloc(GetProcessHeap(), 0, filelen));
             if (regstra == NULL)
+            {
+                CloseHandle(file);
                 return E_OUTOFMEMORY;
-            lres = ReadFile(file, regstra, filelen, NULL, NULL);
-            if (lres == ERROR_SUCCESS)
+            }
+            if (ReadFile(file, regstra, filelen, &filelen, NULL))
             {
                 len = MultiByteToWideChar(CP_ACP, 0, regstra, filelen, NULL, 0) + 1;
                 regstrw = reinterpret_cast<LPWSTR>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, len * sizeof(WCHAR)));
                 if (regstrw == NULL)
                 {
                     HeapFree(GetProcessHeap(), 0, regstra);
+                    CloseHandle(file);
                     return E_OUTOFMEMORY;
                 }
                 MultiByteToWideChar(CP_ACP, 0, regstra, filelen, regstrw, len);
@@ -286,7 +288,7 @@ private:
             }
             else
             {
-                hResult = HRESULT_FROM_WIN32(lres);
+                hResult = HRESULT_FROM_WIN32(GetLastError());
             }
             HeapFree(GetProcessHeap(), 0, regstra);
             CloseHandle(file);
