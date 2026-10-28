@@ -384,6 +384,10 @@ static struct apartment *apartment_construct(DWORD model)
     TRACE("creating new apartment, model %ld\n", model);
 
     apt = calloc(1, sizeof(*apt));
+#ifdef __REACTOS__
+    if (!apt)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     apt->tid = GetCurrentThreadId();
 
     list_init(&apt->proxies);

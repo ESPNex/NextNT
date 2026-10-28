@@ -494,6 +494,10 @@ unsigned char * __RPC_USER HBITMAP_UserUnmarshal(ULONG *flags, unsigned char *bu
             bitmap_size = *(ULONG *)buffer;
             buffer += sizeof(ULONG);
             bits = malloc(bitmap_size);
+#ifdef __REACTOS__
+            if (!bits)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
             memcpy(&bitmap, buffer, header_size);
             buffer += header_size;
