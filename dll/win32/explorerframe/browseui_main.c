@@ -156,6 +156,10 @@ static const IClassFactoryVtbl ClassFactoryVtbl = {
 static HRESULT ClassFactory_Constructor(LPFNCONSTRUCTOR ctor, LPVOID *ppvOut)
 {
     ClassFactory *This = malloc(sizeof(*This));
+#ifdef __REACTOS__
+    if (!This)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     This->IClassFactory_iface.lpVtbl = &ClassFactoryVtbl;
     This->ref = 1;
     This->ctor = ctor;
