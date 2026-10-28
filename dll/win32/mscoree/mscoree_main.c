@@ -229,6 +229,10 @@ void CDECL mono_print_handler_fn(const char *string, INT is_stdout)
     if (!tls)
     {
         tls = malloc(sizeof(*tls));
+#ifdef __REACTOS__
+        if (!tls)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         tls->length = 0;
         TlsSetValue(print_tls_index, tls);
     }
@@ -721,6 +725,10 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 #endif
 
     This = malloc(sizeof(mscorecf));
+#ifdef __REACTOS__
+    if (!This)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     This->IClassFactory_iface.lpVtbl = &mscorecf_vtbl;
     This->pfnCreateInstance = create_monodata;

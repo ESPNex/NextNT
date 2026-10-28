@@ -851,6 +851,10 @@ static BOOL get_mono_path_datadir(LPWSTR path)
     if (!wcsncmp( data_dir, L"\\??\\unix", 8 )) return FALSE;
     data_dir += 4;  /* skip \??\ prefix */
     package_dir = malloc((wcslen(data_dir) + wcslen(suffix) + 1) * sizeof(WCHAR));
+#ifdef __REACTOS__
+    if (!package_dir)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     lstrcpyW( package_dir, data_dir );
     lstrcatW( package_dir, suffix );
 

@@ -1379,6 +1379,10 @@ static void FixupVTableEntry(HMODULE hmodule, VTableFixup *vtable_fixup)
     struct dll_fixup *fixup;
 
     fixup = malloc(sizeof(*fixup));
+#ifdef __REACTOS__
+    if (!fixup)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     fixup->dll = hmodule;
     fixup->thunk_code = HeapAlloc(dll_fixup_heap, 0, sizeof(struct vtable_fixup_thunk) * vtable_fixup->count);
@@ -1398,6 +1402,10 @@ static void FixupVTableEntry(HMODULE hmodule, VTableFixup *vtable_fixup)
         struct vtable_fixup_thunk *thunks = fixup->thunk_code;
 
         tokens = fixup->tokens = malloc(sizeof(*tokens) * vtable_fixup->count);
+#ifdef __REACTOS__
+        if (!tokens)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         memcpy(tokens, vtable, sizeof(*tokens) * vtable_fixup->count);
         for (i=0; i<vtable_fixup->count; i++)
         {
@@ -1501,6 +1509,10 @@ __int32 WINAPI _CorExeMain(void)
         if (parsed_config.private_path[wcslen(parsed_config.private_path) - 1] != ';') number_of_private_paths++;
         config_file_dir_size = (wcsrchr(config_file, '\\') - config_file) + 1;
         priv_path = malloc((number_of_private_paths + 1) * sizeof(WCHAR *));
+#ifdef __REACTOS__
+        if (!priv_path)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         /* wcstok ignores trailing semicolons */
         temp = wcstok_s(parsed_config.private_path, scW, &save);
         for (i = 0; i < number_of_private_paths; i++)

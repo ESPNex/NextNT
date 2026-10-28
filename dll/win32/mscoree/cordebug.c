@@ -686,6 +686,10 @@ static HRESULT WINAPI CorDebug_CreateProcess(ICorDebug *iface, LPCWSTR lpApplica
         if(hr == S_OK)
         {
             struct CorProcess *new_process = malloc(sizeof(CorProcess));
+#ifdef __REACTOS__
+            if (!new_process)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
             new_process->pProcess = pDebugProcess;
             list_add_tail(&This->processes, &new_process->entry);
