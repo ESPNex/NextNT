@@ -543,6 +543,57 @@ static BOOL print_sacl(PSECURITY_DESCRIPTOR sd, WCHAR **pwptr, ULONG *plen)
     return TRUE;
 }
 
+#ifdef __REACTOS__
+static BOOL print_label(PSECURITY_DESCRIPTOR sd, WCHAR **pwptr, ULONG *plen)
+{
+    BOOL present, defaulted;
+    ACL *pacl;
+    UINT i;
+
+    if (!GetSecurityDescriptorSacl(sd, &present, &pacl, &defaulted))
+        return FALSE;
+
+    if (!present || pacl == NULL)
+        return TRUE;
+
+    if (!IsValidAcl(pacl))
+        return FALSE;
+
+    print_string(L"S:", -1, pwptr, plen);
+    for (i = 0; i < pacl->AceCount; i++)
+    {
+        SYSTEM_MANDATORY_LABEL_ACE *ace;
+        if (!GetAce(pacl, i, (void **)&ace))
+            return FALSE;
+        if (ace->Header.AceType != SYSTEM_MANDATORY_LABEL_ACE_TYPE)
+            continue;
+        print_string(L"(ML;", -1, pwptr, plen);
+        if (ace->Header.AceFlags & OBJECT_INHERIT_ACE)
+            print_string(L"OI", -1, pwptr, plen);
+        if (ace->Header.AceFlags & CONTAINER_INHERIT_ACE)
+            print_string(L"CI", -1, pwptr, plen);
+        if (ace->Header.AceFlags & NO_PROPAGATE_INHERIT_ACE)
+            print_string(L"NP", -1, pwptr, plen);
+        if (ace->Header.AceFlags & INHERIT_ONLY_ACE)
+            print_string(L"IO", -1, pwptr, plen);
+        if (ace->Header.AceFlags & INHERITED_ACE)
+            print_string(L"ID", -1, pwptr, plen);
+        print_string(L";", -1, pwptr, plen);
+        if (ace->Mask & SYSTEM_MANDATORY_LABEL_NO_READ_UP)
+            print_string(L"NR", -1, pwptr, plen);
+        if (ace->Mask & SYSTEM_MANDATORY_LABEL_NO_WRITE_UP)
+            print_string(L"NW", -1, pwptr, plen);
+        if (ace->Mask & SYSTEM_MANDATORY_LABEL_NO_EXECUTE_UP)
+            print_string(L"NX", -1, pwptr, plen);
+        print_string(L";;;", -1, pwptr, plen);
+        if (!print_sid(&ace->SidStart, pwptr, plen))
+            return FALSE;
+        print_string(L")", -1, pwptr, plen);
+    }
+    return TRUE;
+}
+#endif
+
 /******************************************************************************
  *     ConvertSecurityDescriptorToStringSecurityDescriptorW   (sechost.@)
  */
@@ -567,6 +618,11 @@ BOOL WINAPI DECLSPEC_HOTPATCH ConvertSecurityDescriptorToStringSecurityDescripto
         return FALSE;
     if ((flags & SACL_SECURITY_INFORMATION) && !print_sacl(sd, NULL, &len))
         return FALSE;
+#ifdef __REACTOS__
+    if ((flags & (SACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION)) == LABEL_SECURITY_INFORMATION &&
+        !print_label(sd, NULL, &len))
+        return FALSE;
+#endif
 
     wstr = wptr = LocalAlloc( 0, (len + 1) * sizeof(WCHAR) );
     if ((flags & OWNER_SECURITY_INFORMATION) && !print_owner(sd, &wptr, NULL))
@@ -589,6 +645,14 @@ BOOL WINAPI DECLSPEC_HOTPATCH ConvertSecurityDescriptorToStringSecurityDescripto
         LocalFree(wstr);
         return FALSE;
     }
+#ifdef __REACTOS__
+    if ((flags & (SACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION)) == LABEL_SECURITY_INFORMATION &&
+        !print_label(sd, &wptr, NULL))
+    {
+        LocalFree(wstr);
+        return FALSE;
+    }
+#endif
     *wptr = 0;
 
     TRACE("ret: %s, %ld\n", wine_dbgstr_w(wstr), len);
