@@ -465,6 +465,10 @@ static HRESULT resource_register(Registrar *This, LPCOLESTR resFileName,
             if(regstra) {
                 len = MultiByteToWideChar(CP_ACP, 0, regstra, reslen, NULL, 0)+1;
                 regstrw = calloc(len, sizeof(WCHAR));
+#ifdef __REACTOS__
+                if (!regstrw)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                 MultiByteToWideChar(CP_ACP, 0, regstra, reslen, regstrw, len);
                 regstrw[len-1] = '\0';
 
@@ -500,9 +504,17 @@ static HRESULT file_register(Registrar *This, LPCOLESTR fileName, BOOL do_regist
     if(file != INVALID_HANDLE_VALUE) {
         filelen = GetFileSize(file, NULL);
         regstra = malloc(filelen);
+#ifdef __REACTOS__
+        if (!regstra)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         if(ReadFile(file, regstra, filelen, NULL, NULL)) {
             len = MultiByteToWideChar(CP_ACP, 0, regstra, filelen, NULL, 0)+1;
             regstrw = calloc(len, sizeof(WCHAR));
+#ifdef __REACTOS__
+            if (!regstrw)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             MultiByteToWideChar(CP_ACP, 0, regstra, filelen, regstrw, len);
             regstrw[len-1] = '\0';
 
@@ -567,6 +579,10 @@ static HRESULT WINAPI Registrar_AddReplacement(IRegistrar *iface, LPCOLESTR Key,
     TRACE("(%p)->(%s %s)\n", This, debugstr_w(Key), debugstr_w(item));
 
     new_rep = malloc(sizeof(*new_rep));
+#ifdef __REACTOS__
+    if (!new_rep)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     new_rep->key_len  = lstrlenW(Key);
     new_rep->key = malloc((new_rep->key_len + 1) * sizeof(OLECHAR));
