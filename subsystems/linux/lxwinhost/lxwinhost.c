@@ -289,6 +289,178 @@ LxApplyIcons(
 }
 
 static
+BOOL
+LxDesktopValue(
+    _In_ PCSTR Data,
+    _In_ PCSTR Key,
+    _Out_writes_z_(Size) PSTR Value,
+    _In_ SIZE_T Size)
+{
+    SIZE_T KeyLength = strlen(Key), Written = 0;
+    BOOL Entry = FALSE;
+    PCSTR Line = Data, End, Cursor;
+
+    for (; *Line != '\0'; Line = End + strspn(End, "\r\n"))
+    {
+        End = Line + strcspn(Line, "\r\n");
+        if (Line[0] == '[')
+        {
+            Entry = ((SIZE_T)(End - Line) == 15) && (memcmp(Line, "[Desktop Entry]", 15) == 0);
+            continue;
+        }
+        if (!Entry || ((SIZE_T)(End - Line) <= KeyLength) || (memcmp(Line, Key, KeyLength) != 0))
+            continue;
+        Cursor = Line + KeyLength;
+        while ((Cursor < End) && (*Cursor == ' '))
+            Cursor++;
+        if ((Cursor == End) || (*Cursor != '='))
+            continue;
+        Cursor++;
+        while ((Cursor < End) && (*Cursor == ' '))
+            Cursor++;
+        for (; (Cursor < End) && (Written + 1 < Size); Cursor++)
+        {
+            CHAR Character = *Cursor;
+
+            if ((Character == '\\') && (Cursor + 1 < End))
+            {
+                Cursor++;
+                switch (*Cursor)
+                {
+                    case 's': Character = ' '; break;
+                    case 'n': Character = '\n'; break;
+                    case 't': Character = '\t'; break;
+                    case 'r': Character = '\r'; break;
+                    default: Character = *Cursor; break;
+                }
+            }
+            Value[Written++] = Character;
+        }
+        Value[Written] = '\0';
+        return Written != 0;
+    }
+    return FALSE;
+}
+
+static
+VOID
+LxStripFieldCodes(
+    _Inout_ PSTR Exec)
+{
+    PSTR Read = Exec, Write = Exec;
+
+    while (*Read != '\0')
+    {
+        PSTR Start = Read, Token;
+        BOOL Quoted = FALSE;
+
+        while ((*Read != '\0') && (Quoted || (*Read != ' ')))
+        {
+            if (*Read == '"')
+                Quoted = !Quoted;
+            else if ((*Read == '\\') && Quoted && (Read[1] != '\0'))
+                Read++;
+            Read++;
+        }
+        if ((Read - Start == 2) && (Start[0] == '%') && (strchr("fFuUickdDnNvm", Start[1]) != NULL))
+        {
+            Read += strspn(Read, " ");
+            continue;
+        }
+        if ((Write != Exec) && (Start != Read))
+            *Write++ = ' ';
+        for (Token = Start; Token < Read; Token++)
+        {
+            *Write++ = *Token;
+            if ((Token[0] == '%') && (Token + 1 < Read) && (Token[1] == '%'))
+                Token++;
+        }
+        Read += strspn(Read, " ");
+    }
+    *Write = '\0';
+}
+
+static
+VOID
+LxSetRelaunch(
+    _In_ IPropertyStore *Store,
+    _In_ PCWSTR AppId)
+{
+    static const PCWSTR Directories[] = { L"\\usr\\local\\share\\applications\\", L"\\usr\\share\\applications\\" };
+    WCHAR Root[MAX_PATH], Path[MAX_PATH], Program[MAX_PATH], Name[256], *Exec = NULL, *Command = NULL;
+    CHAR Data[64 * 1024], Value[4096];
+    PROPVARIANT Variant;
+    DWORD Read = 0;
+    HANDLE File = INVALID_HANDLE_VALUE;
+    ULONG Index;
+    SIZE_T Length;
+
+    if ((wcspbrk(AppId, L"\\/:") == NULL) && (AppId[0] != L'.') && LxNormalizeRoot(LxRoot, Root, ARRAYSIZE(Root)) &&
+        GetModuleFileNameW(NULL, Program, ARRAYSIZE(Program)))
+    {
+        for (Index = 0; (Index < ARRAYSIZE(Directories)) && (File == INVALID_HANDLE_VALUE); Index++)
+        {
+            if (_snwprintf(Path, ARRAYSIZE(Path), L"%s%s%s.desktop", Root, Directories[Index], AppId) > 0)
+            {
+                Path[ARRAYSIZE(Path) - 1] = UNICODE_NULL;
+                File = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+            }
+        }
+    }
+    if (File != INVALID_HANDLE_VALUE)
+    {
+        if (!ReadFile(File, Data, sizeof(Data) - 1, &Read, NULL))
+            Read = 0;
+        CloseHandle(File);
+    }
+    Data[Read] = '\0';
+    if ((Read != 0) && LxDesktopValue(Data, "Exec", Value, sizeof(Value)))
+    {
+        LxStripFieldCodes(Value);
+        Length = strlen(Value) + 1;
+        Exec = HeapAlloc(GetProcessHeap(), 0, Length * sizeof(WCHAR));
+        if ((Exec != NULL) && (MultiByteToWideChar(CP_UTF8, 0, Value, -1, Exec, (int)Length) <= 1))
+        {
+            HeapFree(GetProcessHeap(), 0, Exec);
+            Exec = NULL;
+        }
+    }
+    if (Exec != NULL)
+    {
+        Length = wcslen(Program) + wcslen(Root) + wcslen(Exec) + 16;
+        Command = HeapAlloc(GetProcessHeap(), 0, Length * sizeof(WCHAR));
+        if (Command != NULL)
+            _snwprintf(Command, Length, L"\"%s\" -r \"%s\" %s", Program, Root, Exec);
+    }
+    if (Command != NULL)
+    {
+        if (!LxDesktopValue(Data, "Name", Value, sizeof(Value)) ||
+            (MultiByteToWideChar(CP_UTF8, 0, Value, -1, Name, ARRAYSIZE(Name)) <= 1))
+        {
+            wcsncpy(Name, AppId, ARRAYSIZE(Name) - 1);
+            Name[ARRAYSIZE(Name) - 1] = UNICODE_NULL;
+        }
+        PropVariantInit(&Variant);
+        Variant.vt = VT_LPWSTR;
+        Variant.pwszVal = Command;
+        IPropertyStore_SetValue(Store, &PKEY_AppUserModel_RelaunchCommand, &Variant);
+        Variant.pwszVal = Name;
+        IPropertyStore_SetValue(Store, &PKEY_AppUserModel_RelaunchDisplayNameResource, &Variant);
+    }
+    else
+    {
+        PropVariantInit(&Variant);
+        Variant.vt = VT_BOOL;
+        Variant.boolVal = VARIANT_TRUE;
+        IPropertyStore_SetValue(Store, &PKEY_AppUserModel_PreventPinning, &Variant);
+    }
+    if (Command != NULL)
+        HeapFree(GetProcessHeap(), 0, Command);
+    if (Exec != NULL)
+        HeapFree(GetProcessHeap(), 0, Exec);
+}
+
+static
 VOID
 LxSetAppId(
     _In_ PLX_HOST_WINDOW Window,
@@ -319,7 +491,10 @@ LxSetAppId(
         Variant.vt = VT_LPWSTR;
         Variant.pwszVal = Value;
         if (SUCCEEDED(IPropertyStore_SetValue(Store, &PKEY_AppUserModel_ID, &Variant)))
+        {
+            LxSetRelaunch(Store, Name);
             IPropertyStore_Commit(Store);
+        }
         IPropertyStore_Release(Store);
     }
 
