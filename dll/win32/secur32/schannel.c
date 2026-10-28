@@ -1599,6 +1599,10 @@ static SECURITY_STATUS SEC_ENTRY schan_EncryptMessage(PCtxtHandle context_handle
 
     data_size = buffer->cbBuffer;
     data = malloc(data_size);
+#ifdef __REACTOS__
+    if (!data)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     memcpy(data, buffer->pvBuffer, data_size);
 
     /* Use { STREAM_HEADER, DATA, STREAM_TRAILER } or { TOKEN, DATA, TOKEN } buffers. */
