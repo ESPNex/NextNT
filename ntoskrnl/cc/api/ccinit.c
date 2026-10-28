@@ -41,6 +41,7 @@ ULONG CcFastReadWait;
 
 static KEVENT CcNtLazyWriterEvent;
 static KEVENT CcNtLazyPassEvent;
+static KEVENT CcNtLazyWriteGate;
 static LIST_ENTRY CcNtDeferredWrites;
 static KSPIN_LOCK CcNtDeferredLock;
 static BOOLEAN CcNtReady;
@@ -214,6 +215,7 @@ CcRosFlushDirtyPages(
         if (NtMap == NULL)
             break;
 
+        KeWaitForSingleObject(&CcNtLazyWriteGate, Executive, KernelMode, FALSE, NULL);
         KeEnterCriticalRegion();
         if (NtMap->Callbacks.AcquireForLazyWrite == NULL ||
             NtMap->Callbacks.AcquireForLazyWrite(NtMap->LazyWriteContext, Wait))
@@ -224,6 +226,7 @@ CcRosFlushDirtyPages(
                 NtMap->Callbacks.ReleaseFromLazyWrite(NtMap->LazyWriteContext);
         }
         KeLeaveCriticalRegion();
+        KeSetEvent(&CcNtLazyWriteGate, IO_NO_INCREMENT, FALSE);
 
         if (CalledFromLazy && Flushed != 0)
         {
@@ -305,6 +308,7 @@ CcInitializeCacheManager(VOID)
     KeInitializeSpinLock(&CcNtDeferredLock);
     KeInitializeEvent(&CcNtLazyWriterEvent, SynchronizationEvent, FALSE);
     KeInitializeEvent(&CcNtLazyPassEvent, NotificationEvent, FALSE);
+    KeInitializeEvent(&CcNtLazyWriteGate, SynchronizationEvent, TRUE);
 
     InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
     if (!NT_SUCCESS(PsCreateSystemThread(&Handle, THREAD_ALL_ACCESS, &ObjectAttributes, NULL, NULL, CcNtLazyWriter,
