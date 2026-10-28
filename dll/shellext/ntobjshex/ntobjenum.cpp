@@ -240,6 +240,8 @@ public:
 
         if (ppidl)
             *ppidl = (LPITEMIDLIST) entry;
+        else
+            CoTaskMemFree(entry);
         return S_OK;
     }
 
@@ -265,7 +267,7 @@ public:
 
     STDMETHODIMP Skip(ULONG celt) override
     {
-        while (celt > 0)
+        while (celt-- > 0)
         {
             HRESULT hr = EnumerateNext(NULL);
             if (FAILED(hr))
@@ -400,6 +402,8 @@ public:
 
         if (ppidl)
             *ppidl = (LPITEMIDLIST) entry;
+        else
+            CoTaskMemFree(entry);
         return S_OK;
     }
 
@@ -476,6 +480,8 @@ public:
 
         if (ppidl)
             *ppidl = (LPITEMIDLIST) entry;
+        else
+            CoTaskMemFree(entry);
         return S_OK;
     }
 
@@ -517,7 +523,7 @@ public:
 
     STDMETHODIMP Skip(ULONG celt) override
     {
-        while (celt > 0)
+        while (celt-- > 0)
         {
             HRESULT hr = EnumerateNext(NULL);
             if (FAILED(hr))
@@ -694,7 +700,7 @@ public:
 
     STDMETHODIMP Skip(ULONG celt) override
     {
-        while (celt > 0)
+        while (celt-- > 0)
         {
             HRESULT hr = EnumerateNext(NULL);
             if (FAILED(hr))
