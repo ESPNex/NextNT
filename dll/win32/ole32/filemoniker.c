@@ -1102,6 +1102,10 @@ FileMonikerImpl_RelativePathTo(IMoniker* iface,IMoniker* pmOther, IMoniker** ppm
     /* if the two paths have a consecutive similar item from the begin ! the relativePath will be composed */
     /* by "..\\" in the begin */
     relPath = malloc(sizeof(WCHAR)*(1+lstrlenW(str1)+lstrlenW(str2)));
+#ifdef __REACTOS__
+    if (!relPath)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     *relPath=0;
 
