@@ -619,6 +619,10 @@ static HRESULT sample_allocator_create_samples(struct sample_allocator *allocato
         }
 
         queued_sample = malloc(sizeof(*queued_sample));
+#ifdef __REACTOS__
+        if (!queued_sample)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         queued_sample->sample = sample;
         list_add_tail(&allocator->free_samples, &queued_sample->entry);
         allocator->free_sample_count++;
