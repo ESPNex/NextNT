@@ -425,6 +425,10 @@ HRESULT make_xapo_factory(REFCLSID clsid, REFIID riid, void **ppv)
 {
     HRESULT hr;
     struct xapo_cf *ret = malloc(sizeof(struct xapo_cf));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     ret->IClassFactory_iface.lpVtbl = &xapo_Vtbl;
     ret->class = clsid;
     ret->ref = 0;
