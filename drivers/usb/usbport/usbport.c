@@ -1593,6 +1593,7 @@ USBPORT_DpcHandler(IN PDEVICE_OBJECT FdoDevice)
         }
         else
         {
+            InterlockedIncrement(&Endpoint->TimeoutPin);
             InsertTailList(&List, &Endpoint->DispatchLink);
 
             if (Endpoint->WorkerLink.Flink && Endpoint->WorkerLink.Blink)
@@ -1621,6 +1622,7 @@ USBPORT_DpcHandler(IN PDEVICE_OBJECT FdoDevice)
 
         USBPORT_EndpointWorker(Endpoint, TRUE);
         USBPORT_FlushPendingTransfers(Endpoint);
+        InterlockedDecrement(&Endpoint->TimeoutPin);
     }
 
     KeAcquireSpinLockAtDpcLevel(&FdoExtension->EndpointListSpinLock);
