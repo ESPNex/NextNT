@@ -9,7 +9,7 @@ LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
 
 STRINGTABLE
 BEGIN
-    IDS_USAGE, "Usage: TASKLIST [/?] [/NH]\n"
+    IDS_USAGE, "Usage: TASKLIST [/?] [/NH] [/FI filter]\n"
     IDS_DESCRIPTION, "\n\
 Opis:\
     To narzędzie wyświetla listę aktualnie uruchomionych procesów\n\
@@ -24,4 +24,8 @@ Opis:\
     IDS_HEADER_SESSION, "Nr Sesji#"
     IDS_HEADER_MEMUSAGE, "Użycie pam."
     IDS_MEMORY_STR, "%s K"
+    IDS_FILTER_INVALID, "ERROR: The search filter cannot be recognized.\n"
+    IDS_VALUE_EXPECTED, "ERROR: Invalid syntax. Value expected for '%1'.\n"
+    IDS_TYPE_HELP, "Type ""TASKLIST /?"" for usage.\n"
+    IDS_NO_MATCHING_TASKS, "INFO: No tasks are running which match the specified criteria.\n"
 END

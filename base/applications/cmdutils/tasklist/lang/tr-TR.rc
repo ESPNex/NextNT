@@ -9,7 +9,7 @@ LANGUAGE LANG_TURKISH, SUBLANG_DEFAULT
 
 STRINGTABLE
 BEGIN
-    IDS_USAGE, "Kullanım: TASKLIST [/?] [/NH]\n"
+    IDS_USAGE, "Kullanım: TASKLIST [/?] [/NH] [/FI filter]\n"
     IDS_DESCRIPTION, "\n\
 Açıklama:\
     Bu araç, makinede şu anda çalışan işlemlerin bir listesini görüntüler.\n"
@@ -23,4 +23,8 @@ Açıklama:\
     IDS_HEADER_SESSION, "Oturum#"
     IDS_HEADER_MEMUSAGE, "Bellek Kullanımı"
     IDS_MEMORY_STR, "%s K"
+    IDS_FILTER_INVALID, "ERROR: The search filter cannot be recognized.\n"
+    IDS_VALUE_EXPECTED, "ERROR: Invalid syntax. Value expected for '%1'.\n"
+    IDS_TYPE_HELP, "Type ""TASKLIST /?"" for usage.\n"
+    IDS_NO_MATCHING_TASKS, "INFO: No tasks are running which match the specified criteria.\n"
 END

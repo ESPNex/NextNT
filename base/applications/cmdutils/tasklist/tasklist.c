@@ -9,11 +9,39 @@
 
 // the strings in OptionList are the command-line options.
 // should always correspond with the defines below, in sequence (except OPTION_INVALID)
-static PCWSTR OptionList[] = { L"?", L"nh" };
+static PCWSTR OptionList[] = { L"?", L"nh", L"fi" };
 
 #define OPTION_INVALID    -1
 #define OPTION_HELP       0
 #define OPTION_NOHEADER    1
+#define OPTION_FILTER     2
+
+typedef enum _FILTER_FIELD
+{
+    FilterImageName,
+    FilterPid,
+    FilterSession,
+    FilterMemUsage
+} FILTER_FIELD;
+
+typedef enum _FILTER_OPERATOR
+{
+    FilterEqual,
+    FilterNotEqual,
+    FilterGreater,
+    FilterLess,
+    FilterGreaterEqual,
+    FilterLessEqual
+} FILTER_OPERATOR;
+
+typedef struct _TASK_FILTER
+{
+    FILTER_FIELD Field;
+    FILTER_OPERATOR Operator;
+    BOOL Prefix;
+    ULONGLONG Number;
+    WCHAR Text[MAX_PATH];
+} TASK_FILTER, *PTASK_FILTER;
 
 // the max string length PrintResString can handle
 #define RES_STR_MAXLEN 64
@@ -131,7 +159,167 @@ VOID PrintHeader(VOID)
     ConPuts(StdOut, L"\n");
 }
 
-BOOL EnumProcessAndPrint(BOOL bNoHeader)
+static LPCWSTR SkipSpaces(LPCWSTR String)
+{
+    while (*String == L' ' || *String == L'\t')
+        String++;
+    return String;
+}
+
+static LPCWSTR TakeToken(LPCWSTR String, LPWSTR Token, SIZE_T TokenLength)
+{
+    SIZE_T Length = 0;
+
+    String = SkipSpaces(String);
+    while (*String && *String != L' ' && *String != L'\t')
+    {
+        if (Length + 1 >= TokenLength)
+            return NULL;
+        Token[Length++] = *String++;
+    }
+    Token[Length] = UNICODE_NULL;
+    return Length ? String : NULL;
+}
+
+static BOOL ParseFilter(LPCWSTR String, PTASK_FILTER Filter)
+{
+    static const struct { LPCWSTR Name; FILTER_FIELD Field; BOOL Numeric; } Fields[] =
+    {
+        { L"IMAGENAME", FilterImageName, FALSE },
+        { L"PID", FilterPid, TRUE },
+        { L"SESSION", FilterSession, TRUE },
+        { L"MEMUSAGE", FilterMemUsage, TRUE },
+    };
+    static const struct { LPCWSTR Name; FILTER_OPERATOR Operator; } Operators[] =
+    {
+        { L"eq", FilterEqual },
+        { L"ne", FilterNotEqual },
+        { L"gt", FilterGreater },
+        { L"lt", FilterLess },
+        { L"ge", FilterGreaterEqual },
+        { L"le", FilterLessEqual },
+    };
+    WCHAR Name[32], Operator[8];
+    SIZE_T Length, i;
+    BOOL Numeric = FALSE, Found = FALSE;
+
+    String = TakeToken(String, Name, _countof(Name));
+    if (!String)
+        return FALSE;
+    String = TakeToken(String, Operator, _countof(Operator));
+    if (!String)
+        return FALSE;
+
+    for (i = 0; i < _countof(Fields); i++)
+    {
+        if (!_wcsicmp(Name, Fields[i].Name))
+        {
+            Filter->Field = Fields[i].Field;
+            Numeric = Fields[i].Numeric;
+            Found = TRUE;
+            break;
+        }
+    }
+    if (!Found)
+        return FALSE;
+
+    Found = FALSE;
+    for (i = 0; i < _countof(Operators); i++)
+    {
+        if (!_wcsicmp(Operator, Operators[i].Name))
+        {
+            Filter->Operator = Operators[i].Operator;
+            Found = TRUE;
+            break;
+        }
+    }
+    if (!Found)
+        return FALSE;
+    if (!Numeric && Filter->Operator != FilterEqual && Filter->Operator != FilterNotEqual)
+        return FALSE;
+
+    String = SkipSpaces(String);
+    Length = wcslen(String);
+    while (Length && (String[Length - 1] == L' ' || String[Length - 1] == L'\t'))
+        Length--;
+    if (!Length || Length >= _countof(Filter->Text))
+        return FALSE;
+    RtlCopyMemory(Filter->Text, String, Length * sizeof(WCHAR));
+    Filter->Text[Length] = UNICODE_NULL;
+
+    if (Numeric)
+    {
+        Filter->Number = 0;
+        for (i = 0; i < Length; i++)
+        {
+            if (Filter->Text[i] < L'0' || Filter->Text[i] > L'9')
+                return FALSE;
+            if (Filter->Number > (MAXULONGLONG - 9) / 10)
+                return FALSE;
+            Filter->Number = Filter->Number * 10 + (Filter->Text[i] - L'0');
+        }
+        Filter->Prefix = FALSE;
+    }
+    else
+    {
+        Filter->Prefix = (Filter->Text[Length - 1] == L'*');
+        if (Filter->Prefix)
+            Filter->Text[Length - 1] = UNICODE_NULL;
+        if (wcschr(Filter->Text, L'*'))
+            return FALSE;
+    }
+    return TRUE;
+}
+
+static BOOL CompareNumber(ULONGLONG Value, PTASK_FILTER Filter)
+{
+    switch (Filter->Operator)
+    {
+        case FilterEqual:        return Value == Filter->Number;
+        case FilterNotEqual:     return Value != Filter->Number;
+        case FilterGreater:      return Value > Filter->Number;
+        case FilterLess:         return Value < Filter->Number;
+        case FilterGreaterEqual: return Value >= Filter->Number;
+        case FilterLessEqual:    return Value <= Filter->Number;
+    }
+    return FALSE;
+}
+
+static BOOL MatchFilters(PSYSTEM_PROCESS_INFORMATION pSPI, LPCWSTR ImageName, PTASK_FILTER Filters, UINT FilterCount)
+{
+    for (UINT i = 0; i < FilterCount; i++)
+    {
+        PTASK_FILTER Filter = &Filters[i];
+        BOOL Match;
+
+        switch (Filter->Field)
+        {
+            case FilterImageName:
+                Match = Filter->Prefix ? !_wcsnicmp(ImageName, Filter->Text, wcslen(Filter->Text))
+                                       : !_wcsicmp(ImageName, Filter->Text);
+                if (Filter->Operator == FilterNotEqual)
+                    Match = !Match;
+                break;
+            case FilterPid:
+                Match = CompareNumber((ULONG_PTR)pSPI->UniqueProcessId, Filter);
+                break;
+            case FilterSession:
+                Match = CompareNumber(pSPI->SessionId, Filter);
+                break;
+            case FilterMemUsage:
+                Match = CompareNumber(pSPI->WorkingSetSize >> 10, Filter);
+                break;
+            default:
+                Match = FALSE;
+                break;
+        }
+        if (!Match)
+            return FALSE;
+    }
+    return TRUE;
+}
+
+BOOL EnumProcessAndPrint(BOOL bNoHeader, PTASK_FILTER Filters, UINT FilterCount)
 {
     // Call NtQuerySystemInformation for the process information
     ULONG ProcessInfoBufferLength = 0;
@@ -195,16 +383,30 @@ BOOL EnumProcessAndPrint(BOOL bNoHeader)
         return FALSE;
     }
 
-    ConPuts(StdOut, L"\n");
-
-    if (!bNoHeader)
-        PrintHeader();
-
+    BOOL bPrinted = FALSE;
     PSYSTEM_PROCESS_INFORMATION pSPI;
     pSPI = (PSYSTEM_PROCESS_INFORMATION)ProcessInfoBuffer;
     while (pSPI)
     {
-        PrintString(pSPI->UniqueProcessId ? pSPI->ImageName.Buffer : L"System Idle Process", COLUMNWIDTH_IMAGENAME, TRUE);
+        LPCWSTR ImageName = pSPI->UniqueProcessId ? pSPI->ImageName.Buffer : L"System Idle Process";
+
+        if (!MatchFilters(pSPI, ImageName ? ImageName : L"", Filters, FilterCount))
+        {
+            if (pSPI->NextEntryOffset == 0)
+                break;
+            pSPI = (PSYSTEM_PROCESS_INFORMATION)((LPBYTE)pSPI + pSPI->NextEntryOffset);
+            continue;
+        }
+
+        if (!bPrinted)
+        {
+            ConPuts(StdOut, L"\n");
+            if (!bNoHeader)
+                PrintHeader();
+            bPrinted = TRUE;
+        }
+
+        PrintString(ImageName, COLUMNWIDTH_IMAGENAME, TRUE);
         PrintSpace(1);
         PrintNum((LONGLONG)(INT_PTR)pSPI->UniqueProcessId, COLUMNWIDTH_PID);
         PrintSpace(1);
@@ -218,6 +420,9 @@ BOOL EnumProcessAndPrint(BOOL bNoHeader)
             break;
         pSPI = (PSYSTEM_PROCESS_INFORMATION)((LPBYTE)pSPI + pSPI->NextEntryOffset);
     }
+
+    if (!bPrinted)
+        ConResMsgPrintf(StdOut, 0, IDS_NO_MATCHING_TASKS);
 
     HeapFree(GetProcessHeap(), 0, ProcessInfoBuffer);
     return TRUE;
@@ -243,7 +448,16 @@ INT GetOptionType(LPCWSTR szOption)
 
 BOOL ProcessArguments(INT argc, WCHAR **argv)
 {
-    BOOL bHasHelp = FALSE, bHasNoHeader = FALSE;
+    BOOL bHasHelp = FALSE, bHasNoHeader = FALSE, bResult;
+    PTASK_FILTER Filters;
+    UINT FilterCount = 0;
+
+    Filters = HeapAlloc(GetProcessHeap(), 0, max(argc, 1) * sizeof(*Filters));
+    if (!Filters)
+    {
+        ConResMsgPrintf(StdErr, 0, IDS_OUT_OF_MEMORY);
+        return FALSE;
+    }
 
     for (INT i = 1; i < argc; i++)
     {
@@ -275,11 +489,30 @@ BOOL ProcessArguments(INT argc, WCHAR **argv)
                 bHasNoHeader = TRUE;
                 break;
             }
+            case OPTION_FILTER:
+            {
+                if (i + 1 >= argc)
+                {
+                    ConResMsgPrintf(StdErr, 0, IDS_VALUE_EXPECTED, argv[i]);
+                    ConResMsgPrintf(StdErr, 0, IDS_TYPE_HELP);
+                    HeapFree(GetProcessHeap(), 0, Filters);
+                    return FALSE;
+                }
+                if (!ParseFilter(argv[++i], &Filters[FilterCount]))
+                {
+                    ConResMsgPrintf(StdErr, 0, IDS_FILTER_INVALID);
+                    HeapFree(GetProcessHeap(), 0, Filters);
+                    return FALSE;
+                }
+                FilterCount++;
+                break;
+            }
             case OPTION_INVALID:
             default:
             {
                 ConResMsgPrintf(StdErr, 0, IDS_INVALID_OPTION);
                 ConResMsgPrintf(StdErr, 0, IDS_USAGE);
+                HeapFree(GetProcessHeap(), 0, Filters);
                 return FALSE;
             }
         }
@@ -291,20 +524,21 @@ BOOL ProcessArguments(INT argc, WCHAR **argv)
         {
             ConResMsgPrintf(StdErr, 0, IDS_INVALID_SYNTAX);
             ConResMsgPrintf(StdErr, 0, IDS_USAGE);
-            return FALSE;
         }
         else
         {
             ConResMsgPrintf(StdOut, 0, IDS_USAGE);
             ConResMsgPrintf(StdOut, 0, IDS_DESCRIPTION);
-            return FALSE;
         }
+        bResult = FALSE;
     }
     else
     {
-        EnumProcessAndPrint(bHasNoHeader);
+        EnumProcessAndPrint(bHasNoHeader, Filters, FilterCount);
+        bResult = TRUE;
     }
-    return TRUE;
+    HeapFree(GetProcessHeap(), 0, Filters);
+    return bResult;
 }
 
 int wmain(int argc, WCHAR **argv)

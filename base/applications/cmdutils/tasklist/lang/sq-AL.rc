@@ -9,7 +9,7 @@ LANGUAGE LANG_ALBANIAN, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
-    IDS_USAGE, "Usage: TASKLIST [/?] [/NH]\n"
+    IDS_USAGE, "Usage: TASKLIST [/?] [/NH] [/FI filter]\n"
     IDS_DESCRIPTION, "\n\
 Desciption:\
     This tool displays a list of currently running processes on\n\
@@ -24,4 +24,8 @@ Desciption:\
     IDS_HEADER_SESSION, "Session#"
     IDS_HEADER_MEMUSAGE, "Mem Usage"
     IDS_MEMORY_STR, "%s K"
+    IDS_FILTER_INVALID, "ERROR: The search filter cannot be recognized.\n"
+    IDS_VALUE_EXPECTED, "ERROR: Invalid syntax. Value expected for '%1'.\n"
+    IDS_TYPE_HELP, "Type ""TASKLIST /?"" for usage.\n"
+    IDS_NO_MATCHING_TASKS, "INFO: No tasks are running which match the specified criteria.\n"
 END

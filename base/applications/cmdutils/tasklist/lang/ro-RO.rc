@@ -9,7 +9,7 @@ LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
 
 STRINGTABLE
 BEGIN
-    IDS_USAGE, "Utilizare: TASKLIST [/?] [/NH]\n"
+    IDS_USAGE, "Utilizare: TASKLIST [/?] [/NH] [/FI filter]\n"
     IDS_DESCRIPTION, "\n\
 Descriere:\
     Acest instrument afișează o listă a proceselor curente din\n\
@@ -24,4 +24,8 @@ Descriere:\
     IDS_HEADER_SESSION, "Sesiune#"
     IDS_HEADER_MEMUSAGE, "Uz mem."
     IDS_MEMORY_STR, "%s K"
+    IDS_FILTER_INVALID, "ERROR: The search filter cannot be recognized.\n"
+    IDS_VALUE_EXPECTED, "ERROR: Invalid syntax. Value expected for '%1'.\n"
+    IDS_TYPE_HELP, "Type ""TASKLIST /?"" for usage.\n"
+    IDS_NO_MATCHING_TASKS, "INFO: No tasks are running which match the specified criteria.\n"
 END
