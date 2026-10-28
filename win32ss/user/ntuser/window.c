@@ -4558,8 +4558,9 @@ NtUserQueryWindow(HWND hWnd, DWORD Index)
    TRACE("Enter NtUserQueryWindow\n");
    UserEnterShared();
 
-   if (!(pWnd = UserGetWindowObject(hWnd)))
+   if (!(pWnd = ValidateHwndNoErr(hWnd)))
    {
+      EngSetLastError(ERROR_INVALID_WINDOW_HANDLE);
       goto Exit; // Return 0
    }
 

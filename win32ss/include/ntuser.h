@@ -291,8 +291,8 @@ typedef struct tagCLIPBOARDDATA
 #define TIF_DISABLEIME              0x04000000
 #define TIF_INGETTEXTLENGTH         0x08000000
 #define TIF_ANSILENGTH              0x10000000
-#define TIF_DISABLEHOOKS            0x20000000
-#define TIF_JOBRESTRICTED           0x40000000
+#define TIF_JOBRESTRICTED           0x20000000
+#define TIF_DISABLEHOOKS            0x40000000
 
 typedef struct _CALLBACKWND
 {
