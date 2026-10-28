@@ -215,6 +215,10 @@ static int FM_InitMenuPopup(HMENU hmenu, LPCITEMIDLIST pAlternatePidl)
 		    HMENU hMenuPopup = CreatePopupMenu();
 
 		    lpFmMi = calloc(1, sizeof(*lpFmMi));
+#ifdef __REACTOS__
+		    if (!lpFmMi)
+		    	RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
 		    lpFmMi->pidl = ILCombine(pidl, pidlTemp);
 		    lpFmMi->uEnumFlags = SHCONTF_FOLDERS | SHCONTF_NONFOLDERS;
@@ -285,6 +289,10 @@ HMENU WINAPI FileMenu_Create (
 	crBorderColor, nBorderWidth, hBorderBmp, nSelHeight, uFlags, hMenu);
 
 	menudata = calloc(1, sizeof(*menudata));
+#ifdef __REACTOS__
+	if (!menudata)
+		RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 	menudata->crBorderColor = crBorderColor;
 	menudata->nBorderWidth = nBorderWidth;
 	menudata->hBorderBmp = hBorderBmp;

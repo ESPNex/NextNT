@@ -236,6 +236,10 @@ static void travellog_add_entry(ExplorerBrowserImpl *This, LPITEMIDLIST pidl)
 
     /* Create and add the new entry */
     new = malloc(sizeof(*new));
+#ifdef __REACTOS__
+    if (!new)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     new->pidl = ILClone(pidl);
     list_add_tail(&This->travellog, &new->entry);
     This->travellog_cursor = new;
@@ -1117,6 +1121,10 @@ static HRESULT WINAPI IExplorerBrowser_fnAdvise(IExplorerBrowser *iface,
     TRACE("%p (%p, %p)\n", This, psbe, pdwCookie);
 
     client = malloc(sizeof(*client));
+#ifdef __REACTOS__
+    if (!client)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     client->pebe = psbe;
     client->cookie = ++This->events_next_cookie;
 
@@ -2963,6 +2971,10 @@ HRESULT WINAPI ExplorerBrowser_Constructor(IUnknown *pUnkOuter, REFIID riid, voi
         return CLASS_E_NOAGGREGATION;
 
     eb = calloc(1, sizeof(*eb));
+#ifdef __REACTOS__
+    if (!eb)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     eb->ref = 1;
     eb->IExplorerBrowser_iface.lpVtbl = &vt_IExplorerBrowser;
     eb->IShellBrowser_iface.lpVtbl    = &vt_IShellBrowser;

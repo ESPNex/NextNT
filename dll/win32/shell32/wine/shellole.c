@@ -1408,6 +1408,10 @@ static HRESULT create_shellimagedata_from_path(const WCHAR *path, IShellImageDat
     ShellImageData *This;
 
     This = malloc(sizeof(*This));
+#ifdef __REACTOS__
+    if (!This)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     This->IShellImageData_iface.lpVtbl = &ShellImageDataVtbl;
     This->ref = 1;
