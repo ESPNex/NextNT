@@ -2708,6 +2708,13 @@ USBPORT_SynchronizeControllersStart(IN PDEVICE_OBJECT FdoDevice)
             }
         }
 
+        if (!IsOn &&
+            KeQueryInterruptTime() - PendingTimestamp >= USBPORT_COMPANION_WAIT_TIMEOUT)
+        {
+            USB2FdoDevice = NULL;
+            IsOn = TRUE;
+        }
+
         if (!(FdoExtension->Flags & USBPORT_FLAG_NO_HACTION))
         {
             goto Start;

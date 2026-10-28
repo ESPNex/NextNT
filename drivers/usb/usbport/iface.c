@@ -1283,8 +1283,11 @@ USBHI_RootHubInitNotification(IN PVOID BusContext,
             CallbackData->Caller);
 
     /* Kick the worker to process the callback now that it is armed. */
-    FdoExtension->Flags |= USBPORT_FLAG_RH_INIT_CALLBACK;
-    USBPORT_SignalWorkerThread(FdoDevice);
+    if (!(FdoExtension->Flags & USBPORT_FLAG_COMPANION_HC))
+    {
+        FdoExtension->Flags |= USBPORT_FLAG_RH_INIT_CALLBACK;
+        USBPORT_SignalWorkerThread(FdoDevice);
+    }
 
     return STATUS_SUCCESS;
 }
