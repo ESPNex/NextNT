@@ -128,6 +128,10 @@ empty_mem_output_buffer (j_compress_ptr cinfo)
   /* Try to allocate new buffer with double size */
   nextsize = dest->bufsize * 2;
   nextbuffer = (JOCTET *) malloc(nextsize);
+#ifdef __REACTOS__
+  if (!nextbuffer)
+      abort();
+#endif
 
   if (nextbuffer == NULL)
     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 11);
