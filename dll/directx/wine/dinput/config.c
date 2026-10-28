@@ -367,6 +367,10 @@ static INT_PTR CALLBACK ConfigureDevicesDlgProc(HWND dialog, UINT uMsg, WPARAM w
 
             /* Create a backup action format for CANCEL and RESET operations */
             data->original_lpdiaf = malloc( sizeof(*data->original_lpdiaf) );
+#ifdef __REACTOS__
+            if (!data->original_lpdiaf)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             data->original_lpdiaf->dwNumActions = data->lpdiaf->dwNumActions;
             data->original_lpdiaf->rgoAction = malloc( sizeof(DIACTIONW) * data->lpdiaf->dwNumActions );
             copy_actions(data->original_lpdiaf, data->lpdiaf);
