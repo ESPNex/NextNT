@@ -51,6 +51,7 @@ list(APPEND SOURCE
     InvalidHandles.c
     IsTopLevelWindow.c
     IsServerSideWindow.c
+    JobUiWindowAccess.c
     KbdLayout.c
     LargeMessageBuffers.c
     keybd_event.c

@@ -51,6 +51,7 @@ extern void func_InputMessageSource(void);
 extern void func_InvalidHandles(void);
 extern void func_IsTopLevelWindow(void);
 extern void func_IsServerSideWindow(void);
+extern void func_JobUiWindowAccess(void);
 extern void func_KbdLayout(void);
 extern void func_LargeMessageBuffers(void);
 extern void func_keybd_event(void);
@@ -158,6 +159,7 @@ const struct test winetest_testlist[] =
     { "InvalidHandles", func_InvalidHandles },
     { "IsTopLevelWindow", func_IsTopLevelWindow },
     { "IsServerSideWindow", func_IsServerSideWindow },
+    { "JobUiWindowAccess", func_JobUiWindowAccess },
     { "KbdLayout", func_KbdLayout },
     { "LargeMessageBuffers", func_LargeMessageBuffers },
     { "keybd_event", func_keybd_event },
