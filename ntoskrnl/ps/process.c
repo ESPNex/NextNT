@@ -556,6 +556,8 @@ PspCreateProcess(OUT PHANDLE ProcessHandle,
 #else
         Process->Machine = ImageInformation.Machine;
 #endif
+        if (ImageInformation.ComPlusNativeReady)
+            Process->Machine = IMAGE_FILE_MACHINE_NATIVE;
     }
 
     /* Check for the debug port */
@@ -3286,7 +3288,7 @@ NtCreateUserProcess(OUT PHANDLE ProcessHandle,
         }
 
 #ifdef WOW64_SUPPORTED
-        if (ImageInformation.Machine == IMAGE_FILE_MACHINE_I386)
+        if (ImageInformation.Machine == IMAGE_FILE_MACHINE_I386 && !ImageInformation.ComPlusNativeReady)
         {
             Status = PspInitializeWow64Process(Process, &ImageInformation);
             if (!NT_SUCCESS(Status))

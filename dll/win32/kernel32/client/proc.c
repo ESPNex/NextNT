@@ -3130,6 +3130,7 @@ BasepCreateUserProcess(IN HANDLE UserToken,
 
     if (CreateInfo.State != PsCreateSuccess || !CreateInfo.SuccessState.PebAddressNative ||
         (ImageInformation.Machine == IMAGE_FILE_MACHINE_I386 &&
+         !ImageInformation.ComPlusNativeReady &&
          SharedUserData->NativeProcessorArchitecture != PROCESSOR_ARCHITECTURE_INTEL &&
          !CreateInfo.SuccessState.PebAddressWow64))
     {
@@ -3174,7 +3175,8 @@ BasepCreateUserProcess(IN HANDLE UserToken,
     CreateProcessMessage->CreationFlags = CreationFlags & ~(CREATE_NO_WINDOW | DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS);
     CreateProcessMessage->PebAddressNative = CreateInfo.SuccessState.PebAddressNative;
     CreateProcessMessage->PebAddressWow64 = CreateInfo.SuccessState.PebAddressWow64;
-    CreateProcessMessage->ProcessorArchitecture = ImageInformation.Machine == IMAGE_FILE_MACHINE_I386 ?
+    CreateProcessMessage->ProcessorArchitecture = ImageInformation.Machine == IMAGE_FILE_MACHINE_I386 &&
+                                                  !ImageInformation.ComPlusNativeReady ?
                                                   PROCESSOR_ARCHITECTURE_INTEL : SharedUserData->NativeProcessorArchitecture;
     if (ImageInformation.SubSystemType == IMAGE_SUBSYSTEM_WINDOWS_GUI) AddToHandle(CreateProcessMessage->ProcessHandle, 2);
     NtHeaders = RtlImageNtHeader(GetModuleHandle(NULL));

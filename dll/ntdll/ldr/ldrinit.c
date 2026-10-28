@@ -2493,6 +2493,91 @@ LdrpCopyProcessParameters(
     return NewParameters;
 }
 
+static
+NTSTATUS
+LdrpConvertCorImageHeader(
+    _In_ PVOID ImageBase)
+{
+    PIMAGE_NT_HEADERS32 NtHeader32 = (PIMAGE_NT_HEADERS32)RtlImageNtHeader(ImageBase);
+    PIMAGE_NT_HEADERS64 NtHeader64 = (PIMAGE_NT_HEADERS64)NtHeader32;
+    IMAGE_OPTIONAL_HEADER32 Header32;
+    IMAGE_OPTIONAL_HEADER64 Header64;
+    PIMAGE_SECTION_HEADER Sections;
+    PVOID ProtectBase = ImageBase;
+    SIZE_T ProtectSize;
+    ULONG OldProtect, Count;
+    NTSTATUS Status;
+
+    if (!NtHeader32 ||
+        NtHeader32->FileHeader.SizeOfOptionalHeader < FIELD_OFFSET(IMAGE_OPTIONAL_HEADER32, DataDirectory))
+    {
+        return STATUS_INVALID_IMAGE_FORMAT;
+    }
+
+    ProtectSize = NtHeader32->OptionalHeader.SizeOfHeaders;
+    Sections = IMAGE_FIRST_SECTION(NtHeader32);
+    if ((ULONG_PTR)&NtHeader64->OptionalHeader + sizeof(Header64) +
+        NtHeader32->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER) > (ULONG_PTR)ImageBase + ProtectSize ||
+        (ULONG_PTR)(Sections + NtHeader32->FileHeader.NumberOfSections) > (ULONG_PTR)ImageBase + ProtectSize)
+    {
+        return STATUS_INVALID_IMAGE_FORMAT;
+    }
+
+    RtlZeroMemory(&Header32, sizeof(Header32));
+    RtlCopyMemory(&Header32,
+                  &NtHeader32->OptionalHeader,
+                  min(sizeof(Header32), NtHeader32->FileHeader.SizeOfOptionalHeader));
+
+    RtlZeroMemory(&Header64, sizeof(Header64));
+    Header64.Magic = IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    Header64.MajorLinkerVersion = Header32.MajorLinkerVersion;
+    Header64.MinorLinkerVersion = Header32.MinorLinkerVersion;
+    Header64.SizeOfCode = Header32.SizeOfCode;
+    Header64.SizeOfInitializedData = Header32.SizeOfInitializedData;
+    Header64.SizeOfUninitializedData = Header32.SizeOfUninitializedData;
+    Header64.AddressOfEntryPoint = Header32.AddressOfEntryPoint;
+    Header64.BaseOfCode = Header32.BaseOfCode;
+    Header64.ImageBase = Header32.ImageBase;
+    Header64.SectionAlignment = Header32.SectionAlignment;
+    Header64.FileAlignment = Header32.FileAlignment;
+    Header64.MajorOperatingSystemVersion = Header32.MajorOperatingSystemVersion;
+    Header64.MinorOperatingSystemVersion = Header32.MinorOperatingSystemVersion;
+    Header64.MajorImageVersion = Header32.MajorImageVersion;
+    Header64.MinorImageVersion = Header32.MinorImageVersion;
+    Header64.MajorSubsystemVersion = Header32.MajorSubsystemVersion;
+    Header64.MinorSubsystemVersion = Header32.MinorSubsystemVersion;
+    Header64.Win32VersionValue = Header32.Win32VersionValue;
+    Header64.SizeOfImage = Header32.SizeOfImage;
+    Header64.SizeOfHeaders = Header32.SizeOfHeaders;
+    Header64.CheckSum = Header32.CheckSum;
+    Header64.Subsystem = Header32.Subsystem;
+    Header64.DllCharacteristics = Header32.DllCharacteristics;
+    Header64.SizeOfStackReserve = Header32.SizeOfStackReserve;
+    Header64.SizeOfStackCommit = Header32.SizeOfStackCommit;
+    Header64.SizeOfHeapReserve = Header32.SizeOfHeapReserve;
+    Header64.SizeOfHeapCommit = Header32.SizeOfHeapCommit;
+    Header64.LoaderFlags = Header32.LoaderFlags;
+    Count = min(Header32.NumberOfRvaAndSizes, IMAGE_NUMBEROF_DIRECTORY_ENTRIES);
+    if (NtHeader32->FileHeader.SizeOfOptionalHeader < FIELD_OFFSET(IMAGE_OPTIONAL_HEADER32, DataDirectory[Count]))
+        Count = (NtHeader32->FileHeader.SizeOfOptionalHeader - FIELD_OFFSET(IMAGE_OPTIONAL_HEADER32, DataDirectory)) /
+                sizeof(IMAGE_DATA_DIRECTORY);
+    Header64.NumberOfRvaAndSizes = Count;
+    RtlCopyMemory(Header64.DataDirectory, Header32.DataDirectory, Count * sizeof(IMAGE_DATA_DIRECTORY));
+
+    Status = NtProtectVirtualMemory(NtCurrentProcess(), &ProtectBase, &ProtectSize, PAGE_READWRITE, &OldProtect);
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    RtlMoveMemory((PUCHAR)&NtHeader64->OptionalHeader + sizeof(Header64),
+                  Sections,
+                  NtHeader32->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER));
+    RtlCopyMemory(&NtHeader64->OptionalHeader, &Header64, sizeof(Header64));
+    NtHeader64->FileHeader.SizeOfOptionalHeader = sizeof(Header64);
+
+    NtProtectVirtualMemory(NtCurrentProcess(), &ProtectBase, &ProtectSize, OldProtect, &OldProtect);
+    return STATUS_SUCCESS;
+}
+
 NTSTATUS
 NTAPI
 LdrpInitializeProcess(IN PCONTEXT Context,
@@ -2563,6 +2648,13 @@ LdrpInitializeProcess(IN PCONTEXT Context,
 
     /* Get the NT Headers */
     NtHeader = RtlImageNtHeader(Peb->ImageBaseAddress);
+    if (sizeof(PVOID) == sizeof(ULONG64) && !Teb->WowTebOffset &&
+        NtHeader->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+    {
+        Status = LdrpConvertCorImageHeader(Peb->ImageBaseAddress);
+        if (!NT_SUCCESS(Status))
+            return Status;
+    }
 
 #ifdef _WIN64
     IsWow64 = Teb->WowTebOffset && NtHeader->FileHeader.Machine == IMAGE_FILE_MACHINE_I386;
@@ -3184,7 +3276,7 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     RtlpInitializeActCtx(&OldShimData);
 
     /* Walk the IAT and load all the DLLs */
-    ImportStatus = LdrpWalkImportDescriptor(LdrpDefaultPath.Buffer, LdrpImageEntry);
+    ImportStatus = IsCorILOnlyImage ? STATUS_SUCCESS : LdrpWalkImportDescriptor(LdrpDefaultPath.Buffer, LdrpImageEntry);
 
     if (NT_SUCCESS(ImportStatus) && IsCorILOnlyImage)
     {
@@ -3215,7 +3307,7 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     }
 
     /* Check if relocation is needed */
-    if (Peb->ImageBaseAddress != (PVOID)NtHeader->OptionalHeader.ImageBase)
+    if (!IsCorILOnlyImage && Peb->ImageBaseAddress != (PVOID)NtHeader->OptionalHeader.ImageBase)
     {
         DPRINT1("LDR: Performing EXE relocation\n");
 
@@ -3591,7 +3683,8 @@ LdrpInit(PCONTEXT Context,
              * the emulator and never relies on a cross-image kernel32 RVA.
              */
             if (InitializeChpeProcess ||
-                Context->Pc == (ULONG64)(ULONG_PTR)LdrpImageEntry->EntryPoint)
+                Context->Pc == (ULONG64)(ULONG_PTR)LdrpImageEntry->EntryPoint ||
+                Context->Pc == (ULONG64)(ULONG_PTR)LdrpCorImageEntryPoint)
             {
                 Context->X0 = (ULONG64)(ULONG_PTR)LdrpImageEntry->EntryPoint;
                 Context->X1 = (ULONG64)(ULONG_PTR)Peb;
@@ -3600,7 +3693,8 @@ LdrpInit(PCONTEXT Context,
             }
 #elif defined(_M_AMD64)
             if (Kernel32ThreadInitThunkFunction &&
-                Context->Rip == (ULONG64)(ULONG_PTR)LdrpImageEntry->EntryPoint)
+                (Context->Rip == (ULONG64)(ULONG_PTR)LdrpImageEntry->EntryPoint ||
+                 Context->Rip == (ULONG64)(ULONG_PTR)LdrpCorImageEntryPoint))
             {
                 Context->Rcx = (ULONG64)(ULONG_PTR)LdrpImageEntry->EntryPoint;
                 Context->Rdx = (ULONG64)(ULONG_PTR)Peb;
