@@ -3859,9 +3859,18 @@ static NTSTATUS parse_depend_manifests(struct actctx_loader* acl)
 
     for (i = 0; i < acl->num_dependencies; i++)
     {
+#ifdef __REACTOS__
+        NTSTATUS lookup_status = lookup_assembly(acl, &acl->dependencies[i]);
+
+        if (lookup_status != STATUS_SUCCESS)
+        {
+            if (lookup_status != STATUS_SXS_ASSEMBLY_NOT_FOUND ||
+                (!acl->dependencies[i].optional && !acl->dependencies[i].delayed))
+#else
         if (lookup_assembly(acl, &acl->dependencies[i]) != STATUS_SUCCESS)
         {
             if (!acl->dependencies[i].optional && !acl->dependencies[i].delayed)
+#endif
             {
                 FIXME( "Could not find dependent assembly %s (%s)\n",
                     debugstr_w(acl->dependencies[i].name),

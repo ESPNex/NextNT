@@ -199,7 +199,7 @@ static const SXM_RULE SxmDependentIdentityRules[] =
 {
     { L"name", SxmValueNonEmpty, TRUE, SxmSetNone },
     { L"version", SxmValueVersion, TRUE, SxmSetNone },
-    { L"type", SxmValueTypeWin32, TRUE, SxmSetNone },
+    { L"type", SxmValueTypeWin32, FALSE, SxmSetNone },
     { L"processorArchitecture", SxmValueArchitecture, FALSE, SxmSetNone },
     { L"publicKeyToken", SxmValueAny, FALSE, SxmSetNone },
     { L"language", SxmValueLanguageReference, FALSE, SxmSetNone },
