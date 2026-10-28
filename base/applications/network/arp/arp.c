@@ -224,9 +224,11 @@ DWORD DisplayArpEntries(PTCHAR pszInetAddr, PTCHAR pszIfAddr)
         goto cleanup;
     }
 
-    ZeroMemory(pIpNetTable, sizeof(*pIpNetTable));
+    ZeroMemory(pIpNetTable, Size);
 
     dwError = GetIpNetTable(pIpNetTable, &Size, TRUE);
+    if (dwError == ERROR_NO_DATA)
+        dwError = NO_ERROR;
     if (dwError != NO_ERROR)
     {
         _tprintf(_T("GetIpNetTable failed: %lu\n"), dwError);
@@ -256,7 +258,7 @@ DWORD DisplayArpEntries(PTCHAR pszInetAddr, PTCHAR pszIfAddr)
         goto cleanup;
     }
 
-    ZeroMemory(pIpAddrTable, sizeof(*pIpAddrTable));
+    ZeroMemory(pIpAddrTable, Size);
 
     dwError = GetIpAddrTable(pIpAddrTable, &Size, TRUE);
     if (dwError != NO_ERROR)
@@ -403,7 +405,7 @@ DWORD Addhost(PTCHAR pszInetAddr, PTCHAR pszEthAddr, PTCHAR pszIfAddr)
         goto cleanup;
     }
 
-    ZeroMemory(pIpNetTable, sizeof(*pIpNetTable));
+    ZeroMemory(pIpNetTable, Size);
 
     dwError = GetIpNetTable(pIpNetTable, &Size, TRUE);
     if (dwError != NO_ERROR)
@@ -538,7 +540,7 @@ DWORD Deletehost(PTCHAR pszInetAddr, PTCHAR pszIfAddr)
         goto cleanup;
     }
 
-    ZeroMemory(pIpNetTable, sizeof(*pIpNetTable));
+    ZeroMemory(pIpNetTable, Size);
 
     dwError = GetIpNetTable(pIpNetTable, &Size, TRUE);
     if (dwError != NO_ERROR)
