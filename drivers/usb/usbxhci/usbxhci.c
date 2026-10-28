@@ -5882,6 +5882,7 @@ XHCI_ServiceEventRing(
      * while stopping the root hub. */
 
 
+    KeMemoryBarrier();
     if (AllowCallbacks &&
         Extension->RhIrqEnabled &&
         XhciRegPacket.UsbPortInvalidateRootHub &&
@@ -5968,6 +5969,22 @@ XHCI_EventRingHasPendingTrb(
 
 static
 VOID
+XHCI_DeferRootHubInvalidate(
+    _Inout_ PXHCI_EXTENSION Extension)
+{
+    Extension->RhPendingInvalidate = TRUE;
+    KeMemoryBarrier();
+    if (Extension->RhIrqEnabled &&
+        Extension->RhPendingInvalidate &&
+        XhciRegPacket.UsbPortInvalidateRootHub)
+    {
+        Extension->RhPendingInvalidate = FALSE;
+        XhciRegPacket.UsbPortInvalidateRootHub(Extension);
+    }
+}
+
+static
+VOID
 XHCI_PollForWork(
     _Inout_ PXHCI_EXTENSION Extension,
     _In_ BOOLEAN AllowCallbacks)
@@ -6011,7 +6028,10 @@ XHCI_PollForWork(
             if (XHCI_ScanPortStatusChanges(Extension, Notify))
             {
                 DidWork = TRUE;
-                Extension->RhPendingInvalidate = Notify ? FALSE : TRUE;
+                if (Notify)
+                    Extension->RhPendingInvalidate = FALSE;
+                else
+                    XHCI_DeferRootHubInvalidate(Extension);
             }
         }
 
@@ -14025,7 +14045,10 @@ XHCI_InterruptDpc(PVOID MiniPortExtension,
 
         if (FoundChange)
         {
-            Extension->RhPendingInvalidate = NotifyNow ? FALSE : TRUE;
+            if (NotifyNow)
+                Extension->RhPendingInvalidate = FALSE;
+            else
+                XHCI_DeferRootHubInvalidate(Extension);
         }
         else if (NotifyNow && Extension->RhPendingInvalidate)
         {
@@ -16088,6 +16111,7 @@ XHCI_RH_EnableIrq(
         return;
 
     Extension->RhIrqEnabled = TRUE;
+    KeMemoryBarrier();
     if (Extension->RhPendingInvalidate &&
         XhciRegPacket.UsbPortInvalidateRootHub)
     {
