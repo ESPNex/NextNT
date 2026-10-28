@@ -1624,7 +1624,11 @@ dma_cs55xx:
 
             for(i=udmamode; i>=0; i--) {
                 if(AtaSetTransferMode(deviceExtension, DeviceNumber, lChannel, LunExt, ATA_UDMA0 + i)) {
+#ifdef __REACTOS__
+                    tim |= (0x1U << 31);
+#else
                     tim |= (0x1 << 31);
+#endif
                     tim &= ~(0x7 << 16);
                     tim |= (i << 16);
 
@@ -1637,7 +1641,11 @@ dma_cs55xx:
             if(!udma_ok) {
                 for(i=wdmamode; i>=0; i--) {
                     if(AtaSetTransferMode(deviceExtension, DeviceNumber, lChannel, LunExt, ATA_WDMA0 + i)) {
+#ifdef __REACTOS__
+                        tim &= ~(0x1U << 31);
+#else
                         tim &= ~(0x1 << 31);
+#endif
                         tim &= ~(0x3 << 8);
                         tim |= (i << 8);
 

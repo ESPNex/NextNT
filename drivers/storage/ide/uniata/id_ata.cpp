@@ -2702,7 +2702,11 @@ AtapiResetController__(
                         AtapiReadPortEx4(NULL, (ULONGIO_PTR)(&deviceExtension->BaseIoAddressSATA_0),offs+4) & ((~(ULONG)0x0000000d) << (!Channel*16)) );
                 } else {
                     AtapiWritePortEx1(NULL, (ULONGIO_PTR)(&deviceExtension->BaseIoAddressSATA_0),offs+1,
+#ifdef __REACTOS__
+                        AtapiReadPortEx1(NULL, (ULONGIO_PTR)(&deviceExtension->BaseIoAddressSATA_0),offs+1) & ((~(ULONG)0x0d) << (!Channel*4)) );
+#else
                         AtapiReadPortEx1(NULL, (ULONGIO_PTR)(&deviceExtension->BaseIoAddressSATA_0),offs+1) & ((~(UCHAR)0x0d) << (!Channel*4)) );
+#endif
                 }
                 tmp16 = UniataSataPhyEnable(HwDeviceExtension, j, 0/* dev0*/, UNIATA_SATA_RESET_ENABLE);
 
