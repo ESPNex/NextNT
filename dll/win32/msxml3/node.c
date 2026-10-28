@@ -1381,6 +1381,10 @@ struct domnode *domnode_addref(struct domnode *node)
 struct domdoc_properties *domdoc_create_properties(MSXML_VERSION version)
 {
     struct domdoc_properties *properties = calloc(1, sizeof(*properties));
+#ifdef __REACTOS__
+    if (!properties)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     list_init(&properties->namespaces.entries);
     properties->preserving = VARIANT_FALSE;
@@ -2631,6 +2635,10 @@ static HRESULT import_loader_onDataAvailable(void *ctxt, char *ptr, DWORD len)
     struct import_buffer *buffer;
 
     buffer = malloc(sizeof(*buffer));
+#ifdef __REACTOS__
+    if (!buffer)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     buffer->data = malloc(len);
     memcpy(buffer->data, ptr, len);
@@ -3144,6 +3152,10 @@ static HRESULT msxsl_create_script_site(IXMLDOMDocument *doc, IActiveScriptSite 
     IObjectWithSite_Release(ows);
 
     object = calloc(1, sizeof(*object));
+#ifdef __REACTOS__
+    if (!object)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     object->IActiveScriptSite_iface.lpVtbl = &msxsl_script_site_vtbl;
     object->IServiceProvider_iface.lpVtbl = &msxsl_script_site_servprov_vtbl;
     object->refcount = 1;
@@ -3324,6 +3336,10 @@ HRESULT node_transform_node_params(struct domnode *node, IXMLDOMNode *stylesheet
 
             i = 0;
             xslparams = malloc((params->count * 2 + 1) * sizeof(char*));
+#ifdef __REACTOS__
+            if (!xslparams)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             LIST_FOR_EACH_ENTRY(par, &params->list, struct xslprocessor_par, entry)
             {
                 xslparams[i++] = (char*)xmlchar_from_wchar(par->name);

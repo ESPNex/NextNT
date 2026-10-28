@@ -441,6 +441,10 @@ static HRESULT write_output_buffer(mxwriter *writer, const WCHAR *data, int len)
             if (src_len)
             {
                 encoded_buffer *next = malloc(sizeof(*next));
+#ifdef __REACTOS__
+                if (!next)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                 HRESULT hr;
 
                 if (FAILED(hr = init_encoded_buffer(next))) {

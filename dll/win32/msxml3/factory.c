@@ -275,6 +275,10 @@ static const struct IClassFactoryVtbl DOMClassFactoryVtbl =
 static HRESULT DOMClassFactory_Create(const GUID *clsid, REFIID riid, void **ppv, DOMFactoryCreateInstanceFunc fnCreateInstance)
 {
     DOMFactory *ret = malloc(sizeof(DOMFactory));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     HRESULT hres;
 
     ret->IClassFactory_iface.lpVtbl = &DOMClassFactoryVtbl;

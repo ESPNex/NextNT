@@ -511,6 +511,10 @@ static inline xmlChar *strdupxmlChar(const xmlChar *str)
 
         size = (xmlStrlen(str)+1)*sizeof(xmlChar);
         ret = malloc(size);
+#ifdef __REACTOS__
+        if (!ret)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         memcpy(ret, str, size);
     }
 

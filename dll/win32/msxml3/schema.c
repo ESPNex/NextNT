@@ -769,6 +769,10 @@ static BOOL link_datatypes(xmlDocPtr schema)
 static cache_entry* cache_entry_from_xsd_doc(xmlDocPtr doc, xmlChar const* nsURI, MSXML_VERSION v)
 {
     cache_entry* entry = malloc(sizeof(cache_entry));
+#ifdef __REACTOS__
+    if (!entry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     xmlSchemaParserCtxtPtr spctx;
     xmlDocPtr new_doc = xmlCopyDoc(doc, 1);
 
@@ -798,6 +802,10 @@ static cache_entry* cache_entry_from_xsd_doc(xmlDocPtr doc, xmlChar const* nsURI
 static cache_entry* cache_entry_from_xdr_doc(xmlDocPtr doc, xmlChar const* nsURI, MSXML_VERSION version)
 {
     cache_entry* entry = malloc(sizeof(cache_entry));
+#ifdef __REACTOS__
+    if (!entry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     xmlSchemaParserCtxtPtr spctx;
     xmlDocPtr new_doc = xmlCopyDoc(doc, 1), xsd_doc = XDR_to_XSD_doc(doc, nsURI);
 
@@ -988,6 +996,10 @@ HRESULT cache_from_doc_ns(IXMLDOMSchemaCollection2 *iface, struct domnode *node)
                 }
 
                 entry = malloc(sizeof(cache_entry));
+#ifdef __REACTOS__
+                if (!entry)
+                    RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
                 entry->type = CacheEntryType_NS;
                 entry->ref = 1;
                 entry->schema = NULL;

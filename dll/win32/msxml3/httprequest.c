@@ -557,6 +557,10 @@ static void add_response_header(httprequest *This, const WCHAR *data, int len)
     TRACE("got header %s:%s\n", debugstr_w(header), debugstr_w(value));
 
     entry = malloc(sizeof(*entry));
+#ifdef __REACTOS__
+    if (!entry)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     entry->header = header;
     entry->value  = value;
     list_add_head(&This->respheaders, &entry->entry);

@@ -268,6 +268,10 @@ static dispex_data_t *preprocess_dispex_data(DispatchEx *This)
     }
 
     data = malloc(sizeof(dispex_data_t));
+#ifdef __REACTOS__
+    if (!data)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     data->func_cnt = 0;
     data->funcs = malloc(size * sizeof(func_info_t));
     list_add_tail(&dispex_data_list, &data->entry);

@@ -310,6 +310,10 @@ HRESULT bind_url(IMoniker *mon, HRESULT (*onDataAvailable)(void*,char*,DWORD),
         return hr;
 
     bsc = malloc(sizeof(bsc_t));
+#ifdef __REACTOS__
+    if (!bsc)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     bsc->IBindStatusCallback_iface.lpVtbl = &bsc_vtbl;
     bsc->ref = 1;
