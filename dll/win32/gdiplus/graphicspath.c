@@ -1395,6 +1395,10 @@ GpStatus WINGDIPAPI GdipCreatePath2I(GDIPCONST GpPoint* points,
     TRACE("(%p, %p, %d, %d, %p)\n", points, types, count, fill, path);
 
     ptF = malloc(sizeof(GpPointF) * count);
+#ifdef __REACTOS__
+    if (!ptF)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     for(i = 0;i < count; i++){
         ptF[i].X = (REAL)points[i].X;

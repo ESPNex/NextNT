@@ -1377,6 +1377,10 @@ static WCHAR *copy_name_table_string( const tt_name_record *name, const BYTE *da
     case TT_PLATFORM_APPLE_UNICODE:
     case TT_PLATFORM_MICROSOFT:
         ret = malloc((name_len / 2 + 1) * sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!ret)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         for (len = 0; len < name_len / 2; len++)
             ret[len] = (data[len * 2] << 8) | data[len * 2 + 1];
         ret[len] = 0;
@@ -1387,6 +1391,10 @@ static WCHAR *copy_name_table_string( const tt_name_record *name, const BYTE *da
         if (!len)
             return NULL;
         ret = malloc(len * sizeof(WCHAR));
+#ifdef __REACTOS__
+        if (!ret)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         len = MultiByteToWideChar( codepage, 0, (char *)data, name_len, ret, len - 1 );
         ret[len] = 0;
         return ret;

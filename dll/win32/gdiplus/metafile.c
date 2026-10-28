@@ -2213,6 +2213,10 @@ static GpStatus metafile_deserialize_path(const BYTE *record_data, UINT data_siz
         {
             EmfPlusPoint *points = (EmfPlusPoint *)data->data;
             GpPointF *temp = malloc(sizeof(GpPointF) * data->PathPointCount);
+#ifdef __REACTOS__
+            if (!temp)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
             for (i = 0; i < data->PathPointCount; i++)
             {

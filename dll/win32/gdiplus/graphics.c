@@ -6219,6 +6219,10 @@ static void generate_font_link_info(struct gdip_format_string_info *info, DWORD 
     info->font_link_info.base_font = base_font;
 
     glyph_indices = calloc(length, sizeof(*glyph_indices));
+#ifdef __REACTOS__
+    if (!glyph_indices)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     GetGlyphIndicesW(info->hdc, info->string, length, glyph_indices, GGI_MARK_NONEXISTING_GLYPHS);
 
     /* Newlines won't have a glyph but don't need a fallback */
@@ -6234,6 +6238,10 @@ static void generate_font_link_info(struct gdip_format_string_info *info, DWORD 
     while (progress < length)
     {
         section = calloc(1, sizeof(*section));
+#ifdef __REACTOS__
+        if (!section)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         section->start = progress;
 
         if (glyph_indices[progress] != 0xffff)

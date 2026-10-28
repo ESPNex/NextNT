@@ -97,6 +97,10 @@ static ColorPalette *get_palette(IWICBitmapFrameDecode *frame, WICBitmapPaletteT
 
             IWICPalette_GetColorCount(wic_palette, &count);
             palette = malloc(2 * sizeof(UINT) + count * sizeof(ARGB));
+#ifdef __REACTOS__
+            if (!palette)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
             IWICPalette_GetColors(wic_palette, count, (UINT *)palette->Entries, &palette->Count);
 
             IWICPalette_GetType(wic_palette, &type);
@@ -2922,6 +2926,10 @@ GpStatus WINGDIPAPI GdipGetAllPropertyItems(GpImage *image, UINT size,
         if (item_size)
         {
             item = malloc(item_size + sizeof(*item));
+#ifdef __REACTOS__
+            if (!item)
+                RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
             propvariant_to_item(&value, item, item_size + sizeof(*item), id.uiVal);
             buf[i].id = item->id;
@@ -5923,6 +5931,10 @@ GpStatus WINGDIPAPI GdipCreateEffect(const GUID guid, CGpEffect **effect)
     param_size = get_effect_parameter_size(type);
 
     ef = calloc(1, FIELD_OFFSET(CGpEffect, params.data[param_size]));
+#ifdef __REACTOS__
+    if (!ef)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     ef->type = type;
     *effect = ef;
 

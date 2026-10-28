@@ -485,6 +485,10 @@ GpStatus WINGDIPAPI GdipCreateRegionRect(GDIPCONST GpRectF *rect,
         return InvalidParameter;
 
     *region = calloc(1, sizeof(GpRegion));
+#ifdef __REACTOS__
+    if (!*region)
+        return OutOfMemory;
+#endif
     stat = init_region(*region, RegionDataRect);
     if(stat != Ok)
     {
