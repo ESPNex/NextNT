@@ -28,7 +28,7 @@ RtlIsValidOemCharacter(IN PWCHAR Char);
 static BOOLEAN
 RtlpIsShortIllegal(const WCHAR Char)
 {
-    return (Char < 128 && (RtlpShortIllegals[Char / 32] & (1 << (Char % 32))));
+    return (Char < 128 && (RtlpShortIllegals[Char / 32] & (1U << (Char % 32))));
 }
 
 static USHORT
