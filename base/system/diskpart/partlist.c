@@ -198,6 +198,15 @@ AlignDown(
 }
 
 static
+BOOL
+IsUefiFirmware(VOID)
+{
+    FIRMWARE_TYPE FirmwareType;
+
+    return GetFirmwareType(&FirmwareType) && FirmwareType == FirmwareTypeUefi;
+}
+
+static
 VOID
 GetDriverName(
     PDISKENTRY DiskEntry)
@@ -1128,6 +1137,7 @@ AddDiskToList(
     ULONG DiskNumber)
 {
     DISK_GEOMETRY DiskGeometry;
+    GET_LENGTH_INFORMATION LengthInfo;
     SCSI_ADDRESS ScsiAddress;
     PDISKENTRY DiskEntry;
     IO_STATUS_BLOCK Iosb;
@@ -1402,7 +1412,7 @@ AddDiskToList(
         ListEntry = ListEntry->Flink;
     }
 
-    if (!DiskEntry->BiosFound)
+    if (!DiskEntry->BiosFound && !IsUefiFirmware())
     {
 #if 0
         RtlFreeHeap(ProcessHeap, 0, DiskEntry);
@@ -1428,6 +1438,19 @@ AddDiskToList(
     DiskEntry->SectorCount.QuadPart = DiskGeometry.Cylinders.QuadPart *
                                       (ULONGLONG)DiskGeometry.TracksPerCylinder *
                                       (ULONGLONG)DiskGeometry.SectorsPerTrack;
+
+    Status = NtDeviceIoControlFile(FileHandle,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   &Iosb,
+                                   IOCTL_DISK_GET_LENGTH_INFO,
+                                   NULL,
+                                   0,
+                                   &LengthInfo,
+                                   sizeof(LengthInfo));
+    if (NT_SUCCESS(Status) && DiskGeometry.BytesPerSector != 0)
+        DiskEntry->SectorCount.QuadPart = (ULONGLONG)LengthInfo.Length.QuadPart / DiskGeometry.BytesPerSector;
 
 //    DiskEntry->SectorAlignment = DiskGeometry.SectorsPerTrack;
 //    DiskEntry->CylinderAlignment = DiskGeometry.SectorsPerTrack * DiskGeometry.TracksPerCylinder;

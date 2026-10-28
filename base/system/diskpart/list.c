@@ -25,22 +25,22 @@ PrintSize(
 
     if (ullSize >= SIZE_10TB) /* 10 TB */
     {
-        ullSize = RoundingDivide(ullSize, SIZE_1TB);
+        ullSize = ullSize / SIZE_1TB;
         nUnitId = IDS_UNIT_TB;
     }
     else if (ullSize >= SIZE_10GB) /* 10 GB */
     {
-        ullSize = RoundingDivide(ullSize, SIZE_1GB);
+        ullSize = ullSize / SIZE_1GB;
         nUnitId = IDS_UNIT_GB;
     }
     else if (ullSize >= SIZE_10MB) /* 10 MB */
     {
-        ullSize = RoundingDivide(ullSize, SIZE_1MB);
+        ullSize = ullSize / SIZE_1MB;
         nUnitId = IDS_UNIT_MB;
     }
     else if (ullSize >= SIZE_10KB) /* 10 KB */
     {
-        ullSize = RoundingDivide(ullSize, SIZE_1KB);
+        ullSize = ullSize / SIZE_1KB;
         nUnitId = IDS_UNIT_KB;
     }
     else
@@ -52,7 +52,6 @@ PrintSize(
                 nUnitId,
                 szUnitBuffer, ARRAYSIZE(szUnitBuffer));
 
-    _swprintf(pszOutBuffer, L"%4I64u %-2s", ullSize, szUnitBuffer);
     StringCchPrintfW(pszOutBuffer,
                      ulOutBufferSize,
                      L"%4I64u %-2s", ullSize, szUnitBuffer);
@@ -80,7 +79,7 @@ GetFreeDiskSize(
             if ((PartEntry->Mbr.PartitionType != PARTITION_ENTRY_UNUSED) && 
                 !IsContainerPartition(PartEntry->Mbr.PartitionType))
             {
-                SectorCount -= PartEntry->SectorCount.QuadPart;
+                SectorCount -= min(SectorCount, PartEntry->SectorCount.QuadPart);
             }
 
             Entry = Entry->Flink;
@@ -93,7 +92,7 @@ GetFreeDiskSize(
 
             if (PartEntry->Mbr.PartitionType != PARTITION_ENTRY_UNUSED)
             {
-                SectorCount -= PartEntry->SectorCount.QuadPart;
+                SectorCount -= min(SectorCount, PartEntry->SectorCount.QuadPart);
             }
 
             Entry = Entry->Flink;
@@ -110,7 +109,7 @@ GetFreeDiskSize(
 
             if (!IsEqualGUID(&PartEntry->Gpt.PartitionType, &PARTITION_ENTRY_UNUSED_GUID))
             {
-                SectorCount -= PartEntry->SectorCount.QuadPart;
+                SectorCount -= min(SectorCount, PartEntry->SectorCount.QuadPart);
             }
 
             Entry = Entry->Flink;
