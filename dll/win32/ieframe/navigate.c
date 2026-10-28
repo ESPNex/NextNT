@@ -586,6 +586,10 @@ static BindStatusCallback *create_callback(DocHost *doc_host, LPCWSTR url, PBYTE
         ULONG post_data_len, LPCWSTR headers)
 {
     BindStatusCallback *ret = malloc(sizeof(BindStatusCallback));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IBindStatusCallback_iface.lpVtbl = &BindStatusCallbackVtbl;
     ret->IHttpNegotiate_iface.lpVtbl      = &HttpNegotiateVtbl;
@@ -1031,6 +1035,10 @@ HRESULT navigate_url(DocHost *This, LPCWSTR url, const VARIANT *Flags,
         task_navigate_bsc_t *task;
 
         task = malloc(sizeof(*task));
+#ifdef __REACTOS__
+        if (!task)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         task->bsc = create_callback(This, url, post_data, post_data_len, headers);
         push_dochost_task(This, &task->header, navigate_bsc_proc, navigate_bsc_task_destr, This->url == NULL);
     }

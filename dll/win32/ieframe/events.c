@@ -402,6 +402,10 @@ static void ConnectionPoint_Create(REFIID riid, ConnectionPoint **cp,
                                    IConnectionPointContainer *container)
 {
     ConnectionPoint *ret = malloc(sizeof(ConnectionPoint));
+#ifdef __REACTOS__
+    if (!ret)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     ret->IConnectionPoint_iface.lpVtbl = &ConnectionPointVtbl;
 

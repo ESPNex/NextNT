@@ -320,6 +320,10 @@ static void ready_state_proc(DocHost *This, task_header_t *_task)
 static void push_ready_state_task(DocHost *This, READYSTATE ready_state)
 {
     ready_state_task_t *task = malloc(sizeof(ready_state_task_t));
+#ifdef __REACTOS__
+    if (!task)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 
     IUnknown_AddRef(This->document);
     task->doc = This->document;
@@ -369,6 +373,10 @@ HRESULT dochost_object_available(DocHost *This, IUnknown *doc)
     /* FIXME: Call SetAdvise */
 
     task = malloc(sizeof(*task));
+#ifdef __REACTOS__
+    if (!task)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     push_dochost_task(This, task, object_available_proc, object_available_task_destr, FALSE);
 
     hres = get_doc_ready_state(This, &ready_state);
