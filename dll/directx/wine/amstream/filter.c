@@ -746,6 +746,10 @@ static HRESULT WINAPI filter_WaitUntil(IMediaStreamFilter *iface, REFERENCE_TIME
     else
     {
         event = calloc(1, sizeof(struct event));
+#ifdef __REACTOS__
+        if (!event)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         event->event = CreateEventW(NULL, FALSE, FALSE, NULL);
 
         entry = &event->entry;
