@@ -1800,6 +1800,10 @@ static HRESULT session_set_transform_stream_info(struct topo_node *node)
         node->u.transform.output_map = output_map;
 
         streams = calloc(input_count, sizeof(*streams));
+#ifdef __REACTOS__
+        if (!streams)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         for (i = 0; i < input_count; ++i)
             list_init(&streams[i].samples);
         node->u.transform.inputs = streams;
@@ -1817,6 +1821,10 @@ static HRESULT session_set_transform_stream_info(struct topo_node *node)
         }
 
         streams = calloc(output_count, sizeof(*streams));
+#ifdef __REACTOS__
+        if (!streams)
+            RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
         for (i = 0; i < output_count; ++i)
         {
             list_init(&streams[i].samples);
