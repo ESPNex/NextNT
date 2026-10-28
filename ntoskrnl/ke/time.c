@@ -19,7 +19,6 @@
 
 LONG KiTickOffset;
 volatile ULONG KiTickPhase;
-static ULONGLONG KiLastClockInterruptTime;
 PKPRCB volatile KiClockOwnerPrcb;
 ULONG KeTimeAdjustment;
 BOOLEAN KiTimeAdjustmentEnabled = FALSE;
@@ -178,8 +177,7 @@ KeUpdateSystemTime(IN PKTRAP_FRAME TrapFrame,
 {
     PKPRCB Prcb = KeGetCurrentPrcb();
     LARGE_INTEGER CurrentTime, InterruptTime;
-    ULONGLONG Elapsed, Overrun;
-    LONG OldTickOffset;
+    ULONGLONG OldTick, NewTick;
     ULONG Ticks;
 
     /* Check if this tick is being skipped */
@@ -201,23 +199,12 @@ KeUpdateSystemTime(IN PKTRAP_FRAME TrapFrame,
 
     /* Add the increment time to the shared data */
     InterruptTime.QuadPart = KiUpdateSharedTime(Increment, TRUE);
-
-    Elapsed = Increment;
-    if (KiLastClockInterruptTime)
-    {
-        Elapsed = ((ULONGLONG)InterruptTime.QuadPart > KiLastClockInterruptTime) ?
-                  (ULONGLONG)InterruptTime.QuadPart - KiLastClockInterruptTime : 0;
-    }
-    KiLastClockInterruptTime = InterruptTime.QuadPart;
 #if DBG && defined(KDBG)
     KdpLogWatchdogCheck(InterruptTime.QuadPart);
 #endif
 
     /* Check for timer expiration */
     KiCheckForTimerExpiration(Prcb, TrapFrame, InterruptTime);
-
-    /* Update the tick offset */
-    OldTickOffset = InterlockedExchangeAdd(&KiTickOffset, -(LONG)min(Elapsed, (ULONGLONG)KeMaximumIncrement));
 
     /* If the debugger is enabled, check for break-in request */
     if (KdDebuggerEnabled && KdPollBreakIn())
@@ -227,10 +214,11 @@ KeUpdateSystemTime(IN PKTRAP_FRAME TrapFrame,
     }
 
     /* Check for full tick */
-    if ((LONGLONG)OldTickOffset <= (LONGLONG)Elapsed)
+    OldTick = *(ULONGLONG*)&KeTickCount;
+    NewTick = (ULONGLONG)InterruptTime.QuadPart / KeMaximumIncrement;
+    if (NewTick > OldTick)
     {
-        Overrun = (ULONGLONG)((LONGLONG)Elapsed - OldTickOffset);
-        Ticks = 1 + (ULONG)(Overrun / KeMaximumIncrement);
+        Ticks = (ULONG)min(NewTick - OldTick, (ULONGLONG)MAXULONG);
 
         /* A delayed clock can cross timer buckets that neither endpoint visits. */
         if (Ticks > 1 && !Prcb->TimerRequest)
@@ -241,7 +229,7 @@ KeUpdateSystemTime(IN PKTRAP_FRAME TrapFrame,
         }
 
         /* Update the tick count */
-        CurrentTime.QuadPart = (*(ULONGLONG*)&KeTickCount) + Ticks;
+        CurrentTime.QuadPart = NewTick;
         KiWriteSystemTime(&KeTickCount, CurrentTime);
 
         /* Update it in the shared user data */
@@ -251,7 +239,7 @@ KeUpdateSystemTime(IN PKTRAP_FRAME TrapFrame,
         KiCheckForTimerExpiration(Prcb, TrapFrame, InterruptTime);
 
         /* Reset the tick offset */
-        KiTickOffset = KeMaximumIncrement - (ULONG)(Overrun % KeMaximumIncrement);
+        KiTickOffset = KeMaximumIncrement - (ULONG)((ULONGLONG)InterruptTime.QuadPart % KeMaximumIncrement);
         KiTickPhase = (ULONG)((ULONGLONG)InterruptTime.QuadPart % KeMaximumIncrement);
 
         if (KiClockOwnerPrcb != Prcb)
