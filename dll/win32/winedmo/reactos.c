@@ -7,8 +7,12 @@
 
 /* Wine normally uses a Unix-call boundary. ReactOS invokes the same upstream demuxer callbacks in-process. */
 
+#define FFMPEG_IMPORTS_DEFINE
 #include "config.h"
 #include "unix_private.h"
+#include "reactos.h"
+
+#include <ffmpeg_runtime.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -90,10 +94,56 @@ static void vlog(void *context, int level, const char *format, va_list args)
     wine_dbg_vlog(debug_class, __wine_dbch___default, __func__, format, args);
 }
 
+#define FFMPEG_IMPORT(name) __typeof__(name) *p_##name;
+WINEDMO_FFMPEG_IMPORTS(FFMPEG_IMPORT)
+#undef FFMPEG_IMPORT
+
+int av_strerror(int errnum, char *errbuf, size_t errbuf_size)
+{
+    return p_av_strerror(errnum, errbuf, errbuf_size);
+}
+
 NTSTATUS process_attach(void *params)
 {
     UNREFERENCED_PARAMETER(params);
-    av_log_set_callback(vlog);
-    TRACE("FFmpeg avformat version %u, avcodec version %u\n", avformat_version(), avcodec_version());
+    p_av_log_set_callback(vlog);
+    TRACE("FFmpeg avformat version %u, avcodec version %u\n", p_avformat_version(), p_avcodec_version());
     return STATUS_SUCCESS;
+}
+
+static INIT_ONCE FFmpegOnce = INIT_ONCE_STATIC_INIT;
+static BOOL FFmpegLoaded;
+
+static BOOL CALLBACK
+LoadFFmpeg(
+    _Inout_ PINIT_ONCE InitOnce,
+    _Inout_opt_ PVOID Parameter,
+    _Out_opt_ PVOID *Context)
+{
+    static PCWSTR const Libraries[] =
+    {
+        FFMPEG_RUNTIME_LIBRARY("avutil", LIBAVUTIL_VERSION_MAJOR),
+        FFMPEG_RUNTIME_LIBRARY("avcodec", LIBAVCODEC_VERSION_MAJOR),
+        FFMPEG_RUNTIME_LIBRARY("avformat", LIBAVFORMAT_VERSION_MAJOR),
+    };
+    static const FFMPEG_RUNTIME_IMPORT Imports[] =
+    {
+#define FFMPEG_IMPORT(name) { #name, (PVOID *)&p_##name },
+        WINEDMO_FFMPEG_IMPORTS(FFMPEG_IMPORT)
+#undef FFMPEG_IMPORT
+    };
+
+    UNREFERENCED_PARAMETER(InitOnce);
+    UNREFERENCED_PARAMETER(Parameter);
+    UNREFERENCED_PARAMETER(Context);
+
+    FFmpegLoaded = FFmpegRuntimeBind(Libraries, ARRAYSIZE(Libraries), Imports, ARRAYSIZE(Imports)) &&
+                   NT_SUCCESS(process_attach(NULL));
+    return TRUE;
+}
+
+BOOL winedmo_load_ffmpeg(VOID)
+{
+    InitOnceExecuteOnce(&FFmpegOnce, LoadFFmpeg, NULL, NULL);
+    return FFmpegLoaded;
 }

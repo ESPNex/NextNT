@@ -107,11 +107,7 @@ BOOL WINAPI DllMain( HINSTANCE instance, DWORD reason, void *reserved )
     if (reason == DLL_PROCESS_ATTACH)
     {
 #ifdef __REACTOS__
-        NTSTATUS status;
-
         DisableThreadLibraryCalls( instance );
-        status = UNIX_CALL( process_attach, NULL );
-        if (status) WARN( "Failed to init native backend, status %#lx\n", status );
 #else
         struct process_attach_params params =
         {

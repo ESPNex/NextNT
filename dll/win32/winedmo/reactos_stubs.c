@@ -23,3 +23,8 @@ DEFINE_BACKEND_STUB(demuxer_seek)
 DEFINE_BACKEND_STUB(demuxer_stream_lang)
 DEFINE_BACKEND_STUB(demuxer_stream_name)
 DEFINE_BACKEND_STUB(demuxer_stream_type)
+
+BOOL winedmo_load_ffmpeg(VOID)
+{
+    return FALSE;
+}

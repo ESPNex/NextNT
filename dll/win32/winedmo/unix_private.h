@@ -36,6 +36,9 @@ typedef struct AVRational AVRational;
 #endif /* HAVE_FFMPEG */
 
 #include "unixlib.h"
+#if defined(__REACTOS__) && defined(HAVE_FFMPEG)
+#include "ffmpeg_imports.h"
+#endif
 #include "wine/debug.h"
 
 /* unixlib.c */

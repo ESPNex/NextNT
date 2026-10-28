@@ -17,6 +17,8 @@
 #include <libavutil/mem.h>
 #include <libswresample/swresample.h>
 
+#include "ffmpeg_imports.h"
+
 #include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mfplat);

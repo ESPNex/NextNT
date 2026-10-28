@@ -19,5 +19,7 @@ extern NTSTATUS demuxer_stream_lang(void *params);
 extern NTSTATUS demuxer_stream_name(void *params);
 extern NTSTATUS demuxer_stream_type(void *params);
 
+extern BOOL winedmo_load_ffmpeg(VOID);
+
 #undef UNIX_CALL
-#define UNIX_CALL(func, params) func(params)
+#define UNIX_CALL(func, params) (winedmo_load_ffmpeg() ? func(params) : STATUS_NOT_SUPPORTED)

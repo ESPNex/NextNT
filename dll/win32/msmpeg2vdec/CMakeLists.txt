@@ -20,6 +20,7 @@ set(WINEGSTREAMER_DIR ${REACTOS_SOURCE_DIR}/dll/directx/wine/winegstreamer)
 list(APPEND SOURCE
     main.c
     ffmpeg.c
+    ffmpeg_runtime.c
     ${WINEGSTREAMER_DIR}/aac_decoder.c
     ${WINEGSTREAMER_DIR}/video_decoder.c
     ${WINEGSTREAMER_DIR}/wg_sample.c)
@@ -34,10 +35,7 @@ target_include_directories(msmpeg2vdec BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR
 target_include_directories(msmpeg2vdec PRIVATE "${FFMPEG_ROOT}/include")
 target_compile_definitions(msmpeg2vdec PRIVATE __WINESRC__)
 set_module_type(msmpeg2vdec win32dll)
-target_link_libraries(msmpeg2vdec strmbase mfuuid dmoguids strmiids wmcodecdspuuid uuid wine wine_dll_canunload wine_dll_register
-    "${FFMPEG_ROOT}/lib/libavcodec.dll.a"
-    "${FFMPEG_ROOT}/lib/libswresample.dll.a"
-    "${FFMPEG_ROOT}/lib/libavutil.dll.a")
+target_link_libraries(msmpeg2vdec strmbase mfuuid dmoguids strmiids wmcodecdspuuid uuid wine wine_dll_canunload wine_dll_register)
 add_importlibs(msmpeg2vdec mf mfplat ole32 oleaut32 user32 msvcrt kernel32 ntdll)
 add_dependencies(msmpeg2vdec wineheaders dxsdk ffmpeg)
 add_cd_file(TARGET msmpeg2vdec DESTINATION reactos/system32 FOR all)

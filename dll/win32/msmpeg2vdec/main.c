@@ -129,11 +129,19 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, void *reserved)
     return TRUE;
 }
 
+BOOL msmpeg2vdec_load_ffmpeg(VOID);
+
 HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **out)
 {
     TRACE("clsid %s, iid %s, out %p.\n", debugstr_guid(clsid), debugstr_guid(iid), out);
 
     *out = NULL;
+    if ((IsEqualGUID(clsid, &CLSID_MSH264DecoderMFT) || IsEqualGUID(clsid, &CLSID_MSAACDecMFT)) &&
+        !msmpeg2vdec_load_ffmpeg())
+    {
+        WARN("FFmpeg is not installed.\n");
+        return CLASS_E_CLASSNOTAVAILABLE;
+    }
     if (IsEqualGUID(clsid, &CLSID_MSH264DecoderMFT))
         return IClassFactory_QueryInterface(&h264_decoder_factory.IClassFactory_iface, iid, out);
     if (IsEqualGUID(clsid, &CLSID_MSAACDecMFT))
