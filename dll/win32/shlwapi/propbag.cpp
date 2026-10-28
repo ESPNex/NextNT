@@ -169,9 +169,10 @@ CMemPropertyBag::Read(
 
     TRACE("%p: %s %p %p\n", this, debugstr_w(pszPropName), pvari, pErrorLog);
 
-    VARTYPE vt = V_VT(pvari);
+    VARTYPE vt = pvari ? V_VT(pvari) : VT_EMPTY;
 
-    ::VariantInit(pvari);
+    if (pvari)
+        ::VariantInit(pvari);
 
     if (GetProcessOsVersion() < _WIN32_WINNT_VISTA)
     {
