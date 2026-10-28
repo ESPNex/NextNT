@@ -2006,6 +2006,10 @@ static HRESULT EnumCodePage_create( MLang_impl* mlang, DWORD grfFlags,
         grfFlags = MIMECONTF_MIME_LATEST;
 
     ecp = malloc(sizeof(EnumCodePage_impl));
+#ifdef __REACTOS__
+    if (!ecp)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     ecp->IEnumCodePage_iface.lpVtbl = &IEnumCodePage_vtbl;
     ecp->ref = 1;
     ecp->pos = 0;
@@ -2182,6 +2186,10 @@ static HRESULT EnumScript_create( MLang_impl* mlang, DWORD dwFlags,
         dwFlags = SCRIPTCONTF_SCRIPT_USER | SCRIPTCONTF_SCRIPT_HIDE | SCRIPTCONTF_SCRIPT_SYSTEM;
 
     es = malloc(sizeof(EnumScript_impl));
+#ifdef __REACTOS__
+    if (!es)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     es->IEnumScript_iface.lpVtbl = &IEnumScript_vtbl;
     es->ref = 1;
     es->pos = 0;
@@ -4366,6 +4374,10 @@ static HRESULT MultiLanguage_create(IUnknown *pUnkOuter, LPVOID *ppObj)
         return CLASS_E_NOAGGREGATION;
 
     mlang = malloc(sizeof(MLang_impl));
+#ifdef __REACTOS__
+    if (!mlang)
+        RaiseException(STATUS_NO_MEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
     mlang->IMLangFontLink_iface.lpVtbl = &IMLangFontLink_vtbl;
     mlang->IMultiLanguage_iface.lpVtbl = &IMultiLanguage_vtbl;
     mlang->IMultiLanguage3_iface.lpVtbl = &IMultiLanguage3_vtbl;
