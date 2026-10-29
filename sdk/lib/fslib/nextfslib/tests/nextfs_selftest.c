@@ -1473,6 +1473,149 @@ int main(void)
         }
     }
 
+    printf("[27] security descriptors: deduplicated blobs, validated, persisted\n");
+    if (Volume)
+    {
+        nfs_u8 Descriptor[20];
+        nfs_u8 Other[20];
+        nfs_u8 ReadBack[64];
+        nfs_u32 Length = 0;
+        nfs_u16 FileA[NFS_NAME_MAX], FileB[NFS_NAME_MAX], SecDir[NFS_NAME_MAX];
+        nfs_u32 LenA = Name("acl-a.bin", FileA);
+        nfs_u32 LenB = Name("acl-b.bin", FileB);
+        nfs_u32 LenDir = Name(".security", SecDir);
+        nfs_fileid IdA = 0, IdB = 0;
+        NFS_PIFT_RECORD DirRecord;
+
+        /* A minimal self-relative descriptor: revision 1, self-relative, no
+           owner/group/SACL/DACL offsets. 20 bytes is the whole header. */
+        memset(Descriptor, 0, sizeof(Descriptor));
+        Descriptor[0] = 1;                 /* revision  */
+        Descriptor[2] = 0x00;              /* control   */
+        Descriptor[3] = 0x80;              /* SE_SELF_RELATIVE */
+        memcpy(Other, Descriptor, sizeof(Other));
+        Other[3] = 0x90;                   /* a different control word */
+
+        CHECK(NfsCreate(Volume, NFS_ROOT_ID, FileA, LenA, 0, &IdA) == NFS_OK,
+              "create the first file for the ACL test");
+        CHECK(NfsCreate(Volume, NFS_ROOT_ID, FileB, LenB, 0, &IdB) == NFS_OK,
+              "create the second one");
+
+        /* Nothing set yet. */
+        Length = 0;
+        CHECK(NfsSecurityQuery(Volume, IdA, NULL, 0, &Length) == NFS_ENOENT,
+              "a file with no descriptor says so");
+
+        /* Ask for the length first, the way a caller sizes its buffer. */
+        CHECK(NfsSecuritySet(Volume, IdA, Descriptor, sizeof(Descriptor)) == NFS_OK,
+              "set a descriptor on the first file");
+        Length = 0;
+        CHECK(NfsSecurityQuery(Volume, IdA, NULL, 0, &Length) == NFS_ENOSPC &&
+              Length == sizeof(Descriptor),
+              "querying with no buffer reports the length");
+        CHECK(NfsSecurityQuery(Volume, IdA, ReadBack, 8, &Length) == NFS_ENOSPC,
+              "a buffer that is too small is refused, not filled halfway");
+        memset(ReadBack, 0, sizeof(ReadBack));
+        Length = 0;
+        CHECK(NfsSecurityQuery(Volume, IdA, ReadBack, sizeof(ReadBack), &Length) == NFS_OK &&
+              Length == sizeof(Descriptor) &&
+              memcmp(ReadBack, Descriptor, sizeof(Descriptor)) == 0,
+              "and the descriptor comes back byte for byte");
+
+        /* Deduplication: the same ACL on a second file must not make a second blob. */
+        CHECK(NfsSecuritySet(Volume, IdB, Descriptor, sizeof(Descriptor)) == NFS_OK,
+              "the same descriptor on the second file");
+
+        if (NfsLookup(Volume, NFS_ROOT_ID, SecDir, LenDir, &DirRecord) == NFS_OK)
+        {
+            nfs_u32 Cookie = 0, Blobs = 0;
+            NFS_PIFT_RECORD Entry;
+
+            while (NfsEnumerate(Volume, DirRecord.FileId, &Cookie, "@sd-*", &Entry) == NFS_OK)
+                Blobs++;
+            CHECK(Blobs == 1, "two files with the same ACL share one blob");
+
+            CHECK(NfsSecuritySet(Volume, IdB, Other, sizeof(Other)) == NFS_OK,
+                  "give the second file a different descriptor");
+            Cookie = 0;
+            Blobs = 0;
+            while (NfsEnumerate(Volume, DirRecord.FileId, &Cookie, "@sd-*", &Entry) == NFS_OK)
+                Blobs++;
+            CHECK(Blobs == 2, "a different ACL is a second blob");
+        }
+        else
+        {
+            CHECK(0, "the .security directory exists");
+        }
+
+        /* Validation: a descriptor that would make the next reader walk off the
+           end of the buffer has to be refused before it is stored. */
+        {
+            nfs_u8 Bad[20];
+
+            memcpy(Bad, Descriptor, sizeof(Bad));
+            Bad[0] = 2;                    /* wrong revision */
+            CHECK(NfsSecuritySet(Volume, IdA, Bad, sizeof(Bad)) == NFS_EINVAL,
+                  "a descriptor with the wrong revision is refused");
+
+            memcpy(Bad, Descriptor, sizeof(Bad));
+            Bad[3] = 0x00;                 /* not self-relative */
+            CHECK(NfsSecuritySet(Volume, IdA, Bad, sizeof(Bad)) == NFS_EINVAL,
+                  "an absolute descriptor is refused");
+
+            memcpy(Bad, Descriptor, sizeof(Bad));
+            Bad[4] = 0xFF;                 /* owner offset past the blob */
+            CHECK(NfsSecuritySet(Volume, IdA, Bad, sizeof(Bad)) == NFS_EINVAL,
+                  "a descriptor whose owner offset is outside the blob is refused");
+
+            CHECK(NfsSecuritySet(Volume, IdA, Bad, 8) == NFS_EINVAL,
+                  "eight bytes is not a descriptor");
+        }
+
+        /* The descriptor is per file, and it survives a remount: it is in the
+           record, and the blob is a file like any other. */
+        CHECK(NfsSecurityQuery(Volume, IdA, ReadBack, sizeof(ReadBack), &Length) == NFS_OK &&
+              memcmp(ReadBack, Descriptor, sizeof(Descriptor)) == 0,
+              "the first file still has its descriptor after four rejected sets");
+
+        NfsUnmount(Volume);
+        Volume = NULL;
+        CHECK(NfsMount(&Block, &Volume) == NFS_OK, "remount for the security test");
+        if (Volume)
+        {
+            CHECK(NfsSecurityQuery(Volume, IdA, ReadBack, sizeof(ReadBack), &Length) == NFS_OK &&
+                  memcmp(ReadBack, Descriptor, sizeof(Descriptor)) == 0,
+                  "the descriptor is still there after a remount");
+            CHECK(NfsSecurityQuery(Volume, IdB, ReadBack, sizeof(ReadBack), &Length) == NFS_OK &&
+                  memcmp(ReadBack, Other, sizeof(Other)) == 0,
+                  "and the second file has its own");
+
+            /* Dropping the descriptor takes the blob with it, but only the blob
+               nobody else points at. */
+            CHECK(NfsSecuritySet(Volume, IdB, NULL, 0) == NFS_OK,
+                  "removing the descriptor from the second file");
+            Length = 0;
+            CHECK(NfsSecurityQuery(Volume, IdB, NULL, 0, &Length) == NFS_ENOENT,
+                  "which now has none");
+            CHECK(NfsSecurityQuery(Volume, IdA, ReadBack, sizeof(ReadBack), &Length) == NFS_OK,
+                  "while the first file keeps its own");
+
+            /* Deleting every file that used a descriptor collects it. */
+            CHECK(NfsRemove(Volume, IdA) == NFS_OK, "delete the first file");
+            CHECK(NfsRemove(Volume, IdB) == NFS_OK, "delete the second file");
+            CHECK(NfsSecurityGc(Volume) == NFS_OK, "collect the orphaned blobs");
+
+            {
+                nfs_u16 SecName[NFS_NAME_MAX];
+                nfs_u32 SecLen = Name(".security", SecName);
+                NFS_PIFT_RECORD Dir;
+
+                CHECK(NfsLookup(Volume, NFS_ROOT_ID, SecName, SecLen, &Dir) == NFS_ENOENT,
+                      "and the .security directory goes with them, because it is empty");
+            }
+        }
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

@@ -13,6 +13,7 @@ list(APPEND SOURCE
     nextfs_finfo.c
     nextfs_dirctl.c
     nextfs_volinfo.c
+    nextfs_security.c
     nextfs.h)
 
 add_library(nextfs MODULE ${SOURCE})

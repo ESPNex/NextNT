@@ -1,4 +1,4 @@
-# NextFS — design (v0.11, branch `nextfs`)
+# NextFS — design (v0.12, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -295,9 +295,8 @@ PIFT record.
 
 ## 5. Open questions (to settle before phase 12)
 
-1. **Security descriptors**: store inline in the record (simple, fat) or in a
-   deduplicated blob store (smaller, slower)? Leaning to a deduplicated store keyed by
-   CRC, like `$Secure` but without the index.
+1. ~~**Security descriptors**~~ — **decided in phase 12**: a deduplicated blob store
+   keyed by CRC32C, like `$Secure` but without the index. See §8.
 2. **Compression/encryption**: NTFS does it in the FSD above the `$DATA` attribute.
    NextFS can do it per-extent with a flag, but the cache manager path must not see
    compressed bytes. Deferred.
@@ -310,7 +309,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.11, branch `nextfs`)
+## 6. Implementation status (v0.12, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -331,8 +330,10 @@ Done and tested in this phase:
 | FSD: information classes | `drivers/filesystems/nextfs/nextfs_finfo.c` | basic/standard/network/all/stream/name, rename, EOF, disposition |
 | FSD: directory control | `drivers/filesystems/nextfs/nextfs_dirctl.c` | six directory classes over `NfsEnumerate` |
 | FSD: volume information + FSCTL | `drivers/filesystems/nextfs/nextfs_volinfo.c` | size/label/attributes, dirty, sparse, retrieval pointers |
+| security descriptor store | `nextfslib/nextfs_security.c` | dedup by CRC, strict self-relative validation, remount, garbage collection, empty `.security` removed |
+| FSD: query/set security | `drivers/filesystems/nextfs/nextfs_security.c` | length probe, user-memory probe under SEH, trimming, volume default |
 
-`nextfslib/tests/nextfs_selftest.c` runs 333 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 360 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
@@ -560,13 +561,15 @@ Landed in phase 3 (`nextfslib`):
 
 Still open, in order of importance:
 
-1. **Kernel I/O paths** (`IRP_MJ_CREATE/READ/WRITE/DIRECTORY_CONTROL`, cache
-   manager callbacks). Until they exist, `nextfslib` is not in
-   `sdk/lib/fslib/CMakeLists.txt` and `nextfs.sys` is not in
-   `drivers/filesystems/CMakeLists.txt`: NTFS stays the boot file system.
-2. **Security descriptors, compression, encryption, quotas**: not implemented.
-   Names are compared with a folded table compiled in (`$UpCase` equivalent);
-   ACLs will land in the PIFT record tail as a deduplicated blob.
+1. **The boot switch**. Every IRP path a running system needs exists and is
+   dispatched (create, read, write, flush, the information classes, directory
+   control, volume information, FSCTL, locks, query/set security). What is still
+   missing is the other half of the road: `nextldr` reading a NextFS boot volume,
+   and a formatted, installed image. Until then NTFS stays the boot file system.
+2. **Compression, encryption, quotas**: not implemented. Compression is per-extent
+   with a flag (§5, item 2); quotas need a per-owner record the PIFT does not have yet.
+3. **Encryption and the cache manager**: if a volume is ever encrypted below the
+   FSD, §7 changes, because the pages `Cc` would see must be plaintext.
 
 ---
 
@@ -599,3 +602,76 @@ SYNCHRONIZATION`, `MemoryMappedSection` write-back) do need `Cc` or an explicit
 front of `NEXTFS_FILE` and a `CACHE_MANAGER_CALLBACKS` pair is registered on the
 volume resource -- the hooks are already the only thing missing, which is why the
 acquire/release functions exist here and do nothing yet.
+
+---
+
+## 8. Security descriptors: a blob store, not an index
+
+Every NTFS file's descriptor lives in `$STANDARD_INFORMATION` and the bytes live in
+`$Secure`, a named stream keyed by a hash, with two global indexes (`$SII`,
+`$SDS`) and a per-entry reference count. The reference count is the weak point: a
+crash between "the record now points at descriptor 4711" and "4711's count went
+from 3 to 4" leaves either a leaked descriptor or a freed one that a file still
+names, and repairing it needs a filesystem check.
+
+NextFS inverts it. The descriptor is a **file**, named after its own CRC32C:
+
+```
+PIFT record { ..., SecurityId = CRC32C(descriptor), SecurityLength }
+      |
+      +--> \.security\@sd-1a2b3c4d      (content = the self-relative descriptor)
+```
+
+* **Deduplication needs no index.** Two files with the same ACL compute the same
+  CRC, so they look up the same name and find the same file. A second `SetSecurity`
+  with an identical descriptor writes nothing at all. The name *is* the key.
+* **No reference count.** "Is anyone using this blob?" is a scan of the RAM PIFT,
+  which is already in memory -- a linear pass over an array of records, not a disk
+  read. `NfsSecurityGc` removes every blob no live record names, one per pass, each
+  pass re-enumerating (deleting an entry shifts the enumeration, and a stale cookie
+  is how a garbage collector becomes a data destroyer). When the last blob goes,
+  `\.security` goes with it, so a volume with no ACLs looks like a volume that
+  never had any.
+* **The blob is snapshotted like any file.** It is written through the ordinary
+  copy-on-write data path, so a snapshot taken between two `SetSecurity` calls sees
+  the ACL its generation had, with no special case in the snapshot code.
+* **Zero means "the volume default".** A record with `SecurityId == 0` has no
+  descriptor of its own. The FSD answers `IRP_MJ_QUERY_SECURITY` with the default
+  descriptor built into `nextfs_security.c` (owner Administrators, group Everyone,
+  a DACL granting Everyone `FILE_ALL_ACCESS`) -- the behaviour a FAT volume has,
+  which is what an installer or a recovery tool expects from a filesystem that has
+  never been given an ACL.
+* **Validation happens before storage, not on read.** A descriptor must be revision
+  1, `SE_SELF_RELATIVE`, at most 64 KiB, and every offset must point inside the
+  blob. An absolute descriptor names kernel addresses, so it is refused: the
+  conversion NT does on the way in is `nextfs_security.c`'s job, and until the
+  driver has it, `STATUS_INVALID_PARAMETER` is the honest answer. `SECURITY_MAX` is
+  a limit on the blob, not on the ACL inside it.
+
+### 8.1 The IRP path
+
+`IRP_MJ_QUERY_SECURITY` and `IRP_MJ_SET_SECURITY` are METHOD_NEITHER: the buffer is
+a user address, valid only for the duration of the call and only while it does not
+fault. So the driver never holds that pointer across a call into the library.
+
+| IRP | What the driver does |
+|---|---|
+| `QUERY_SECURITY` | asks the library for the length (no buffer), allocates that much pool, asks again, trims the descriptor to the `SecurityInformation` bits the caller asked for, and copies it out under `ProbeForWrite` inside `_SEH2_TRY` |
+| `SET_SECURITY` | walks the descriptor's own offsets under one exception frame to measure it, copies it into pool with `ProbeForRead`, then hands the copy to the library |
+| `SET_SECURITY` with no descriptor | removes it: the file goes back to the volume default |
+
+Two limits are deliberate, and both are the next thing to fix rather than
+oversights:
+
+1. **Trimming instead of rebuilding.** A query for `OWNER_SECURITY_INFORMATION`
+   returns a self-relative descriptor whose owner is present and whose DACL offset
+   is zeroed with `SE_DACL_PRESENT` cleared, rather than a descriptor rebuilt from
+   parts. The result is a valid descriptor, and it is smaller to write than the
+   `SeQuerySecurityDescriptorInfo` dance -- but the day a caller asks for a
+   descriptor *combination* rather than a filter, this becomes a rebuild.
+2. **A coarse write check.** `FILE_OBJECT` carries `WriteAccess`/`DeleteAccess`, not
+   the mask the create asked for, so `SET_SECURITY` requires the handle to be able
+   to write at all. That is deny-by-default but it is not the real rule: the real
+   rule is `SeAccessCheck` with `WRITE_DAC`/`WRITE_OWNER` against the file's stored
+   descriptor and the requestor's access state, and it is the one thing in this
+   phase that a security review would send back.

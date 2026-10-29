@@ -136,6 +136,8 @@ NTSTATUS NTAPI NextFsWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS NTAPI NextFsFlushBuffers(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS NTAPI NextFsQueryInformation(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS NTAPI NextFsSetInformation(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+NTSTATUS NTAPI NextFsQuerySecurity(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+NTSTATUS NTAPI NextFsSetSecurity(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS NTAPI NextFsQueryEa(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS NTAPI NextFsSetEa(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS NTAPI NextFsDirectoryControl(PDEVICE_OBJECT DeviceObject, PIRP Irp);

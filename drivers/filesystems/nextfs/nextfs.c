@@ -818,6 +818,8 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
     DriverObject->MajorFunction[IRP_MJ_FILE_SYSTEM_CONTROL]    = NextFsFileSystemControl;
     DriverObject->MajorFunction[IRP_MJ_SHUTDOWN]               = NextFsShutdown;
     DriverObject->MajorFunction[IRP_MJ_LOCK_CONTROL]           = NextFsLockControl;
+    DriverObject->MajorFunction[IRP_MJ_QUERY_SECURITY]         = NextFsQuerySecurity;
+    DriverObject->MajorFunction[IRP_MJ_SET_SECURITY]           = NextFsSetSecurity;
 
     /* Fast I/O answers the metadata calls without an IRP round trip; file data
        stays on the IRP path, the reason is at the top of nextfs_lock.c. */

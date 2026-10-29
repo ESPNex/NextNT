@@ -30,7 +30,7 @@ typedef nfs_u64 nfs_seq;
 
 #define NFS_SUPER_MAGIC        "NFSB"
 #define NFS_SUPER_SIZE         1024u
-#define NFS_FORMAT_VERSION     3u
+#define NFS_FORMAT_VERSION     4u   /* 4: security descriptors in the record */
 #define NFS_BOOT_OEM           "NEXTFS  "
 #define NFS_NODE_MAGIC         "NFBT"
 #define NFS_FRAME_MAGIC        "NFJN"
@@ -43,6 +43,8 @@ typedef nfs_u64 nfs_seq;
 
 #define NFS_NAME_MAX           255u
 #define NFS_EXTENT_MAX         64u
+#define NFS_SECURITY_MAX       65536u   /* largest descriptor blob         */
+#define NFS_SECURITY_DIR       ".security"
 #define NFS_LABEL_MAX          64u
 
 /* Root directory is fileid 1; 0 is never a valid fileid. */
@@ -183,8 +185,11 @@ typedef struct _NFS_PIFT_BODY
     nfs_u64 Ctime, Mtime, Atime, Btime;
     nfs_u64 SnapshotRoot;  /* snapshot records: the pinned tree root    */
     nfs_u64 SnapshotGeneration;
+    nfs_u64 SecurityId;    /* CRC32C of the descriptor blob, 0 = none    */
+    nfs_u32 SecurityLength;/* length of that blob                        */
     nfs_u32 NameLen;       /* UTF-16 code units                         */
     nfs_u32 ExtentCount;
+    nfs_u32 Reserved0;
 } NFS_PIFT_BODY, *PNFS_PIFT_BODY;
 
 #pragma pack(pop)
@@ -207,6 +212,8 @@ typedef struct _NFS_PIFT_RECORD
     nfs_u64    Ctime, Mtime, Atime, Btime;
     nfs_u64    SnapshotRoot;         /* only for NFS_FLAG_SNAPSHOT records */
     nfs_u64    SnapshotGeneration;
+    nfs_u64    SecurityId;           /* CRC32C of the descriptor blob, 0 = none */
+    nfs_u32    SecurityLength;       /* length of that blob, bytes          */
     nfs_u32    NameLen;
     nfs_u16    Name[NFS_NAME_MAX];
     nfs_u32    ExtentCount;
@@ -402,6 +409,17 @@ int NfsDirectoryIsEmpty(PNFS_VOLUME Volume, nfs_fileid Directory);
 /* Everything the information classes ask for, in one call. */
 int NfsQueryStandardInfo(PNFS_VOLUME Volume, nfs_fileid FileId,
                          NFS_STANDARD_INFORMATION *OutInfo);
+
+/* Security descriptors: deduplicated blobs in \\.security, no index. SecurityId
+   is the CRC32C of the descriptor, so two files with the same ACL share a blob by
+   construction. Query with a NULL buffer to learn the length (NFS_ENOSPC).
+   A file with SecurityId 0 has no descriptor: the FSD supplies the default. */
+int NfsSecurityQuery(PNFS_VOLUME Volume, nfs_fileid FileId, void *Buffer,
+                     nfs_u32 Capacity, nfs_u32 *Length);
+int NfsSecuritySet(PNFS_VOLUME Volume, nfs_fileid FileId, const void *Blob,
+                   nfs_u32 Length);
+/* Drop blobs nobody references any more; returns NFS_OK when there is nothing to do. */
+int NfsSecurityGc(PNFS_VOLUME Volume);
 
 /* Attributes and timestamps. */
 int NfsSetFileInfo(PNFS_VOLUME Volume, nfs_fileid FileId,

@@ -13,6 +13,7 @@ list(APPEND SOURCE
     nextfs_journal.c
     nextfs_tree.c
     nextfs_snapshot.c
+    nextfs_security.c
     nextfs_namespace.c
     nextfs_handle.c
     nextfs_volume.c
