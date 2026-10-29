@@ -529,3 +529,153 @@ NfsQueryVolumeInfo(PNFS_VOLUME Volume, NFS_VOLUME_INFO *OutInfo)
     memcpy(OutInfo->Uuid, Volume->Super.VolumeUuid, 16);
     return NFS_OK;
 }
+
+/* ------------------------------------------------------------------ */
+/* Enumeration with NT wildcards (IRP_MJ_DIRECTORY_CONTROL)            */
+/* ------------------------------------------------------------------ */
+
+static nfs_u16
+NfsFold(nfs_u16 Unit)
+{
+    if (Unit >= 'A' && Unit <= 'Z')
+        return (nfs_u16)(Unit - 'A' + 'a');
+    return Unit;
+}
+
+static int
+NfsMatchHere(const nfs_u16 *Name, nfs_u32 NameLength, const char *Pattern,
+             nfs_u32 PatternLength)
+{
+    nfs_u32 n = 0, p = 0, StarPattern = 0, StarName = 0;
+
+    /* Iterative wildcard match with a single backtrack point: "*" is greedy but
+       remembers where it was, so "a*b*c" works without recursion. */
+    while (n < NameLength)
+    {
+        if (p < PatternLength && Pattern[p] == '*')
+        {
+            StarPattern = ++p;
+            StarName = n;
+            continue;
+        }
+
+        if (p < PatternLength &&
+            (nfs_u16)(unsigned char)Pattern[p] == NfsFold(Name[n]))
+        {
+            p++;
+            n++;
+            continue;
+        }
+
+        if (p < PatternLength && Pattern[p] == '?')
+        {
+            p++;
+            n++;
+            continue;
+        }
+
+        if (StarPattern)
+        {
+            p = StarPattern;
+            n = ++StarName;
+            continue;
+        }
+
+        return 0;
+    }
+
+    while (p < PatternLength && Pattern[p] == '*')
+        p++;
+
+    return p == PatternLength;
+}
+
+int
+NfsMatchPattern(const nfs_u16 *Name, nfs_u32 NameLength, const char *Pattern)
+{
+    nfs_u32 PatternLength;
+
+    if (!Name || !Pattern)
+        return 0;
+
+    PatternLength = (nfs_u32)strlen(Pattern);
+
+    /* NT keeps the DOS rule: "*.*" also matches names without an extension. */
+    if (PatternLength == 3 && Pattern[0] == '*' && Pattern[1] == '.' && Pattern[2] == '*')
+        return 1;
+
+    return NfsMatchHere(Name, NameLength, Pattern, PatternLength);
+}
+
+int
+NfsEnumerate(PNFS_VOLUME Volume, nfs_fileid Directory, nfs_u32 *Cookie,
+             const char *Pattern, NFS_PIFT_RECORD *OutRecord)
+{
+    nfs_u32 Index;
+
+    if (!Volume || !Cookie || !OutRecord)
+        return NFS_EINVAL;
+
+    for (Index = *Cookie;; Index++)
+    {
+        NFS_PIFT_RECORD *Record = NfsChildrenAt(Volume, Directory, Index);
+
+        if (!Record)
+            return NFS_ENOENT;      /* end of the directory */
+
+        if (Record->Flags & NFS_FLAG_DELETED)
+            continue;
+        if (Pattern && !NfsMatchPattern(Record->Name, Record->NameLen, Pattern))
+            continue;
+
+        *OutRecord = *Record;
+        *Cookie = Index + 1;
+        return NFS_OK;
+    }
+}
+
+int
+NfsDirectoryIsEmpty(PNFS_VOLUME Volume, nfs_fileid Directory)
+{
+    nfs_u32 Index;
+
+    if (!Volume)
+        return NFS_EINVAL;
+
+    for (Index = 0;; Index++)
+    {
+        NFS_PIFT_RECORD *Record = NfsChildrenAt(Volume, Directory, Index);
+
+        if (!Record)
+            return 1;
+        if (Record->Flags & NFS_FLAG_DELETED)
+            continue;
+        return 0;
+    }
+}
+
+int
+NfsQueryStandardInfo(PNFS_VOLUME Volume, nfs_fileid FileId,
+                     NFS_STANDARD_INFORMATION *OutInfo)
+{
+    NFS_PIFT_RECORD *Record;
+
+    if (!Volume || !OutInfo)
+        return NFS_EINVAL;
+
+    Record = NfsIndexGet(Volume, FileId);
+    if (!Record || (Record->Flags & NFS_FLAG_DELETED))
+        return NFS_ENOENT;
+
+    memset(OutInfo, 0, sizeof(*OutInfo));
+    OutInfo->CreationTime = Record->Btime;
+    OutInfo->LastAccessTime = Record->Atime;
+    OutInfo->LastWriteTime = Record->Mtime;
+    OutInfo->ChangeTime = Record->Ctime;
+    OutInfo->AllocationSize = Record->AllocSize;
+    OutInfo->EndOfFile = Record->Size;
+    OutInfo->Attributes = Record->Attributes;
+    OutInfo->NumberOfLinks = 1;
+    OutInfo->Directory = (Record->Flags & NFS_FLAG_DIR) ? 1 : 0;
+    return NFS_OK;
+}

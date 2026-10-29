@@ -287,6 +287,23 @@ typedef struct _NFS_HANDLE
 #define NFS_HANDLE_WRITE      0x00000002u
 #define NFS_HANDLE_DIRECTORY  0x00000004u
 #define NFS_HANDLE_CREATED    0x00000008u
+#define NFS_HANDLE_DELETE_ON_CLOSE 0x00000010u
+
+/* What FileBasicInformation + FileStandardInformation + FileAllInformation need
+   for one file, in one call. */
+typedef struct _NFS_STANDARD_INFORMATION
+{
+    nfs_u64 CreationTime;
+    nfs_u64 LastAccessTime;
+    nfs_u64 LastWriteTime;
+    nfs_u64 ChangeTime;
+    nfs_u64 AllocationSize;
+    nfs_u64 EndOfFile;
+    nfs_u32 Attributes;
+    nfs_u32 NumberOfLinks;      /* NextFS has no hard links yet: always 1 */
+    nfs_u32 Directory;
+    nfs_u32 DeletePending;
+} NFS_STANDARD_INFORMATION, *PNFS_STANDARD_INFORMATION;
 
 /* What the FSD shows for a volume. */
 typedef struct _NFS_VOLUME_INFO
@@ -369,7 +386,22 @@ int  NfsHandleQuery(PNFS_VOLUME Volume, nfs_u32 Handle, NFS_PIFT_RECORD *OutReco
 int  NfsHandleReadDir(PNFS_VOLUME Volume, nfs_u32 Handle, nfs_u32 Index,
                       NFS_PIFT_RECORD *OutRecord);
 int  NfsHandleSetEndOfFile(PNFS_VOLUME Volume, nfs_u32 Handle, nfs_u64 Size);
+/* Delete-on-close: the file goes when the last handle closes, which is how NT
+   implements IRP_MJ_SET_INFORMATION/FileDispositionInformation. */
+int  NfsHandleSetDeleteOnClose(PNFS_VOLUME Volume, nfs_u32 Handle, int DeleteOnClose);
 int  NfsHandleClose(PNFS_VOLUME Volume, nfs_u32 Handle);
+
+/* NT wildcard match ("*" and "?", case-insensitive; "*.*" also matches a name
+   without a dot, which is the DOS-compatible rule NT keeps). */
+int NfsMatchPattern(const nfs_u16 *Name, nfs_u32 NameLength, const char *Pattern);
+/* Enumerate a directory with a pattern; Cookie is the resume index (0 to start). */
+int NfsEnumerate(PNFS_VOLUME Volume, nfs_fileid Directory, nfs_u32 *Cookie,
+                 const char *Pattern, NFS_PIFT_RECORD *OutRecord);
+/* A directory with no live children. */
+int NfsDirectoryIsEmpty(PNFS_VOLUME Volume, nfs_fileid Directory);
+/* Everything the information classes ask for, in one call. */
+int NfsQueryStandardInfo(PNFS_VOLUME Volume, nfs_fileid FileId,
+                         NFS_STANDARD_INFORMATION *OutInfo);
 
 /* Attributes and timestamps. */
 int NfsSetFileInfo(PNFS_VOLUME Volume, nfs_fileid FileId,

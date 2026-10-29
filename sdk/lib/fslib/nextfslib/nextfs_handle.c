@@ -215,13 +215,47 @@ NfsHandleSetEndOfFile(PNFS_VOLUME Volume, nfs_u32 Handle, nfs_u64 Size)
 }
 
 int
-NfsHandleClose(PNFS_VOLUME Volume, nfs_u32 Handle)
+NfsHandleSetDeleteOnClose(PNFS_VOLUME Volume, nfs_u32 Handle, int DeleteOnClose)
 {
     PNFS_HANDLE Entry = NfsHandleAt(Volume, Handle);
 
     if (!Entry)
         return NFS_EINVAL;
 
-    memset(Entry, 0, sizeof(*Entry));
+    if (DeleteOnClose)
+        Entry->Flags |= NFS_HANDLE_DELETE_ON_CLOSE;
+    else
+        Entry->Flags &= ~NFS_HANDLE_DELETE_ON_CLOSE;
     return NFS_OK;
+}
+
+int
+NfsHandleClose(PNFS_VOLUME Volume, nfs_u32 Handle)
+{
+    PNFS_HANDLE Entry = NfsHandleAt(Volume, Handle);
+    nfs_fileid FileId;
+    int Delete = 0;
+
+    if (!Entry)
+        return NFS_EINVAL;
+
+    FileId = Entry->FileId;
+    Delete = (Entry->Flags & NFS_HANDLE_DELETE_ON_CLOSE) != 0;
+    memset(Entry, 0, sizeof(*Entry));
+
+    if (!Delete || FileId == NFS_ROOT_ID)
+        return NFS_OK;
+
+    /* Delete-on-close: the file goes with the last handle. A directory must be
+       empty first, exactly like a real delete. */
+    {
+        NFS_PIFT_RECORD *Record = NfsIndexGet(Volume, FileId);
+
+        if (!Record || (Record->Flags & NFS_FLAG_DELETED))
+            return NFS_OK;
+        if ((Record->Flags & NFS_FLAG_DIR) && !NfsDirectoryIsEmpty(Volume, FileId))
+            return NFS_EINVAL;
+    }
+
+    return NfsRemove(Volume, FileId);
 }

@@ -1,4 +1,4 @@
-# NextFS — design (v0.7, branch `nextfs`)
+# NextFS — design (v0.8, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -13,8 +13,8 @@ This document is the contract between four components that must agree byte for b
 | `nextformat` | `sdk/lib/fslib/nextfslib/tools/` | mkfs |
 | boot chain | `boot/nextldr/nextldr/lib/fs/nextfs.c` (later phase) | must read a NextFS volume to boot |
 
-Status: **phase 7**. `nextfslib` implements the format as described here and is
-self-tested (237 checks); `nextfs.sys` is still a mount-capable skeleton (volume
+Status: **phase 8**. `nextfslib` implements the format as described here and is
+self-tested (267 checks); `nextfs.sys` is still a mount-capable skeleton (volume
 open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`).
 
 ---
@@ -288,7 +288,7 @@ PIFT record.
 
 ---
 
-## 5. Open questions (to settle before phase 8)
+## 5. Open questions (to settle before phase 9)
 
 1. **Security descriptors**: store inline in the record (simple, fat) or in a
    deduplicated blob store (smaller, slower)? Leaning to a deduplicated store keyed by
@@ -305,7 +305,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.7, branch `nextfs`)
+## 6. Implementation status (v0.8, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -322,7 +322,7 @@ Done and tested in this phase:
 | two-generation roots + PIFT halves | `nextfslib/nextfs_volume.c` | 6 checkpoints with zero cluster drift; corrupt live root ⇒ fallback mount |
 | driver skeleton | `drivers/filesystems/nextfs/nextfs.c` | not compiled yet (needs the RosBE build) |
 
-`nextfslib/tests/nextfs_selftest.c` runs 237 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 267 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
@@ -340,7 +340,8 @@ only when the snapshot that pinned it is dropped. Group [21] covers rename, move
 replacement, cycle refusal, attributes and both restore paths (overwritten file,
 deleted file). Group [22] covers path resolution and every disposition. Group
 [23] covers handles: position tracking, clamps, access modes and the closed-handle
-refusal.
+refusal. Group [24] covers wildcards, enumeration cookies, the information query
+and delete-on-close (including the refused non-empty directory).
 
 Landed in phase 2 (`nextfslib`):
 
@@ -357,6 +358,21 @@ Landed in phase 2 (`nextfslib`):
   `NfsReadDir` and updated transactionally. No disk read is involved in a lookup.
 * **Checkpoints scale**: the chain now holds up to 4096 nodes and the self-test
   exercises 300 files across several nodes, including remount.
+
+Landed in phase 8 (`nextfslib`, `nextfs_namespace.c` + `nextfs_handle.c`):
+
+* **NT wildcards** (`NfsMatchPattern`): `*` and `?`, case-insensitive, with the
+  single-backtrack match so `a*b*c` works without recursion, plus the DOS rule NT
+  keeps — `*.*` also matches a name with no extension.
+* **Enumerations with a cookie** (`NfsEnumerate`): `IRP_MJ_DIRECTORY_CONTROL` asks
+  for one entry at a time and resumes from an index; the cookie is the position in
+  the directory's child set, and the pattern is applied as a filter.
+* **`NfsQueryStandardInfo`**: creation/access/write/change times, allocation size,
+  end of file, attributes, link count and the directory flag — one call for
+  `FileBasicInformation`, `FileStandardInformation` and `FileAllInformation`.
+* **Delete-on-close** (`NfsHandleSetDeleteOnClose` + close): the file goes when the
+  last handle closes, which is how `FileDispositionInformation` is implemented; a
+  directory that still has children refuses instead of leaking them.
 
 Landed in phase 7 (`nextfslib`, `nextfs_handle.c`):
 

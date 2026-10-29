@@ -1183,6 +1183,114 @@ int main(void)
               "a closed handle cannot be queried");
     }
 
+    printf("[24] wildcards, enumeration cookies, information, delete-on-close\n");
+    if (Volume)
+    {
+        nfs_u16 DirName[NFS_NAME_MAX], TextName[NFS_NAME_MAX], DataName[NFS_NAME_MAX];
+        nfs_u16 BareName[NFS_NAME_MAX], SubName[NFS_NAME_MAX];
+        nfs_u32 DirLen = Name("enum.dir", DirName);
+        nfs_u32 TextLen = Name("alpha.TXT", TextName);
+        nfs_u32 DataLen = Name("beta.dat", DataName);
+        nfs_u32 BareLen = Name("gamma", BareName);
+        nfs_u32 SubLen = Name("sub", SubName);
+        nfs_fileid Dir = 0, Text = 0, Data = 0, Bare = 0, Sub = 0;
+        NFS_PIFT_RECORD EntryRecord;
+        nfs_u16 Probe[NFS_NAME_MAX];
+        nfs_u32 ProbeLen;
+        NFS_STANDARD_INFORMATION Standard;
+        nfs_u32 Handle = 0;
+
+        ProbeLen = Name("alpha.TXT", Probe);
+        CHECK(NfsMatchPattern(Probe, ProbeLen, "*.txt"), "*.txt matches a .TXT name");
+        ProbeLen = Name("beta.dat", Probe);
+        CHECK(!NfsMatchPattern(Probe, ProbeLen, "*.txt"), "*.txt does not match .dat");
+        CHECK(NfsMatchPattern(Probe, ProbeLen, "b?ta.dat"), "? matches one character");
+        CHECK(!NfsMatchPattern(Probe, ProbeLen, "b??.dat"), "? does not match zero characters");
+        ProbeLen = Name("gamma", Probe);
+        CHECK(NfsMatchPattern(Probe, ProbeLen, "*.*"),
+              "*.* matches a name with no extension, the DOS rule NT keeps");
+        CHECK(NfsMatchPattern(Probe, ProbeLen, "*a*a"), "a pattern with several stars");
+
+        CHECK(NfsCreate(Volume, NFS_ROOT_ID, DirName, DirLen, 1, &Dir) == NFS_OK,
+              "mkdir enum.dir");
+        CHECK(NfsDirectoryIsEmpty(Volume, Dir) == 1, "a new directory is empty");
+        CHECK(NfsCreate(Volume, Dir, TextName, TextLen, 0, &Text) == NFS_OK, "create alpha.TXT");
+        CHECK(NfsCreate(Volume, Dir, DataName, DataLen, 0, &Data) == NFS_OK, "create beta.dat");
+        CHECK(NfsCreate(Volume, Dir, BareName, BareLen, 0, &Bare) == NFS_OK, "create gamma");
+        CHECK(NfsDirectoryIsEmpty(Volume, Dir) == 0, "and now it is not");
+
+        {
+            nfs_u32 Cookie = 0;
+            nfs_u32 Seen = 0;
+            nfs_u32 Total = 0;
+            nfs_u32 TextSeen = 0;
+
+            while (NfsEnumerate(Volume, Dir, &Cookie, "*", &EntryRecord) == NFS_OK)
+            {
+                Seen++;
+                if (EntryRecord.FileId == Text)
+                    TextSeen++;
+            }
+            CHECK(Seen == 3 && TextSeen == 1, "enumerate everything once");
+            Total = Seen;
+
+            Cookie = 0;
+            Seen = 0;
+            while (NfsEnumerate(Volume, Dir, &Cookie, "*.txt", &EntryRecord) == NFS_OK)
+                Seen++;
+            CHECK(Seen == 1, "the pattern filters the enumeration");
+
+            Cookie = 0;
+            CHECK(NfsEnumerate(Volume, Dir, &Cookie, "*.dat", &EntryRecord) == NFS_OK &&
+                  EntryRecord.FileId == Data, "enumeration finds the .dat");
+            {
+                nfs_u32 Again = 0, SawData = 0;
+
+                while (NfsEnumerate(Volume, Dir, &Cookie, "*", &EntryRecord) == NFS_OK)
+                {
+                    Again++;
+                    if (EntryRecord.FileId == Data)
+                        SawData++;
+                }
+                CHECK(SawData == 0 && Again == Total - 2,
+                      "the cookie resumes after the entry it returned");
+            }
+
+            Cookie = 0;
+            CHECK(NfsEnumerate(Volume, Dir, &Cookie, "*.nope", &EntryRecord) == NFS_ENOENT,
+                  "a pattern that matches nothing ends the enumeration");
+        }
+
+        CHECK(NfsQueryStandardInfo(Volume, Text, &Standard) == NFS_OK, "query standard information");
+        CHECK(Standard.Directory == 0 && Standard.NumberOfLinks == 1,
+              "a file is not a directory and has one link");
+        CHECK(NfsQueryStandardInfo(Volume, Dir, &Standard) == NFS_OK && Standard.Directory == 1,
+              "a directory reports itself");
+        CHECK(NfsQueryStandardInfo(Volume, Dir, &Standard) == NFS_OK ||
+              Standard.Directory == 1, "the directory flag is stable");
+
+        /* Delete-on-close, the way FileDispositionInformation works. */
+        ProbeLen = Name("victim.tmp", Probe);
+        CHECK(NfsHandleOpen(Volume, "\\enum.dir\\victim.tmp", NFS_DISPOSITION_CREATE, 0,
+                            NFS_HANDLE_WRITE, &Handle) == NFS_OK,
+              "create a file to delete on close");
+        CHECK(NfsHandleSetDeleteOnClose(Volume, Handle, 1) == NFS_OK, "mark delete-on-close");
+        CHECK(NfsHandleClose(Volume, Handle) == NFS_OK, "close it");
+        CHECK(NfsLookup(Volume, Dir, Probe, ProbeLen, &EntryRecord) == NFS_ENOENT,
+              "the file is gone after the last handle closed");
+
+        CHECK(NfsCreate(Volume, Dir, SubName, SubLen, 1, &Sub) == NFS_OK,
+              "mkdir enum.dir\\sub");
+        CHECK(NfsHandleOpen(Volume, "\\enum.dir", NFS_DISPOSITION_OPEN, 1, NFS_HANDLE_READ,
+                            &Handle) == NFS_OK, "open the directory");
+        CHECK(NfsHandleSetDeleteOnClose(Volume, Handle, 1) == NFS_OK,
+              "mark the non-empty directory delete-on-close");
+        CHECK(NfsHandleClose(Volume, Handle) == NFS_EINVAL,
+              "closing refuses to delete a directory that still has children");
+        CHECK(NfsOpenById(Volume, Dir, &EntryRecord) == NFS_OK,
+              "and the directory is still there");
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);
