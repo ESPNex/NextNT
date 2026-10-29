@@ -915,6 +915,135 @@ int main(void)
         }
     }
 
+    printf("[21] rename, file information, restore from a snapshot\n");
+    if (Volume)
+    {
+        static const char FirstText[] = "content of the file before the rename";
+        static const char SecondText[] = "a different file, about to be replaced";
+        static const char LaterText[] = "this overwrote the file later on";
+        nfs_u16 DirAName[NFS_NAME_MAX], DirBName[NFS_NAME_MAX];
+        nfs_u16 NameOne[NFS_NAME_MAX], NameTwo[NFS_NAME_MAX], NameThree[NFS_NAME_MAX];
+        nfs_u16 NameVictim[NFS_NAME_MAX], SnapName[NFS_NAME_MAX];
+        nfs_u32 LenA = Name("nsa", DirAName), LenB = Name("nsb", DirBName);
+        nfs_u32 LenOne = Name("one.txt", NameOne), LenTwo = Name("two.txt", NameTwo);
+        nfs_u32 LenThree = Name("three.txt", NameThree);
+        nfs_u32 LenVictim = Name("victim.txt", NameVictim);
+        nfs_fileid DirA = 0, DirB = 0, One = 0, Victim = 0, Snap = 0, Restored = 0;
+        NFS_PIFT_RECORD Entry;
+        NFS_FILE_INFO Info;
+        char Buffer[128];
+        nfs_u32 Got = 0;
+
+        CHECK(NfsCreate(Volume, NFS_ROOT_ID, DirAName, LenA, 1, &DirA) == NFS_OK,
+              "mkdir nsa");
+        CHECK(NfsCreate(Volume, NFS_ROOT_ID, DirBName, LenB, 1, &DirB) == NFS_OK,
+              "mkdir nsb");
+        CHECK(NfsCreate(Volume, DirA, NameOne, LenOne, 0, &One) == NFS_OK,
+              "create nsa/one.txt");
+        CHECK(NfsWrite(Volume, One, 0, FirstText, (nfs_u32)sizeof(FirstText), NULL) == NFS_OK,
+              "write nsa/one.txt");
+        CHECK(NfsCreate(Volume, DirA, NameVictim, LenVictim, 0, &Victim) == NFS_OK,
+              "create nsa/victim.txt");
+        CHECK(NfsWrite(Volume, Victim, 0, SecondText, (nfs_u32)sizeof(SecondText),
+                       NULL) == NFS_OK,
+              "write nsa/victim.txt");
+
+        /* Rename in place. */
+        CHECK(NfsRename(Volume, One, DirA, NameTwo, LenTwo, 0) == NFS_OK,
+              "rename one.txt to two.txt");
+        CHECK(NfsLookup(Volume, DirA, NameOne, LenOne, &Entry) == NFS_ENOENT,
+              "the old name is gone");
+        CHECK(NfsLookup(Volume, DirA, NameTwo, LenTwo, &Entry) == NFS_OK,
+              "the new name is there");
+
+        /* Move to another directory. */
+        CHECK(NfsRename(Volume, One, DirB, NameThree, LenThree, 0) == NFS_OK,
+              "move the file to nsb/three.txt");
+        CHECK(NfsLookup(Volume, DirA, NameTwo, LenTwo, &Entry) == NFS_ENOENT,
+              "the file left nsa");
+        CHECK(NfsLookup(Volume, DirB, NameThree, LenThree, &Entry) == NFS_OK,
+              "the file arrived in nsb");
+        CHECK(NfsOpenById(Volume, One, &Entry) == NFS_OK && Entry.Size == sizeof(FirstText),
+              "the moved file kept its content and its identity");
+
+        /* Replacement needs the flag, and then it is atomic. */
+        CHECK(NfsRename(Volume, Victim, DirB, NameThree, LenThree, 0) == NFS_EEXIST,
+              "rename over an existing name fails without the replace flag");
+        CHECK(NfsRename(Volume, Victim, DirB, NameThree, LenThree, 1) == NFS_OK,
+              "rename with replacement");
+        CHECK(NfsOpenById(Volume, One, &Entry) == NFS_ENOENT,
+              "the replaced file is gone");
+        CHECK(NfsLookup(Volume, DirB, NameThree, LenThree, &Entry) == NFS_OK &&
+              Entry.FileId == Victim,
+              "the target name now belongs to the replacing file");
+
+        CHECK(NfsRename(Volume, NFS_ROOT_ID, DirA, NameTwo, LenTwo, 0) == NFS_EINVAL,
+              "the root cannot be renamed");
+        CHECK(NfsRename(Volume, DirA, DirA, NameTwo, LenTwo, 0) == NFS_EINVAL,
+              "a directory cannot be moved inside itself");
+        {
+            nfs_u16 SubName[NFS_NAME_MAX];
+            nfs_u32 SubLen = Name("sub", SubName);
+            nfs_fileid Sub = 0;
+
+            CHECK(NfsCreate(Volume, DirA, SubName, SubLen, 1, &Sub) == NFS_OK,
+                  "mkdir nsa/sub");
+            CHECK(NfsRename(Volume, DirA, Sub, NameTwo, LenTwo, 0) == NFS_EINVAL,
+                  "a directory cannot be moved below itself");
+            CHECK(NfsRename(Volume, Victim, NFS_ROOT_ID, DirAName, LenA, 1) == NFS_EINVAL,
+                  "a file cannot replace a directory that has children");
+        }
+
+        /* File information. */
+        memset(&Info, 0, sizeof(Info));
+        Info.SetMask = NFS_SET_ATTRIBUTES | NFS_SET_MTIME | NFS_SET_ATIME;
+        Info.Attributes = NFS_ATTRIBUTE_READONLY | NFS_ATTRIBUTE_ARCHIVE;
+        Info.Mtime = 1234567;
+        Info.Atime = 7654321;
+        CHECK(NfsSetFileInfo(Volume, Victim, &Info) == NFS_OK, "set attributes and times");
+        CHECK(NfsOpenById(Volume, Victim, &Entry) == NFS_OK &&
+              Entry.Attributes == (NFS_ATTRIBUTE_READONLY | NFS_ATTRIBUTE_ARCHIVE) &&
+              Entry.Atime == 7654321,
+              "the record carries the new attributes and timestamp");
+
+        /* Snapshot, overwrite, then restore. */
+        SnapName[0] = 0;
+        {
+            nfs_u32 SnapLen = Name("restore-point", SnapName);
+
+            CHECK(NfsSnapshotCreate(Volume, SnapName, SnapLen, &Snap) == NFS_OK,
+                  "snapshot restore-point");
+        }
+
+        CHECK(NfsWrite(Volume, Victim, 0, LaterText, (nfs_u32)sizeof(LaterText), NULL) == NFS_OK,
+              "overwrite the file after the snapshot");
+        CHECK(NfsRevertFromSnapshot(Volume, Snap, Victim, &Restored) == NFS_OK,
+              "restore the file from the snapshot");
+        memset(Buffer, 0, sizeof(Buffer));
+        Got = 0;
+        CHECK(NfsRead(Volume, Restored, 0, Buffer, (nfs_u32)sizeof(SecondText), &Got) == NFS_OK,
+              "read the restored file");
+        CHECK(memcmp(Buffer, SecondText, sizeof(SecondText)) == 0,
+              "the restored content is the snapshotted one");
+        CHECK(NfsSnapshotOpenById(Volume, Snap, Victim, &Entry) == NFS_OK,
+              "the snapshot record is still readable");
+
+        /* Restore a file that no longer exists. */
+        CHECK(NfsRemove(Volume, Victim) == NFS_OK, "delete the file for good");
+        CHECK(NfsRevertFromSnapshot(Volume, Snap, Victim, &Restored) == NFS_OK,
+              "restore a file that was deleted");
+        memset(Buffer, 0, sizeof(Buffer));
+        Got = 0;
+        CHECK(NfsRead(Volume, Restored, 0, Buffer, (nfs_u32)sizeof(SecondText), &Got) == NFS_OK,
+              "read the re-created file");
+        CHECK(memcmp(Buffer, SecondText, sizeof(SecondText)) == 0,
+              "the re-created file has the snapshotted content");
+        CHECK(NfsLookup(Volume, DirB, NameThree, LenThree, &Entry) == NFS_OK,
+              "and it is back under its old name");
+
+        CHECK(NfsSnapshotDelete(Volume, Snap) == NFS_OK, "delete the restore point");
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

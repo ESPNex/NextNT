@@ -63,6 +63,14 @@ typedef nfs_u64 nfs_seq;
 #define NFS_FLAG_INLINE_DATA   0x00000004u
 #define NFS_FLAG_SNAPSHOT      0x00000008u   /* a pinned checkpoint generation    */
 
+/* File attribute bits, the same values the Win32 API uses. */
+#define NFS_ATTRIBUTE_READONLY    0x00000001u
+#define NFS_ATTRIBUTE_HIDDEN      0x00000002u
+#define NFS_ATTRIBUTE_SYSTEM      0x00000004u
+#define NFS_ATTRIBUTE_DIRECTORY   0x00000010u
+#define NFS_ATTRIBUTE_ARCHIVE     0x00000020u
+#define NFS_ATTRIBUTE_NORMAL      0x00000080u
+
 /* nfs_extent.lcn value for a sparse hole */
 #define NFS_HOLE               0xFFFFFFFFFFFFFFFFull
 
@@ -237,6 +245,23 @@ typedef struct _NFS_STATS
     nfs_u32 PinnedRanges;       /* snapshot pin intervals in RAM        */
 } NFS_STATS, *PNFS_STATS;
 
+/* What NfsSetFileInfo may change. */
+#define NFS_SET_ATTRIBUTES    0x00000001u
+#define NFS_SET_CTIME         0x00000002u
+#define NFS_SET_MTIME         0x00000004u
+#define NFS_SET_ATIME         0x00000008u
+#define NFS_SET_BTIME         0x00000010u
+
+typedef struct _NFS_FILE_INFO
+{
+    nfs_u32 SetMask;
+    nfs_u32 Attributes;
+    nfs_u64 Ctime;
+    nfs_u64 Mtime;
+    nfs_u64 Atime;
+    nfs_u64 Btime;
+} NFS_FILE_INFO, *PNFS_FILE_INFO;
+
 /* One snapshot, as reported by NfsSnapshotList. */
 typedef struct _NFS_SNAPSHOT_INFO
 {
@@ -276,6 +301,18 @@ int NfsOpenById(PNFS_VOLUME Volume, nfs_fileid FileId, NFS_PIFT_RECORD *OutRecor
 int NfsRemove(PNFS_VOLUME Volume, nfs_fileid FileId);
 int NfsReadDir(PNFS_VOLUME Volume, nfs_fileid Directory, nfs_u32 Index,
                NFS_PIFT_RECORD *OutRecord);
+
+/* Rename or move. With ReplaceExisting a target of the same name is deleted
+   first, atomically with the rename: one PIFT commit, no delete window. */
+int NfsRename(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_fileid NewParent,
+              const nfs_u16 *NewName, nfs_u32 NameLength, int ReplaceExisting);
+/* Attributes and timestamps. */
+int NfsSetFileInfo(PNFS_VOLUME Volume, nfs_fileid FileId,
+                   const NFS_FILE_INFO *Info);
+/* Restore a file from a snapshot: its content, size and timestamps come back.
+   If the live file was deleted, it is re-created in the parent it had. */
+int NfsRevertFromSnapshot(PNFS_VOLUME Volume, nfs_fileid SnapshotId,
+                          nfs_fileid FileId, nfs_fileid *OutFileId);
 
 /* Snapshots: a pinned checkpoint generation. Every block a snapshot owns (its
    tree nodes and the file data its records map) stays allocated until the

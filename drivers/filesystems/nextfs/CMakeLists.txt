@@ -13,6 +13,7 @@ list(APPEND NEXTFSLIB_SOURCE
     ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/nextfslib/nextfs_journal.c
     ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/nextfslib/nextfs_tree.c
     ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/nextfslib/nextfs_snapshot.c
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/nextfslib/nextfs_namespace.c
     ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/nextfslib/nextfs_volume.c)
 
 add_library(nextfs MODULE ${SOURCE} ${NEXTFSLIB_SOURCE})

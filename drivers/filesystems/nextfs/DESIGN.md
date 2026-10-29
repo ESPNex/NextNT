@@ -1,4 +1,4 @@
-# NextFS — design (v0.4, branch `nextfs`)
+# NextFS — design (v0.5, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -13,8 +13,8 @@ This document is the contract between four components that must agree byte for b
 | `nextformat` | `sdk/lib/fslib/nextfslib/tools/` | mkfs |
 | boot chain | `boot/nextldr/nextldr/lib/fs/nextfs.c` (later phase) | must read a NextFS volume to boot |
 
-Status: **phase 4**. `nextfslib` implements the format as described here and is
-self-tested (153 checks); `nextfs.sys` is still a mount-capable skeleton (volume
+Status: **phase 5**. `nextfslib` implements the format as described here and is
+self-tested (189 checks); `nextfs.sys` is still a mount-capable skeleton (volume
 open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`).
 
 ---
@@ -268,8 +268,10 @@ PIFT record.
 * Reading a snapshot walks its pinned tree (no cache, no mount): `NfsSnapshotLookup`
   by parent + name, `NfsSnapshotRead` for the data, both through the record's CoW
   extents.
-* Full-file atomic replace (`ReplaceFile`, `MoveFileEx` with `MOVEFILE_REPLACE_EXISTING`)
-  is a single PIFT record commit — no rename-with-delete-window.
+* **Rename, move and replacement** are one PIFT record commit (`NfsRename`), and
+  replacement deletes the old target *in the same commit*: no rename-with-delete
+  window, no rollback file, no `$RmMetadata`. Cycles are refused by walking the
+  parent chain, and a directory with children cannot be replaced by a file.
 
 ## 4. What replaces what
 
@@ -286,7 +288,7 @@ PIFT record.
 
 ---
 
-## 5. Open questions (to settle before phase 5)
+## 5. Open questions (to settle before phase 6)
 
 1. **Security descriptors**: store inline in the record (simple, fat) or in a
    deduplicated blob store (smaller, slower)? Leaning to a deduplicated store keyed by
@@ -303,7 +305,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.4, branch `nextfs`)
+## 6. Implementation status (v0.5, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -320,7 +322,7 @@ Done and tested in this phase:
 | two-generation roots + PIFT halves | `nextfslib/nextfs_volume.c` | 6 checkpoints with zero cluster drift; corrupt live root ⇒ fallback mount |
 | driver skeleton | `drivers/filesystems/nextfs/nextfs.c` | not compiled yet (needs the RosBE build) |
 
-`nextfslib/tests/nextfs_selftest.c` runs 153 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 189 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
@@ -334,7 +336,9 @@ fallback generation with the needs-check flag raised, and snapshots: the pinned
 generation keeps the original bytes through an in-place overwrite, a live delete
 and a remount, the pins come back at mount, two snapshots do not disturb each
 other, and a 128-cluster file the live tree deleted comes back to the allocator
-only when the snapshot that pinned it is dropped.
+only when the snapshot that pinned it is dropped. Group [21] covers rename, move,
+replacement, cycle refusal, attributes and both restore paths (overwritten file,
+deleted file).
 
 Landed in phase 2 (`nextfslib`):
 
@@ -351,6 +355,16 @@ Landed in phase 2 (`nextfslib`):
   `NfsReadDir` and updated transactionally. No disk read is involved in a lookup.
 * **Checkpoints scale**: the chain now holds up to 4096 nodes and the self-test
   exercises 300 files across several nodes, including remount.
+
+Landed in phase 5 (`nextfslib`, `nextfs_namespace.c`):
+
+* **`NfsRename`**: rename in place, move across directories, and atomic replacement
+  (`MOVEFILE_REPLACE_EXISTING`): the deleted target and the renamed source go into
+  one commit, so a crash cannot leave both names or neither.
+* **`NfsSetFileInfo`**: attributes and the four timestamps, one record commit.
+* **`NfsRevertFromSnapshot`**: restores a file's bytes, size, attributes and
+  timestamps from a pinned generation, and re-creates the file under its old name
+  if the live tree had deleted it.
 
 Landed in phase 4 (`nextfslib`, `nextfs_snapshot.c`):
 
