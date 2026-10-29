@@ -33,6 +33,16 @@ typedef struct _NFS_CHILD_SET
 
 #define NFS_CHILD_BUCKETS 512
 
+/* An interval of clusters held alive by snapshot generations. Intervals are
+   sorted by Start, never overlap, and every one has Count > 0. */
+typedef struct _NFS_PIN
+{
+    nfs_u64 Start;
+    nfs_u64 Length;
+    nfs_u32 Count;
+    nfs_u32 Pad;
+} NFS_PIN, *PNFS_PIN;
+
 struct _NFS_VOLUME
 {
     NFS_BDEV Device;                 /* callbacks, copied at mount       */
@@ -58,6 +68,10 @@ struct _NFS_VOLUME
     PNFS_CHILD_SET Children[NFS_CHILD_BUCKETS];
 
     NFS_STATS Stats;
+
+    NFS_PIN *Pins;                   /* snapshot pin intervals, sorted   */
+    nfs_u32  PinCount;
+    nfs_u32  PinCapacity;
 };
 
 /* Superblock + device helpers (nextfs_super.c) */
@@ -128,6 +142,18 @@ int NfsTreeWalk(PNFS_VOLUME Volume, nfs_u64 Root,
                 void *Context);
 int NfsTreeCollect(PNFS_VOLUME Volume, nfs_u64 Root, nfs_u64 *Blocks,
                    nfs_u32 Max, nfs_u32 *Count);
+
+/* Snapshot pin set (nextfs_snapshot.c) */
+int  NfsPinInit(PNFS_VOLUME Volume);
+void NfsPinDestroy(PNFS_VOLUME Volume);
+int  NfsPinAddRange(PNFS_VOLUME Volume, nfs_u64 Start, nfs_u64 Length);
+int  NfsPinSubRange(PNFS_VOLUME Volume, nfs_u64 Start, nfs_u64 Length,
+                    void (*OnZero)(void *Context, nfs_u64 Start, nfs_u64 Length),
+                    void *Context);
+void NfsPinFreeGaps(PNFS_VOLUME Volume, nfs_u64 Start, nfs_u64 Length);
+nfs_u32 NfsPinCoveredBy(PNFS_VOLUME Volume, nfs_u64 Cluster);
+int  NfsSnapshotPinsRebuild(PNFS_VOLUME Volume);
+int  NfsSnapshotRecover(PNFS_VOLUME Volume);
 
 /* Checkpointing + transactions (nextfs_volume.c) */
 int NfsCheckpoint(PNFS_VOLUME Volume);

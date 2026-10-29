@@ -1,4 +1,4 @@
-# NextFS — design (v0.3, branch `nextfs`)
+# NextFS — design (v0.4, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -13,9 +13,9 @@ This document is the contract between four components that must agree byte for b
 | `nextformat` | `sdk/lib/fslib/nextfslib/tools/` | mkfs |
 | boot chain | `boot/nextldr/nextldr/lib/fs/nextfs.c` (later phase) | must read a NextFS volume to boot |
 
-Status: **phase 2**. `nextfslib` is complete for the format as described here and
-self-tested (112 checks); `nextfs.sys` is still a mount-capable skeleton (volume
-open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`, `TODO(phase3)`).
+Status: **phase 4**. `nextfslib` implements the format as described here and is
+self-tested (153 checks); `nextfs.sys` is still a mount-capable skeleton (volume
+open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`).
 
 ---
 
@@ -245,20 +245,31 @@ PIFT record.
 
 ---
 
-## 3. Copy-on-write
+## 3. Copy-on-write and snapshots
 
 * No metadata block, bitmap block or data page is ever rewritten in place while a
   snapshot may reference it.
 * A write to a file allocates new clusters, writes the payload, then atomically
   publishes the new extent list through the PIFT record + journal commit. Old
-  clusters drop one refcount; at zero they return to the bitmap.
-* A snapshot is `{pift_root, tree_root, refcount_root, bitmap_root, generation}`,
-  i.e. 5 numbers. Creating one is a superblock-adjacent metadata write; deleting one
-  runs a garbage collector over the refcount tree.
+  clusters are released; those a snapshot still owns stay allocated.
+* A snapshot is a **pinned checkpoint generation**: `{tree root, generation}` held
+  in a PIFT record (flag `SNAPSHOT`) inside the `.snapshots` directory of the root.
+  Creating one checkpoints, then adds a reference to every block the generation
+  owns; deleting one drops those references and frees what falls to zero.
+* **Refcounts are intervals in RAM, not a tree on disk.** The pin set is a sorted
+  array of `{start, length, count}` ranges covering tree nodes (one cluster each)
+  and the extent ranges of the records inside them, so its size follows the number
+  of extents, not the number of clusters. The set is *derived*: mount rebuilds it by
+  walking every snapshot tree, so a crash can never leave the on-disk state and the
+  pins disagreeing — there is no second source of truth to keep in step.
+* Freeing goes through the pins: `NfsClusterFree` gives back only the clusters no
+  pin covers, which is what keeps a pinned generation readable while the live file
+  system overwrites and deletes its files.
+* Reading a snapshot walks its pinned tree (no cache, no mount): `NfsSnapshotLookup`
+  by parent + name, `NfsSnapshotRead` for the data, both through the record's CoW
+  extents.
 * Full-file atomic replace (`ReplaceFile`, `MoveFileEx` with `MOVEFILE_REPLACE_EXISTING`)
   is a single PIFT record commit — no rename-with-delete-window.
-
----
 
 ## 4. What replaces what
 
@@ -275,7 +286,7 @@ PIFT record.
 
 ---
 
-## 5. Open questions (to settle before phase 4)
+## 5. Open questions (to settle before phase 5)
 
 1. **Security descriptors**: store inline in the record (simple, fat) or in a
    deduplicated blob store (smaller, slower)? Leaning to a deduplicated store keyed by
@@ -292,7 +303,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.3, branch `nextfs`)
+## 6. Implementation status (v0.4, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -309,7 +320,7 @@ Done and tested in this phase:
 | two-generation roots + PIFT halves | `nextfslib/nextfs_volume.c` | 6 checkpoints with zero cluster drift; corrupt live root ⇒ fallback mount |
 | driver skeleton | `drivers/filesystems/nextfs/nextfs.c` | not compiled yet (needs the RosBE build) |
 
-`nextfslib/tests/nextfs_selftest.c` runs 112 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 153 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
@@ -318,8 +329,12 @@ a 300-file directory with a multi-node checkpoint, 400 randomised writes compare
 byte for byte with a reference buffer, a crash in the middle of a 40-write burst that
 must recover to a whole step (never a torn write), 8000 files forcing a three-level
 checkpoint tree, six back-to-back checkpoints that must not drift the free-cluster
-count, and a deliberately corrupted live root that must be mounted through the
-fallback generation with the needs-check flag raised.
+count, a deliberately corrupted live root that must be mounted through the
+fallback generation with the needs-check flag raised, and snapshots: the pinned
+generation keeps the original bytes through an in-place overwrite, a live delete
+and a remount, the pins come back at mount, two snapshots do not disturb each
+other, and a 128-cluster file the live tree deleted comes back to the allocator
+only when the snapshot that pinned it is dropped.
 
 Landed in phase 2 (`nextfslib`):
 
@@ -336,6 +351,24 @@ Landed in phase 2 (`nextfslib`):
   `NfsReadDir` and updated transactionally. No disk read is involved in a lookup.
 * **Checkpoints scale**: the chain now holds up to 4096 nodes and the self-test
   exercises 300 files across several nodes, including remount.
+
+Landed in phase 4 (`nextfslib`, `nextfs_snapshot.c`):
+
+* **Snapshots** create/delete/list/read. A snapshot pins the current checkpoint
+  generation; `nextfsinfo --snapshot v1 --cat-snapshot v1 notes.txt` shows the
+  original bytes of a file the live tree has already overwritten or deleted, also
+  in a later process (the pins are rebuilt at mount).
+* **Pin set (refcounts)** as sorted intervals with splitting on partial overlaps.
+  `NfsPinFreeGaps` is on the free path, so no allocation path can take a cluster a
+  snapshot owns; releasing a snapshot frees only what neither it nor the live
+  namespace still maps.
+* **Write-through area fix found by the tests**: a fallback mount used to leave
+  `pift_head` at the end of the half, so the next commit failed with `ENOSPC`
+  before it could checkpoint. `NfsPiftScan` now puts the append pointer back to the
+  real tail, and `NfsCommitRecords` checkpoints *before* writing when the area is
+  past its high-water mark.
+* **Snapshot records** carry `snapshot_root` and `snapshot_generation`; format
+  version 3.
 
 Landed in phase 3 (`nextfslib`):
 
@@ -361,12 +394,10 @@ Landed in phase 3 (`nextfslib`):
 
 Still open, in order of importance:
 
-1. **Snapshots and the refcount tree** (section 3). Copy-on-write is in place for
-   every write, but nothing shares blocks yet, so the refcount tree is unused.
-2. **Kernel I/O paths** (`IRP_MJ_CREATE/READ/WRITE/DIRECTORY_CONTROL`, cache
+1. **Kernel I/O paths** (`IRP_MJ_CREATE/READ/WRITE/DIRECTORY_CONTROL`, cache
    manager callbacks). Until they exist, `nextfslib` is not in
    `sdk/lib/fslib/CMakeLists.txt` and `nextfs.sys` is not in
    `drivers/filesystems/CMakeLists.txt`: NTFS stays the boot file system.
-4. **Security descriptors, compression, encryption, quotas**: not implemented.
+2. **Security descriptors, compression, encryption, quotas**: not implemented.
    Names are compared with a folded table compiled in (`$UpCase` equivalent);
    ACLs will land in the PIFT record tail as a deduplicated blob.

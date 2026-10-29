@@ -253,8 +253,10 @@ main(int argc, char **argv)
         NFS_STATS Stats;
 
         NfsGetStats(Volume, &Stats);
-        printf("  mount ok: %u files, %llu journal commits, %llu frames replayed%s\n",
-               Stats.Files, (unsigned long long)Stats.JournalCommits,
+        printf("  mount ok: %u files, %u snapshots (%u pinned ranges), %llu journal "
+               "commits, %llu frames replayed%s\n",
+               Stats.Files, Stats.Snapshots, Stats.PinnedRanges,
+               (unsigned long long)Stats.JournalCommits,
                (unsigned long long)Stats.ReplayedFrames,
                Stats.UsedFallbackRoot ? ", using the fallback root" : "");
     }
@@ -272,6 +274,29 @@ main(int argc, char **argv)
         printf("    %u nodes checked, %u bad, walk %s\n", Check.Nodes, Check.BadNodes,
                (Status == NFS_OK) ? "complete" : "FAILED");
         Check.BadNodes += (Status == NFS_OK) ? 0 : 1;
+    }
+
+    /* 3b. snapshots */
+    {
+        NFS_SNAPSHOT_INFO Info;
+        nfs_u32 Index;
+
+        for (Index = 0; NfsSnapshotList(Volume, Index, &Info) == NFS_OK; Index++)
+        {
+            char Name[NFS_NAME_MAX + 1];
+            nfs_u32 i;
+
+            for (i = 0; i < Info.NameLen && i < NFS_NAME_MAX; i++)
+                Name[i] = (char)((Info.Name[i] < 0x80) ? Info.Name[i] : '?');
+            Name[(Info.NameLen < NFS_NAME_MAX) ? Info.NameLen : NFS_NAME_MAX] = 0;
+
+            printf("  snapshot \"%s\" (id %llu): tree root %llu, generation %llu\n",
+                   Name, (unsigned long long)Info.Id,
+                   (unsigned long long)Info.TreeRoot,
+                   (unsigned long long)Info.Generation);
+        }
+        if (Index == 0)
+            printf("  snapshots: none\n");
     }
 
     /* 4. bitmap cross-check: the two checkpoint generations are expected to be
@@ -310,6 +335,12 @@ main(int argc, char **argv)
 
             if (Used)
                 Referenced = ClusterReferenced(Volume, Cluster);
+
+            if (Used && !Referenced && NfsPinCoveredBy(Volume, Cluster) > 0)
+            {
+                Reserved++;
+                continue;
+            }
 
             if (Used && !Referenced)
             {

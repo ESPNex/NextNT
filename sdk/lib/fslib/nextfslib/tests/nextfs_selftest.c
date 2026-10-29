@@ -761,6 +761,160 @@ int main(void)
         }
     }
 
+    printf("[20] snapshots: a pinned generation survives live writes and deletes\n");
+    if (Volume)
+    {
+        static const char OldText[] = "snapshot keeps this text, live does not";
+        static const char NewText[] = "the live file now says something else";
+        nfs_u16 FileName[NFS_NAME_MAX];
+        nfs_u16 SnapName[NFS_NAME_MAX];
+        nfs_u32 FileLen = Name("snapfile.txt", FileName);
+        nfs_u32 SnapLen;
+        nfs_fileid FileId = 0, S1 = 0, S2 = 0;
+        NFS_SNAPSHOT_INFO Info;
+        NFS_PIFT_RECORD Entry;
+        NFS_STATS Stats;
+        char Buffer[128];
+        nfs_u32 Got = 0;
+
+        CHECK(NfsCreate(Volume, NFS_ROOT_ID, FileName, FileLen, 0, &FileId) == NFS_OK,
+              "create snapfile.txt");
+        CHECK(NfsWrite(Volume, FileId, 0, OldText, (nfs_u32)sizeof(OldText), NULL) == NFS_OK,
+              "write the original content");
+
+        SnapLen = Name("s1", SnapName);
+        CHECK(NfsSnapshotCreate(Volume, SnapName, SnapLen, &S1) == NFS_OK, "snapshot s1");
+        CHECK(NfsSnapshotList(Volume, 0, &Info) == NFS_OK && Info.Id == S1,
+              "s1 is the first snapshot in the list");
+        CHECK(Info.TreeRoot != 0 && Info.Generation != 0, "s1 names a pinned generation");
+        CHECK(NfsSnapshotList(Volume, 1, &Info) == NFS_ENOENT, "there is exactly one snapshot");
+        CHECK(NfsSnapshotDelete(Volume, FileId) == NFS_EINVAL,
+              "a plain file is not a snapshot");
+
+        /* Overwrite in place: the old clusters are copy-on-write, so the live
+           file moves and the snapshot keeps the old ones. */
+        CHECK(NfsWrite(Volume, FileId, 0, NewText, (nfs_u32)sizeof(NewText), NULL) == NFS_OK,
+              "overwrite after the snapshot");
+
+        memset(Buffer, 0, sizeof(Buffer));
+        CHECK(NfsRead(Volume, FileId, 0, Buffer, (nfs_u32)sizeof(OldText), &Got) == NFS_OK,
+              "read the live file");
+        CHECK(memcmp(Buffer, NewText, sizeof(NewText)) == 0, "live read returns the new text");
+
+        memset(Buffer, 0, sizeof(Buffer));
+        Got = 0;
+        CHECK(NfsSnapshotRead(Volume, S1, FileId, 0, Buffer, (nfs_u32)sizeof(OldText),
+                              &Got) == NFS_OK,
+              "read through the snapshot");
+        CHECK(Got == sizeof(OldText) && memcmp(Buffer, OldText, sizeof(OldText)) == 0,
+              "the snapshot still returns the original text");
+
+        /* Second snapshot of the live state, then delete the file for real. */
+        SnapLen = Name("s2", SnapName);
+        CHECK(NfsSnapshotCreate(Volume, SnapName, SnapLen, &S2) == NFS_OK, "snapshot s2");
+        CHECK(NfsRemove(Volume, FileId) == NFS_OK, "delete the live file");
+
+
+        CHECK(NfsSnapshotLookup(Volume, S1, NFS_ROOT_ID, FileName, FileLen, &Entry) == NFS_OK,
+              "the deleted file is still in s1");
+        CHECK(NfsSnapshotLookup(Volume, S2, NFS_ROOT_ID, FileName, FileLen, &Entry) == NFS_OK,
+              "the deleted file is still in s2");
+
+        memset(Buffer, 0, sizeof(Buffer));
+        Got = 0;
+        CHECK(NfsSnapshotRead(Volume, S1, FileId, 0, Buffer, (nfs_u32)sizeof(OldText),
+                              &Got) == NFS_OK,
+              "s1 still reads after the live delete");
+        CHECK(memcmp(Buffer, OldText, sizeof(OldText)) == 0,
+              "s1 returns the original text after the live delete");
+
+        memset(Buffer, 0, sizeof(Buffer));
+        Got = 0;
+        CHECK(NfsSnapshotRead(Volume, S2, FileId, 0, Buffer, (nfs_u32)sizeof(NewText),
+                              &Got) == NFS_OK,
+              "s2 reads the state it pinned");
+        CHECK(memcmp(Buffer, NewText, sizeof(NewText)) == 0,
+              "s2 returns the text that was live when it was taken");
+
+        /* Survive a remount: the pins are derived from the snapshot records. */
+        NfsDiscard(Volume);
+        Volume = NULL;
+        CHECK(NfsMount(&Block, &Volume) == NFS_OK, "remount with two snapshots");
+        if (Volume)
+        {
+            NfsGetStats(Volume, &Stats);
+            CHECK(Stats.Snapshots == 2, "both snapshots came back");
+            CHECK(Stats.PinnedRanges > 0, "the pin set was rebuilt");
+
+            memset(Buffer, 0, sizeof(Buffer));
+            Got = 0;
+            CHECK(NfsSnapshotRead(Volume, S1, FileId, 0, Buffer, (nfs_u32)sizeof(OldText),
+                                  &Got) == NFS_OK,
+                  "read s1 after the remount");
+            CHECK(memcmp(Buffer, OldText, sizeof(OldText)) == 0,
+                  "s1 content survives the remount");
+
+            CHECK(NfsSnapshotDelete(Volume, S1) == NFS_OK, "delete s1");
+            memset(Buffer, 0, sizeof(Buffer));
+            Got = 0;
+            CHECK(NfsSnapshotRead(Volume, S2, FileId, 0, Buffer, (nfs_u32)sizeof(NewText),
+                                  &Got) == NFS_OK,
+                  "s2 still reads after s1 is gone");
+            CHECK(memcmp(Buffer, NewText, sizeof(NewText)) == 0,
+                  "s2 content is the one it pinned, untouched by s1");
+
+            CHECK(NfsSnapshotDelete(Volume, S2) == NFS_OK, "delete s2");
+            NfsGetStats(Volume, &Stats);
+            CHECK(Stats.Snapshots == 0, "no snapshots left");
+
+            CHECK(NfsSnapshotRead(Volume, S2, FileId, 0, Buffer, 16, &Got) == NFS_ENOENT,
+                  "a deleted snapshot is gone");
+
+            CHECK(Stats.PinnedRanges == 0, "the pin set is empty again");
+
+            /* Reclamation, with a signal big enough to see through the tree
+               churn every checkpoint causes. */
+            {
+                nfs_u16 BigName[NFS_NAME_MAX];
+                nfs_u32 BigLen = Name("big.bin", BigName);
+                nfs_fileid BigId = 0, S3 = 0;
+                nfs_u8 *Payload = (nfs_u8 *)malloc(64 * 1024);
+                nfs_u64 FreeBefore, FreePinned, FreeReleased;
+                nfs_u32 Round;
+
+                CHECK(Payload != NULL, "payload buffer");
+                if (Payload)
+                {
+                    memset(Payload, 0x5A, 64 * 1024);
+                    CHECK(NfsCreate(Volume, NFS_ROOT_ID, BigName, BigLen, 0, &BigId) == NFS_OK,
+                          "create big.bin");
+
+                    FreeBefore = NfsGetSuper(Volume)->FreeClusters;
+                    for (Round = 0; Round < 2; Round++)
+                        CHECK(NfsWrite(Volume, BigId, (nfs_u64)Round * 64 * 1024, Payload,
+                                       64 * 1024, NULL) == NFS_OK,
+                              "write 64 KiB");
+
+                    FreeBefore = NfsGetSuper(Volume)->FreeClusters;
+                    SnapLen = Name("s3", SnapName);
+                    CHECK(NfsSnapshotCreate(Volume, SnapName, SnapLen, &S3) == NFS_OK,
+                          "snapshot s3 pins big.bin");
+
+                    CHECK(NfsRemove(Volume, BigId) == NFS_OK, "delete big.bin while pinned");
+                    FreePinned = NfsGetSuper(Volume)->FreeClusters;
+                    CHECK(FreePinned < FreeBefore + 32,
+                          "the pinned clusters are not handed back on delete");
+
+                    CHECK(NfsSnapshotDelete(Volume, S3) == NFS_OK, "delete s3");
+                    FreeReleased = NfsGetSuper(Volume)->FreeClusters;
+                    CHECK(FreeReleased + 32 > FreePinned,
+                          "the clusters come back when the snapshot goes");
+                    free(Payload);
+                }
+            }
+        }
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

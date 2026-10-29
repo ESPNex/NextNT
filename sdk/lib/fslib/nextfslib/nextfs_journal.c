@@ -199,8 +199,10 @@ NfsSeqIsCommitted(PNFS_VOLUME Volume, nfs_seq Seq)
 int
 NfsPiftScan(PNFS_VOLUME Volume)
 {
-    nfs_u64 Offset = Volume->Super.PiftFirst * Volume->Super.ClusterSize;
+    nfs_u64 Base = Volume->Super.PiftFirst * Volume->Super.ClusterSize;
+    nfs_u64 Offset = Base;
     nfs_u64 End = Offset + Volume->Super.PiftHead;
+    nfs_u64 ValidEnd = Offset;
     nfs_u8 Frame[NFS_FRAME_SIZE];
     int Status;
 
@@ -233,8 +235,13 @@ NfsPiftScan(PNFS_VOLUME Volume)
         }
 
         Offset += NFS_FRAME_SIZE;
+        ValidEnd = Offset;
     }
 
+    /* Where the valid records end is where the next append goes. A fallback
+       mount reads the whole half to find its records, and this puts the append
+       pointer back to the real tail. */
+    Volume->Super.PiftHead = ValidEnd - Base;
     return NFS_OK;
 }
 

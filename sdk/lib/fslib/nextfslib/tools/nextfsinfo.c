@@ -4,7 +4,8 @@
  * PURPOSE:     nextfsinfo — mount a NextFS image and list it (read-only demo)
  * LICENSE:     GPL-3.0-or-later
  *
- * usage: nextfsinfo <image> [--all]
+ * usage: nextfsinfo <image> [--depth N] [--put <host file> <name>]
+ *                     [--snapshot <name>] [--cat-snapshot <snapshot> <name>]
  */
 
 #include "../nextfs_format.h"
@@ -80,6 +81,9 @@ int main(int argc, char **argv)
     PNFS_VOLUME Volume = NULL;
     const NFS_SUPER *Super;
     NFS_STATS Stats;
+    const char *PutSource = NULL, *PutName = NULL;
+    const char *SnapshotName = NULL;
+    const char *CatSnapshot = NULL, *CatName = NULL;
     int Depth = 1, i, Status;
 
     if (argc < 2)
@@ -91,6 +95,18 @@ int main(int argc, char **argv)
     {
         if (strcmp(argv[i], "--depth") == 0 && i + 1 < argc)
             Depth = atoi(argv[++i]);
+        else if (strcmp(argv[i], "--put") == 0 && i + 2 < argc)
+        {
+            PutSource = argv[++i];
+            PutName = argv[++i];
+        }
+        else if (strcmp(argv[i], "--snapshot") == 0 && i + 1 < argc)
+            SnapshotName = argv[++i];
+        else if (strcmp(argv[i], "--cat-snapshot") == 0 && i + 2 < argc)
+        {
+            CatSnapshot = argv[++i];
+            CatName = argv[++i];
+        }
     }
 
     Image.File = fopen(argv[1], "r+b");
@@ -137,6 +153,108 @@ int main(int argc, char **argv)
            (unsigned long long)Stats.ReplayedFrames,
            (unsigned long long)Stats.JournalCommits,
            (unsigned long long)Stats.Checkpoints);
+
+    /* Optional writes, so the tools can drive a quick end-to-end test. */
+    if (PutSource && PutName)
+    {
+        FILE *Source = fopen(PutSource, "rb");
+        nfs_u16 FileName[NFS_NAME_MAX];
+        nfs_u32 NameLength = NfsNameFromAscii(PutName, FileName, NFS_NAME_MAX);
+        nfs_fileid FileId = 0;
+
+        if (!Source)
+        {
+            perror(PutSource);
+        }
+        else
+        {
+            static nfs_u8 Contents[1 << 20];
+            size_t Length = fread(Contents, 1, sizeof(Contents), Source);
+            fclose(Source);
+
+            Status = NfsCreate(Volume, NFS_ROOT_ID, FileName, NameLength, 0, &FileId);
+            if (Status == NFS_OK)
+                Status = NfsWrite(Volume, FileId, 0, Contents, (nfs_u32)Length, NULL);
+            printf("put %s (%zu bytes): %s\n", PutName, Length,
+                   Status == NFS_OK ? "ok" : "failed");
+        }
+    }
+
+    if (SnapshotName)
+    {
+        nfs_u16 Name[NFS_NAME_MAX];
+        nfs_u32 NameLength = NfsNameFromAscii(SnapshotName, Name, NFS_NAME_MAX);
+        nfs_fileid Id = 0;
+
+        Status = NfsSnapshotCreate(Volume, Name, NameLength, &Id);
+        printf("snapshot \"%s\": %s\n", SnapshotName,
+               Status == NFS_OK ? "ok" : "failed");
+    }
+
+    printf("snapshots:\n");
+    {
+        NFS_SNAPSHOT_INFO Info;
+        nfs_u32 Index;
+        int Any = 0;
+
+        for (Index = 0; NfsSnapshotList(Volume, Index, &Info) == NFS_OK; Index++)
+        {
+            char Name[NFS_NAME_MAX + 1];
+
+            if (NfsNameToAscii(Info.Name, Info.NameLen, Name, sizeof(Name)) != NFS_OK)
+                strcpy(Name, "?");
+            printf("  %-24s id=%llu tree root %llu, generation %llu\n", Name,
+                   (unsigned long long)Info.Id, (unsigned long long)Info.TreeRoot,
+                   (unsigned long long)Info.Generation);
+            Any = 1;
+        }
+        if (!Any)
+            printf("  none\n");
+    }
+
+    if (CatSnapshot && CatName)
+    {
+        nfs_u16 SnapshotNode[NFS_NAME_MAX];
+        nfs_u16 FileNode[NFS_NAME_MAX];
+        nfs_u32 SnapshotLength = NfsNameFromAscii(CatSnapshot, SnapshotNode, NFS_NAME_MAX);
+        nfs_u32 FileLength = NfsNameFromAscii(CatName, FileNode, NFS_NAME_MAX);
+        NFS_PIFT_RECORD SnapshotRecord, FileRecord;
+
+        /* Snapshots are records inside the .snapshots directory of the root. */
+        {
+            nfs_u16 DirectoryNode[NFS_NAME_MAX];
+            nfs_u32 DirectoryLength = NfsNameFromAscii(".snapshots", DirectoryNode,
+                                                       NFS_NAME_MAX);
+            NFS_PIFT_RECORD DirectoryRecord;
+
+            Status = NfsLookup(Volume, NFS_ROOT_ID, DirectoryNode, DirectoryLength,
+                               &DirectoryRecord);
+            if (Status == NFS_OK)
+                Status = NfsLookup(Volume, DirectoryRecord.FileId, SnapshotNode,
+                                   SnapshotLength, &SnapshotRecord);
+        }
+        if (Status == NFS_OK)
+            Status = NfsSnapshotLookup(Volume, SnapshotRecord.FileId, NFS_ROOT_ID,
+                                       FileNode, FileLength, &FileRecord);
+        if (Status != NFS_OK)
+        {
+            printf("cat %s from %s: not found (lookup=%d, snapshot id=%llu)\n", CatName,
+                   CatSnapshot, Status, (unsigned long long)SnapshotRecord.FileId);
+        }
+        else
+        {
+            char Contents[4096];
+            nfs_u32 Got = 0;
+
+            Status = NfsSnapshotRead(Volume, SnapshotRecord.FileId, FileRecord.FileId,
+                                     0, Contents, sizeof(Contents), &Got);
+            if (Status == NFS_OK)
+                printf("cat %s from %s (%u bytes): %.*s\n", CatName, CatSnapshot, Got,
+                       (int)Got, Contents);
+            else
+                printf("cat %s from %s: read failed\n", CatName, CatSnapshot);
+        }
+    }
 
     printf("root:\n");
     ListDir(Volume, NFS_ROOT_ID, "  ", Depth);

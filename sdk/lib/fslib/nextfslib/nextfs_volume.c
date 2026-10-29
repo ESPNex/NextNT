@@ -124,6 +124,18 @@ NfsCommitRecords(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Records, nfs_u32 Count)
     if (Count == 0)
         return NFS_OK;
 
+    /* Compact before writing if the write-through area is already past its
+       high-water mark: appending first and checkpointing afterwards would fail
+       on a full area instead of making room. */
+    if (Volume->Super.PiftHead > NFS_PIFT_HIGH_WATER(Volume->Super) ||
+        Volume->Super.PiftHead + NFS_FRAME_SIZE >
+            (nfs_u64)Volume->Super.PiftClusters * Volume->Super.ClusterSize)
+    {
+        Status = NfsCheckpoint(Volume);
+        if (Status != NFS_OK)
+            return Status;
+    }
+
     for (i = 0; i < Count; i++)
     {
         nfs_u8 RecordBuffer[NFS_NAME_MAX * 2 + NFS_EXTENT_MAX * 24 + 128];
@@ -286,6 +298,12 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
     if (Status != NFS_OK)
         goto Fail;
 
+    /* The pin set exists before any block can be freed: the allocator consults
+       it, and it is filled once the records are known (step 4). */
+    Status = NfsPinInit(Volume);
+    if (Status != NFS_OK)
+        goto Fail;
+
     /* 1. Checkpoint tree: the last compacted state of the PIFT. If the newest
        generation does not verify, fall back to the previous one and flag the
        volume: nextchk has to look at it. */
@@ -350,6 +368,12 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
     if (Status != NFS_OK)
         goto Fail;
 
+    /* 4. Snapshots: pin every generation a snapshot record points at. The pins
+       are derived, so a crash cannot leave them out of step with the trees. */
+    Status = NfsSnapshotPinsRebuild(Volume);
+    if (Status != NFS_OK)
+        goto Fail;
+
     NfsSetDirty(Volume, 1);
     NfsWriteSuper(Volume);
 
@@ -359,6 +383,7 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
 Fail:
     NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
+    NfsPinDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
     return Status;
@@ -387,6 +412,7 @@ NfsDiscard(PNFS_VOLUME Volume)
         return;
     NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
+    NfsPinDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
 }
@@ -399,6 +425,7 @@ NfsUnmount(PNFS_VOLUME Volume)
     NfsSync(Volume);
     NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
+    NfsPinDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
 }

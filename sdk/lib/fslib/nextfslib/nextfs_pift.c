@@ -55,6 +55,8 @@ NfsPiftSerialize(const NFS_PIFT_RECORD *Record, void *Buffer, nfs_u32 Capacity)
     Body->Mtime = Record->Mtime;
     Body->Atime = Record->Atime;
     Body->Btime = Record->Btime;
+    Body->SnapshotRoot = Record->SnapshotRoot;
+    Body->SnapshotGeneration = Record->SnapshotGeneration;
     Body->NameLen = Record->NameLen;
     Body->ExtentCount = Record->ExtentCount;
 
@@ -108,6 +110,8 @@ NfsPiftDeserialize(const void *Buffer, nfs_u32 Length, NFS_PIFT_RECORD *Record)
     Record->Mtime = Body->Mtime;
     Record->Atime = Body->Atime;
     Record->Btime = Body->Btime;
+    Record->SnapshotRoot = Body->SnapshotRoot;
+    Record->SnapshotGeneration = Body->SnapshotGeneration;
     Record->NameLen = Body->NameLen;
     Record->ExtentCount = Body->ExtentCount;
 

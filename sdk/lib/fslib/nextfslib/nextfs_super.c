@@ -262,7 +262,8 @@ NfsClusterAlloc(PNFS_VOLUME Volume, nfs_u64 Count, nfs_u64 *FirstCluster)
 void
 NfsClusterFree(PNFS_VOLUME Volume, nfs_u64 FirstCluster, nfs_u64 Count)
 {
-    NfsClusterMarkFree(Volume, FirstCluster, Count);
+    /* A cluster a snapshot still owns is not free: the pin set decides. */
+    NfsPinFreeGaps(Volume, FirstCluster, Count);
 }
 
 int

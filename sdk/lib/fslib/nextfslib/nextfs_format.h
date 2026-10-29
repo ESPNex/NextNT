@@ -30,7 +30,7 @@ typedef nfs_u64 nfs_seq;
 
 #define NFS_SUPER_MAGIC        "NFSB"
 #define NFS_SUPER_SIZE         1024u
-#define NFS_FORMAT_VERSION     2u
+#define NFS_FORMAT_VERSION     3u
 #define NFS_BOOT_OEM           "NEXTFS  "
 #define NFS_NODE_MAGIC         "NFBT"
 #define NFS_FRAME_MAGIC        "NFJN"
@@ -61,6 +61,7 @@ typedef nfs_u64 nfs_seq;
 #define NFS_FLAG_DIR           0x00000001u
 #define NFS_FLAG_DELETED       0x00000002u
 #define NFS_FLAG_INLINE_DATA   0x00000004u
+#define NFS_FLAG_SNAPSHOT      0x00000008u   /* a pinned checkpoint generation    */
 
 /* nfs_extent.lcn value for a sparse hole */
 #define NFS_HOLE               0xFFFFFFFFFFFFFFFFull
@@ -172,6 +173,8 @@ typedef struct _NFS_PIFT_BODY
     nfs_u64 Size;
     nfs_u64 AllocSize;
     nfs_u64 Ctime, Mtime, Atime, Btime;
+    nfs_u64 SnapshotRoot;  /* snapshot records: the pinned tree root    */
+    nfs_u64 SnapshotGeneration;
     nfs_u32 NameLen;       /* UTF-16 code units                         */
     nfs_u32 ExtentCount;
 } NFS_PIFT_BODY, *PNFS_PIFT_BODY;
@@ -194,6 +197,8 @@ typedef struct _NFS_PIFT_RECORD
     nfs_u64    Size;
     nfs_u64    AllocSize;
     nfs_u64    Ctime, Mtime, Atime, Btime;
+    nfs_u64    SnapshotRoot;         /* only for NFS_FLAG_SNAPSHOT records */
+    nfs_u64    SnapshotGeneration;
     nfs_u32    NameLen;
     nfs_u16    Name[NFS_NAME_MAX];
     nfs_u32    ExtentCount;
@@ -227,8 +232,21 @@ typedef struct _NFS_STATS
     nfs_u64 Checkpoints;
     nfs_u64 ReplayedFrames;
     nfs_u32 Files;
+    nfs_u32 Snapshots;
     nfs_u32 UsedFallbackRoot;   /* mount had to use the previous tree root */
+    nfs_u32 PinnedRanges;       /* snapshot pin intervals in RAM        */
 } NFS_STATS, *PNFS_STATS;
+
+/* One snapshot, as reported by NfsSnapshotList. */
+typedef struct _NFS_SNAPSHOT_INFO
+{
+    nfs_fileid Id;
+    nfs_u64    TreeRoot;
+    nfs_u64    Generation;
+    nfs_u64    Created;
+    nfs_u32    NameLen;
+    nfs_u16    Name[NFS_NAME_MAX];
+} NFS_SNAPSHOT_INFO, *PNFS_SNAPSHOT_INFO;
 
 /* ------------------------------------------------------------------ */
 /* API                                                                 */
@@ -258,6 +276,21 @@ int NfsOpenById(PNFS_VOLUME Volume, nfs_fileid FileId, NFS_PIFT_RECORD *OutRecor
 int NfsRemove(PNFS_VOLUME Volume, nfs_fileid FileId);
 int NfsReadDir(PNFS_VOLUME Volume, nfs_fileid Directory, nfs_u32 Index,
                NFS_PIFT_RECORD *OutRecord);
+
+/* Snapshots: a pinned checkpoint generation. Every block a snapshot owns (its
+   tree nodes and the file data its records map) stays allocated until the
+   snapshot is deleted; the pin set lives in RAM and is rebuilt at mount. */
+int NfsSnapshotCreate(PNFS_VOLUME Volume, const nfs_u16 *Name, nfs_u32 NameLength,
+                      nfs_fileid *OutId);
+int NfsSnapshotDelete(PNFS_VOLUME Volume, nfs_fileid SnapshotId);
+int NfsSnapshotList(PNFS_VOLUME Volume, nfs_u32 Index, NFS_SNAPSHOT_INFO *OutInfo);
+int NfsSnapshotLookup(PNFS_VOLUME Volume, nfs_fileid SnapshotId, nfs_fileid Parent,
+                      const nfs_u16 *Name, nfs_u32 NameLength,
+                      NFS_PIFT_RECORD *OutRecord);
+int NfsSnapshotOpenById(PNFS_VOLUME Volume, nfs_fileid SnapshotId, nfs_fileid FileId,
+                        NFS_PIFT_RECORD *OutRecord);
+int NfsSnapshotRead(PNFS_VOLUME Volume, nfs_fileid SnapshotId, nfs_fileid FileId,
+                    nfs_u64 Offset, void *Buffer, nfs_u32 Length, nfs_u32 *Read);
 
 /* Data. Any offset and length; the touched clusters are copy-on-write and a
    write past EOF creates a sparse hole. Length 0 with an offset truncates. */
