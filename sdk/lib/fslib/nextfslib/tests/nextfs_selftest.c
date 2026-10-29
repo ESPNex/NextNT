@@ -642,6 +642,125 @@ int main(void)
         }
     }
 
+    printf("[18] multi-level checkpoint tree (more leaves than one internal node holds)\n");
+    if (Volume)
+    {
+        nfs_fileid DirId = 0;
+        nfs_u16 Probe[NFS_NAME_MAX];
+        nfs_u32 ProbeLen = Name("many", Probe);
+        nfs_u32 i;
+        nfs_u32 Created = 0;
+        nfs_u32 Listed = 0;
+        nfs_u32 Before = 0;
+        NFS_PIFT_RECORD Entry;
+
+        CHECK(NfsLookup(Volume, NFS_ROOT_ID, Probe, ProbeLen, &Record) == NFS_OK,
+              "many directory for the deep tree test");
+        DirId = Record.FileId;
+
+        /* The directory already holds the files from the previous test. */
+        while (NfsReadDir(Volume, DirId, Before, &Entry) == NFS_OK)
+            Before++;
+
+        for (i = 0; i < 8000; i++)
+        {
+            nfs_u16 FileName[NFS_NAME_MAX];
+            char Text[32];
+            nfs_u32 Length;
+
+            snprintf(Text, sizeof(Text), "deep%05u", i);
+            Length = Name(Text, FileName);
+            if (NfsCreate(Volume, DirId, FileName, Length, 0, NULL) == NFS_OK)
+                Created++;
+        }
+        CHECK(Created == 8000, "created 8000 files");
+
+        CHECK(NfsSync(Volume) == NFS_OK, "checkpoint 8000 records");
+
+        /* The root must now be an internal node, i.e. the tree has levels. */
+        {
+            nfs_u8 Node[4096];
+            NFS_NODE_HDR *Header = (NFS_NODE_HDR *)Node;
+            nfs_u64 Root = NfsGetSuper(Volume)->CheckpointRoot.Block;
+
+            CHECK(Device.Data != NULL, "device");
+            memcpy(Node, Device.Data + Root * NfsGetSuper(Volume)->ClusterSize, 4096);
+            CHECK(memcmp(Header->Magic, "NFBT", 4) == 0, "root node magic");
+            CHECK(Header->Level >= 1, "root of the checkpoint tree is internal");
+        }
+
+        NfsDiscard(Volume);
+        Volume = NULL;
+        CHECK(NfsMount(&Block, &Volume) == NFS_OK, "remount a multi-level tree");
+        if (Volume)
+        {
+            while (NfsReadDir(Volume, DirId, Listed, &Entry) == NFS_OK)
+                Listed++;
+            CHECK(Listed == Before + 8000, "every file enumerated after remount");
+
+            ProbeLen = Name("deep04242", Probe);
+            CHECK(NfsLookup(Volume, DirId, Probe, ProbeLen, &Entry) == NFS_OK,
+                  "binary search in an 8000-entry directory");
+        }
+    }
+
+    printf("[19] repeated checkpoints and the two-generation fallback root\n");
+    if (Volume)
+    {
+        nfs_u64 FreeBefore, FreeAfter;
+        nfs_u32 Round;
+        nfs_fileid ManyId = 0;
+        nfs_u16 Probe[NFS_NAME_MAX];
+        nfs_u32 ProbeLen = Name("many", Probe);
+        NFS_PIFT_RECORD Entry;
+
+        FreeBefore = NfsGetSuper(Volume)->FreeClusters;
+        for (Round = 0; Round < 6; Round++)
+            CHECK(NfsSync(Volume) == NFS_OK, "checkpoint round");
+
+        FreeAfter = NfsGetSuper(Volume)->FreeClusters;
+        CHECK(FreeBefore == FreeAfter,
+              "six checkpoints reclaim the retired generation (no cluster drift)");
+
+        /* The volume keeps exactly two generations alive. */
+        CHECK(NfsGetSuper(Volume)->CheckpointRoot.Block != 0, "live root published");
+        CHECK(NfsGetSuper(Volume)->CheckpointRootPrev.Block != 0, "fallback root published");
+        CHECK(NfsGetSuper(Volume)->CheckpointRootPrev.Generation <
+              NfsGetSuper(Volume)->CheckpointRoot.Generation,
+              "fallback root is the older generation");
+
+        /* Now break the live tree on purpose: the previous generation has to
+           carry the mount, and the volume must say it needs a check. */
+        {
+            nfs_u64 Root = NfsGetSuper(Volume)->CheckpointRoot.Block;
+            nfs_u32 Cluster = NfsGetSuper(Volume)->ClusterSize;
+
+            Device.Data[Root * Cluster + 200] ^= 0xFF;
+            NfsDiscard(Volume);
+            Volume = NULL;
+
+            CHECK(NfsMount(&Block, &Volume) == NFS_OK, "mount over a corrupt live tree");
+            if (Volume)
+            {
+                NFS_STATS Stats;
+
+                NfsGetStats(Volume, &Stats);
+                CHECK(Stats.UsedFallbackRoot == 1, "mount used the fallback generation");
+                CHECK((NfsGetSuper(Volume)->Flags & NFS_SB_NEEDS_CHECK) != 0,
+                      "volume reports that it needs a check");
+                CHECK(NfsOpenById(Volume, NFS_ROOT_ID, &Entry) == NFS_OK,
+                      "root survived the fallback");
+                CHECK(NfsLookup(Volume, NFS_ROOT_ID, Probe, ProbeLen, &Entry) == NFS_OK,
+                      "the rebuilt directory survived the fallback");
+                ManyId = Entry.FileId;
+
+                ProbeLen = Name("deep07777", Probe);
+                CHECK(NfsLookup(Volume, ManyId, Probe, ProbeLen, &Entry) == NFS_OK,
+                      "a file created before the last two checkpoints is still reachable");
+            }
+        }
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

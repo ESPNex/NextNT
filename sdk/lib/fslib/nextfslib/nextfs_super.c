@@ -345,7 +345,8 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
     NFS_PIFT_RECORD Root;
     nfs_u64 DeviceBytes = 0;
     nfs_u64 TotalClusters, Reserved, Cluster;
-    nfs_u64 BitmapClusters, JournalClusters, PiftClusters, PiftFirst;
+    nfs_u64 BitmapClusters, JournalClusters, PiftClusters, PiftAreaClusters;
+    nfs_u64 PiftAreaFirst;
     nfs_u32 i;
 
     if (!Device || !Device->Read || !Device->Write)
@@ -373,17 +374,22 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
        data area, and the last cluster holds the superblock backup. The PIFT
        area is bounded (1/16 of the volume, 16..4096 clusters): the rest is
        file data and copy-on-write metadata. */
-    PiftClusters = TotalClusters / 16;
-    if (PiftClusters < 16)
-        PiftClusters = 16;
-    if (PiftClusters > 4096)
-        PiftClusters = 4096;
+    PiftAreaClusters = TotalClusters / 16;
+    if (PiftAreaClusters < 32)
+        PiftAreaClusters = 32;
+    if (PiftAreaClusters > 8192)
+        PiftAreaClusters = 8192;
 
-    Reserved = 2 + BitmapClusters + JournalClusters + PiftClusters + 1;
+    /* Two halves, one per live generation: a checkpoint switches writes to the
+       half the fallback generation is not using, so the fallback always finds
+       the records that were appended after it was built. */
+    PiftClusters = PiftAreaClusters / 2;
+
+    Reserved = 2 + BitmapClusters + JournalClusters + PiftAreaClusters + 1;
     if (TotalClusters <= Reserved + 16)
         return NFS_EINVAL;
 
-    PiftFirst = 2 + BitmapClusters + JournalClusters;
+    PiftAreaFirst = 2 + BitmapClusters + JournalClusters;
 
     memset(&Volume, 0, sizeof(Volume));
     Volume.Device = *Device;
@@ -402,7 +408,9 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
     Super->JournalClusters = (nfs_u32)JournalClusters;
     Super->JournalSeqFirst = 1;
     Super->JournalSeqNext = 1;
-    Super->PiftFirst = PiftFirst;
+    Super->PiftAreaFirst = PiftAreaFirst;
+    Super->PiftAreaClusters = (nfs_u32)PiftAreaClusters;
+    Super->PiftFirst = PiftAreaFirst + ((Super->Generation & 1) ? PiftClusters : 0);
     Super->PiftClusters = (nfs_u32)PiftClusters;
     Super->PiftHead = 0;
     Super->PiftSeqNext = 1;
@@ -422,7 +430,7 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
         return NFS_ENOSPC;
     memset(Volume.Bitmap, 0, Volume.BitmapBytes);   /* a new volume is all free */
     Volume.Super.FreeClusters = TotalClusters;
-    NfsClusterMarkUsed(&Volume, 0, PiftFirst + PiftClusters);
+    NfsClusterMarkUsed(&Volume, 0, PiftAreaFirst + PiftAreaClusters);
     NfsClusterMarkUsed(&Volume, TotalClusters - 1, 1);   /* super backup */
 
     /* Root directory record. */

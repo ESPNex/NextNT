@@ -120,10 +120,18 @@ int main(int argc, char **argv)
            Super->ClusterSize, (unsigned long long)Super->TotalClusters,
            (unsigned long long)Super->FreeClusters,
            (unsigned long long)Super->Generation, Super->Flags);
-    printf("  journal %u clusters (seq %llu..%llu), PIFT area %u clusters, head %llu\n",
-           Super->JournalClusters, (unsigned long long)Super->JournalSeqFirst,
-           (unsigned long long)Super->JournalSeqNext, Super->PiftClusters,
-           (unsigned long long)Super->PiftHead);
+    printf("  journal %u clusters (seq %llu..%llu)\n", Super->JournalClusters,
+           (unsigned long long)Super->JournalSeqFirst,
+           (unsigned long long)Super->JournalSeqNext);
+    printf("  PIFT area %u clusters in two halves; live half starts at cluster %llu "
+           "(%u clusters), head %llu\n",
+           Super->PiftAreaClusters, (unsigned long long)Super->PiftFirst,
+           Super->PiftClusters, (unsigned long long)Super->PiftHead);
+    printf("  checkpoint root %llu (generation %llu), fallback root %llu (generation %llu)\n",
+           (unsigned long long)Super->CheckpointRoot.Block,
+           (unsigned long long)Super->CheckpointRoot.Generation,
+           (unsigned long long)Super->CheckpointRootPrev.Block,
+           (unsigned long long)Super->CheckpointRootPrev.Generation);
     NfsGetStats(Volume, &Stats);
     printf("  replayed frames: %llu, commits: %llu, checkpoints: %llu\n",
            (unsigned long long)Stats.ReplayedFrames,

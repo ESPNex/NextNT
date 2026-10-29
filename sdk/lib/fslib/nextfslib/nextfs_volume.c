@@ -17,6 +17,19 @@ void NfsMemFree(void *Block);
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
+/* The PIFT-on-disk area is split in two halves, one per live generation. */
+static nfs_u64
+NfsPiftHalfClusters(const NFS_SUPER *Super)
+{
+    return Super->PiftAreaClusters / 2;
+}
+
+static nfs_u64
+NfsPiftHalfFirst(const NFS_SUPER *Super, nfs_u64 Generation)
+{
+    return Super->PiftAreaFirst + (((Generation & 1) ? NfsPiftHalfClusters(Super) : 0));
+}
+
 /* ------------------------------------------------------------------ */
 
 static nfs_u64
@@ -161,147 +174,47 @@ NfsCommitRecords(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Records, nfs_u32 Count)
 /* Checkpoint: write the live records as a fresh copy-on-write chain   */
 /* ------------------------------------------------------------------ */
 
-typedef struct _NFS_CHAIN_BLOCK
-{
-    nfs_u64 Block;
-    nfs_u32 StartRecord;
-    nfs_u32 RecordCount;
-} NFS_CHAIN_BLOCK;
-
 int
 NfsCheckpoint(PNFS_VOLUME Volume)
 {
-    NFS_CHAIN_BLOCK Blocks[4096];
-    nfs_u32 BlockCount = 0;
-    nfs_u32 i, Cursor = 0, LiveCount = 0;
-    nfs_u64 OldChain[512];
+    nfs_u64 OldBlocks[8192];
     nfs_u32 OldCount = 0;
+    nfs_u64 Root = 0;
     nfs_u64 Generation = Volume->Super.Generation + 1;
+    nfs_u32 i;
     int Status;
 
-    /* 1. Walk the current chain so its blocks can be freed afterwards. */
+    /* 1. Remember the blocks of the *previous* generation: those are the ones
+       this checkpoint retires. The current tree becomes the new fallback, so a
+       volume can always mount from the generation before. */
+    Status = NfsTreeCollect(Volume, Volume->Super.CheckpointRootPrev.Block,
+                            OldBlocks, 8192, &OldCount);
+    if (Status != NFS_OK)
     {
-        nfs_u64 Block = Volume->Super.CheckpointRoot.Block;
-        while (Block != 0 && OldCount < 4096)
-        {
-            nfs_u8 Node[NFS_NODE_SIZE];
-            NFS_NODE_HDR *Header = (NFS_NODE_HDR *)Node;
-            OldChain[OldCount++] = Block;
-            if (NfsDevRead(Volume, Block * NFS_CLUSTER_BYTES(Volume), Node, NFS_NODE_SIZE) != NFS_OK)
-                break;
-            if (memcmp(Header->Magic, NFS_NODE_MAGIC, 4) != 0)
-                break;
-            Block = Header->Next;
-        }
+        /* A corrupt old tree must not stop a checkpoint: we simply cannot
+           reclaim its blocks. Report nothing, leak them until nextchk. */
+        OldCount = 0;
     }
 
-    /* 2. Plan the new chain: pack live records into NFS_NODE_SIZE nodes. */
-    while (Cursor < Volume->RecordCount)
-    {
-        nfs_u32 Used = sizeof(NFS_NODE_HDR);
-        nfs_u32 Start = Cursor;
-
-        while (Cursor < Volume->RecordCount)
-        {
-            nfs_u64 Size = sizeof(nfs_u32) +
-                           NfsPiftRecordSize(&Volume->Records[Cursor]);
-            if (Volume->Records[Cursor].Flags & NFS_FLAG_DELETED)
-            {
-                Cursor++;
-                continue;
-            }
-            if (Used + Size > NFS_NODE_SIZE)
-            {
-                if (Cursor == Start)
-                {
-                    /* A single record bigger than a node: still pack it. */
-                    Used += (nfs_u32)Size;
-                    Cursor++;
-                }
-                break;
-            }
-            Used += (nfs_u32)Size;
-            Cursor++;
-        }
-
-        if (BlockCount >= 4096)
-            return NFS_ENOSPC;   /* v0.2: chain of at most 4096 nodes */
-
-        Blocks[BlockCount].Block = 0;
-        Blocks[BlockCount].StartRecord = Start;
-        Blocks[BlockCount].RecordCount = Cursor - Start;
-        BlockCount++;
-
-    }
-
-    if (BlockCount == 0)
-        return NFS_OK;
-
-    /* 3. Allocate a block for each new node. */
-    for (i = 0; i < BlockCount; i++)
-    {
-        Status = NfsClusterAlloc(Volume, 1, &Blocks[i].Block);
-        if (Status != NFS_OK)
-            return Status;
-    }
-
-    /* 4. Write the nodes. Next is known because all blocks are allocated. */
-    for (i = 0; i < BlockCount; i++)
-    {
-        nfs_u8 Node[NFS_NODE_SIZE];
-        NFS_NODE_HDR *Header = (NFS_NODE_HDR *)Node;
-        nfs_u8 *Payload = Node + sizeof(NFS_NODE_HDR);
-        nfs_u32 j, Used;
-
-        memset(Node, 0, sizeof(Node));
-        memcpy(Header->Magic, NFS_NODE_MAGIC, 4);
-        Header->Level = 0;
-        Header->Generation = Generation;
-        Header->Block = Blocks[i].Block;
-        Header->Next = (i + 1 < BlockCount) ? Blocks[i + 1].Block : 0;
-        Header->DataOffset = sizeof(NFS_NODE_HDR);
-
-        Used = 0;
-        for (j = 0; j < Blocks[i].RecordCount; j++)
-        {
-            nfs_u32 Index = Blocks[i].StartRecord + j;
-            nfs_u8 RecordBuffer[NFS_NAME_MAX * 2 + NFS_EXTENT_MAX * 24 + 128];
-            nfs_u32 RecordLen;
-
-            if (Volume->Records[Index].Flags & NFS_FLAG_DELETED)
-                continue;
-
-            RecordLen = NfsPiftSerialize(&Volume->Records[Index], RecordBuffer,
-                                         sizeof(RecordBuffer));
-            if (RecordLen == 0)
-                continue;
-            memcpy(Payload + Used, &RecordLen, sizeof(nfs_u32));
-            Used += sizeof(nfs_u32);
-            memcpy(Payload + Used, RecordBuffer, RecordLen);
-            Used += RecordLen;
-            LiveCount++;
-        }
-
-        Header->Entries = (nfs_u16)Blocks[i].RecordCount;
-        Header->UsedBytes = (nfs_u16)Used;
-        Header->Crc32c = 0;
-        Header->Crc32c = NfsCrc32c(0, Node, NFS_NODE_SIZE);
-
-        Status = NfsDevWrite(Volume, Blocks[i].Block * NFS_CLUSTER_BYTES(Volume),
-                             Node, NFS_NODE_SIZE);
-        if (Status != NFS_OK)
-            return Status;
-    }
+    /* 2. Build a fresh copy-on-write tree. */
+    Status = NfsTreeBuild(Volume, Generation, &Root);
+    if (Status != NFS_OK)
+        return Status;
 
     Status = NfsDevFlush(Volume);
     if (Status != NFS_OK)
         return Status;
 
-    /* 5. Publish: a single superblock pair write swaps the root. */
-    Volume->Super.CheckpointRoot.Block = Blocks[0].Block;
+    /* 3. Publish with one superblock pair write. */
+    Volume->Super.CheckpointRootPrev = Volume->Super.CheckpointRoot;
+    Volume->Super.CheckpointRoot.Block = Root;
     Volume->Super.CheckpointRoot.Generation = Generation;
     Volume->Super.Generation = Generation;
-    Volume->Super.PiftHead = 0;                     /* area is reset    */
+    /* Fresh write-through half for the new generation: the fallback generation
+       keeps its own, so mounting it still sees every record it ever appended. */
+    Volume->Super.PiftFirst = NfsPiftHalfFirst(&Volume->Super, Generation);
+    Volume->Super.PiftClusters = (nfs_u32)NfsPiftHalfClusters(&Volume->Super);
+    Volume->Super.PiftHead = 0;
     Volume->Super.JournalSeqFirst = Volume->Super.JournalSeqNext;
     NfsSetDirty(Volume, 0);
 
@@ -309,9 +222,10 @@ NfsCheckpoint(PNFS_VOLUME Volume)
     if (Status != NFS_OK)
         return Status;
 
-    /* 6. Retire the old chain and persist the bitmap. */
+    /* 4. Retire the old tree. */
     for (i = 0; i < OldCount; i++)
-        NfsClusterFree(Volume, OldChain[i], 1);
+        NfsClusterFree(Volume, OldBlocks[i], 1);
+
     Status = NfsBitmapFlush(Volume);
     if (Status != NFS_OK)
         return Status;
@@ -324,6 +238,19 @@ NfsCheckpoint(PNFS_VOLUME Volume)
 /* ------------------------------------------------------------------ */
 /* Mount / unmount / sync                                              */
 /* ------------------------------------------------------------------ */
+
+static int
+NfsMountAcceptRecord(void *Context, const NFS_PIFT_RECORD *Record)
+{
+    PNFS_VOLUME Volume = (PNFS_VOLUME)Context;
+    NFS_PIFT_RECORD *Existing;
+
+    Existing = NfsIndexGet(Volume, Record->FileId);
+    if (Existing && Existing->Seq > Record->Seq)
+        return NFS_OK;           /* a newer write-through record already won */
+
+    return (NfsIndexInsert(Volume, Record) == NFS_OK) ? NFS_OK : NFS_ENOSPC;
+}
 
 int
 NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
@@ -359,66 +286,26 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
     if (Status != NFS_OK)
         goto Fail;
 
-    /* 1. Checkpoint chain: the last compacted state of the PIFT. */
+    /* 1. Checkpoint tree: the last compacted state of the PIFT. If the newest
+       generation does not verify, fall back to the previous one and flag the
+       volume: nextchk has to look at it. */
+    Status = NfsTreeWalk(Volume, Volume->Super.CheckpointRoot.Block,
+                         NfsMountAcceptRecord, Volume);
+    if (Status != NFS_OK)
     {
-        nfs_u64 Block = Volume->Super.CheckpointRoot.Block;
-
-        while (Block != 0)
-        {
-            nfs_u8 Node[NFS_NODE_SIZE];
-            NFS_NODE_HDR *Header = (NFS_NODE_HDR *)Node;
-            nfs_u32 Cursor;
-
-            Status = NfsDevRead(Volume, Block * NFS_CLUSTER_BYTES(Volume), Node, NFS_NODE_SIZE);
-            if (Status != NFS_OK)
-                goto Fail;
-            if (memcmp(Header->Magic, NFS_NODE_MAGIC, 4) != 0)
-            {
-                Status = NFS_ECORRUPT;
-                goto Fail;
-            }
-            {
-                nfs_u32 StoredCrc = Header->Crc32c;
-                Header->Crc32c = 0;
-                if (StoredCrc != NfsCrc32c(0, Node, NFS_NODE_SIZE))
-                {
-                    Status = NFS_ECORRUPT;
-                    goto Fail;
-                }
-                Header->Crc32c = StoredCrc;
-            }
-
-            Cursor = Header->DataOffset;
-            {
-                nfs_u32 End = (nfs_u32)Header->DataOffset + Header->UsedBytes;
-
-                while (Cursor + sizeof(nfs_u32) <= End)
-                {
-                    nfs_u32 RecordLen;
-                    NFS_PIFT_RECORD Record;
-
-                    memcpy(&RecordLen, Node + Cursor, sizeof(nfs_u32));
-                    Cursor += sizeof(nfs_u32);
-                    if (RecordLen > End - Cursor)
-                        break;
-                    if (NfsPiftDeserialize(Node + Cursor, RecordLen, &Record) == NFS_OK)
-                    {
-                        NFS_PIFT_RECORD *Existing = NfsIndexGet(Volume, Record.FileId);
-                        if (!Existing || Existing->Seq <= Record.Seq)
-                        {
-                            if (NfsIndexInsert(Volume, &Record) != NFS_OK)
-                            {
-                                Status = NFS_ENOSPC;
-                                goto Fail;
-                            }
-                        }
-                    }
-                    Cursor += RecordLen;
-                }
-            }
-
-            Block = Header->Next;
-        }
+        Status = NfsTreeWalk(Volume, Volume->Super.CheckpointRootPrev.Block,
+                             NfsMountAcceptRecord, Volume);
+        if (Status != NFS_OK)
+            goto Fail;
+        /* Follow the fallback generation to its own PIFT half and read all of
+           it: the highest sequence per file wins, so stale frames are inert. */
+        Volume->Super.PiftFirst = NfsPiftHalfFirst(&Volume->Super,
+                                                   Volume->Super.CheckpointRootPrev.Generation);
+        Volume->Super.PiftClusters = (nfs_u32)NfsPiftHalfClusters(&Volume->Super);
+        Volume->Super.PiftHead = NfsPiftHalfClusters(&Volume->Super) *
+                                 Volume->Super.ClusterSize;
+        Volume->Super.Flags |= NFS_SB_NEEDS_CHECK;
+        Volume->Stats.UsedFallbackRoot = 1;
     }
 
     /* 2. PIFT-on-disk area: newer than the checkpoint, still not read at runtime. */

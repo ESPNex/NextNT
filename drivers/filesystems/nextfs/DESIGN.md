@@ -1,4 +1,4 @@
-# NextFS — design (v0.1, draft)
+# NextFS — design (v0.3, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -14,7 +14,7 @@ This document is the contract between four components that must agree byte for b
 | boot chain | `boot/nextldr/nextldr/lib/fs/nextfs.c` (later phase) | must read a NextFS volume to boot |
 
 Status: **phase 2**. `nextfslib` is complete for the format as described here and
-self-tested (87 checks); `nextfs.sys` is still a mount-capable skeleton (volume
+self-tested (112 checks); `nextfs.sys` is still a mount-capable skeleton (volume
 open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`, `TODO(phase3)`).
 
 ---
@@ -45,7 +45,7 @@ the primary is used.
 | Field | Type | Meaning |
 |---|---|---|
 | `magic` | `char[4]` | `"NFSB"` |
-| `version` | `u16` | format version, currently 1 |
+| `version` | `u16` | format version, currently 2 |
 | `header_size` | `u16` | 1024 |
 | `cluster_size` | `u32` | bytes per cluster, power of two, >= 4096 |
 | `total_clusters` | `u64` | volume size in clusters |
@@ -55,17 +55,19 @@ the primary is used.
 | `journal_clusters` | `u32` | journal length in clusters |
 | `journal_seq_first` | `u64` | oldest transaction still recoverable |
 | `journal_seq_next` | `u64` | next transaction sequence number |
-| `pift_first` | `u64` | first cluster of the PIFT-on-disk area |
-| `pift_clusters` | `u32` | length of the PIFT-on-disk area |
+| `pift_area_first` | `u64` | first cluster of the whole PIFT-on-disk area |
+| `pift_area_clusters` | `u32` | size of the whole PIFT-on-disk area (two halves) |
+| `pift_first` | `u64` | first cluster of the half the live generation writes |
+| `pift_clusters` | `u32` | length of that half |
+| `pift_head` | `u64` | bytes appended in that half |
 | `pift_seq_next` | `u64` | next PIFT record sequence number |
-| `pift_root` | `{ u64 block, u64 generation }` | checkpoint root of the PIFT tree |
-| `tree_root` | `{ u64 block, u64 generation }` | namespace tree root (directory links) |
-| `refcount_root` | `{ u64 block, u64 generation }` | copy-on-write block refcount tree |
-| `bitmap_root` | `{ u64 block, u64 generation }` | allocation bitmap (copy-on-write chain) |
+| `checkpoint_root` | `{ u64 block, u64 generation }` | live PIFT checkpoint tree |
+| `checkpoint_root_prev` | `{ u64 block, u64 generation }` | previous generation, the fallback |
+| ~~`tree_root`~~, ~~`refcount_root`~~, ~~`bitmap_root`~~ | | planned (section 3, open item 1) |
 | `free_clusters` | `u64` | advisory free count (the bitmap is authoritative) |
 | `flags` | `u32` | bit 0 dirty, bit 1 needs-check, bit 2 read-only |
 | `label` | `char[64]` | UTF-8 volume label, NUL padded |
-| `crc32c` | `u32` | CRC32C over bytes 0..1019 |
+| `crc32c` | `u32` | CRC32C over the 1020 bytes before it |
 
 A `{block, generation}` pair is read as: "block *n* is the root **only** if the node
 stored there carries generation *g*". Stale blocks (lower generation) are ignored.
@@ -73,24 +75,36 @@ That single rule is what makes copy-on-write cheap and snapshots free.
 
 ### 1.2 Copy-on-write B+tree node (4 KiB)
 
+One node per cluster, never modified in place: a change allocates a new node, writes
+it with the *new* generation and only then publishes it through the parent (the last
+publish is the superblock). A node is trusted only if its CRC is valid **and** its
+self address and generation match what the parent expects.
+
 | Field | Type | Meaning |
 |---|---|---|
 | `magic` | `char[4]` | `"NFBT"` |
 | `level` | `u16` | 0 = leaf |
-| `entries` | `u16` | number of (key, value) pairs |
+| `entries` | `u16` | number of entries |
 | `generation` | `u64` | written with the node, compared on read |
 | `block` | `u64` | self address (detects a block copied to the wrong place) |
-| `keys` / `values` | arrays | leaf: `u64 key` + opaque value; internal: `u64 key` + `u64 child` |
-| `crc32c` | `u32` | over the node |
+| `next` | `u64` | leaf sibling, kept for sequential scans |
+| `data_offset` | `u32` | where the entry area starts (40-byte header, padded) |
+| `used_bytes` | `u32` | bytes used after `data_offset` (relative, so a node can move) |
+| `crc32c` | `u32` | over the whole 4096-byte node with this field zeroed |
 
-Keys are `u64`. Three trees are used:
+* **Leaf** — a packed sequence of serialised PIFT records, each prefixed by a 4-byte
+  length. A record is never split across two leaves. Packing beats one-key-per-entry
+  here because the record *is* the value and the key (`fileid`) is inside it.
+* **Internal** — an array of `{ u64 key_max, u64 child }` pairs (up to 16 per node):
+  `child` covers every key `<= key_max`. The walk descends all children in order, so
+  the same code works for a scan and for a full walk; `NFS_TREE_MAX_DEPTH` is 8, which
+  at 16-wide fan-out and ~1.9 KiB of leaf payload per node is far beyond any realistic
+  PIFT (8^16 records).
 
-* **namespace tree** — key = `hash(parent_fileid, casefold(name))` + name bytes;
-  used for directory enumeration ordering and for hard-link records.
-* **PIFT checkpoint tree** — key = `fileid`; value = a serialised PIFT record
-  (section 2). This is the compacted form of the PIFT-on-disk area.
-* **refcount tree** — key = `block`; value = `refcount`. Required because a
-  copy-on-write block may be shared by a snapshot and the live tree.
+The namespace ordering itself lives in RAM (the sorted child index, section 2.1), so
+the checkpoint tree is purely the on-disk compacted PIFT. Directory links are not a
+separate tree: a record names its parent, and the child index is rebuilt from the
+records at mount.
 
 ### 1.3 Allocation bitmap
 
@@ -124,18 +138,27 @@ Rules:
 
 ### 1.5 PIFT-on-disk area
 
-Append-only log of serialised PIFT records, wrapping inside `pift_first ..
-pift_first + pift_clusters`. It is **write-through**: every committed change appends
+Append-only log of serialised PIFT records inside the current half,
+`pift_first .. pift_first + pift_clusters`. It is **write-through**: every committed change appends
 its record(s) here, so the on-disk table always trails the RAM table by at most one
 transaction. It is **never read during runtime**: the only readers are
 
 * mount (to rebuild the RAM table), and
 * `nextchk` (recovery) when the RAM table cannot be rebuilt or the volume is dirty.
 
-When the area reaches a high-water mark, it is **compacted**: the live records are
-copied into a fresh PIFT checkpoint tree, `pift_root` is swapped with a single
-superblock write, and the area is reset. Compaction is itself copy-on-write, so a
-crash mid-compaction leaves the old root valid.
+The area is split in **two halves**. Each generation writes only into its own half
+(the half selected by `generation & 1`), so the fallback generation always keeps
+every record it appended, even after the next checkpoint. When the live half reaches
+its high-water mark, it is **compacted**: the whole RAM PIFT is written as a fresh
+checkpoint tree, the roots and the half are swapped with a single superblock pair
+write, and the half restarts at offset 0. Compaction is itself copy-on-write, so a
+crash mid-compaction leaves the previous root valid — and the previous root still has
+its own untouched half to read from.
+
+Mount order is: tree of `checkpoint_root` (fall back to `checkpoint_root_prev` and set
+the needs-check flag if it does not verify), then the PIFT half of that generation,
+then the journal. Records are accepted only if their sequence number is committed, so
+reading a half past its valid tail is inert.
 
 ---
 
@@ -247,12 +270,12 @@ PIFT record.
 | `$INDEX_ROOT`/`$INDEX_ALLOCATION` (`$I30`) | child index in RAM (sorted), namespace tree on disk |
 | `$Bitmap` | copy-on-write bitmap chain |
 | `$LogFile` | journal ring, commit-frame protocol (section 2.2) |
-| `$UsnJrnl`, indexed search, `$Secure`, `$UpCase` | nothing: name comparison uses a casefold table compiled in (`nextfslib/casefold`), security descriptors live in the PIFT record tail (phase 3) |
+| `$UsnJrnl`, indexed search, `$Secure`, `$UpCase` | nothing: name comparison uses a casefold table compiled in (`nextfslib/casefold`), security descriptors live in the PIFT record tail (later phase) |
 | `fs_rec` OEM "NTFS    " | OEM "NEXTFS  " + superblock magic |
 
 ---
 
-## 5. Open questions (to settle before phase 3)
+## 5. Open questions (to settle before phase 4)
 
 1. **Security descriptors**: store inline in the record (simple, fat) or in a
    deduplicated blob store (smaller, slower)? Leaning to a deduplicated store keyed by
@@ -269,7 +292,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.2, branch `nextfs`)
+## 6. Implementation status (v0.3, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -279,19 +302,24 @@ Done and tested in this phase:
 | PIFT record codec + RAM index | `nextfslib/nextfs_pift.c` | create/lookup/readdir/unlink checks |
 | journal, commit frames, replay | `nextfslib/nextfs_journal.c` | "crash after commit" and "torn commit frame" cases |
 | transactions, checkpoint chain | `nextfslib/nextfs_volume.c` | remount after clean unmount, free-space accounting |
-| mkfs / inspector | `nextfslib/tools/nextformat.c`, `nextfsinfo.c` | 16 MiB image formatted and listed |
+| mkfs / inspector / checker | `nextfslib/tools/nextformat.c`, `nextfsinfo.c`, `nextchk.c` | 16 and 32 MiB images formatted, listed, checked, corrupted and repaired |
 | any-offset CoW writes, holes, truncate | `nextfslib/nextfs_volume.c` | boundary-spanning writes, sparse reads, truncate down/up |
 | sorted child index | `nextfslib/nextfs_pift.c` | 300-file directory, binary-search lookup, ordered enumeration |
+| multi-level checkpoint tree | `nextfslib/nextfs_tree.c` | 8000 files: root is internal (level 2), remount, enumerate, lookup |
+| two-generation roots + PIFT halves | `nextfslib/nextfs_volume.c` | 6 checkpoints with zero cluster drift; corrupt live root ⇒ fallback mount |
 | driver skeleton | `drivers/filesystems/nextfs/nextfs.c` | not compiled yet (needs the RosBE build) |
 
-`nextfslib/tests/nextfs_selftest.c` runs 87 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 112 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
 overwrites, writes across a cluster boundary, sparse holes, truncate down and up,
 a 300-file directory with a multi-node checkpoint, 400 randomised writes compared
-byte for byte with a reference buffer, and a crash in the middle of a 40-write
-burst that must recover to a whole step (never a torn write).
+byte for byte with a reference buffer, a crash in the middle of a 40-write burst that
+must recover to a whole step (never a torn write), 8000 files forcing a three-level
+checkpoint tree, six back-to-back checkpoints that must not drift the free-cluster
+count, and a deliberately corrupted live root that must be mounted through the
+fallback generation with the needs-check flag raised.
 
 Landed in phase 2 (`nextfslib`):
 
@@ -309,13 +337,33 @@ Landed in phase 2 (`nextfslib`):
 * **Checkpoints scale**: the chain now holds up to 4096 nodes and the self-test
   exercises 300 files across several nodes, including remount.
 
+Landed in phase 3 (`nextfslib`):
+
+* **Multi-level checkpoint B+tree** (`nextfs_tree.c`). Leaves are packed serialised
+  records, internal levels are `{key_max, child}` arrays, every node carries its own
+  address, generation and CRC32C. `NfsTreeBuild` writes the whole tree
+  copy-on-write, `NfsTreeWalk` reads it back at mount, `NfsTreeCollect` lists the
+  blocks of a generation so the retired one can be freed. Checkpoint publishes with
+  one superblock pair write; the old blocks are freed afterwards.
+* **Two live generations.** `checkpoint_root_prev` keeps the generation before, so a
+  tree that does not verify is not a catastrophe any more: mount uses the fallback,
+  raises `NFS_SB_NEEDS_CHECK` and `Stats.UsedFallbackRoot`. A new checkpoint retires
+  the generation *before* the fallback, which is why the free-cluster count is stable.
+* **Two PIFT halves.** The on-disk PIFT is now two halves, one per live generation,
+  so the fallback generation still has every record it appended. Failing over also
+  switches `pift_first` to that half.
+* **`nextchk`** (`tools/nextchk.c`): verifies both superblocks, walks the checkpoint
+  tree node by node (magic, self address, CRC, generation), reports the leaks and the
+  metadata clusters the bitmap thinks are free, cross-checks every record's extents
+  against the volume size, and with `--repair` rebuilds the bitmap from the PIFT and
+  checkpoints a clean generation. A plain check is read-only: it puts the superblock
+  flags back exactly as it found them.
+
 Still open, in order of importance:
 
 1. **Snapshots and the refcount tree** (section 3). Copy-on-write is in place for
-   every write, but nothing shares blocks yet, so `refcount_root` is unused.
-2. **Multi-level B+tree** for the checkpoint and namespace trees (section 1.2).
-   A leaf chain is fine at test scale, not at volume scale.
-3. **Kernel I/O paths** (`IRP_MJ_CREATE/READ/WRITE/DIRECTORY_CONTROL`, cache
+   every write, but nothing shares blocks yet, so the refcount tree is unused.
+2. **Kernel I/O paths** (`IRP_MJ_CREATE/READ/WRITE/DIRECTORY_CONTROL`, cache
    manager callbacks). Until they exist, `nextfslib` is not in
    `sdk/lib/fslib/CMakeLists.txt` and `nextfs.sys` is not in
    `drivers/filesystems/CMakeLists.txt`: NTFS stays the boot file system.

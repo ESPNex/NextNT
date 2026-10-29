@@ -4,9 +4,10 @@
  * PURPOSE:     NextFS on-disk format, PIFT records and the library API
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  *
- * v0.2: portable C, no OS dependencies. Everything that touches the device
- * goes through nfs_bdev callbacks, so the same code serves nextformat (a
- * file image), the self-test and, in a later phase, nextfs.sys.
+ * v0.3: multi-level checkpoint tree, two live generations, PIFT split in two
+ * halves. Portable C, no OS dependencies. Everything that touches the device goes
+ * through nfs_bdev callbacks, so the same code serves nextformat (a file image),
+ * the self-test and, in a later phase, nextfs.sys.
  */
 
 #ifndef _NEXTFS_FORMAT_H_
@@ -29,7 +30,7 @@ typedef nfs_u64 nfs_seq;
 
 #define NFS_SUPER_MAGIC        "NFSB"
 #define NFS_SUPER_SIZE         1024u
-#define NFS_FORMAT_VERSION     1u
+#define NFS_FORMAT_VERSION     2u
 #define NFS_BOOT_OEM           "NEXTFS  "
 #define NFS_NODE_MAGIC         "NFBT"
 #define NFS_FRAME_MAGIC        "NFJN"
@@ -109,12 +110,15 @@ typedef struct _NFS_SUPER
     nfs_u64    JournalSeqFirst;
     nfs_u64    JournalSeqNext;
 
-    nfs_u64    PiftFirst;
-    nfs_u32    PiftClusters;
-    nfs_u64    PiftHead;          /* bytes appended in the PIFT area   */
+    nfs_u64    PiftAreaFirst;     /* whole PIFT area, split in two halves */
+    nfs_u32    PiftAreaClusters;
+    nfs_u64    PiftFirst;         /* half used by the live generation  */
+    nfs_u32    PiftClusters;      /* size of that half                 */
+    nfs_u64    PiftHead;          /* bytes appended in that half       */
     nfs_u64    PiftSeqNext;
 
-    NFS_ROOT_REF CheckpointRoot;  /* CoW chain of PIFT checkpoint nodes */
+    NFS_ROOT_REF CheckpointRoot;      /* current CoW checkpoint tree    */
+    NFS_ROOT_REF CheckpointRootPrev;  /* previous generation, fallback  */
 
     nfs_u64    BitmapFirst;
     nfs_u32    BitmapClusters;
@@ -122,15 +126,15 @@ typedef struct _NFS_SUPER
 
     nfs_u32    Flags;
     char       Label[NFS_LABEL_MAX];
-    /* 204 bytes of fields above + this padding + Crc32c == NFS_SUPER_SIZE */
-    nfs_u8     Reserved[NFS_SUPER_SIZE - 204 - 4];
+    /* Every field above, this padding and Crc32c fill exactly NFS_SUPER_SIZE. */
+    nfs_u8     Reserved[NFS_SUPER_SIZE - 232 - 4];
     nfs_u32    Crc32c;
 } NFS_SUPER, *PNFS_SUPER;
 
 typedef struct _NFS_NODE_HDR
 {
     char    Magic[4];
-    nfs_u16 Level;      /* 0 = leaf (v0.1 only has leaves)               */
+    nfs_u16 Level;      /* 0 = leaf, >0 = internal {key_max, child} array */
     nfs_u16 Entries;
     nfs_u64 Generation;
     nfs_u64 Block;
@@ -223,6 +227,7 @@ typedef struct _NFS_STATS
     nfs_u64 Checkpoints;
     nfs_u64 ReplayedFrames;
     nfs_u32 Files;
+    nfs_u32 UsedFallbackRoot;   /* mount had to use the previous tree root */
 } NFS_STATS, *PNFS_STATS;
 
 /* ------------------------------------------------------------------ */

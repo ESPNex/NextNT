@@ -121,6 +121,14 @@ int NfsSeqIsCommitted(PNFS_VOLUME Volume, nfs_seq Seq);
 int NfsPiftAppend(PNFS_VOLUME Volume, const void *Frames, nfs_u32 Length);
 int NfsPiftScan(PNFS_VOLUME Volume);
 
+/* Copy-on-write B+tree for the checkpoint store (nextfs_tree.c) */
+int NfsTreeBuild(PNFS_VOLUME Volume, nfs_u64 Generation, nfs_u64 *OutRoot);
+int NfsTreeWalk(PNFS_VOLUME Volume, nfs_u64 Root,
+                int (*Callback)(void *Context, const NFS_PIFT_RECORD *Record),
+                void *Context);
+int NfsTreeCollect(PNFS_VOLUME Volume, nfs_u64 Root, nfs_u64 *Blocks,
+                   nfs_u32 Max, nfs_u32 *Count);
+
 /* Checkpointing + transactions (nextfs_volume.c) */
 int NfsCheckpoint(PNFS_VOLUME Volume);
 int NfsCommitRecords(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Records, nfs_u32 Count);
