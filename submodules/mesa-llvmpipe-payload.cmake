@@ -35,7 +35,7 @@ else()
         file(SHA256 "${_payload_zip}" _payload_have_hash)
     endif()
     if(NOT _payload_have_hash STREQUAL _payload_hash)
-        set(_payload_url "https://github.com/espnex/nextnt/releases/download/mesa-llvmpipe-${MESA_LLVMPIPE_PAYLOAD_RELEASE}/${_payload_name}")
+        set(_payload_url "https://github.com/espnex/NextNT/releases/download/mesa-llvmpipe-${MESA_LLVMPIPE_PAYLOAD_RELEASE}/${_payload_name}")
         message(STATUS "Downloading ${_payload_url}")
         file(DOWNLOAD "${_payload_url}" "${_payload_zip}"
             EXPECTED_HASH SHA256=${_payload_hash}

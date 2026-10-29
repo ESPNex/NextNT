@@ -3,7 +3,7 @@
 </p>
 
 > [!IMPORTANT]
-> NextNT is in active development. The builds on the [Releases](https://github.com/espnex/nextnt/releases) page are Debug pre-releases for testing: run them in a virtual machine or on spare hardware, not on a computer you depend on.
+> NextNT is in active development. The builds on the [Releases](https://github.com/espnex/NextNT/releases) page are Debug pre-releases for testing: run them in a virtual machine or on spare hardware, not on a computer you depend on.
 
 <div align="center">
 
@@ -12,20 +12,20 @@
 
 **Built out of love for the NT architecture. Windows® 11 compatible, for amd64, arm64 and riscv64.**
 
-[![Build](https://img.shields.io/github/actions/workflow/status/espnex/nextnt/build.yml?branch=main-nt10&label=Build&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/espnex/nextnt/actions/workflows/build.yml)
+[![Build](https://img.shields.io/github/actions/workflow/status/espnex/NextNT/build.yml?branch=main-nt10&label=Build&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/espnex/NextNT/actions/workflows/build.yml)
 [![License: GPL 3.0](https://img.shields.io/badge/License-GPL_3.0-0161B6?style=for-the-badge&logo=gnu&logoColor=white)](#license)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/BpcKg7FZ2)
 [![Matrix](https://img.shields.io/badge/Matrix-%23nextnt-000000?style=for-the-badge&logo=matrix&logoColor=white)](https://matrix.to/#/#nextnt:matrix.org)
 
-<img src="https://img.shields.io/github/repo-size/espnex/nextnt?style=flat-square&color=blue" alt="Repo Size">
-<img src="https://img.shields.io/github/stars/espnex/nextnt?style=flat-square&color=yellow" alt="Stars">
-<img src="https://img.shields.io/github/forks/espnex/nextnt?style=flat-square&color=lightgrey" alt="Forks">
-<img src="https://img.shields.io/github/last-commit/espnex/nextnt/main-nt10?style=flat-square&color=green" alt="Last Commit">
-<img src="https://img.shields.io/github/issues/espnex/nextnt?style=flat-square&color=orange" alt="Issues">
+<img src="https://img.shields.io/github/repo-size/espnex/NextNT?style=flat-square&color=blue" alt="Repo Size">
+<img src="https://img.shields.io/github/stars/espnex/NextNT?style=flat-square&color=yellow" alt="Stars">
+<img src="https://img.shields.io/github/forks/espnex/NextNT?style=flat-square&color=lightgrey" alt="Forks">
+<img src="https://img.shields.io/github/last-commit/espnex/NextNT/main-nt10?style=flat-square&color=green" alt="Last Commit">
+<img src="https://img.shields.io/github/issues/espnex/NextNT?style=flat-square&color=orange" alt="Issues">
 
 <br>
 
-[![Download the latest build](https://img.shields.io/badge/Download-Latest_build-0161B6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/espnex/nextnt/releases)
+[![Download the latest build](https://img.shields.io/badge/Download-Latest_build-0161B6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/espnex/NextNT/releases)
 
 </div>
 
@@ -92,7 +92,7 @@ NextNT brings modern hardware and platforms to the NT architecture.
 | **Your own build** | `menuconfig` lets you choose the target, compiler and build type, and switch features on or off. |
 
 > [!TIP]
-> Each build on the [Releases](https://github.com/espnex/nextnt/releases) page lists what changed since the previous one.
+> Each build on the [Releases](https://github.com/espnex/NextNT/releases) page lists what changed since the previous one.
 
 ---
 
@@ -113,7 +113,7 @@ Release builds also include PowerPC images.
 
 ### Step 1: Download a Build
 
-Every build on the [Releases](https://github.com/espnex/nextnt/releases) page comes as one ZIP file per image and architecture:
+Every build on the [Releases](https://github.com/espnex/NextNT/releases) page comes as one ZIP file per image and architecture:
 
 | File | What it is |
 | --- | --- |
@@ -167,7 +167,7 @@ curl -fsSL https://raw.githubusercontent.com/NextNT/nextnt-build-toolchain/main/
 ### 2. Get the source
 
 ```sh
-git clone https://github.com/espnex/nextnt.git
+git clone https://github.com/espnex/NextNT.git
 cd NextNT
 ```
 
@@ -265,9 +265,9 @@ NextNT/
 
 ## Contributing
 
-Report bugs and suggest features in [Issues](https://github.com/espnex/nextnt/issues), and find guides and notes in the [Wiki](https://github.com/espnex/nextnt/wiki).
+Report bugs and suggest features in [Issues](https://github.com/espnex/NextNT/issues), and find guides and notes in the [Wiki](https://github.com/espnex/NextNT/wiki).
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [PULL_REQUEST_MANAGEMENT.md](PULL_REQUEST_MANAGEMENT.md). If you're planning a larger change, ask in [Issues](https://github.com/espnex/nextnt/issues) or on [Discord](https://discord.gg/BpcKg7FZ2) first.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [PULL_REQUEST_MANAGEMENT.md](PULL_REQUEST_MANAGEMENT.md). If you're planning a larger change, ask in [Issues](https://github.com/espnex/NextNT/issues) or on [Discord](https://discord.gg/BpcKg7FZ2) first.
 
 > [!WARNING]
 > **Legal notice:** If you have seen proprietary Microsoft Windows source code (including but not limited to the leaked Windows NT 3.5, NT 4, 2000 source code and the Windows Research Kernel), your contribution won't be accepted because of potential copyright violation.
@@ -308,6 +308,6 @@ NextNT is built by the **NextNT contributors**, started and maintained by [Ahmed
 
 - [Visit the NextNT organization](https://github.com/NextNT)
 - [Website](https://nextnt.vercel.app)
-- [Download the latest build](https://github.com/espnex/nextnt/releases)
-- [Wiki](https://github.com/espnex/nextnt/wiki)
+- [Download the latest build](https://github.com/espnex/NextNT/releases)
+- [Wiki](https://github.com/espnex/NextNT/wiki)
 - Chat on [Discord](https://discord.gg/BpcKg7FZ2) or [Matrix](https://matrix.to/#/#nextnt:matrix.org)

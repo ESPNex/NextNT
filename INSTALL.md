@@ -24,4 +24,4 @@ The preinstalled disk also carries NextNT Setup. Run `C:\<architecture>\nextnt.e
 
 ## Help
 
-If something goes wrong, report it in [Issues](https://github.com/espnex/nextnt/issues) with the architecture, the build type, the commit you built and the steps that lead to the problem. Guides and notes are in the [Wiki](https://github.com/espnex/nextnt/wiki), and you can ask the team on [Discord](https://discord.gg/BpcKg7FZ2) or [Matrix](https://matrix.to/#/#nextnt:matrix.org).
+If something goes wrong, report it in [Issues](https://github.com/espnex/NextNT/issues) with the architecture, the build type, the commit you built and the steps that lead to the problem. Guides and notes are in the [Wiki](https://github.com/espnex/NextNT/wiki), and you can ask the team on [Discord](https://discord.gg/BpcKg7FZ2) or [Matrix](https://matrix.to/#/#nextnt:matrix.org).
