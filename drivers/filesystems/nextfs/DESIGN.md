@@ -1,4 +1,4 @@
-# NextFS — design (v0.13, branch `nextfs`)
+# NextFS — design (v0.14, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -308,7 +308,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.13, branch `nextfs`)
+## 6. Implementation status (v0.14, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -333,6 +333,7 @@ Done and tested in this phase:
 | FSD: query/set security | `drivers/filesystems/nextfs/nextfs_security.c` | length probe, user-memory probe under SEH, trimming, volume default |
 | boot loader: NextFS reader | `boot/nextldr/nextldr/lib/fs/nextfs_core.c` | 94 checks against an image nextformat wrote: lookups, UTF-8 names, sparse holes, backup superblock, previous checkpoint generation |
 | boot loader: ARC glue | `boot/nextldr/nextldr/lib/fs/nextfs.c` | 24 checks through the DEVVTBL: open/read/seek/query/close, write open refused, seek past EOF refused |
+| installer: format + populate | `nextfslib/tools/nextfsinstall.c` | a 32 MiB image with a five-file tree, every file read back byte for byte through the boot reader |
 
 `nextfslib/tests/nextfs_selftest.c` runs 360 checks (and the two boot-path tests of
 §9.4 add 118 more): format, mount, create/write/
@@ -750,3 +751,56 @@ environment -- so the ARC glue is checked by contract rather than by linker. Tha
 the honest state of it: the format reader is tested, the glue is tested, the two
 having been compiled into one binary by the real build is the one step that has not
 happened yet.
+
+---
+
+## 10. Installing a NextFS boot volume
+
+A file system that cannot be installed cannot be tested, so the first half of the
+boot switch is a tool that produces an image: `nextfslib/tools/nextfsinstall.c`.
+
+```
+nextfsinstall --image boot.img --size 512 --label NEXTNT \
+              --source <install-tree> --dest \ReactOS
+```
+
+It formats the volume, walks the source tree, creates the directories, copies the
+files through `NfsWrite` (so the copy is the same copy-on-write path an application
+would take, not a shortcut), and unmounts -- which checkpoints. That last step is
+the one that matters for the boot: **nextldr reads the checkpoint tree and never
+the journal**, so an uncheckpointed volume is a volume the loader cannot boot.
+`--no-format` installs into an existing volume; `--dest` places the tree below a
+subdirectory, which is what `\ReactOS` is for.
+
+What it does not do, on purpose: no partition table, no boot sector, no
+`NEXTLDR.INI`. Those belong to the image layout rather than to the file system, and
+keeping them out means the same tool writes a plain image file, a loopback device,
+or a partition on a real disk.
+
+### 10.1 Why not usetup first
+
+usetup formats a partition through its own formatter and then copies the install
+tree onto it. That is the right home for a NextFS formatter eventually, and it is
+the wrong place to start: it cannot be run until the whole OS builds, which means
+the file system would be untestable until the very end. `nextfsinstall` is the same
+library calls in a program that runs today, and when usetup grows a NextFS branch it
+will be calling `NfsFormat` and `NfsWrite` exactly like this does.
+
+### 10.2 The boot entry
+
+Nothing in `NEXTLDR.INI` changes: an `[OS]` entry names a `Path=` and the ARC layer
+resolves it, so the same entry boots from NTFS, FAT or NextFS. The file's header
+carries the note (§ the comment at the top of `NEXTLDR.INI`), because the first
+question anyone asks when they see a new file system is "what do I write in the
+config", and the answer is "nothing".
+
+### 10.3 What was verified
+
+A 32 MiB image with a five-file tree -- a 70 KB binary that spans clusters, an
+INF-style text file, a file inside two levels of subdirectory, an empty file, and a
+name with an accent -- was installed with `nextfsinstall`, and then every file was
+read back **through the boot reader** and compared with the source: identical, all
+five, including the one whose name is not ASCII. `nextfsinfo` reads the same image
+back as a volume with the expected geometry. What has *not* happened is a machine
+booting from it: that needs the real loader build (§9.4) and an installer that runs
+on hardware.
