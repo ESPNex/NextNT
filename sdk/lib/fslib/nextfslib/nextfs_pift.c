@@ -226,7 +226,20 @@ NfsIndexGet(PNFS_VOLUME Volume, nfs_fileid FileId)
 }
 
 int
-NfsIndexInsert(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record)
+NfsIndexLocate(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u32 *OutIndex)
+{
+    nfs_u32 *Slot = NfsIndexFindSlot(Volume, FileId);
+
+    if (!Slot || *Slot == NFS_HASH_EMPTY || *Slot == NFS_HASH_TOMB)
+        return NFS_ENOENT;
+    if (OutIndex)
+        *OutIndex = *Slot;
+    return NFS_OK;
+}
+
+int
+NfsIndexInsertEx(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record,
+                 nfs_u32 *OutIndex)
 {
     nfs_u32 *Slot;
     nfs_u32 Index;
@@ -245,6 +258,8 @@ NfsIndexInsert(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record)
     {
         /* Replace in place: the record array keeps its slot. */
         Volume->Records[*Slot] = *Record;
+        if (OutIndex)
+            *OutIndex = *Slot;
         return NFS_OK;
     }
 
@@ -270,5 +285,230 @@ NfsIndexInsert(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record)
     Volume->Records[Index] = *Record;
     *Slot = Index;
     Volume->HashUsed++;
+    if (OutIndex)
+        *OutIndex = Index;
     return NFS_OK;
+}
+
+int
+NfsIndexInsert(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record)
+{
+    return NfsIndexInsertEx(Volume, Record, NULL);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sorted child index                                                  */
+/*                                                                     */
+/* Lookups by name and directory enumeration never touch the disk: the */
+/* child sets below are the runtime namespace index. They are rebuilt  */
+/* at mount and updated on every create/remove.                        */
+/* ------------------------------------------------------------------ */
+
+static nfs_u16
+ChildFold(nfs_u16 c)
+{
+    if (c >= 'A' && c <= 'Z')
+        return (nfs_u16)(c - 'A' + 'a');
+    return c;
+}
+
+static int
+ChildNameCompare(const NFS_PIFT_RECORD *Left, const NFS_PIFT_RECORD *Right)
+{
+    nfs_u32 i, Limit = Left->NameLen < Right->NameLen ? Left->NameLen : Right->NameLen;
+
+    for (i = 0; i < Limit; i++)
+    {
+        nfs_u16 a = ChildFold(Left->Name[i]);
+        nfs_u16 b = ChildFold(Right->Name[i]);
+
+        if (a != b)
+            return (a < b) ? -1 : 1;
+    }
+    if (Left->NameLen == Right->NameLen)
+        return 0;
+    return (Left->NameLen < Right->NameLen) ? -1 : 1;
+}
+
+static nfs_u32
+ChildrenBucket(nfs_fileid Parent)
+{
+    return NfsIndexHashFileId(Parent ^ 0xC0FFEEull) % NFS_CHILD_BUCKETS;
+}
+
+static PNFS_CHILD_SET
+ChildrenFind(PNFS_VOLUME Volume, nfs_fileid Parent, int Create)
+{
+    nfs_u32 Bucket = ChildrenBucket(Parent);
+    PNFS_CHILD_SET Set = Volume->Children[Bucket];
+
+    while (Set)
+    {
+        if (Set->Parent == Parent)
+            return Set;
+        Set = Set->Next;
+    }
+    if (!Create)
+        return NULL;
+
+    Set = (PNFS_CHILD_SET)NfsMemAlloc(sizeof(NFS_CHILD_SET));
+    if (!Set)
+        return NULL;
+    memset(Set, 0, sizeof(*Set));
+    Set->Parent = Parent;
+    Set->Next = Volume->Children[Bucket];
+    Volume->Children[Bucket] = Set;
+    return Set;
+}
+
+int
+NfsChildrenInit(PNFS_VOLUME Volume)
+{
+    memset(Volume->Children, 0, sizeof(Volume->Children));
+    return NFS_OK;
+}
+
+void
+NfsChildrenDestroy(PNFS_VOLUME Volume)
+{
+    nfs_u32 i;
+
+    for (i = 0; i < NFS_CHILD_BUCKETS; i++)
+    {
+        PNFS_CHILD_SET Set = Volume->Children[i];
+
+        while (Set)
+        {
+            PNFS_CHILD_SET Next = Set->Next;
+            NfsMemFree(Set->Indices);
+            NfsMemFree(Set);
+            Set = Next;
+        }
+        Volume->Children[i] = NULL;
+    }
+}
+
+static nfs_u32
+ChildrenLowerBound(PNFS_VOLUME Volume, PNFS_CHILD_SET Set,
+                   const NFS_PIFT_RECORD *Record)
+{
+    nfs_u32 Low = 0, High = Set->Count;
+
+    while (Low < High)
+    {
+        nfs_u32 Mid = Low + (High - Low) / 2;
+
+        if (ChildNameCompare(&Volume->Records[Set->Indices[Mid]], Record) < 0)
+            Low = Mid + 1;
+        else
+            High = Mid;
+    }
+    return Low;
+}
+
+int
+NfsChildrenAdd(PNFS_VOLUME Volume, nfs_u32 RecordIndex)
+{
+    NFS_PIFT_RECORD *Record = &Volume->Records[RecordIndex];
+    PNFS_CHILD_SET Set = ChildrenFind(Volume, Record->Parent, 1);
+    nfs_u32 Position;
+
+    if (!Set)
+        return NFS_ENOSPC;
+
+    if (Set->Count == Set->Capacity)
+    {
+        nfs_u32 NewCapacity = Set->Capacity ? Set->Capacity * 2 : 8;
+        nfs_u32 *NewIndices = (nfs_u32 *)NfsMemAlloc((size_t)NewCapacity * sizeof(nfs_u32));
+
+        if (!NewIndices)
+            return NFS_ENOSPC;
+        if (Set->Indices)
+        {
+            memcpy(NewIndices, Set->Indices, (size_t)Set->Count * sizeof(nfs_u32));
+            NfsMemFree(Set->Indices);
+        }
+        Set->Indices = NewIndices;
+        Set->Capacity = NewCapacity;
+    }
+
+    Position = ChildrenLowerBound(Volume, Set, Record);
+    if (Position < Set->Count)
+        memmove(&Set->Indices[Position + 1], &Set->Indices[Position],
+                (size_t)(Set->Count - Position) * sizeof(nfs_u32));
+    Set->Indices[Position] = RecordIndex;
+    Set->Count++;
+    return NFS_OK;
+}
+
+void
+NfsChildrenRemove(PNFS_VOLUME Volume, nfs_u32 RecordIndex)
+{
+    NFS_PIFT_RECORD *Record = &Volume->Records[RecordIndex];
+    PNFS_CHILD_SET Set = ChildrenFind(Volume, Record->Parent, 0);
+    nfs_u32 i;
+
+    if (!Set)
+        return;
+
+    for (i = 0; i < Set->Count; i++)
+    {
+        if (Set->Indices[i] == RecordIndex)
+        {
+            if (i + 1 < Set->Count)
+                memmove(&Set->Indices[i], &Set->Indices[i + 1],
+                        (size_t)(Set->Count - i - 1) * sizeof(nfs_u32));
+            Set->Count--;
+            return;
+        }
+    }
+}
+
+int
+NfsChildrenRebuild(PNFS_VOLUME Volume)
+{
+    nfs_u32 i;
+
+    NfsChildrenDestroy(Volume);
+    for (i = 0; i < Volume->RecordCount; i++)
+    {
+        if (Volume->Records[i].Flags & NFS_FLAG_DELETED)
+            continue;
+        if (NfsChildrenAdd(Volume, i) != NFS_OK)
+            return NFS_ENOSPC;
+    }
+    return NFS_OK;
+}
+
+NFS_PIFT_RECORD *
+NfsChildrenLookup(PNFS_VOLUME Volume, nfs_fileid Parent,
+                  const nfs_u16 *Name, nfs_u32 NameLength)
+{
+    PNFS_CHILD_SET Set = ChildrenFind(Volume, Parent, 0);
+    NFS_PIFT_RECORD Probe;
+    nfs_u32 Position;
+
+    if (!Set || NameLength > NFS_NAME_MAX)
+        return NULL;
+
+    memset(&Probe, 0, sizeof(Probe));
+    Probe.NameLen = NameLength;
+    memcpy(Probe.Name, Name, (size_t)NameLength * sizeof(nfs_u16));
+
+    Position = ChildrenLowerBound(Volume, Set, &Probe);
+    if (Position >= Set->Count)
+        return NULL;
+    if (ChildNameCompare(&Volume->Records[Set->Indices[Position]], &Probe) != 0)
+        return NULL;
+    return &Volume->Records[Set->Indices[Position]];
+}
+
+NFS_PIFT_RECORD *
+NfsChildrenAt(PNFS_VOLUME Volume, nfs_fileid Parent, nfs_u32 Index)
+{
+    PNFS_CHILD_SET Set = ChildrenFind(Volume, Parent, 0);
+
+    if (!Set || Index >= Set->Count)
+        return NULL;
+    return &Volume->Records[Set->Indices[Index]];
 }

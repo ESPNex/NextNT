@@ -332,6 +332,316 @@ int main(void)
         CHECK(FreeAfterFormat > 0, "free clusters were counted at format time");
     }
 
+    /* ------------------------------------------------------------- */
+    /* Phase 2: arbitrary-offset copy-on-write, holes, truncate,      */
+    /* many files, and a randomised comparison against a reference.   */
+    /* ------------------------------------------------------------- */
+    printf("[12] middle-of-file overwrite keeps the surrounding bytes\n");
+    if (Volume)
+    {
+        nfs_fileid Id = 0;
+        nfs_u32 Written = 0;
+
+        Name("mid.bin", NameBuffer);
+        NfsCreate(Volume, NFS_ROOT_ID, NameBuffer, 7, 0, &Id);
+        Status = NfsWrite(Volume, Id, 0, "AAAAAAAAAAAAAAAA", 16, &Written);
+        CHECK(Status == NFS_OK, "write 16 bytes at 0");
+        Status = NfsWrite(Volume, Id, 5, "BBBB", 4, &Written);
+        CHECK(Status == NFS_OK, "overwrite 4 bytes at offset 5");
+        CHECK(ReadWhole(Volume, Id, Buffer, sizeof(Buffer)) == NFS_OK, "read mid.bin");
+        CHECK(strcmp(Buffer, "AAAAABBBBAAAAAAA") == 0, "surrounding bytes preserved");
+
+        /* Unaligned write spanning a cluster boundary (4096). */
+        {
+            char Big[8192];
+            char Expected[8192];
+            nfs_u32 i;
+            nfs_u32 Got = 0;
+
+            memset(Big, 'x', sizeof(Big));
+            memset(Expected, 'x', sizeof(Expected));
+            CHECK(NfsWrite(Volume, Id, 0, Big, 8192, &Written) == NFS_OK, "write 8 KiB");
+            CHECK(NfsWrite(Volume, Id, 4000, "ZZZZ", 4, &Written) == NFS_OK,
+                  "write across the cluster boundary");
+            memset(Big + 4000, 'Z', 4);
+            CHECK(NfsRead(Volume, Id, 0, Expected, sizeof(Expected), &Got) == NFS_OK,
+                  "read 8 KiB back");
+            CHECK(Got == 8192, "read the whole 8 KiB");
+            CHECK(memcmp(Expected, Big, 8192) == 0, "boundary-spanning content matches");
+            (void)i;
+        }
+
+        /* Sparse write past EOF: the gap must read as zeroes. */
+        printf("[13] sparse write past EOF\n");
+        CHECK(NfsWrite(Volume, Id, 20000, "TAIL", 4, &Written) == NFS_OK, "write at 20000");
+        {
+            char Hole[64];
+            nfs_u32 Got = 0;
+
+            CHECK(NfsRead(Volume, Id, 8192, Hole, sizeof(Hole), &Got) == NFS_OK, "read the hole");
+            CHECK(Got == 64, "hole read length");
+            CHECK(Hole[0] == 0 && Hole[63] == 0, "hole reads as zeroes");
+            CHECK(NfsOpenById(Volume, Id, &Record) == NFS_OK, "record for the sparse file");
+            CHECK(Record.Size == 20004, "size covers the sparse tail");
+        }
+
+        /* Truncate down and back up. */
+        printf("[14] truncate\n");
+        CHECK(NfsTruncate(Volume, Id, 100) == NFS_OK, "truncate to 100");
+        CHECK(NfsOpenById(Volume, Id, &Record) == NFS_OK, "record after truncate");
+        CHECK(Record.Size == 100, "size is 100 after truncate");
+        CHECK(ReadWhole(Volume, Id, Buffer, sizeof(Buffer)) == NFS_OK, "read truncated file");
+        CHECK(strlen(Buffer) == 100, "read stops at the new size");
+        CHECK(NfsTruncate(Volume, Id, 5000) == NFS_OK, "grow to 5000");
+        {
+            char Tail[16];
+            nfs_u32 Got = 0;
+
+            CHECK(NfsRead(Volume, Id, 4990, Tail, 10, &Got) == NFS_OK, "read grown tail");
+            CHECK(Got == 10 && Tail[0] == 0, "grown area is zero-filled");
+        }
+        CHECK(NfsRemove(Volume, Id) == NFS_OK, "delete mid.bin");
+    }
+
+    printf("[15] many files: multi-node checkpoint and sorted index\n");
+    if (Volume)
+    {
+        nfs_fileid DirId = 0;
+        nfs_u32 i;
+        int Created = 0, Listed = 0;
+        char ExpectedName[32];
+        NFS_PIFT_RECORD Entry;
+
+        Name("many", NameBuffer);
+        NfsCreate(Volume, NFS_ROOT_ID, NameBuffer, 4, 1, &DirId);
+        for (i = 0; i < 300; i++)
+        {
+            nfs_u16 FileName[NFS_NAME_MAX];
+            char Text[32];
+            nfs_u32 Length;
+
+            snprintf(Text, sizeof(Text), "file%03u.txt", i);
+            Length = Name(Text, FileName);
+            if (NfsCreate(Volume, DirId, FileName, Length, 0, NULL) == NFS_OK)
+                Created++;
+        }
+        CHECK(Created == 300, "created 300 files");
+
+        /* The index sorts case-insensitively by name: check the first and last. */
+        CHECK(NfsReadDir(Volume, DirId, 0, &Entry) == NFS_OK, "first entry");
+        CHECK(Entry.NameLen == 11, "first entry name length (file000.txt)");
+        CHECK(Entry.Name[4] == '0' && Entry.Name[5] == '0' && Entry.Name[6] == '0',
+              "enumeration starts at file000.txt");
+        CHECK(NfsReadDir(Volume, DirId, 299, &Entry) == NFS_OK, "last entry");
+        CHECK(NfsReadDir(Volume, DirId, 300, &Entry) == NFS_ENOENT, "enumeration stops at 300");
+
+        snprintf(ExpectedName, sizeof(ExpectedName), "file123.txt");
+        {
+            nfs_u16 Probe[NFS_NAME_MAX];
+            nfs_u32 ProbeLen = Name(ExpectedName, Probe);
+
+            CHECK(NfsLookup(Volume, DirId, Probe, ProbeLen, &Entry) == NFS_OK,
+                  "binary search finds file123.txt");
+            CHECK(Entry.Name[4] == '1' && Entry.Name[5] == '2' && Entry.Name[6] == '3',
+                  "found the right file");
+        }
+
+        /* Force a checkpoint with many records in the chain. */
+        CHECK(NfsSync(Volume) == NFS_OK, "sync with 300+ records");
+        NfsUnmount(Volume);
+        Volume = NULL;
+        CHECK(NfsMount(&Block, &Volume) == NFS_OK, "remount with a multi-node checkpoint");
+        if (Volume)
+        {
+            while (NfsReadDir(Volume, DirId, (nfs_u32)Listed, &Entry) == NFS_OK)
+                Listed++;
+            CHECK(Listed == 300, "all 300 files came back from the checkpoint");
+        }
+    }
+
+    printf("[16] randomised writes against a reference buffer\n");
+    if (Volume)
+    {
+        nfs_fileid DirId = 0;
+        nfs_u16 Probe[NFS_NAME_MAX];
+        nfs_u32 ProbeLen = Name("many", Probe);
+        nfs_fileid Id = 0;
+        unsigned char *Reference;
+        unsigned char *ReadBack;
+        nfs_u64 Size = 0;
+        nfs_u32 Step;
+        unsigned int Seed = 12345;
+        int Mismatches = 0;
+
+        CHECK(NfsLookup(Volume, NFS_ROOT_ID, Probe, ProbeLen, &Record) == NFS_OK,
+              "found the many directory after remount");
+        DirId = Record.FileId;
+
+        Name("fuzz.bin", NameBuffer);
+        NfsCreate(Volume, DirId, NameBuffer, 8, 0, &Id);
+
+        Reference = (unsigned char *)calloc(1, 64 * 1024);
+        ReadBack = (unsigned char *)malloc(64 * 1024);
+        memset(ReadBack, 0xA5, 64 * 1024);   /* poison, so missing data shows up */
+
+        for (Step = 0; Step < 400; Step++)
+        {
+            nfs_u32 Length, i;
+            nfs_u64 Offset;
+            unsigned char Payload[512];
+
+            Seed = Seed * 1103515245u + 12345u;
+            Offset = (Seed >> 8) % (48 * 1024);
+            Seed = Seed * 1103515245u + 12345u;
+            Length = (Seed >> 8) % 500 + 1;
+            for (i = 0; i < Length; i++)
+            {
+                Seed = Seed * 1103515245u + 12345u;
+                Payload[i] = (unsigned char)(Seed >> 16);
+            }
+
+            if (Step % 17 == 0)
+            {
+                /* Occasionally truncate, to exercise the shrink path. */
+                nfs_u64 NewSize = (Seed >> 4) % (32 * 1024);
+
+                if (NfsTruncate(Volume, Id, NewSize) == NFS_OK)
+                {
+                    if (NewSize < Size)
+                        memset(Reference + NewSize, 0, (size_t)(Size - NewSize));
+                    if (NewSize > Size)
+                        memset(Reference + Size, 0, (size_t)(NewSize - Size));
+                    Size = NewSize;
+                }
+            }
+
+            if (NfsWrite(Volume, Id, Offset, Payload, Length, NULL) != NFS_OK)
+                continue;
+            if (Offset + Length > Size)
+            {
+                memset(Reference + Size, 0, (size_t)(Offset + Length - Size));
+                Size = Offset + Length;
+            }
+            memcpy(Reference + Offset, Payload, Length);
+        }
+
+        CHECK(NfsOpenById(Volume, Id, &Record) == NFS_OK, "fuzz record");
+        CHECK(Record.Size == Size, "fuzz file size matches the reference");
+
+        {
+            nfs_u32 Got = 0;
+
+            if (NfsRead(Volume, Id, 0, ReadBack, (nfs_u32)Size, &Got) == NFS_OK &&
+                Got == Size && memcmp(ReadBack, Reference, (size_t)Size) == 0)
+            {
+                CHECK(1, "400 randomised writes match the reference byte for byte");
+            }
+            else
+            {
+                nfs_u32 i;
+
+                for (i = 0; i < Got; i++)
+                {
+                    if (ReadBack[i] != Reference[i])
+                        Mismatches++;
+                }
+                printf("        mismatching bytes: %d of %u\n", Mismatches, Got);
+                CHECK(0, "400 randomised writes match the reference byte for byte");
+            }
+        }
+
+        free(Reference);
+        free(ReadBack);
+        CHECK(NfsRemove(Volume, Id) == NFS_OK, "delete fuzz.bin");
+    }
+
+    printf("[17] crash during a write burst: the volume recovers to a whole step\n");
+    if (Volume)
+    {
+        nfs_fileid DirId = 0;
+        nfs_u16 Probe[NFS_NAME_MAX];
+        nfs_u32 ProbeLen = Name("many", Probe);
+        nfs_fileid Id = 0;
+        unsigned char Reference[16 * 1024];
+        unsigned char ReadBack[16 * 1024];
+        nfs_u64 ReferenceSize = 0;
+        nfs_u32 Checksums[41];
+        nfs_u32 Step;
+        unsigned int Seed = 999;
+        MEM_DEVICE Snapshot;
+        int Recovered = 0;
+
+        CHECK(NfsLookup(Volume, NFS_ROOT_ID, Probe, ProbeLen, &Record) == NFS_OK,
+              "many directory still there");
+        DirId = Record.FileId;
+        Name("burst.bin", NameBuffer);
+        CHECK(NfsCreate(Volume, DirId, NameBuffer, 9, 0, &Id) == NFS_OK, "create burst.bin");
+
+        memset(Reference, 0, sizeof(Reference));
+        Checksums[0] = 0;
+        for (Step = 1; Step <= 40; Step++)
+        {
+            nfs_u64 Offset;
+            nfs_u32 Length, i;
+            unsigned char Payload[128];
+
+            Seed = Seed * 1103515245u + 12345u;
+            Offset = (Seed >> 8) % 8192;
+            Seed = Seed * 1103515245u + 12345u;
+            Length = (Seed >> 8) % 120 + 1;
+            for (i = 0; i < Length; i++)
+            {
+                Seed = Seed * 1103515245u + 12345u;
+                Payload[i] = (unsigned char)(Seed >> 16);
+            }
+
+            if (NfsWrite(Volume, Id, Offset, Payload, Length, NULL) != NFS_OK)
+                continue;
+            if (Offset + Length > ReferenceSize)
+            {
+                memset(Reference + ReferenceSize, 0, (size_t)(Offset + Length - ReferenceSize));
+                ReferenceSize = Offset + Length;
+            }
+            memcpy(Reference + Offset, Payload, Length);
+            Checksums[Step] = NfsCrc32c(0, Reference, (size_t)ReferenceSize);
+        }
+
+        /* Snapshot the disk and abandon the volume as a power cut would. */
+        Snapshot.Size = IMAGE_BYTES;
+        Snapshot.Data = (nfs_u8 *)malloc(IMAGE_BYTES);
+        memcpy(Snapshot.Data, Device.Data, IMAGE_BYTES);
+        NfsDiscard(Volume);
+        Volume = NULL;
+        memcpy(Device.Data, Snapshot.Data, IMAGE_BYTES);
+        free(Snapshot.Data);
+
+        {
+            NFS_BDEV CrashBlock;
+
+            BindDevice(&CrashBlock, &Device);
+            Status = NfsMount(&CrashBlock, &Volume);
+            CHECK(Status == NFS_OK, "mount after a crash in the middle of a burst");
+            if (Status == NFS_OK)
+            {
+                nfs_u32 Got = 0;
+                nfs_u32 RecoveredChecksum;
+
+                CHECK(NfsOpenById(Volume, Id, &Record) == NFS_OK, "burst.bin recovered");
+                CHECK(Record.Size <= ReferenceSize, "recovered size is no larger than the reference");
+                CHECK(NfsRead(Volume, Id, 0, ReadBack, (nfs_u32)Record.Size, &Got) == NFS_OK,
+                      "read the recovered file");
+                RecoveredChecksum = NfsCrc32c(0, ReadBack, (size_t)Got);
+
+                for (Step = 0; Step <= 40; Step++)
+                {
+                    if (Checksums[Step] == RecoveredChecksum)
+                        Recovered = 1;
+                }
+                CHECK(Recovered, "recovered content matches a whole step (no torn write)");
+            }
+        }
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

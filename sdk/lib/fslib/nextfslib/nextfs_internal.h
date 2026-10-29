@@ -20,6 +20,19 @@
 #define NFS_PIFT_HIGH_WATER(Super) \
     (((nfs_u64)(Super).PiftClusters * (Super).ClusterSize) / 2)
 
+/* Sorted, per-directory child set kept in RAM (the on-disk namespace tree is
+   only needed for checkpoints, so the runtime index lives here). */
+typedef struct _NFS_CHILD_SET
+{
+    nfs_fileid Parent;
+    nfs_u32 *Indices;        /* record indices, sorted by case-folded name */
+    nfs_u32  Count;
+    nfs_u32  Capacity;
+    struct _NFS_CHILD_SET *Next;
+} NFS_CHILD_SET, *PNFS_CHILD_SET;
+
+#define NFS_CHILD_BUCKETS 512
+
 struct _NFS_VOLUME
 {
     NFS_BDEV Device;                 /* callbacks, copied at mount       */
@@ -41,6 +54,8 @@ struct _NFS_VOLUME
     nfs_u64  Transactions;           /* since the last checkpoint        */
 
     nfs_u64  NextFileId;             /* fileid allocator                 */
+
+    PNFS_CHILD_SET Children[NFS_CHILD_BUCKETS];
 
     NFS_STATS Stats;
 };
@@ -69,6 +84,28 @@ nfs_u64 NfsPiftRecordSize(const NFS_PIFT_RECORD *Record);
 int NfsIndexInit(PNFS_VOLUME Volume);
 void NfsIndexDestroy(PNFS_VOLUME Volume);
 int NfsIndexInsert(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record);
+int NfsIndexInsertEx(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record,
+                     nfs_u32 *OutIndex);
+int NfsIndexLocate(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u32 *OutIndex);
+
+/* Sorted child index (nextfs_pift.c) */
+int  NfsChildrenInit(PNFS_VOLUME Volume);
+void NfsChildrenDestroy(PNFS_VOLUME Volume);
+int  NfsChildrenAdd(PNFS_VOLUME Volume, nfs_u32 RecordIndex);
+void NfsChildrenRemove(PNFS_VOLUME Volume, nfs_u32 RecordIndex);
+int  NfsChildrenRebuild(PNFS_VOLUME Volume);
+NFS_PIFT_RECORD *NfsChildrenLookup(PNFS_VOLUME Volume, nfs_fileid Parent,
+                                   const nfs_u16 *Name, nfs_u32 NameLength);
+NFS_PIFT_RECORD *NfsChildrenAt(PNFS_VOLUME Volume, nfs_fileid Parent, nfs_u32 Index);
+
+/* Generic data mapping (nextfs_volume.c) */
+int  NfsWriteRange(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Record, nfs_u64 Offset,
+                   const void *Buffer, nfs_u32 Length, NFS_PIFT_RECORD *Updated);
+int  NfsTruncateRecord(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Record, nfs_u64 NewSize,
+                       NFS_PIFT_RECORD *Updated);
+int  NfsMapClusterRecord(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record,
+                         nfs_u64 Vcn, nfs_u64 *Lcn);
+int  NfsCoalesceExtents(NFS_PIFT_RECORD *Record);
 NFS_PIFT_RECORD *NfsIndexGet(PNFS_VOLUME Volume, nfs_fileid FileId);
 nfs_u32 NfsIndexHashFileId(nfs_fileid FileId);
 

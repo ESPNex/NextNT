@@ -13,9 +13,9 @@ This document is the contract between four components that must agree byte for b
 | `nextformat` | `sdk/lib/fslib/nextfslib/tools/` | mkfs |
 | boot chain | `boot/nextldr/nextldr/lib/fs/nextfs.c` (later phase) | must read a NextFS volume to boot |
 
-Status: **phase 0-1**. `nextfslib` + `nextformat` are implemented and self-tested;
-`nextfs.sys` is a mount-capable skeleton (volume open + PIFT load, I/O paths still
-`STATUS_NOT_IMPLEMENTED`, marked `TODO(phase2)`).
+Status: **phase 2**. `nextfslib` is complete for the format as described here and
+self-tested (87 checks); `nextfs.sys` is still a mount-capable skeleton (volume
+open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`, `TODO(phase3)`).
 
 ---
 
@@ -269,7 +269,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.1, branch `nextfs`)
+## 6. Implementation status (v0.2, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -280,28 +280,45 @@ Done and tested in this phase:
 | journal, commit frames, replay | `nextfslib/nextfs_journal.c` | "crash after commit" and "torn commit frame" cases |
 | transactions, checkpoint chain | `nextfslib/nextfs_volume.c` | remount after clean unmount, free-space accounting |
 | mkfs / inspector | `nextfslib/tools/nextformat.c`, `nextfsinfo.c` | 16 MiB image formatted and listed |
+| any-offset CoW writes, holes, truncate | `nextfslib/nextfs_volume.c` | boundary-spanning writes, sparse reads, truncate down/up |
+| sorted child index | `nextfslib/nextfs_pift.c` | 300-file directory, binary-search lookup, ordered enumeration |
 | driver skeleton | `drivers/filesystems/nextfs/nextfs.c` | not compiled yet (needs the RosBE build) |
 
-`nextfslib/tests/nextfs_selftest.c` runs 40 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 87 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
-commit frame (change must be discarded), delete, free-space return.
+commit frame (change must be discarded), delete, free-space return, unaligned
+overwrites, writes across a cluster boundary, sparse holes, truncate down and up,
+a 300-file directory with a multi-node checkpoint, 400 randomised writes compared
+byte for byte with a reference buffer, and a crash in the middle of a 40-write
+burst that must recover to a whole step (never a torn write).
 
-Deliberate v0.1 limitations, all scheduled for phase 2:
+Landed in phase 2 (`nextfslib`):
 
-1. **No snapshots / refcount tree.** Copy-on-write is used for metadata blocks and
-   for whole-file rewrites; there are no snapshots yet, so nothing needs block
-   refcounts. `NfsWrite` in the middle of a file returns `NFS_EUNSUPPORTED`
-   (needs extent splitting), and an unaligned append patches the tail cluster in
-   place instead of shadowing it.
-2. **Checkpoint chain is a leaf chain**, not a multi-level B+tree: fine for the
-   tens of thousands of records a test volume holds, phase 2 for a real volume.
-3. **Security descriptors, compression, sparse files**: not implemented.
-4. **No kernel I/O paths**: `nextfs.sys` mounts and loads the PIFT, everything
-   else is `STATUS_NOT_IMPLEMENTED`. `nextfslib` is therefore not yet wired into
-   `sdk/lib/fslib/CMakeLists.txt` and the driver is not in
-   `drivers/filesystems/CMakeLists.txt`: NTFS stays the boot file system until
-   phase 2 lands.
-5. **Child lookup is a linear scan** over the RAM records; the sorted child index
-   described in 2.1 is phase 2 (it is an in-RAM structure, so the on-disk format
-   does not change when it lands).
+* **Any-offset writes, copy-on-write.** `NfsWriteRange` maps the affected cluster
+  range to fresh clusters, carries over the bytes a partially covered cluster
+  keeps, publishes the new extent list and only then releases the replaced
+  clusters. Middle-of-file writes, unaligned writes across a cluster boundary and
+  sparse writes past EOF all work; the gap reads as zeroes.
+* **Truncate** (`NfsTruncate`): shrinking rewrites the boundary cluster with a
+  zeroed tail (copy-on-write) before releasing the tail clusters, so a later
+  growth cannot resurrect stale bytes.
+* **Sorted child index in RAM** (`NFS_CHILD_SET`): per-directory arrays sorted by
+  case-folded name, binary-searched by `NfsLookup`, used directly by
+  `NfsReadDir` and updated transactionally. No disk read is involved in a lookup.
+* **Checkpoints scale**: the chain now holds up to 4096 nodes and the self-test
+  exercises 300 files across several nodes, including remount.
+
+Still open, in order of importance:
+
+1. **Snapshots and the refcount tree** (section 3). Copy-on-write is in place for
+   every write, but nothing shares blocks yet, so `refcount_root` is unused.
+2. **Multi-level B+tree** for the checkpoint and namespace trees (section 1.2).
+   A leaf chain is fine at test scale, not at volume scale.
+3. **Kernel I/O paths** (`IRP_MJ_CREATE/READ/WRITE/DIRECTORY_CONTROL`, cache
+   manager callbacks). Until they exist, `nextfslib` is not in
+   `sdk/lib/fslib/CMakeLists.txt` and `nextfs.sys` is not in
+   `drivers/filesystems/CMakeLists.txt`: NTFS stays the boot file system.
+4. **Security descriptors, compression, encryption, quotas**: not implemented.
+   Names are compared with a folded table compiled in (`$UpCase` equivalent);
+   ACLs will land in the PIFT record tail as a deduplicated blob.

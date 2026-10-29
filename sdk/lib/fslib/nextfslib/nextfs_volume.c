@@ -19,29 +19,6 @@ void NfsMemFree(void *Block);
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-static nfs_u16
-NfsFoldChar(nfs_u16 c)
-{
-    if (c >= 'A' && c <= 'Z')
-        return (nfs_u16)(c - 'A' + 'a');
-    return c;
-}
-
-static int
-NfsNameEqual(const NFS_PIFT_RECORD *Record, const nfs_u16 *Name, nfs_u32 Length)
-{
-    nfs_u32 i;
-
-    if (Record->NameLen != Length)
-        return 0;
-    for (i = 0; i < Length; i++)
-    {
-        if (NfsFoldChar(Record->Name[i]) != NfsFoldChar(Name[i]))
-            return 0;
-    }
-    return 1;
-}
-
 static nfs_u64
 NfsNow(void)
 {
@@ -98,13 +75,25 @@ NfsCommitChunk(PNFS_VOLUME Volume, const nfs_u8 *Payload, nfs_u32 PayloadLen,
         return Status;
     Volume->Stats.JournalCommits++;
 
-    /* 4. Publish in RAM. */
+    /* 4. Publish in RAM and keep the child index in step. */
     for (i = First; i <= Last; i++)
     {
+        nfs_u32 Index = 0;
+
         Records[i].Seq = Seq;
         Records[i].Mtime = NfsNow();
-        if (NfsIndexInsert(Volume, &Records[i]) != NFS_OK)
+
+        if (NfsIndexLocate(Volume, Records[i].FileId, &Index) == NFS_OK)
+            NfsChildrenRemove(Volume, Index);
+
+        if (NfsIndexInsertEx(Volume, &Records[i], &Index) != NFS_OK)
             return NFS_ENOSPC;
+
+        if (!(Records[i].Flags & NFS_FLAG_DELETED))
+        {
+            if (NfsChildrenAdd(Volume, Index) != NFS_OK)
+                return NFS_ENOSPC;
+        }
     }
 
     return NFS_OK;
@@ -182,7 +171,7 @@ typedef struct _NFS_CHAIN_BLOCK
 int
 NfsCheckpoint(PNFS_VOLUME Volume)
 {
-    NFS_CHAIN_BLOCK Blocks[256];
+    NFS_CHAIN_BLOCK Blocks[4096];
     nfs_u32 BlockCount = 0;
     nfs_u32 i, Cursor = 0, LiveCount = 0;
     nfs_u64 OldChain[512];
@@ -193,7 +182,7 @@ NfsCheckpoint(PNFS_VOLUME Volume)
     /* 1. Walk the current chain so its blocks can be freed afterwards. */
     {
         nfs_u64 Block = Volume->Super.CheckpointRoot.Block;
-        while (Block != 0 && OldCount < 512)
+        while (Block != 0 && OldCount < 4096)
         {
             nfs_u8 Node[NFS_NODE_SIZE];
             NFS_NODE_HDR *Header = (NFS_NODE_HDR *)Node;
@@ -235,8 +224,8 @@ NfsCheckpoint(PNFS_VOLUME Volume)
             Cursor++;
         }
 
-        if (BlockCount >= 256)
-            return NFS_ENOSPC;   /* v0.1: chain of at most 256 nodes */
+        if (BlockCount >= 4096)
+            return NFS_ENOSPC;   /* v0.2: chain of at most 4096 nodes */
 
         Blocks[BlockCount].Block = 0;
         Blocks[BlockCount].StartRecord = Start;
@@ -362,6 +351,10 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
     if (Status != NFS_OK)
         goto Fail;
 
+    Status = NfsChildrenInit(Volume);
+    if (Status != NFS_OK)
+        goto Fail;
+
     Status = NfsIndexInit(Volume);
     if (Status != NFS_OK)
         goto Fail;
@@ -463,8 +456,12 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
                 Live++;
         }
         Volume->NextFileId = MaxId + 1;
-        Volume->Stats.Files = Live;
+    Volume->Stats.Files = Live;
     }
+
+    Status = NfsChildrenRebuild(Volume);
+    if (Status != NFS_OK)
+        goto Fail;
 
     NfsSetDirty(Volume, 1);
     NfsWriteSuper(Volume);
@@ -473,6 +470,7 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
     return NFS_OK;
 
 Fail:
+    NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
@@ -500,6 +498,7 @@ NfsDiscard(PNFS_VOLUME Volume)
     /* Drop the volume without checkpointing: what a power cut does to RAM. */
     if (!Volume)
         return;
+    NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
@@ -511,6 +510,7 @@ NfsUnmount(PNFS_VOLUME Volume)
     if (!Volume)
         return;
     NfsSync(Volume);
+    NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
@@ -533,7 +533,6 @@ NfsCreate(PNFS_VOLUME Volume, nfs_fileid Parent, const nfs_u16 *Name,
 {
     NFS_PIFT_RECORD Record;
     NFS_PIFT_RECORD *ParentRecord;
-    nfs_u32 i;
     int Status;
 
     if (!Volume || !Name || NameLength == 0 || NameLength > NFS_NAME_MAX)
@@ -543,14 +542,8 @@ NfsCreate(PNFS_VOLUME Volume, nfs_fileid Parent, const nfs_u16 *Name,
     if (!ParentRecord || !(ParentRecord->Flags & NFS_FLAG_DIR))
         return NFS_ENOENT;
 
-    for (i = 0; i < Volume->RecordCount; i++)
-    {
-        if (Volume->Records[i].Flags & NFS_FLAG_DELETED)
-            continue;
-        if (Volume->Records[i].Parent == Parent &&
-            NfsNameEqual(&Volume->Records[i], Name, NameLength))
-            return NFS_EEXIST;
-    }
+    if (NfsChildrenLookup(Volume, Parent, Name, NameLength))
+        return NFS_EEXIST;
 
     memset(&Record, 0, sizeof(Record));
     Record.FileId = Volume->NextFileId++;
@@ -576,25 +569,17 @@ int
 NfsLookup(PNFS_VOLUME Volume, nfs_fileid Parent, const nfs_u16 *Name,
           nfs_u32 NameLength, NFS_PIFT_RECORD *OutRecord)
 {
-    nfs_u32 i;
+    NFS_PIFT_RECORD *Record;
 
     if (!Volume)
         return NFS_EINVAL;
 
-    for (i = 0; i < Volume->RecordCount; i++)
-    {
-        NFS_PIFT_RECORD *Record = &Volume->Records[i];
-
-        if ((Record->Flags & NFS_FLAG_DELETED) || Record->Parent != Parent)
-            continue;
-        if (NfsNameEqual(Record, Name, NameLength))
-        {
-            if (OutRecord)
-                *OutRecord = *Record;
-            return NFS_OK;
-        }
-    }
-    return NFS_ENOENT;
+    Record = NfsChildrenLookup(Volume, Parent, Name, NameLength);
+    if (!Record)
+        return NFS_ENOENT;
+    if (OutRecord)
+        *OutRecord = *Record;
+    return NFS_OK;
 }
 
 int
@@ -612,72 +597,20 @@ NfsOpenById(PNFS_VOLUME Volume, nfs_fileid FileId, NFS_PIFT_RECORD *OutRecord)
     return NFS_OK;
 }
 
-typedef struct _NFS_DIR_ENTRY
-{
-    nfs_u32 Index;
-    nfs_u16 Name[NFS_NAME_MAX];
-    nfs_u32 NameLen;
-    nfs_u64 FileId;
-} NFS_DIR_ENTRY;
-
-static int
-NfsDirEntryCompare(const void *A, const void *B)
-{
-    const NFS_DIR_ENTRY *Left = (const NFS_DIR_ENTRY *)A;
-    const NFS_DIR_ENTRY *Right = (const NFS_DIR_ENTRY *)B;
-    nfs_u32 i, Limit = Left->NameLen < Right->NameLen ? Left->NameLen : Right->NameLen;
-
-    for (i = 0; i < Limit; i++)
-    {
-        nfs_u16 a = NfsFoldChar(Left->Name[i]);
-        nfs_u16 b = NfsFoldChar(Right->Name[i]);
-        if (a != b)
-            return (a < b) ? -1 : 1;
-    }
-    if (Left->NameLen == Right->NameLen)
-        return 0;
-    return (Left->NameLen < Right->NameLen) ? -1 : 1;
-}
-
 int
 NfsReadDir(PNFS_VOLUME Volume, nfs_fileid Directory, nfs_u32 Index,
            NFS_PIFT_RECORD *OutRecord)
 {
-    NFS_DIR_ENTRY *Entries;
-    nfs_u32 Count = 0, i;
-    int Status = NFS_ENOENT;
+    NFS_PIFT_RECORD *Record;
 
     if (!Volume || !OutRecord)
         return NFS_EINVAL;
 
-    Entries = (NFS_DIR_ENTRY *)NfsMemAlloc((size_t)(Volume->RecordCount + 1) * sizeof(NFS_DIR_ENTRY));
-    if (!Entries)
-        return NFS_ENOSPC;
-
-    for (i = 0; i < Volume->RecordCount; i++)
-    {
-        NFS_PIFT_RECORD *Record = &Volume->Records[i];
-
-        if ((Record->Flags & NFS_FLAG_DELETED) || Record->Parent != Directory)
-            continue;
-        Entries[Count].Index = i;
-        Entries[Count].NameLen = Record->NameLen;
-        memcpy(Entries[Count].Name, Record->Name, (size_t)Record->NameLen * sizeof(nfs_u16));
-        Entries[Count].FileId = Record->FileId;
-        Count++;
-    }
-
-    if (Count)
-        qsort(Entries, Count, sizeof(NFS_DIR_ENTRY), NfsDirEntryCompare);
-
-    if (Index < Count)
-    {
-        *OutRecord = Volume->Records[Entries[Index].Index];
-        Status = NFS_OK;
-    }
-
-    NfsMemFree(Entries);
-    return Status;
+    Record = NfsChildrenAt(Volume, Directory, Index);
+    if (!Record)
+        return NFS_ENOENT;
+    *OutRecord = *Record;
+    return NFS_OK;
 }
 
 int
@@ -695,12 +628,8 @@ NfsRemove(PNFS_VOLUME Volume, nfs_fileid FileId)
     if (!Record || (Record->Flags & NFS_FLAG_DELETED))
         return NFS_ENOENT;
 
-    for (i = 0; i < Volume->RecordCount; i++)
-    {
-        if (!(Volume->Records[i].Flags & NFS_FLAG_DELETED) &&
-            Volume->Records[i].Parent == FileId)
-            return NFS_EINVAL;   /* v0.1: only empty directories */
-    }
+    if (NfsChildrenAt(Volume, FileId, 0) != NULL)
+        return NFS_EINVAL;   /* only empty directories can be removed */
 
     Updated = *Record;
     Updated.Flags |= NFS_FLAG_DELETED;
@@ -724,9 +653,9 @@ NfsRemove(PNFS_VOLUME Volume, nfs_fileid FileId)
 /* Data                                                                */
 /* ------------------------------------------------------------------ */
 
-static int
-NfsMapCluster(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record, nfs_u64 Vcn,
-              nfs_u64 *Lcn)
+int
+NfsMapClusterRecord(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record,
+                    nfs_u64 Vcn, nfs_u64 *Lcn)
 {
     nfs_u32 i;
 
@@ -736,14 +665,340 @@ NfsMapCluster(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record, nfs_u64 Vcn,
 
         if (Vcn >= Extent->Vcn && Vcn < Extent->Vcn + Extent->Length)
         {
-            if (Extent->Lcn == NFS_HOLE)
-                *Lcn = NFS_HOLE;
-            else
-                *Lcn = Extent->Lcn + (Vcn - Extent->Vcn);
+            *Lcn = (Extent->Lcn == NFS_HOLE) ? NFS_HOLE : Extent->Lcn + (Vcn - Extent->Vcn);
             return NFS_OK;
         }
     }
+    *Lcn = NFS_HOLE;
     return NFS_ENOENT;
+}
+
+int
+NfsCoalesceExtents(NFS_PIFT_RECORD *Record)
+{
+    nfs_u32 In, Out = 0;
+
+    for (In = 0; In < Record->ExtentCount; In++)
+    {
+        NFS_EXTENT Current = Record->Extents[In];
+
+        if (Current.Length == 0)
+            continue;
+
+        if (Out > 0)
+        {
+            NFS_EXTENT *Previous = &Record->Extents[Out - 1];
+            int Mergeable = 0;
+
+            if (Previous->Vcn + Previous->Length != Current.Vcn)
+                Mergeable = 0;
+            else if (Previous->Lcn == NFS_HOLE && Current.Lcn == NFS_HOLE)
+                Mergeable = 1;
+            else if (Previous->Lcn != NFS_HOLE && Current.Lcn != NFS_HOLE &&
+                     Previous->Lcn + Previous->Length == Current.Lcn)
+                Mergeable = 1;
+
+            if (Mergeable)
+            {
+                Previous->Length += Current.Length;
+                continue;
+            }
+        }
+
+        Record->Extents[Out++] = Current;
+    }
+
+    Record->ExtentCount = Out;
+    return NFS_OK;
+}
+
+static int
+NfsBuildExtents(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Source,
+                NFS_PIFT_RECORD *Record, nfs_u64 TotalVcns,
+                nfs_u64 ReplaceFirst, nfs_u64 ReplaceLast, nfs_u64 NewBase)
+{
+    nfs_u64 Vcn;
+    nfs_u64 AllocSize = 0;
+
+    Record->ExtentCount = 0;
+
+    for (Vcn = 0; Vcn < TotalVcns; Vcn++)
+    {
+        nfs_u64 Lcn;
+
+        if (NewBase != NFS_HOLE && Vcn >= ReplaceFirst && Vcn <= ReplaceLast)
+        {
+            Lcn = NewBase + (Vcn - ReplaceFirst);
+        }
+        else
+        {
+            NfsMapClusterRecord(Volume, Source, Vcn, &Lcn);
+        }
+
+        if (Record->ExtentCount > 0)
+        {
+            NFS_EXTENT *Previous = &Record->Extents[Record->ExtentCount - 1];
+
+            if (Previous->Vcn + Previous->Length == Vcn &&
+                ((Previous->Lcn == NFS_HOLE && Lcn == NFS_HOLE) ||
+                 (Previous->Lcn != NFS_HOLE && Lcn != NFS_HOLE &&
+                  Previous->Lcn + Previous->Length == Lcn)))
+            {
+                Previous->Length++;
+                if (Lcn != NFS_HOLE)
+                    AllocSize += Volume->Super.ClusterSize;
+                continue;
+            }
+        }
+
+        if (Record->ExtentCount >= NFS_EXTENT_MAX)
+            return NFS_EUNSUPPORTED;
+
+        Record->Extents[Record->ExtentCount].Vcn = Vcn;
+        Record->Extents[Record->ExtentCount].Lcn = Lcn;
+        Record->Extents[Record->ExtentCount].Length = 1;
+        Record->ExtentCount++;
+
+        if (Lcn != NFS_HOLE)
+            AllocSize += Volume->Super.ClusterSize;
+    }
+
+    Record->AllocSize = AllocSize;
+    return NFS_OK;
+}
+
+static void
+NfsFreeExtentRange(PNFS_VOLUME Volume, const NFS_PIFT_RECORD *Record,
+                   nfs_u64 First, nfs_u64 Last)
+{
+    nfs_u32 i;
+
+    for (i = 0; i < Record->ExtentCount; i++)
+    {
+        const NFS_EXTENT *Extent = &Record->Extents[i];
+        nfs_u64 ExtentEnd = Extent->Vcn + Extent->Length - 1;
+        nfs_u64 OverlapFirst, OverlapLast;
+
+        if (Extent->Lcn == NFS_HOLE || Extent->Length == 0)
+            continue;
+
+        OverlapFirst = Extent->Vcn > First ? Extent->Vcn : First;
+        OverlapLast = ExtentEnd < Last ? ExtentEnd : Last;
+        if (OverlapFirst > OverlapLast)
+            continue;
+
+        /* Only the overlapped clusters are replaced by this write: the parts of
+           the extent outside the range stay mapped and must stay allocated. */
+        NfsClusterFree(Volume, Extent->Lcn + (OverlapFirst - Extent->Vcn),
+                       OverlapLast - OverlapFirst + 1);
+    }
+}
+
+/*
+ * Write Length bytes at Offset, with copy-on-write semantics: the clusters that
+ * the write touches are never modified in place, they are allocated fresh, the
+ * untouched bytes of a partially covered cluster are carried over, and the old
+ * clusters are released once the new mapping is published. Holes are allowed
+ * between extents, so a write past EOF creates a sparse gap.
+ */
+int
+NfsWriteRange(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Record, nfs_u64 Offset,
+              const void *Buffer, nfs_u32 Length, NFS_PIFT_RECORD *Updated)
+{
+    nfs_u64 ClusterSize = Volume->Super.ClusterSize;
+    nfs_u64 OldSize = Record->Size;
+    nfs_u64 NewSize;
+    nfs_u64 FirstVcn, LastVcn, VcnCount, NewBase = NFS_HOLE;
+    nfs_u8 *Staging = NULL;
+    nfs_u32 i;
+    int Status;
+
+    *Updated = *Record;
+
+    if (Length == 0)
+        return NfsTruncateRecord(Volume, Record, Offset, Updated);
+
+    NewSize = Offset + Length;
+    if (NewSize < OldSize)
+        NewSize = OldSize;
+
+    FirstVcn = Offset / ClusterSize;
+    LastVcn = (Offset + Length - 1) / ClusterSize;
+    VcnCount = LastVcn - FirstVcn + 1;
+
+    if (VcnCount > 4096)
+        return NFS_EUNSUPPORTED;   /* v0.2: one write may span 16 MiB */
+
+    Status = NfsClusterAlloc(Volume, VcnCount, &NewBase);
+    if (Status != NFS_OK)
+        return Status;
+
+    Staging = (nfs_u8 *)NfsMemAlloc((size_t)(VcnCount * ClusterSize));
+    if (!Staging)
+    {
+        NfsClusterFree(Volume, NewBase, VcnCount);
+        return NFS_ENOSPC;
+    }
+    memset(Staging, 0, (size_t)(VcnCount * ClusterSize));
+
+    for (i = 0; i < VcnCount; i++)
+    {
+        nfs_u64 Vcn = FirstVcn + i;
+        nfs_u64 ClusterStart = Vcn * ClusterSize;
+        nfs_u64 ClusterEnd = ClusterStart + ClusterSize;
+        nfs_u64 WriteStart = (Offset > ClusterStart) ? Offset : ClusterStart;
+        nfs_u64 WriteEnd = (Offset + Length < ClusterEnd) ? Offset + Length : ClusterEnd;
+        nfs_u64 Lcn = NFS_HOLE;
+
+        /* Carry over the bytes this cluster keeps from the old mapping. */
+        if (WriteStart > ClusterStart || WriteEnd < ClusterEnd)
+        {
+            if (NfsMapClusterRecord(Volume, Record, Vcn, &Lcn) == NFS_OK && Lcn != NFS_HOLE)
+            {
+                Status = NfsDevRead(Volume, Lcn * ClusterSize, Staging + (size_t)(i * ClusterSize),
+                                    (nfs_u32)ClusterSize);
+                if (Status != NFS_OK)
+                {
+                    NfsMemFree(Staging);
+                    NfsClusterFree(Volume, NewBase, VcnCount);
+                    return Status;
+                }
+            }
+        }
+
+        if (WriteEnd > WriteStart)
+        {
+            nfs_u64 SourceOffset = WriteStart - Offset;
+
+            memcpy(Staging + (size_t)(i * ClusterSize) + (size_t)(WriteStart - ClusterStart),
+                   (const nfs_u8 *)Buffer + (size_t)SourceOffset,
+                   (size_t)(WriteEnd - WriteStart));
+        }
+    }
+
+    Status = NfsDevWrite(Volume, NewBase * ClusterSize, Staging,
+                         (nfs_u32)(VcnCount * ClusterSize));
+    NfsMemFree(Staging);
+    if (Status != NFS_OK)
+    {
+        NfsClusterFree(Volume, NewBase, VcnCount);
+        return Status;
+    }
+
+    /* Publish the mapping, then release the clusters it replaced. */
+    {
+        nfs_u64 TotalVcns = (NewSize + ClusterSize - 1) / ClusterSize;
+
+        Status = NfsBuildExtents(Volume, Record, Updated, TotalVcns, FirstVcn, LastVcn, NewBase);
+        if (Status != NFS_OK)
+        {
+            NfsClusterFree(Volume, NewBase, VcnCount);
+            return Status;
+        }
+        NfsFreeExtentRange(Volume, Record, FirstVcn, LastVcn);
+    }
+
+    Updated->Size = NewSize;
+    return NFS_OK;
+}
+
+int
+NfsTruncateRecord(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Record, nfs_u64 NewSize,
+                  NFS_PIFT_RECORD *Updated)
+{
+    nfs_u64 ClusterSize = Volume->Super.ClusterSize;
+    nfs_u64 TotalVcns;
+    nfs_u64 ReplaceFirst = 0, ReplaceLast = (nfs_u64)-1, NewBase = NFS_HOLE;
+    nfs_u64 OldBoundaryLcn = NFS_HOLE;
+    int ReplacingBoundary = 0;
+    int Status;
+
+    *Updated = *Record;
+    if (NewSize == Record->Size)
+        return NFS_OK;
+
+    TotalVcns = (NewSize + ClusterSize - 1) / ClusterSize;
+
+    /* Shrinking into the middle of a cluster: rewrite that cluster with a
+       zeroed tail, copy-on-write, so a later growth cannot resurrect stale
+       bytes. Reads of a hole must always be zeroes. */
+    if (NewSize < Record->Size && NewSize > 0 && (NewSize % ClusterSize) != 0)
+    {
+        nfs_u64 Vcn = NewSize / ClusterSize;
+        nfs_u64 Lcn = NFS_HOLE;
+
+        if (NfsMapClusterRecord(Volume, Record, Vcn, &Lcn) == NFS_OK && Lcn != NFS_HOLE)
+        {
+            nfs_u8 *Buffer = (nfs_u8 *)NfsMemAlloc((size_t)ClusterSize);
+            nfs_u64 NewCluster = 0;
+
+            if (!Buffer)
+                return NFS_ENOSPC;
+
+            Status = NfsDevRead(Volume, Lcn * ClusterSize, Buffer, (nfs_u32)ClusterSize);
+            if (Status == NFS_OK)
+            {
+                memset(Buffer + (size_t)(NewSize % ClusterSize), 0,
+                       (size_t)(ClusterSize - (NewSize % ClusterSize)));
+
+                Status = NfsClusterAlloc(Volume, 1, &NewCluster);
+                if (Status == NFS_OK)
+                {
+                    Status = NfsDevWrite(Volume, NewCluster * ClusterSize, Buffer,
+                                         (nfs_u32)ClusterSize);
+                    if (Status != NFS_OK)
+                        NfsClusterFree(Volume, NewCluster, 1);
+                }
+            }
+            NfsMemFree(Buffer);
+
+            if (Status != NFS_OK)
+                return Status;
+
+            OldBoundaryLcn = Lcn;
+            ReplaceFirst = Vcn;
+            ReplaceLast = Vcn;
+            NewBase = NewCluster;
+            ReplacingBoundary = 1;
+        }
+    }
+
+    /* Release everything fully past the new end. */
+    if (Record->Size > NewSize)
+    {
+        nfs_u32 i;
+
+        for (i = 0; i < Record->ExtentCount; i++)
+        {
+            const NFS_EXTENT *Extent = &Record->Extents[i];
+            nfs_u64 Keep, Drop;
+
+            if (Extent->Lcn == NFS_HOLE || Extent->Length == 0)
+                continue;
+            if (Extent->Vcn + Extent->Length <= TotalVcns)
+                continue;
+
+            Keep = (TotalVcns > Extent->Vcn) ? TotalVcns - Extent->Vcn : 0;
+            Drop = Extent->Length - Keep;
+            if (Drop > 0)
+                NfsClusterFree(Volume, Extent->Lcn + Keep, Drop);
+        }
+    }
+
+    Status = NfsBuildExtents(Volume, Record, Updated, TotalVcns,
+                             ReplaceFirst, ReplaceLast, NewBase);
+    if (Status != NFS_OK)
+    {
+        if (ReplacingBoundary)
+            NfsClusterFree(Volume, NewBase, 1);
+        return Status;
+    }
+
+    if (ReplacingBoundary)
+        NfsClusterFree(Volume, OldBoundaryLcn, 1);
+
+    Updated->Size = NewSize;
+    return NFS_OK;
 }
 
 int
@@ -772,7 +1027,7 @@ NfsRead(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 Offset,
         nfs_u64 Vcn = Position / ClusterSize;
         nfs_u32 InCluster = (nfs_u32)(Position % ClusterSize);
         nfs_u32 Chunk = (nfs_u32)(ClusterSize - InCluster);
-        nfs_u64 Lcn;
+        nfs_u64 Lcn = NFS_HOLE;
         int Status;
 
         if (Chunk > Length - Done)
@@ -780,16 +1035,10 @@ NfsRead(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 Offset,
         if (Position + Chunk > Record->Size)
             Chunk = (nfs_u32)(Record->Size - Position);
 
-        Status = NfsMapCluster(Volume, Record, Vcn, &Lcn);
-        if (Status != NFS_OK)
+        Status = NfsMapClusterRecord(Volume, Record, Vcn, &Lcn);
+        if (Status != NFS_OK || Lcn == NFS_HOLE)
         {
-            memset(Out + Done, 0, Chunk);   /* hole reads as zeroes */
-            Done += Chunk;
-            continue;
-        }
-        if (Lcn == NFS_HOLE)
-        {
-            memset(Out + Done, 0, Chunk);
+            memset(Out + Done, 0, Chunk);   /* a hole reads as zeroes */
             Done += Chunk;
             continue;
         }
@@ -811,11 +1060,9 @@ NfsWrite(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 Offset,
 {
     NFS_PIFT_RECORD *Record;
     NFS_PIFT_RECORD Updated;
-    nfs_u64 ClusterSize;
-    nfs_u32 i;
     int Status;
 
-    if (!Volume || !Buffer)
+    if (!Volume || (!Buffer && Length))
         return NFS_EINVAL;
 
     Record = NfsIndexGet(Volume, FileId);
@@ -824,172 +1071,9 @@ NfsWrite(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 Offset,
     if (Record->Flags & NFS_FLAG_DIR)
         return NFS_EINVAL;
 
-    ClusterSize = Volume->Super.ClusterSize;
-    Updated = *Record;
-
-    if (Offset == 0)
-    {
-        /* Rewrite: allocate fresh clusters (copy-on-write), then publish. */
-        nfs_u64 Clusters = (Length + ClusterSize - 1) / ClusterSize;
-        nfs_u64 First = 0;
-        nfs_u8 *Cluster = NULL;
-
-        if (Clusters > 0)
-        {
-            Status = NfsClusterAlloc(Volume, Clusters, &First);
-            if (Status != NFS_OK)
-                return Status;
-
-            Cluster = (nfs_u8 *)NfsMemAlloc((size_t)Clusters * ClusterSize);
-            if (!Cluster)
-            {
-                NfsClusterFree(Volume, First, Clusters);
-                return NFS_ENOSPC;
-            }
-            memset(Cluster, 0, (size_t)Clusters * ClusterSize);
-            memcpy(Cluster, Buffer, Length);
-
-            Status = NfsDevWrite(Volume, First * ClusterSize, Cluster,
-                                 (nfs_u32)(Clusters * ClusterSize));
-            NfsMemFree(Cluster);
-            if (Status != NFS_OK)
-            {
-                NfsClusterFree(Volume, First, Clusters);
-                return Status;
-            }
-
-            for (i = 0; i < Record->ExtentCount; i++)
-            {
-                if (Record->Extents[i].Lcn != NFS_HOLE)
-                    NfsClusterFree(Volume, Record->Extents[i].Lcn,
-                                   Record->Extents[i].Length);
-            }
-
-            Updated.ExtentCount = 1;
-            Updated.Extents[0].Vcn = 0;
-            Updated.Extents[0].Lcn = First;
-            Updated.Extents[0].Length = Clusters;
-            Updated.AllocSize = Clusters * ClusterSize;
-        }
-        else
-        {
-            for (i = 0; i < Record->ExtentCount; i++)
-            {
-                if (Record->Extents[i].Lcn != NFS_HOLE)
-                    NfsClusterFree(Volume, Record->Extents[i].Lcn,
-                                   Record->Extents[i].Length);
-            }
-            Updated.ExtentCount = 0;
-            Updated.AllocSize = 0;
-        }
-
-        Updated.Size = Length;
-    }
-    else if (Offset == Record->Size)
-    {
-        /* Append. Aligned appends add an extent; unaligned ones patch the
-           tail cluster in place (documented v0.1 limitation: no snapshot). */
-        nfs_u64 Tail = Record->Size % ClusterSize;
-        nfs_u32 Consumed = 0;
-
-        if (Tail != 0)
-        {
-            nfs_u64 LastVcn = Record->Size / ClusterSize;
-            nfs_u64 Lcn = NFS_HOLE;
-            nfs_u32 Chunk = (nfs_u32)(ClusterSize - Tail);
-            nfs_u8 *ClusterBuffer;
-
-            Status = NfsMapCluster(Volume, Record, LastVcn, &Lcn);
-            if (Status != NFS_OK || Lcn == NFS_HOLE)
-                return NFS_EUNSUPPORTED;
-
-            if (Chunk > Length)
-                Chunk = Length;
-
-            ClusterBuffer = (nfs_u8 *)NfsMemAlloc((size_t)ClusterSize);
-            if (!ClusterBuffer)
-                return NFS_ENOSPC;
-            Status = NfsDevRead(Volume, Lcn * ClusterSize, ClusterBuffer, (nfs_u32)ClusterSize);
-            if (Status == NFS_OK)
-            {
-                memcpy(ClusterBuffer + Tail, Buffer, Chunk);
-                Status = NfsDevWrite(Volume, Lcn * ClusterSize, ClusterBuffer,
-                                     (nfs_u32)ClusterSize);
-            }
-            NfsMemFree(ClusterBuffer);
-            if (Status != NFS_OK)
-                return Status;
-            Consumed = Chunk;
-        }
-
-        if (Consumed < Length)
-        {
-            nfs_u32 Remaining = Length - Consumed;
-            nfs_u64 Clusters = (Remaining + ClusterSize - 1) / ClusterSize;
-            nfs_u64 First = 0;
-            nfs_u8 *Cluster;
-
-            Status = NfsClusterAlloc(Volume, Clusters, &First);
-            if (Status != NFS_OK)
-                return Status;
-
-            Cluster = (nfs_u8 *)NfsMemAlloc((size_t)Clusters * ClusterSize);
-            if (!Cluster)
-            {
-                NfsClusterFree(Volume, First, Clusters);
-                return NFS_ENOSPC;
-            }
-            memset(Cluster, 0, (size_t)Clusters * ClusterSize);
-            memcpy(Cluster, (const nfs_u8 *)Buffer + Consumed, Remaining);
-            Status = NfsDevWrite(Volume, First * ClusterSize, Cluster,
-                                 (nfs_u32)(Clusters * ClusterSize));
-            NfsMemFree(Cluster);
-            if (Status != NFS_OK)
-            {
-                NfsClusterFree(Volume, First, Clusters);
-                return Status;
-            }
-
-            if (Updated.ExtentCount >= NFS_EXTENT_MAX)
-            {
-                NfsClusterFree(Volume, First, Clusters);
-                return NFS_EUNSUPPORTED;   /* extent array full in v0.1 */
-            }
-
-            /* Start the new extent at the cluster after the last mapped one. */
-            {
-                nfs_u64 NextVcn = ((Record->Size + ClusterSize - 1) / ClusterSize);
-                nfs_u32 LastIndex = Updated.ExtentCount;
-
-                if (LastIndex > 0)
-                {
-                    NFS_EXTENT *Last = &Updated.Extents[LastIndex - 1];
-                    if (Last->Lcn != NFS_HOLE &&
-                        Last->Lcn + Last->Length == First &&
-                        Last->Vcn + Last->Length == NextVcn)
-                    {
-                        Last->Length += Clusters;
-                        Updated.AllocSize += Clusters * ClusterSize;
-                        goto Commit;
-                    }
-                }
-
-                Updated.Extents[LastIndex].Vcn = NextVcn;
-                Updated.Extents[LastIndex].Lcn = First;
-                Updated.Extents[LastIndex].Length = Clusters;
-                Updated.ExtentCount = LastIndex + 1;
-                Updated.AllocSize += Clusters * ClusterSize;
-            }
-        }
-
-Commit:
-        Updated.Size = Record->Size + Length;
-    }
-    else
-    {
-        /* Middle-of-file writes need extent splitting: phase 2. */
-        return NFS_EUNSUPPORTED;
-    }
+    Status = NfsWriteRange(Volume, Record, Offset, Buffer, Length, &Updated);
+    if (Status != NFS_OK)
+        return Status;
 
     Status = NfsCommitRecords(Volume, &Updated, 1);
     if (Status != NFS_OK)
@@ -998,6 +1082,28 @@ Commit:
     if (Written)
         *Written = Length;
     return NFS_OK;
+}
+
+int
+NfsTruncate(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 NewSize)
+{
+    NFS_PIFT_RECORD *Record;
+    NFS_PIFT_RECORD Updated;
+    int Status;
+
+    if (!Volume)
+        return NFS_EINVAL;
+
+    Record = NfsIndexGet(Volume, FileId);
+    if (!Record || (Record->Flags & NFS_FLAG_DELETED))
+        return NFS_ENOENT;
+    if (Record->Flags & NFS_FLAG_DIR)
+        return NFS_EINVAL;
+
+    Status = NfsTruncateRecord(Volume, Record, NewSize, &Updated);
+    if (Status != NFS_OK)
+        return Status;
+    return NfsCommitRecords(Volume, &Updated, 1);
 }
 
 /* ------------------------------------------------------------------ */

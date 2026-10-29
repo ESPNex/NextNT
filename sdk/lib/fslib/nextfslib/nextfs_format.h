@@ -4,7 +4,7 @@
  * PURPOSE:     NextFS on-disk format, PIFT records and the library API
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  *
- * v0.1: portable C, no OS dependencies. Everything that touches the device
+ * v0.2: portable C, no OS dependencies. Everything that touches the device
  * goes through nfs_bdev callbacks, so the same code serves nextformat (a
  * file image), the self-test and, in a later phase, nextfs.sys.
  */
@@ -254,11 +254,14 @@ int NfsRemove(PNFS_VOLUME Volume, nfs_fileid FileId);
 int NfsReadDir(PNFS_VOLUME Volume, nfs_fileid Directory, nfs_u32 Index,
                NFS_PIFT_RECORD *OutRecord);
 
-/* Data. v0.1 supports rewriting a file from offset 0 and appending at EOF. */
+/* Data. Any offset and length; the touched clusters are copy-on-write and a
+   write past EOF creates a sparse hole. Length 0 with an offset truncates. */
 int NfsWrite(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 Offset,
              const void *Buffer, nfs_u32 Length, nfs_u32 *Written);
 int NfsRead(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 Offset,
             void *Buffer, nfs_u32 Length, nfs_u32 *Read);
+/* Grow (with a hole) or shrink a file. */
+int NfsTruncate(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 NewSize);
 
 void NfsGetStats(PNFS_VOLUME Volume, PNFS_STATS Stats);
 const NFS_SUPER *NfsGetSuper(PNFS_VOLUME Volume);
