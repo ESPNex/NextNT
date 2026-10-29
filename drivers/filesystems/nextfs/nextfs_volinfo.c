@@ -234,6 +234,23 @@ NextFsFileSystemControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 
     switch (ControlCode)
     {
+        /* Oplocks: acquiring one, and acknowledging a break, are FSCTLs. FsRtl
+           owns the state machine, including the break timeouts. */
+        case FSCTL_REQUEST_OPLOCK_LEVEL_1:
+        case FSCTL_REQUEST_OPLOCK_LEVEL_2:
+        case FSCTL_REQUEST_BATCH_OPLOCK:
+        case FSCTL_OPLOCK_BREAK_ACKNOWLEDGE:
+        case FSCTL_OPLOCK_BREAK_ACK_NO_2:
+        case FSCTL_OPLOCK_BREAK_NOTIFY:
+        {
+            ULONG OutputLength = IrpSp->Parameters.FileSystemControl.OutputBufferLength;
+
+            Status = NextFsOplockControl(File, Irp, ControlCode, OutputLength);
+            if (Status == STATUS_PENDING)
+                return STATUS_PENDING;   /* FsRtl completes it when the break lands */
+            return NextFsCompleteIo(Irp, Status, 0);
+        }
+
         case FSCTL_IS_VOLUME_DIRTY:
         {
             PULONG Dirty = (PULONG)Irp->AssociatedIrp.SystemBuffer;

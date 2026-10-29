@@ -72,6 +72,9 @@ typedef struct _NEXTFS_FILE
     nfs_u32 FileId;
     ULONG Flags;
     PCHAR Path;              /* UTF-8, kept current across renames          */
+    PFILE_LOCK FileLock;     /* byte ranges this handle holds               */
+    OPLOCK Oplock;           /* same object NTFS and fastfat use            */
+    BOOLEAN OplockInitialized;
 } NEXTFS_FILE, *PNEXTFS_FILE;
 
 #define NEXTFS_FILE_DIRECTORY        0x0001
@@ -106,6 +109,20 @@ NTSTATUS NextFsOpenFile(PNEXTFS_VCB Vcb, PCHAR Path, ULONG CreateDisposition,
 
 /* Replace the stored path of an open file, used by rename. */
 NTSTATUS NextFsSetFilePath(PNEXTFS_FILE File, PCHAR NewPath);
+
+/* Locking, oplocks and the fast I/O table (nextfs_lock.c) */
+NTSTATUS NextFsInitializeLocking(PNEXTFS_FILE File);
+void NextFsUninitializeLocking(PNEXTFS_FILE File, PFILE_OBJECT FileObject);
+NTSTATUS NextFsCheckOplock(PNEXTFS_FILE File, PIRP Irp);
+NTSTATUS NextFsOplockControl(PNEXTFS_FILE File, PIRP Irp, ULONG ControlCode,
+                              ULONG OutputLength);
+void NextFsRegisterFastIo(PDRIVER_OBJECT DriverObject);
+NTSTATUS NTAPI NextFsLockControl(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+
+/* Time and attribute conversion shared by the information paths and by the fast
+   I/O table (nextfs_finfo.c). */
+LARGE_INTEGER NextFsUnixToNtTime(nfs_u64 Seconds);
+ULONG NextFsNtAttributes(const NFS_STANDARD_INFORMATION *Info);
 
 /* ------------------------------------------------------------------ */
 /* Dispatch entry points                                               */

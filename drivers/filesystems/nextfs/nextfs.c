@@ -332,6 +332,18 @@ NextFsOpenFile(PNEXTFS_VCB Vcb, PCHAR Path, ULONG CreateDisposition,
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
+    {
+        NTSTATUS LockStatus = NextFsInitializeLocking(File);
+
+        if (!NT_SUCCESS(LockStatus))
+        {
+            NfsHandleClose(Vcb->Volume, Handle);
+            NextFsFreePath(File->Path);
+            ExFreePoolWithTag(File, NEXTFS_POOL_TAG);
+            return LockStatus;
+        }
+    }
+
     *OutFile = File;
     return STATUS_SUCCESS;
 }
@@ -727,7 +739,12 @@ NextFsClose(PDEVICE_OBJECT DeviceObject, PIRP Irp)
     {
         File = (PNEXTFS_FILE)FileObject->FsContext2;
         if (File && File->Magic == NEXTFS_FILE_MAGIC)
+        {
+            /* Byte ranges and the oplock go with the last handle: nothing may
+               outlive the FILE_OBJECT that owns it. */
+            NextFsUninitializeLocking(File, FileObject);
             NextFsFreeFile(File);
+        }
         else if (!File && FileObject->FsContext == Vcb &&
                  InterlockedDecrement(&Vcb->OpenCount) == 0)
         {
@@ -800,6 +817,11 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
     DriverObject->MajorFunction[IRP_MJ_SET_VOLUME_INFORMATION] = NextFsSetVolumeInformation;
     DriverObject->MajorFunction[IRP_MJ_FILE_SYSTEM_CONTROL]    = NextFsFileSystemControl;
     DriverObject->MajorFunction[IRP_MJ_SHUTDOWN]               = NextFsShutdown;
+    DriverObject->MajorFunction[IRP_MJ_LOCK_CONTROL]           = NextFsLockControl;
+
+    /* Fast I/O answers the metadata calls without an IRP round trip; file data
+       stays on the IRP path, the reason is at the top of nextfs_lock.c. */
+    NextFsRegisterFastIo(DriverObject);
 
     DriverObject->DriverUnload = NULL;    /* a mounted FSD cannot be unloaded */
 

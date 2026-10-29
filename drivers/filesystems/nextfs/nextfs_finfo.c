@@ -19,8 +19,8 @@
 /* NextFS stores Unix seconds; NT wants 100 ns ticks since 1601. */
 #define NEXTFS_EPOCH_DELTA 116444736000000000LL
 
-static LARGE_INTEGER
-NextFsUnixToTime(nfs_u64 Seconds)
+LARGE_INTEGER
+NextFsUnixToNtTime(nfs_u64 Seconds)
 {
     LARGE_INTEGER Value;
 
@@ -41,8 +41,8 @@ NextFsTimeToUnix(PLARGE_INTEGER Time)
     return (nfs_u64)(Ticks / 10000000LL);
 }
 
-static ULONG
-NextFsAttributes(const NFS_STANDARD_INFORMATION *Info)
+ULONG
+NextFsNtAttributes(const NFS_STANDARD_INFORMATION *Info)
 {
     ULONG Attributes = FILE_ATTRIBUTE_NORMAL;
 
@@ -143,11 +143,11 @@ NextFsQueryInformation(PDEVICE_OBJECT DeviceObject, PIRP Irp)
             if (Length < sizeof(FILE_BASIC_INFORMATION) || !Basic)
                 return NextFsCompleteIo(Irp, STATUS_BUFFER_OVERFLOW, sizeof(FILE_BASIC_INFORMATION));
 
-            Basic->CreationTime = NextFsUnixToTime(Info.CreationTime);
-            Basic->LastAccessTime = NextFsUnixToTime(Info.LastAccessTime);
-            Basic->LastWriteTime = NextFsUnixToTime(Info.LastWriteTime);
-            Basic->ChangeTime = NextFsUnixToTime(Info.ChangeTime);
-            Basic->FileAttributes = (ULONG)NextFsAttributes(&Info);
+            Basic->CreationTime = NextFsUnixToNtTime(Info.CreationTime);
+            Basic->LastAccessTime = NextFsUnixToNtTime(Info.LastAccessTime);
+            Basic->LastWriteTime = NextFsUnixToNtTime(Info.LastWriteTime);
+            Basic->ChangeTime = NextFsUnixToNtTime(Info.ChangeTime);
+            Basic->FileAttributes = (ULONG)NextFsNtAttributes(&Info);
             return NextFsCompleteIo(Irp, STATUS_SUCCESS, sizeof(FILE_BASIC_INFORMATION));
         }
 
@@ -238,13 +238,13 @@ NextFsQueryInformation(PDEVICE_OBJECT DeviceObject, PIRP Irp)
             if (Length < sizeof(FILE_NETWORK_OPEN_INFORMATION) || !Network)
                 return NextFsCompleteIo(Irp, STATUS_BUFFER_OVERFLOW, sizeof(FILE_NETWORK_OPEN_INFORMATION));
 
-            Network->CreationTime = NextFsUnixToTime(Info.CreationTime);
-            Network->LastAccessTime = NextFsUnixToTime(Info.LastAccessTime);
-            Network->LastWriteTime = NextFsUnixToTime(Info.LastWriteTime);
-            Network->ChangeTime = NextFsUnixToTime(Info.ChangeTime);
+            Network->CreationTime = NextFsUnixToNtTime(Info.CreationTime);
+            Network->LastAccessTime = NextFsUnixToNtTime(Info.LastAccessTime);
+            Network->LastWriteTime = NextFsUnixToNtTime(Info.LastWriteTime);
+            Network->ChangeTime = NextFsUnixToNtTime(Info.ChangeTime);
             Network->AllocationSize.QuadPart = (LONGLONG)Info.AllocationSize;
             Network->EndOfFile.QuadPart = (LONGLONG)Info.EndOfFile;
-            Network->FileAttributes = NextFsAttributes(&Info);
+            Network->FileAttributes = NextFsNtAttributes(&Info);
             return NextFsCompleteIo(Irp, STATUS_SUCCESS, sizeof(FILE_NETWORK_OPEN_INFORMATION));
         }
 
@@ -254,7 +254,7 @@ NextFsQueryInformation(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 
             if (Length < sizeof(FILE_ATTRIBUTE_TAG_INFORMATION) || !Tag)
                 return NextFsCompleteIo(Irp, STATUS_BUFFER_OVERFLOW, sizeof(FILE_ATTRIBUTE_TAG_INFORMATION));
-            Tag->FileAttributes = NextFsAttributes(&Info);
+            Tag->FileAttributes = NextFsNtAttributes(&Info);
             Tag->ReparseTag = 0;
             return NextFsCompleteIo(Irp, STATUS_SUCCESS, sizeof(FILE_ATTRIBUTE_TAG_INFORMATION));
         }
@@ -285,11 +285,11 @@ NextFsQueryInformation(PDEVICE_OBJECT DeviceObject, PIRP Irp)
             if (!Buffer || Length < FIELD_OFFSET(FILE_ALL_INFORMATION, NameInformation.FileName))
                 return NextFsCompleteIo(Irp, STATUS_BUFFER_OVERFLOW, Needed);
 
-            All->BasicInformation.CreationTime = NextFsUnixToTime(Info.CreationTime);
-            All->BasicInformation.LastAccessTime = NextFsUnixToTime(Info.LastAccessTime);
-            All->BasicInformation.LastWriteTime = NextFsUnixToTime(Info.LastWriteTime);
-            All->BasicInformation.ChangeTime = NextFsUnixToTime(Info.ChangeTime);
-            All->BasicInformation.FileAttributes = NextFsAttributes(&Info);
+            All->BasicInformation.CreationTime = NextFsUnixToNtTime(Info.CreationTime);
+            All->BasicInformation.LastAccessTime = NextFsUnixToNtTime(Info.LastAccessTime);
+            All->BasicInformation.LastWriteTime = NextFsUnixToNtTime(Info.LastWriteTime);
+            All->BasicInformation.ChangeTime = NextFsUnixToNtTime(Info.ChangeTime);
+            All->BasicInformation.FileAttributes = NextFsNtAttributes(&Info);
             All->StandardInformation.AllocationSize.QuadPart = (LONGLONG)Info.AllocationSize;
             All->StandardInformation.EndOfFile.QuadPart = (LONGLONG)Info.EndOfFile;
             All->StandardInformation.NumberOfLinks = Info.NumberOfLinks ? Info.NumberOfLinks : 1;
@@ -484,6 +484,17 @@ NextFsSetInformation(PDEVICE_OBJECT DeviceObject, PIRP Irp)
         return NextFsCompleteIo(Irp, STATUS_VOLUME_DISMOUNTED, 0);
     if (!File || File->Magic != NEXTFS_FILE_MAGIC || File->Handle == 0)
         return NextFsCompleteIo(Irp, STATUS_INVALID_HANDLE, 0);
+
+    /* Truncating, renaming or marking for delete all change what another handle
+       sees, so an oplock has to break first. */
+    {
+        NTSTATUS OplockStatus = NextFsCheckOplock(File, Irp);
+
+        if (OplockStatus == STATUS_PENDING)
+            return STATUS_PENDING;
+        if (!NT_SUCCESS(OplockStatus))
+            return NextFsCompleteIo(Irp, OplockStatus, 0);
+    }
 
     switch (InfoClass)
     {

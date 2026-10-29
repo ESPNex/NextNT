@@ -133,6 +133,17 @@ NextFsWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp)
         Offset = (LONGLONG)Record.Size;
     }
 
+    /* A write breaks a batch or level-2 oplock. While the break is in flight the
+       I/O manager owns the IRP, so we hand it back untouched. */
+    {
+        NTSTATUS OplockStatus = NextFsCheckOplock(File, Irp);
+
+        if (OplockStatus == STATUS_PENDING)
+            return STATUS_PENDING;
+        if (!NT_SUCCESS(OplockStatus))
+            return NextFsCompleteIo(Irp, OplockStatus, 0);
+    }
+
     ExAcquireResourceExclusiveLite(&Vcb->Resource, TRUE);
     NfsStatus = NfsHandleSeek(Vcb->Volume, File->Handle, (nfs_u64)Offset);
     if (NfsStatus == NFS_OK)

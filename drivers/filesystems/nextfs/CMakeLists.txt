@@ -8,6 +8,7 @@
 
 list(APPEND SOURCE
     nextfs.c
+    nextfs_lock.c
     nextfs_rw.c
     nextfs_finfo.c
     nextfs_dirctl.c
