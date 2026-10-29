@@ -157,6 +157,10 @@ nfs_u32 NfsPinCoveredBy(PNFS_VOLUME Volume, nfs_u64 Cluster);
 int  NfsSnapshotPinsRebuild(PNFS_VOLUME Volume);
 int  NfsSnapshotRecover(PNFS_VOLUME Volume);
 
+/* UTF-8 -> UTF-16 units on a length, for path components (nextfs_volume.c) */
+nfs_u32 NfsUtf8NameDecode(const char *Text, nfs_u32 TextLength, nfs_u16 *Out,
+                          nfs_u32 MaxUnits);
+
 /* Checkpointing + transactions (nextfs_volume.c) */
 int NfsCheckpoint(PNFS_VOLUME Volume);
 int NfsCommitRecords(PNFS_VOLUME Volume, NFS_PIFT_RECORD *Records, nfs_u32 Count);

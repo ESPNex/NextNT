@@ -442,6 +442,12 @@ const NFS_SUPER *NfsGetSuper(PNFS_VOLUME Volume);
 nfs_u32 NfsNameFromAscii(const char *Ascii, nfs_u16 *Out, nfs_u32 MaxUnits);
 int NfsNameToAscii(const nfs_u16 *Name, nfs_u32 Length, char *Out, nfs_u32 MaxBytes);
 
+/* Clock: the FSD passes real time (Unix seconds). Without it nextfslib hands out
+   a monotonic counter, which keeps records ordered but is not a date. */
+typedef nfs_u64 (*NFS_CLOCK_FN)(void);
+void NfsSetClock(NFS_CLOCK_FN Clock);
+void NfsGetTime(nfs_u64 *Seconds);
+
 /* Allocation hooks: override for kernel pool. Defaults to malloc/free. */
 typedef void *(*NFS_ALLOC_FN)(size_t Size);
 typedef void (*NFS_FREE_FN)(void *Block);

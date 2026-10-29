@@ -249,15 +249,55 @@ NfsPiftScan(PNFS_VOLUME Volume)
 /* Replay of committed journal frames                                  */
 /* ------------------------------------------------------------------ */
 
-static int
-NfsSeqCompare(const void *A, const void *B)
+/*
+ * In-place heapsort of the committed sequence list. nextfs_journal.c is compiled
+ * into the FSD too, and ntoskrnl exports no qsort, so the sort lives here. The
+ * order is total and stable enough for replay: frames are applied oldest first.
+ */
+static void
+NfsSeqSiftDown(nfs_u64 *Seqs, nfs_u32 Start, nfs_u32 Count)
 {
-    nfs_u64 Left = *(const nfs_u64 *)A;
-    nfs_u64 Right = *(const nfs_u64 *)B;
+    nfs_u32 Root = Start;
 
-    if (Left == Right)
-        return 0;
-    return (Left < Right) ? -1 : 1;
+    for (;;)
+    {
+        nfs_u32 Child = Root * 2 + 1;
+        nfs_u32 Swap = Root;
+        nfs_u64 Temp;
+
+        if (Child < Count && Seqs[Swap] < Seqs[Child])
+            Swap = Child;
+        if (Child + 1 < Count && Seqs[Swap] < Seqs[Child + 1])
+            Swap = Child + 1;
+        if (Swap == Root)
+            return;
+
+        Temp = Seqs[Root];
+        Seqs[Root] = Seqs[Swap];
+        Seqs[Swap] = Temp;
+        Root = Swap;
+    }
+}
+
+static void
+NfsSeqSort(nfs_u64 *Seqs, nfs_u32 Count)
+{
+    nfs_u32 Start, End;
+    nfs_u64 Temp;
+
+    if (Count < 2)
+        return;
+
+    for (Start = Count / 2; Start > 0; Start--)
+        NfsSeqSiftDown(Seqs, Start - 1, Count);
+
+    for (End = Count - 1; End > 0; End--)
+    {
+        Temp = Seqs[0];
+        Seqs[0] = Seqs[End];
+        Seqs[End] = Temp;
+        NfsSeqSiftDown(Seqs, 0, End);
+    }
 }
 
 /*
@@ -282,7 +322,7 @@ NfsJournalReplay(PNFS_VOLUME Volume)
     if (Count > 4096)
         Count = 4096;
 
-    qsort(Seqs, Count, sizeof(nfs_u64), NfsSeqCompare);
+    NfsSeqSort(Seqs, Count);
 
     for (i = 0; i < Count; i++)
     {

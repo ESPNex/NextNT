@@ -1387,6 +1387,92 @@ int main(void)
         }
     }
 
+    printf("[26] names are UTF-8 end to end\n");
+    {
+        nfs_u16 Wide[NFS_NAME_MAX];
+        char Utf8[256];
+        nfs_u32 Length = Name("citt\xC3\xA0.txt", Wide);
+
+        CHECK(Length == 9, "a UTF-8 path decodes to 9 UTF-16 units");
+        CHECK(Wide[4] == 0xE0, "and the accented letter is U+00E0, not two raw bytes");
+        CHECK(NfsNameToAscii(Wide, Length, Utf8, sizeof(Utf8)) == NFS_OK &&
+              strcmp(Utf8, "citt\xC3\xA0.txt") == 0,
+              "the name converts back to the same UTF-8");
+
+        Length = Name("plain.txt", Wide);
+        CHECK(Length == 9, "ASCII is untouched by the decoder");
+        CHECK(NfsNameToAscii(Wide, Length, Utf8, sizeof(Utf8)) == NFS_OK &&
+              strcmp(Utf8, "plain.txt") == 0, "and it converts back unchanged");
+
+        /* Outside the BMP: one code point, two UTF-16 units, four UTF-8 bytes. */
+        Length = Name("\xF0\x9F\x98\x80.txt", Wide);
+        CHECK(Length == 6, "an emoji is one surrogate pair plus '.txt'");
+        CHECK(Wide[0] >= 0xD800 && Wide[0] < 0xDC00 && Wide[1] >= 0xDC00 && Wide[1] < 0xE000,
+              "encoded as a surrogate pair");
+        CHECK(NfsNameToAscii(Wide, Length, Utf8, sizeof(Utf8)) == NFS_OK &&
+              strcmp(Utf8, "\xF0\x9F\x98\x80.txt") == 0,
+              "and it converts back to the same four bytes");
+
+        /* Too small an output buffer is a clean error, never a cut name. */
+        Length = Name("citt\xC3\xA0", Wide);
+        CHECK(NfsNameToAscii(Wide, Length, Utf8, 3) == NFS_EINVAL,
+              "a buffer that cannot hold the whole name is refused");
+        CHECK(NfsNameToAscii(Wide, Length, Utf8, 7) == NFS_OK &&
+              strcmp(Utf8, "citt\xC3\xA0") == 0,
+              "one byte more is enough, NUL included");
+
+        /* A broken sequence becomes '?': a lookup miss, never another file. */
+        Length = Name("bad\xFFname", Wide);
+        CHECK(Length == 8 && Wide[3] == '?', "a malformed byte becomes '?'");
+        Length = Name("\xC3", Wide);
+        CHECK(Length == 1 && Wide[0] == '?', "a truncated sequence becomes '?' too");
+
+        if (Volume)
+        {
+            NfsUnmount(Volume);
+            Volume = NULL;
+        }
+        CHECK(NfsMount(&Block, &Volume) == NFS_OK, "remount for the UTF-8 namespace test");
+        if (Volume)
+        {
+            nfs_u32 Handle = 0;
+            NFS_PIFT_RECORD Entry;
+            char Text[64];
+            nfs_u32 Got = 0;
+
+            CHECK(NfsHandleOpen(Volume, "\\perch\xC3\xA9.txt", NFS_DISPOSITION_CREATE, 0,
+                                NFS_HANDLE_READ | NFS_HANDLE_WRITE, &Handle) == NFS_OK,
+                  "create \"perche'\" with an accent through a UTF-8 path");
+            CHECK(NfsHandleWrite(Volume, Handle, "ciao", 4, &Got) == NFS_OK && Got == 4,
+                  "write to it");
+            CHECK(NfsHandleClose(Volume, Handle) == NFS_OK, "close it");
+
+            Length = Name("perch\xC3\xA9.txt", Wide);
+            CHECK(NfsLookup(Volume, NFS_ROOT_ID, Wide, Length, &Entry) == NFS_OK,
+                  "look it up by its UTF-16 name");
+            CHECK(Entry.NameLen == Length && Entry.Name[5] == 0xE9,
+                  "the stored name is the UTF-16 one, accent included");
+            memset(Text, 0, sizeof(Text));
+            CHECK(ReadWhole(Volume, Entry.FileId, Text, sizeof(Text)) == NFS_OK &&
+                  strcmp(Text, "ciao") == 0, "and the content is there");
+
+            /* A directory and a file whose name needs four UTF-8 bytes. */
+            CHECK(NfsHandleOpen(Volume, "\\\xF0\x9F\x98\x80", NFS_DISPOSITION_CREATE, 1,
+                                NFS_HANDLE_READ | NFS_HANDLE_WRITE, &Handle) == NFS_OK,
+                  "create a directory whose name is outside the BMP");
+            CHECK(NfsHandleClose(Volume, Handle) == NFS_OK, "close the directory handle");
+            Length = Name("\xF0\x9F\x98\x80", Wide);
+            CHECK(NfsLookup(Volume, NFS_ROOT_ID, Wide, Length, &Entry) == NFS_OK &&
+                  (Entry.Flags & NFS_FLAG_DIR) != 0,
+                  "the directory is in the PIFT under that name");
+
+            /* "plain.txt" from the earlier groups must be unaffected. */
+            Length = Name("robust.bin", Wide);
+            CHECK(NfsLookup(Volume, NFS_ROOT_ID, Wide, Length, &Entry) == NFS_OK,
+                  "and the ASCII names created before are still reachable");
+        }
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

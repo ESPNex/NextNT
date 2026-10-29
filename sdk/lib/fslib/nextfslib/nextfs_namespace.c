@@ -383,8 +383,8 @@ NfsOpenPath(PNFS_VOLUME Volume, const char *Path, nfs_u32 Disposition,
             continue;
         }
 
-        if (Length > NFS_NAME_MAX)
-            return NFS_EINVAL;
+        if (Length > NFS_NAME_MAX * 4)
+            return NFS_EINVAL;           /* cannot even hold NFS_NAME_MAX units */
 
         {
             nfs_u32 i;
@@ -393,12 +393,19 @@ NfsOpenPath(PNFS_VOLUME Volume, const char *Path, nfs_u32 Disposition,
             {
                 unsigned char Ch = (unsigned char)Component[i];
 
+                /* Every byte of a UTF-8 sequence is >= 0x80, so this check still
+                   sees the separators NT refuses and never a continuation byte. */
                 if (Ch < 0x20 || Ch == ':' || Ch == '*' || Ch == '?' || Ch == '"' ||
                     Ch == '<' || Ch == '>' || Ch == '|')
                     return NFS_EINVAL;   /* characters NT refuses too */
-                Name[i] = (nfs_u16)Ch;
             }
         }
+
+        /* UTF-8 path component to UTF-16 units, the same decoder NfsNameFromAscii
+           uses, so "perche'" and "perché" are different names and neither is cut. */
+        Length = NfsUtf8NameDecode(Component, Length, Name, NFS_NAME_MAX);
+        if (Length == 0)
+            return NFS_EINVAL;
 
         Record = NfsChildrenLookup(Volume, Current, Name, Length);
 

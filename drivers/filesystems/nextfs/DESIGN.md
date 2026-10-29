@@ -1,4 +1,4 @@
-# NextFS — design (v0.9, branch `nextfs`)
+# NextFS — design (v0.10, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -13,9 +13,12 @@ This document is the contract between four components that must agree byte for b
 | `nextformat` | `sdk/lib/fslib/nextfslib/tools/` | mkfs |
 | boot chain | `boot/nextldr/nextldr/lib/fs/nextfs.c` (later phase) | must read a NextFS volume to boot |
 
-Status: **phase 9**. `nextfslib` implements the format as described here and is
-self-tested (310 checks); `nextfs.sys` is still a mount-capable skeleton (volume
-open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`).
+Status: **phase 10**. `nextfslib` implements the format as described here and is
+self-tested (333 checks). `nextfs.sys` is no longer a skeleton: it mounts a
+volume, and every IRP path (create, read, write, information, directory control,
+volume information, FSCTL) is implemented on top of `nextfslib`. It is built as
+part of the tree but **not** installed in the boot image yet: NTFS is still the
+boot file system.
 
 ---
 
@@ -288,7 +291,7 @@ PIFT record.
 
 ---
 
-## 5. Open questions (to settle before phase 10)
+## 5. Open questions (to settle before phase 11)
 
 1. **Security descriptors**: store inline in the record (simple, fat) or in a
    deduplicated blob store (smaller, slower)? Leaning to a deduplicated store keyed by
@@ -305,7 +308,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.9, branch `nextfs`)
+## 6. Implementation status (v0.10, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -320,9 +323,14 @@ Done and tested in this phase:
 | sorted child index | `nextfslib/nextfs_pift.c` | 300-file directory, binary-search lookup, ordered enumeration |
 | multi-level checkpoint tree | `nextfslib/nextfs_tree.c` | 8000 files: root is internal (level 2), remount, enumerate, lookup |
 | two-generation roots + PIFT halves | `nextfslib/nextfs_volume.c` | 6 checkpoints with zero cluster drift; corrupt live root ⇒ fallback mount |
-| driver skeleton | `drivers/filesystems/nextfs/nextfs.c` | not compiled yet (needs the RosBE build) |
+| FSD: mount + dispatch table | `drivers/filesystems/nextfs/nextfs.c` | compiles against the DDK headers, mount path reviewed against `fastfat` |
+| FSD: create/cleanup/close | `drivers/filesystems/nextfs/nextfs.c` | disposition translation, delete-on-close, volume teardown |
+| FSD: read/write/flush/shutdown | `drivers/filesystems/nextfs/nextfs_rw.c` | direct-I/O MDL path, append, write-through |
+| FSD: information classes | `drivers/filesystems/nextfs/nextfs_finfo.c` | basic/standard/network/all/stream/name, rename, EOF, disposition |
+| FSD: directory control | `drivers/filesystems/nextfs/nextfs_dirctl.c` | six directory classes over `NfsEnumerate` |
+| FSD: volume information + FSCTL | `drivers/filesystems/nextfs/nextfs_volinfo.c` | size/label/attributes, dirty, sparse, retrieval pointers |
 
-`nextfslib/tests/nextfs_selftest.c` runs 310 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 333 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
@@ -342,7 +350,57 @@ deleted file). Group [22] covers path resolution and every disposition. Group
 [23] covers handles: position tracking, clamps, access modes and the closed-handle
 refusal. Group [24] covers wildcards, enumeration cookies, the information query
 and delete-on-close (including the refused non-empty directory). Group [25] is
-the corruption loop described above.
+the corruption loop described above. Group [26] covers names end to end: UTF-8
+decoding, a fastfs-safe round trip back, an emoji outside the BMP, a buffer too
+small for a name refused instead of cut, a malformed byte turned into `?`, and an
+accented file created, looked up and read through the volume.
+
+Landed in phase 10 (`nextfs.sys`, `drivers/filesystems/nextfs/`):
+
+* **Split into five files along IRP lines**, like `ntfs/`: `nextfs.c` (entry,
+  mount, helpers, dispatch table), `nextfs_rw.c`, `nextfs_finfo.c`,
+  `nextfs_dirctl.c`, `nextfs_volinfo.c`. The rule the split enforces: no file
+  system logic lives in the driver. Every handler is a translation of one IRP into
+  one `nextfslib` call plus the NT status code for its result.
+* **Mount** (`NextFsMountVolume`) reads the geometry with
+  `IOCTL_DISK_GET_DRIVE_GEOMETRY_EX`, builds `NFS_BDEV` over synchronous
+  `IRP_MJ_READ`/`IRP_MJ_WRITE`/`IRP_MJ_FLUSH_BUFFERS`, and calls `NfsMount`. A
+  volume that fails to mount is reported as `STATUS_UNRECOGNIZED_VOLUME`, which is
+  exactly what `fs_rec` needs to try the next file system.
+* **Path building** walks `RelatedFileObject` chains and converts UTF-16 to the
+  UTF-8 the library speaks, so a name like `perché.txt` reaches the PIFT intact.
+* **Create** maps `FILE_SUPERSEDE/OPEN/CREATE/OPEN_IF/OVERWRITE/OVERWRITE_IF` to
+  the NextFS dispositions, keeps the library handle in `FsContext2` (never a
+  pointer into the PIFT: a write-through commit reallocates the record array),
+  honours `FILE_DELETE_ON_CLOSE` at cleanup time and returns `FILE_CREATED` only
+  when the object did not exist.
+* **Read/write** use the MDL for direct I/O (and the system buffer when the cache
+  manager is in play), honour explicit byte offsets and `-1` (use the file object
+  position), implement append for `FILE_APPEND_DATA` handles, and checkpoint on
+  `FO_WRITE_THROUGH`.
+* **Information classes**: basic, standard, internal (`IndexNumber` = the PIFT file
+  id, stable across renames), EA, access, position, mode, alignment, network open,
+  attribute tag, stream (one unnamed stream), all, and name. Alternates (8.3) and
+  hard links are refused on purpose: a second name for a file is duplicated state,
+  and the PIFT is a table.
+* **Directory control** serves `FileNames`, `FileDirectory`, `FileFullDirectory`,
+  `FileBothDirectory`, `FileIdFullDirectory` and `FileIdBothDirectory` from
+  `NfsEnumerate`, honouring the restart index, filling short names as empty and
+  terminating the `NextEntryOffset` chain. Change notification answers
+  `STATUS_NOT_SUPPORTED` rather than blocking an IRP it can never signal.
+* **FSCTL**: `FSCTL_IS_VOLUME_DIRTY`, `FSCTL_MARK_VOLUME_DIRTY`,
+  `FSCTL_SET_SPARSE` (always true here), `FSCTL_GET_RETRIEVAL_POINTERS` (answered
+  from the PIFT extents — no disk walk), lock/unlock/dismount. `FSCTL_GET_NTFS_*`
+  is refused explicitly: there is no MFT to report on.
+* **Kernel-readiness fixes in `nextfslib`**, needed because the same sources now
+  link into the kernel: `qsort` replaced by an in-place heapsort (ntoskrnl exports
+  no `qsort`), the `malloc`/`free` defaults compiled out behind
+  `NFS_KERNEL_MODE` (the FSD installs `ExAllocatePoolWithTag`/`ExFreePoolWithTag`
+  via `NfsSetAllocators`), and the only undefined symbols left in a freestanding
+  build are `memcpy`/`memmove`/`memset`/`memcmp`/`strlen`.
+* **Real timestamps**: `NfsSetClock` lets the FSD pass Unix seconds from
+  `KeQuerySystemTime`. Without a clock `nextfslib` still hands out a monotonic
+  counter, which is what the self-test wants.
 
 Landed in phase 2 (`nextfslib`):
 

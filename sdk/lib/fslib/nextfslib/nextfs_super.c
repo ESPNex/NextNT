@@ -7,18 +7,31 @@
 
 #include "nextfs_internal.h"
 
-#include <stdlib.h>
 #include <string.h>
+
+#ifndef NFS_KERNEL_MODE
+#include <stdlib.h>
+#endif
 
 static NFS_ALLOC_FN g_NfsAlloc = NULL;
 static NFS_FREE_FN  g_NfsFree = NULL;
 
+/*
+ * Allocation goes through the hooks. In a kernel build there is no heap to fall
+ * back on, so nextfs.sys installs ExAllocatePoolWithTag/ExFreePoolWithTag in
+ * DriverEntry with NfsSetAllocators() before anything can mount; a NULL result
+ * there is a real out-of-memory and is handled like one.
+ */
 void *
 NfsMemAlloc(size_t Size)
 {
     if (g_NfsAlloc)
         return g_NfsAlloc(Size);
+#ifdef NFS_KERNEL_MODE
+    return NULL;
+#else
     return malloc(Size);
+#endif
 }
 
 void
@@ -28,8 +41,10 @@ NfsMemFree(void *Block)
         return;
     if (g_NfsFree)
         g_NfsFree(Block);
+#ifndef NFS_KERNEL_MODE
     else
         free(Block);
+#endif
 }
 
 void
@@ -452,6 +467,7 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
     }
     if (NfsIndexInsert(&Volume, &Root) != NFS_OK)
     {
+        NfsChildrenDestroy(&Volume);
         NfsIndexDestroy(&Volume);
         NfsMemFree(Volume.Bitmap);
         return NFS_ENOSPC;
@@ -463,7 +479,8 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
         Records[0] = Root;
         if (NfsCommitRecords(&Volume, Records, 1) != NFS_OK)
         {
-            NfsIndexDestroy(&Volume);
+            NfsChildrenDestroy(&Volume);
+        NfsIndexDestroy(&Volume);
             NfsMemFree(Volume.Bitmap);
             return NFS_EIO;
         }
@@ -472,6 +489,7 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
     /* Compact the root record into the first checkpoint chain. */
     if (NfsCheckpoint(&Volume) != NFS_OK)
     {
+        NfsChildrenDestroy(&Volume);
         NfsIndexDestroy(&Volume);
         NfsMemFree(Volume.Bitmap);
         return NFS_EIO;
@@ -483,6 +501,7 @@ NfsFormat(PNFS_BDEV Device, const char *Label, nfs_u32 ClusterSize)
     Super->Generation++;
     NfsWriteSuper(&Volume);
 
+    NfsChildrenDestroy(&Volume);
     NfsIndexDestroy(&Volume);
     NfsMemFree(Volume.Bitmap);
     (void)Cluster;

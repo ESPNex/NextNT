@@ -32,12 +32,34 @@ NfsPiftHalfFirst(const NFS_SUPER *Super, nfs_u64 Generation)
 
 /* ------------------------------------------------------------------ */
 
+static NFS_CLOCK_FN g_NfsClock = NULL;
+
+void
+NfsSetClock(NFS_CLOCK_FN Clock)
+{
+    g_NfsClock = Clock;
+}
+
+void
+NfsGetTime(nfs_u64 *Seconds)
+{
+    static nfs_u64 Counter = 0;
+
+    if (g_NfsClock)
+        *Seconds = g_NfsClock();
+    else
+        *Seconds = ++Counter;      /* deterministic for the self-test */
+}
+
 static nfs_u64
 NfsNow(void)
 {
-    /* v0.1 keeps a monotonic pseudo-timestamp so records still order. */
-    static nfs_u64 Counter = 0;
-    return ++Counter;
+    nfs_u64 Now;
+
+    /* nextfs.sys installs a wall clock (Unix seconds) in DriverEntry; without
+       one the counter keeps records ordered, which is all the tests need. */
+    NfsGetTime(&Now);
+    return Now;
 }
 
 void
@@ -1031,28 +1053,154 @@ NfsTruncate(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_u64 NewSize)
 /* Name helpers                                                        */
 /* ------------------------------------------------------------------ */
 
+/*
+ * Paths cross the API as UTF-8. This used to widen bytes to code units one for
+ * one, which silently mangled every non-ASCII name, so the decoder is explicit
+ * and shared with the path walker in nextfs_namespace.c: it works on a length,
+ * because a path component is not NUL terminated.
+ *
+ * A malformed sequence becomes '?'. That can only cause a lookup miss, never a
+ * match against a different file.
+ */
 nfs_u32
-NfsNameFromAscii(const char *Ascii, nfs_u16 *Out, nfs_u32 MaxUnits)
+NfsUtf8NameDecode(const char *Text, nfs_u32 TextLength, nfs_u16 *Out, nfs_u32 MaxUnits)
 {
-    nfs_u32 Length = 0;
+    nfs_u32 Index = 0, Length = 0;
 
-    while (Ascii[Length] != 0 && Length < MaxUnits)
+    while (Index < TextLength)
     {
-        Out[Length] = (nfs_u16)(nfs_u8)Ascii[Length];
-        Length++;
+        const unsigned char *Cursor = (const unsigned char *)Text + Index;
+        unsigned char Lead = *Cursor;
+        nfs_u32 CodePoint, Extra, Taken;
+
+        if (Lead < 0x80)
+        {
+            CodePoint = Lead;
+            Extra = 0;
+        }
+        else if ((Lead & 0xE0) == 0xC0)
+        {
+            CodePoint = Lead & 0x1F;
+            Extra = 1;
+        }
+        else if ((Lead & 0xF0) == 0xE0)
+        {
+            CodePoint = Lead & 0x0F;
+            Extra = 2;
+        }
+        else if ((Lead & 0xF8) == 0xF0)
+        {
+            CodePoint = Lead & 0x07;
+            Extra = 3;
+        }
+        else
+        {
+            CodePoint = '?';
+            Extra = 0;
+        }
+
+        Index++;
+        for (Taken = 0; Taken < Extra; Taken++)
+        {
+            if (Index + Taken >= TextLength ||
+                ((unsigned char)Text[Index + Taken] & 0xC0) != 0x80)
+            {
+                CodePoint = '?';    /* truncated inside the sequence */
+                break;
+            }
+            CodePoint = (CodePoint << 6) | ((unsigned char)Text[Index + Taken] & 0x3F);
+        }
+        Index += Taken;
+
+        if (CodePoint >= 0x10000)
+        {
+            /* Outside the BMP: one code point, two UTF-16 units. */
+            if (Length + 2 > MaxUnits)
+                break;
+            CodePoint -= 0x10000;
+            Out[Length++] = (nfs_u16)(0xD800 | (CodePoint >> 10));
+            Out[Length++] = (nfs_u16)(0xDC00 | (CodePoint & 0x3FF));
+        }
+        else
+        {
+            if (Length + 1 > MaxUnits)
+                break;
+            Out[Length++] = (nfs_u16)CodePoint;
+        }
     }
     return Length;
 }
 
+nfs_u32
+NfsNameFromAscii(const char *Ascii, nfs_u16 *Out, nfs_u32 MaxUnits)
+{
+    nfs_u32 TextLength = 0;
+
+    while (Ascii[TextLength] != 0)
+        TextLength++;
+    return NfsUtf8NameDecode(Ascii, TextLength, Out, MaxUnits);
+}
+
+/*
+ * The reverse: UTF-16 to UTF-8, unpaired surrogates become '?'. Fails with
+ * NFS_EINVAL when the output buffer is too small, so a caller can never receive a
+ * truncated name that still looks valid.
+ */
 int
 NfsNameToAscii(const nfs_u16 *Name, nfs_u32 Length, char *Out, nfs_u32 MaxBytes)
 {
-    nfs_u32 i;
+    nfs_u32 i, Used = 0;
 
-    if (Length + 1 > MaxBytes)
-        return NFS_EINVAL;
     for (i = 0; i < Length; i++)
-        Out[i] = (Name[i] < 0x80) ? (char)Name[i] : '?';
-    Out[Length] = 0;
+    {
+        nfs_u32 CodePoint = Name[i];
+        char Encoded[4];
+        nfs_u32 Count;
+
+        if (CodePoint >= 0xD800 && CodePoint < 0xDC00 && i + 1 < Length &&
+            Name[i + 1] >= 0xDC00 && Name[i + 1] < 0xE000)
+        {
+            CodePoint = 0x10000 + ((CodePoint - 0xD800) << 10) + (Name[i + 1] - 0xDC00);
+            i++;
+        }
+        else if (CodePoint >= 0xD800 && CodePoint < 0xE000)
+        {
+            CodePoint = '?';
+        }
+
+        if (CodePoint < 0x80)
+        {
+            Encoded[0] = (char)CodePoint;
+            Count = 1;
+        }
+        else if (CodePoint < 0x800)
+        {
+            Encoded[0] = (char)(0xC0 | (CodePoint >> 6));
+            Encoded[1] = (char)(0x80 | (CodePoint & 0x3F));
+            Count = 2;
+        }
+        else if (CodePoint < 0x10000)
+        {
+            Encoded[0] = (char)(0xE0 | (CodePoint >> 12));
+            Encoded[1] = (char)(0x80 | ((CodePoint >> 6) & 0x3F));
+            Encoded[2] = (char)(0x80 | (CodePoint & 0x3F));
+            Count = 3;
+        }
+        else
+        {
+            Encoded[0] = (char)(0xF0 | (CodePoint >> 18));
+            Encoded[1] = (char)(0x80 | ((CodePoint >> 12) & 0x3F));
+            Encoded[2] = (char)(0x80 | ((CodePoint >> 6) & 0x3F));
+            Encoded[3] = (char)(0x80 | (CodePoint & 0x3F));
+            Count = 4;
+        }
+
+        if (Used + Count + 1 > MaxBytes)
+            return NFS_EINVAL;
+        memcpy(Out + Used, Encoded, Count);
+        Used += Count;
+    }
+
+    Out[Used] = 0;
     return NFS_OK;
 }
