@@ -1,4 +1,4 @@
-# NextFS — design (v0.8, branch `nextfs`)
+# NextFS — design (v0.9, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -13,8 +13,8 @@ This document is the contract between four components that must agree byte for b
 | `nextformat` | `sdk/lib/fslib/nextfslib/tools/` | mkfs |
 | boot chain | `boot/nextldr/nextldr/lib/fs/nextfs.c` (later phase) | must read a NextFS volume to boot |
 
-Status: **phase 8**. `nextfslib` implements the format as described here and is
-self-tested (267 checks); `nextfs.sys` is still a mount-capable skeleton (volume
+Status: **phase 9**. `nextfslib` implements the format as described here and is
+self-tested (310 checks); `nextfs.sys` is still a mount-capable skeleton (volume
 open + PIFT load, I/O paths `STATUS_NOT_IMPLEMENTED`).
 
 ---
@@ -305,7 +305,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.8, branch `nextfs`)
+## 6. Implementation status (v0.9, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -322,7 +322,7 @@ Done and tested in this phase:
 | two-generation roots + PIFT halves | `nextfslib/nextfs_volume.c` | 6 checkpoints with zero cluster drift; corrupt live root ⇒ fallback mount |
 | driver skeleton | `drivers/filesystems/nextfs/nextfs.c` | not compiled yet (needs the RosBE build) |
 
-`nextfslib/tests/nextfs_selftest.c` runs 267 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 310 checks: format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
@@ -341,7 +341,8 @@ replacement, cycle refusal, attributes and both restore paths (overwritten file,
 deleted file). Group [22] covers path resolution and every disposition. Group
 [23] covers handles: position tracking, clamps, access modes and the closed-handle
 refusal. Group [24] covers wildcards, enumeration cookies, the information query
-and delete-on-close (including the refused non-empty directory).
+and delete-on-close (including the refused non-empty directory). Group [25] is
+the corruption loop described above.
 
 Landed in phase 2 (`nextfslib`):
 
@@ -358,6 +359,18 @@ Landed in phase 2 (`nextfslib`):
   `NfsReadDir` and updated transactionally. No disk read is involved in a lookup.
 * **Checkpoints scale**: the chain now holds up to 4096 nodes and the self-test
   exercises 300 files across several nodes, including remount.
+
+Landed in phase 9 (robustness, no new API):
+
+* **Random-corruption test**: 40 rounds, each damaging a fresh copy of a live
+  image in 1–16 random bytes (weighted towards the metadata region), then mounting
+  it. Every round must either mount and survive a lookup, a read and two directory
+  enumerations, or fail with a clean error code — never crash, never hang. The
+  suite runs green under AddressSanitizer **and** UndefinedBehaviorSanitizer.
+* **Superblock backup**: with the 1024-byte primary superblock zeroed by hand, the
+  volume still mounts from the second copy and the files are still reachable.
+* The same loop proves the damage does not leak into the next round: after it, the
+  pristine image mounts again.
 
 Landed in phase 8 (`nextfslib`, `nextfs_namespace.c` + `nextfs_handle.c`):
 

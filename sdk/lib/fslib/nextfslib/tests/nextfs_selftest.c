@@ -1291,6 +1291,102 @@ int main(void)
               "and the directory is still there");
     }
 
+    printf("[25] random corruption: the mount is safe and fails cleanly\n");
+    if (Volume)
+    {
+        nfs_u16 FileName[NFS_NAME_MAX];
+        nfs_u32 FileLen = Name("robust.bin", FileName);
+        nfs_fileid FileId = 0;
+        nfs_u8 Payload[4096];
+        nfs_u8 *Baseline;
+        nfs_u64 Seed = 0x1234567890ABCDEFull;
+        nfs_u32 Round;
+        NFS_BDEV Block;
+
+        memset(Payload, 0xC3, sizeof(Payload));
+        CHECK(NfsCreate(Volume, NFS_ROOT_ID, FileName, FileLen, 0, &FileId) == NFS_OK,
+              "create a file to make the image worth damaging");
+        CHECK(NfsWrite(Volume, FileId, 0, Payload, sizeof(Payload), NULL) == NFS_OK,
+              "write a full cluster");
+        NfsUnmount(Volume);
+        Volume = NULL;
+
+        Baseline = (nfs_u8 *)malloc(IMAGE_BYTES);
+        CHECK(Baseline != NULL, "baseline copy of the image");
+        if (Baseline)
+        {
+            memcpy(Baseline, Device.Data, IMAGE_BYTES);
+            BindDevice(&Block, &Device);
+
+            for (Round = 0; Round < 40; Round++)
+            {
+                nfs_u32 Damage = 1 + (nfs_u32)(Seed % 16);
+                nfs_u32 i;
+                int Status;
+
+                memcpy(Device.Data, Baseline, IMAGE_BYTES);
+
+                for (i = 0; i < Damage; i++)
+                {
+                    nfs_u64 Position;
+                    nfs_u64 Span = IMAGE_BYTES / 4;   /* metadata lives up front */
+
+                    Seed = Seed * 6364136223846793005ull + 1442695040888963407ull;
+                    Position = (Seed >> 17) % ((i & 1) ? IMAGE_BYTES : Span);
+                    Device.Data[Position] ^= (nfs_u8)(1u << ((Seed >> 5) & 7));
+                }
+
+                Status = NfsMount(&Block, &Volume);
+                if (Status == NFS_OK)
+                {
+                    /* Whatever survived, reading must not crash and must answer
+                       with a status, not with garbage pointers. */
+                    NFS_PIFT_RECORD Entry;
+                    nfs_u8 Buffer[512];
+                    nfs_u32 Got = 0;
+
+                    NfsLookup(Volume, NFS_ROOT_ID, FileName, FileLen, &Entry);
+                    NfsRead(Volume, FileId, 0, Buffer, sizeof(Buffer), &Got);
+                    NfsReadDir(Volume, NFS_ROOT_ID, 0, &Entry);
+                    NfsReadDir(Volume, NFS_ROOT_ID, 1, &Entry);
+                    NfsUnmount(Volume);
+                    Volume = NULL;
+                }
+                else
+                {
+                    CHECK(Status == NFS_ECORRUPT || Status == NFS_EIO ||
+                          Status == NFS_ENOSPC || Status == NFS_EINVAL,
+                          "a refused mount reports a clean error code");
+                }
+            }
+
+            /* Every round left the image damaged: the pristine one must still
+               mount, which proves the loop above did not leak state. */
+            memcpy(Device.Data, Baseline, IMAGE_BYTES);
+            CHECK(NfsMount(&Block, &Volume) == NFS_OK,
+                  "the pristine image still mounts after the damage loop");
+
+            /* The primary superblock gone: the backup has to carry the mount. */
+            if (Volume)
+            {
+                NfsUnmount(Volume);
+                Volume = NULL;
+            }
+            memset(Device.Data, 0, 1024);
+            CHECK(NfsMount(&Block, &Volume) == NFS_OK,
+                  "a zeroed primary superblock is recovered from the backup");
+            if (Volume)
+            {
+                NFS_PIFT_RECORD Entry;
+
+                CHECK(NfsLookup(Volume, NFS_ROOT_ID, FileName, FileLen, &Entry) == NFS_OK,
+                      "and the files are still there");
+            }
+
+            free(Baseline);
+        }
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);
