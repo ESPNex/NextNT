@@ -368,6 +368,10 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
     if (Status != NFS_OK)
         goto Fail;
 
+    Status = NfsHandleTableInit(Volume);
+    if (Status != NFS_OK)
+        goto Fail;
+
     /* 4. Snapshots: pin every generation a snapshot record points at. The pins
        are derived, so a crash cannot leave them out of step with the trees. */
     Status = NfsSnapshotPinsRebuild(Volume);
@@ -383,6 +387,7 @@ NfsMount(PNFS_BDEV Device, PNFS_VOLUME *OutVolume)
 Fail:
     NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
+    NfsHandleTableDestroy(Volume);
     NfsPinDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
@@ -412,6 +417,7 @@ NfsDiscard(PNFS_VOLUME Volume)
         return;
     NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
+    NfsHandleTableDestroy(Volume);
     NfsPinDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);
@@ -425,6 +431,7 @@ NfsUnmount(PNFS_VOLUME Volume)
     NfsSync(Volume);
     NfsChildrenDestroy(Volume);
     NfsIndexDestroy(Volume);
+    NfsHandleTableDestroy(Volume);
     NfsPinDestroy(Volume);
     NfsMemFree(Volume->Bitmap);
     NfsMemFree(Volume);

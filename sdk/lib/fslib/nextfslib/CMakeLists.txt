@@ -7,6 +7,7 @@ list(APPEND SOURCE
     nextfs_tree.c
     nextfs_snapshot.c
     nextfs_namespace.c
+    nextfs_handle.c
     nextfs_volume.c)
 
 add_library(nextfslib ${SOURCE})

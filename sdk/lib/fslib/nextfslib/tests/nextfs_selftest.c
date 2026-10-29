@@ -1125,6 +1125,64 @@ int main(void)
         CHECK(Info.Files > 0 && Info.Snapshots == 0, "file and snapshot counts are live");
     }
 
+    printf("[23] file handles: position, access mode, end of file\n");
+    if (Volume)
+    {
+        static const char Payload[] = "handle level payload";
+        nfs_u32 Handle = 0, Reader = 0;
+        NFS_PIFT_RECORD EntryRecord;
+        char Buffer[64];
+        nfs_u32 Got = 0;
+
+        CHECK(NfsHandleOpen(Volume, "\\handles.txt", NFS_DISPOSITION_CREATE, 0,
+                            NFS_HANDLE_WRITE | NFS_HANDLE_READ, &Handle) == NFS_OK,
+              "open a handle with read and write access");
+        CHECK(NfsHandleWrite(Volume, Handle, Payload, (nfs_u32)sizeof(Payload), &Got) == NFS_OK &&
+              Got == sizeof(Payload), "write through the handle");
+        CHECK(NfsHandleSeek(Volume, Handle, 0) == NFS_OK, "seek back to the start");
+        memset(Buffer, 0, sizeof(Buffer));
+        Got = 0;
+        CHECK(NfsHandleRead(Volume, Handle, Buffer, (nfs_u32)sizeof(Payload), &Got) == NFS_OK &&
+              Got == sizeof(Payload) && memcmp(Buffer, Payload, sizeof(Payload)) == 0,
+              "read through the handle returns what was written");
+        CHECK(NfsHandleSeek(Volume, Handle, 3) == NFS_OK, "seek to an offset");
+        Got = 0;
+        CHECK(NfsHandleRead(Volume, Handle, Buffer, 4, &Got) == NFS_OK && Got == 4 &&
+              memcmp(Buffer, Payload + 3, 4) == 0,
+              "the position is honoured");
+        CHECK(NfsHandleSeek(Volume, Handle, 1u << 20) == NFS_OK, "seeking past EOF clamps");
+        CHECK(NfsHandleQuery(Volume, Handle, &EntryRecord) == NFS_OK &&
+              EntryRecord.Size == sizeof(Payload), "query through the handle");
+
+        CHECK(NfsHandleSetEndOfFile(Volume, Handle, 6) == NFS_OK, "truncate through the handle");
+        CHECK(NfsHandleQuery(Volume, Handle, &EntryRecord) == NFS_OK &&
+              EntryRecord.Size == 6, "the file is 6 bytes after truncation");
+
+        /* A handle without write access cannot write; a directory handle cannot read. */
+        CHECK(NfsHandleOpen(Volume, "\\handles.txt", NFS_DISPOSITION_OPEN, 0,
+                            NFS_HANDLE_READ, &Reader) == NFS_OK,
+              "open a second handle read-only");
+        CHECK(NfsHandleWrite(Volume, Reader, Payload, 4, &Got) == NFS_EINVAL,
+              "a read-only handle cannot write");
+        CHECK(NfsHandleRead(Volume, Reader, Buffer, 4, &Got) == NFS_OK,
+              "but it can read");
+        CHECK(NfsHandleClose(Volume, Reader) == NFS_OK, "close the reader");
+        CHECK(NfsHandleRead(Volume, Reader, Buffer, 4, &Got) == NFS_EINVAL,
+              "a closed handle is refused");
+
+        CHECK(NfsHandleOpen(Volume, "\\docs", NFS_DISPOSITION_OPEN, 1, NFS_HANDLE_READ,
+                            &Reader) == NFS_OK, "open a directory handle");
+        CHECK(NfsHandleRead(Volume, Reader, Buffer, 4, &Got) == NFS_EINVAL,
+              "a directory handle does not read data");
+        CHECK(NfsHandleReadDir(Volume, Reader, 0, &EntryRecord) == NFS_OK,
+              "but it enumerates");
+        CHECK(NfsHandleClose(Volume, Reader) == NFS_OK, "close the directory handle");
+
+        CHECK(NfsHandleClose(Volume, Handle) == NFS_OK, "close the file handle");
+        CHECK(NfsHandleQuery(Volume, Handle, &EntryRecord) == NFS_EINVAL,
+              "a closed handle cannot be queried");
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

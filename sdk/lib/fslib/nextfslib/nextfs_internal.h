@@ -69,6 +69,8 @@ struct _NFS_VOLUME
 
     NFS_STATS Stats;
 
+    PNFS_HANDLE Handles;             /* the FSD's open handles           */
+
     NFS_PIN *Pins;                   /* snapshot pin intervals, sorted   */
     nfs_u32  PinCount;
     nfs_u32  PinCapacity;

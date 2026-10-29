@@ -271,6 +271,23 @@ typedef struct _NFS_FILE_INFO
 #define NFS_DISPOSITION_OVERWRITE      4u
 #define NFS_DISPOSITION_OVERWRITE_IF   5u
 
+/* A file handle, the object the FSD keeps per FILE_OBJECT. */
+#define NFS_HANDLE_MAX 64
+
+typedef struct _NFS_HANDLE
+{
+    PNFS_VOLUME Volume;
+    nfs_fileid  FileId;
+    nfs_u64     Position;
+    nfs_u32     InUse;
+    nfs_u32     Flags;          /* NFS_HANDLE_*                        */
+} NFS_HANDLE, *PNFS_HANDLE;
+
+#define NFS_HANDLE_READ       0x00000001u
+#define NFS_HANDLE_WRITE      0x00000002u
+#define NFS_HANDLE_DIRECTORY  0x00000004u
+#define NFS_HANDLE_CREATED    0x00000008u
+
 /* What the FSD shows for a volume. */
 typedef struct _NFS_VOLUME_INFO
 {
@@ -336,6 +353,23 @@ int NfsRename(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_fileid NewParent,
 int NfsOpenPath(PNFS_VOLUME Volume, const char *Path, nfs_u32 Disposition,
                 int IsDirectory, nfs_fileid *OutFileId, int *OutCreated);
 int NfsQueryVolumeInfo(PNFS_VOLUME Volume, NFS_VOLUME_INFO *OutInfo);
+
+/* File handles: what the FSD keeps per FILE_OBJECT. The handle is a slot index
+   in the volume, so an IRP handler never holds a pointer that can go stale. */
+int  NfsHandleTableInit(PNFS_VOLUME Volume);
+void NfsHandleTableDestroy(PNFS_VOLUME Volume);
+int  NfsHandleOpen(PNFS_VOLUME Volume, const char *Path, nfs_u32 Disposition,
+                   int IsDirectory, nfs_u32 Access, nfs_u32 *OutHandle);
+int  NfsHandleRead(PNFS_VOLUME Volume, nfs_u32 Handle, void *Buffer, nfs_u32 Length,
+                   nfs_u32 *Read);
+int  NfsHandleWrite(PNFS_VOLUME Volume, nfs_u32 Handle, const void *Buffer,
+                    nfs_u32 Length, nfs_u32 *Written);
+int  NfsHandleSeek(PNFS_VOLUME Volume, nfs_u32 Handle, nfs_u64 Offset);
+int  NfsHandleQuery(PNFS_VOLUME Volume, nfs_u32 Handle, NFS_PIFT_RECORD *OutRecord);
+int  NfsHandleReadDir(PNFS_VOLUME Volume, nfs_u32 Handle, nfs_u32 Index,
+                      NFS_PIFT_RECORD *OutRecord);
+int  NfsHandleSetEndOfFile(PNFS_VOLUME Volume, nfs_u32 Handle, nfs_u64 Size);
+int  NfsHandleClose(PNFS_VOLUME Volume, nfs_u32 Handle);
 
 /* Attributes and timestamps. */
 int NfsSetFileInfo(PNFS_VOLUME Volume, nfs_fileid FileId,
