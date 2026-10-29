@@ -271,3 +271,261 @@ NfsRevertFromSnapshot(PNFS_VOLUME Volume, nfs_fileid SnapshotId, nfs_fileid File
         *OutFileId = Target;
     return NFS_OK;
 }
+
+/* ------------------------------------------------------------------ */
+/* Path resolution and creation dispositions (IRP_MJ_CREATE)           */
+/* ------------------------------------------------------------------ */
+
+#define NFS_PATH_MAX_COMPONENTS 128
+
+typedef struct _NFS_PATH_ITER
+{
+    const char *Cursor;
+} NFS_PATH_ITER, *PNFS_PATH_ITER;
+
+/* Next component, or 0 when the path is exhausted. "." and ".." come back as
+   such; the caller decides what they mean. */
+static nfs_u32
+NfsPathNext(PNFS_PATH_ITER Iter, const char **Start)
+{
+    const char *Cursor = Iter->Cursor;
+    nfs_u32 Length = 0;
+
+    while (*Cursor == '\\' || *Cursor == '/')
+        Cursor++;
+    if (*Cursor == 0)
+    {
+        Iter->Cursor = Cursor;
+        return 0;
+    }
+
+    *Start = Cursor;
+    while (Cursor[Length] && Cursor[Length] != '\\' && Cursor[Length] != '/')
+        Length++;
+    Iter->Cursor = Cursor + Length;
+    return Length;
+}
+
+static int
+NfsPathComponentIs(const char *Component, nfs_u32 Length, const char *Word)
+{
+    nfs_u32 i;
+
+    for (i = 0; i < Length; i++)
+        if (Component[i] != Word[i] || Word[i] == 0)
+            return 0;
+    return Word[Length] == 0;
+}
+
+/*
+ * Walk a path from the root. On the last component the disposition decides
+ * whether an existing file is opened as is, removed (supersede/overwrite) or
+ * refused; everything before the last component must be an existing directory.
+ */
+int
+NfsOpenPath(PNFS_VOLUME Volume, const char *Path, nfs_u32 Disposition,
+            int IsDirectory, nfs_fileid *OutFileId, int *OutCreated)
+{
+    NFS_PATH_ITER Iter;
+    const char *Component;
+    nfs_u32 Length;
+    nfs_fileid Parent = NFS_ROOT_ID;
+    nfs_fileid Current = NFS_ROOT_ID;
+    nfs_u32 Depth = 0;
+    nfs_u16 Name[NFS_NAME_MAX];
+    int Created = 0;
+    int Status = NFS_OK;
+
+    if (!Volume || !Path)
+        return NFS_EINVAL;
+    if (Disposition > NFS_DISPOSITION_OVERWRITE_IF)
+        return NFS_EINVAL;
+
+    Iter.Cursor = Path;
+
+    for (;;)
+    {
+        NFS_PIFT_RECORD *Record;
+        nfs_fileid Next = 0;
+        int Last;
+
+        Length = NfsPathNext(&Iter, &Component);
+        if (Length == 0)
+            break;                       /* trailing separators */
+
+        if (++Depth > NFS_PATH_MAX_COMPONENTS)
+            return NFS_EINVAL;
+
+        /* Look ahead: is another component coming? */
+        {
+            NFS_PATH_ITER Probe = Iter;
+            const char *Dummy;
+
+            Last = (NfsPathNext(&Probe, &Dummy) == 0);
+        }
+
+        if (NfsPathComponentIs(Component, Length, "."))
+        {
+            if (Last)
+                break;
+            continue;
+        }
+
+        if (NfsPathComponentIs(Component, Length, ".."))
+        {
+            if (Last)
+                break;
+            Record = NfsIndexGet(Volume, Current);
+            if (!Record)
+                return NFS_ECORRUPT;
+            Current = (Record->Parent == 0) ? NFS_ROOT_ID : Record->Parent;
+            Parent = Current;
+            continue;
+        }
+
+        if (Length > NFS_NAME_MAX)
+            return NFS_EINVAL;
+
+        {
+            nfs_u32 i;
+
+            for (i = 0; i < Length; i++)
+            {
+                unsigned char Ch = (unsigned char)Component[i];
+
+                if (Ch < 0x20 || Ch == ':' || Ch == '*' || Ch == '?' || Ch == '"' ||
+                    Ch == '<' || Ch == '>' || Ch == '|')
+                    return NFS_EINVAL;   /* characters NT refuses too */
+                Name[i] = (nfs_u16)Ch;
+            }
+        }
+
+        Record = NfsChildrenLookup(Volume, Current, Name, Length);
+
+        if (!Last)
+        {
+            if (!Record || (Record->Flags & NFS_FLAG_DELETED))
+                return NFS_ENOENT;
+            if (!(Record->Flags & NFS_FLAG_DIR))
+                return NFS_ENOENT;       /* a file cannot have children */
+            Current = Record->FileId;
+            Parent = Current;
+            continue;
+        }
+
+        /* Last component: apply the disposition. */
+        switch (Disposition)
+        {
+        case NFS_DISPOSITION_CREATE:
+            if (Record && !(Record->Flags & NFS_FLAG_DELETED))
+                return NFS_EEXIST;
+            Status = NfsCreate(Volume, Current, Name, Length, IsDirectory, &Next);
+            Created = 1;
+            break;
+
+        case NFS_DISPOSITION_OPEN:
+            if (!Record || (Record->Flags & NFS_FLAG_DELETED))
+                return NFS_ENOENT;
+            if ((Record->Flags & NFS_FLAG_DIR) && Record->FileId == NFS_ROOT_ID)
+                Next = NFS_ROOT_ID;
+            else
+                Next = Record->FileId;
+            if (IsDirectory && !(Record->Flags & NFS_FLAG_DIR))
+                return NFS_EINVAL;
+            break;
+
+        case NFS_DISPOSITION_OPEN_IF:
+            if (Record && !(Record->Flags & NFS_FLAG_DELETED))
+            {
+                Next = Record->FileId;
+                if (IsDirectory && !(Record->Flags & NFS_FLAG_DIR))
+                    return NFS_EINVAL;
+            }
+            else
+            {
+                Status = NfsCreate(Volume, Current, Name, Length, IsDirectory, &Next);
+                Created = 1;
+            }
+            break;
+
+        case NFS_DISPOSITION_SUPERSEDE:
+        case NFS_DISPOSITION_OVERWRITE:
+        case NFS_DISPOSITION_OVERWRITE_IF:
+            if (Record && !(Record->Flags & NFS_FLAG_DELETED))
+            {
+                if (Record->Flags & NFS_FLAG_DIR)
+                    return NFS_EINVAL;
+                Next = Record->FileId;
+                Status = NfsTruncate(Volume, Next, 0);
+            }
+            else if (Disposition == NFS_DISPOSITION_OVERWRITE)
+            {
+                return NFS_ENOENT;       /* overwrite needs an existing file */
+            }
+            else
+            {
+                Status = NfsCreate(Volume, Current, Name, Length, IsDirectory, &Next);
+                Created = 1;
+            }
+            break;
+
+        default:
+            return NFS_EINVAL;
+        }
+
+        if (Status != NFS_OK)
+            return Status;
+
+        /* The object that was opened has to be of the kind the caller asked
+           for: a directory does not open as a file and vice versa. */
+        {
+            NFS_PIFT_RECORD *Existing = NfsIndexGet(Volume, Next);
+
+            if (Existing)
+            {
+                int IsDir = (Existing->Flags & NFS_FLAG_DIR) != 0;
+
+                if (IsDir != (IsDirectory != 0))
+                    return NFS_EINVAL;
+            }
+        }
+
+        Parent = Current;
+        if (OutFileId)
+            *OutFileId = Next;
+        if (OutCreated)
+            *OutCreated = Created;
+        return NFS_OK;
+    }
+
+    /* The path named the root itself (empty, ".", "..", or only separators). */
+    if (!IsDirectory)
+        return NFS_EINVAL;
+    if (OutFileId)
+        *OutFileId = NFS_ROOT_ID;
+    if (OutCreated)
+        *OutCreated = 0;
+    (void)Parent;
+    return NFS_OK;
+}
+
+int
+NfsQueryVolumeInfo(PNFS_VOLUME Volume, NFS_VOLUME_INFO *OutInfo)
+{
+    if (!Volume || !OutInfo)
+        return NFS_EINVAL;
+
+    memset(OutInfo, 0, sizeof(*OutInfo));
+    OutInfo->ClusterSize = Volume->Super.ClusterSize;
+    OutInfo->TotalClusters = Volume->Super.TotalClusters;
+    OutInfo->FreeClusters = Volume->Super.FreeClusters;
+    OutInfo->TotalBytes = Volume->Super.TotalClusters * Volume->Super.ClusterSize;
+    OutInfo->FreeBytes = Volume->Super.FreeClusters * Volume->Super.ClusterSize;
+    OutInfo->Generation = Volume->Super.Generation;
+    OutInfo->Files = Volume->Stats.Files;
+    OutInfo->Snapshots = Volume->Stats.Snapshots;
+    OutInfo->Flags = Volume->Super.Flags;
+    memcpy(OutInfo->Label, Volume->Super.Label, NFS_LABEL_MAX);
+    memcpy(OutInfo->Uuid, Volume->Super.VolumeUuid, 16);
+    return NFS_OK;
+}

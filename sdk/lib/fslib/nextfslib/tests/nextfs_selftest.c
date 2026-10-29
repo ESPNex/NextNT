@@ -1044,6 +1044,87 @@ int main(void)
         CHECK(NfsSnapshotDelete(Volume, Snap) == NFS_OK, "delete the restore point");
     }
 
+    printf("[22] paths and creation dispositions (what IRP_MJ_CREATE will call)\n");
+    if (Volume)
+    {
+        static const char Body[] = "path resolution payload";
+        nfs_fileid Doc = 0, Deep = 0, Opened = 0;
+        int Created = 0;
+        NFS_VOLUME_INFO Info;
+        NFS_PIFT_RECORD EntryRecord;
+
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports\\q1.txt", NFS_DISPOSITION_CREATE, 0,
+                          &Doc, &Created) == NFS_ENOENT,
+              "a missing intermediate directory is an error, not a silent create");
+        CHECK(NfsOpenPath(Volume, "\\docs", NFS_DISPOSITION_CREATE, 1, &Doc, &Created) ==
+              NFS_OK && Created,
+              "create \\docs");
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports", NFS_DISPOSITION_CREATE, 1, &Deep,
+                          &Created) == NFS_OK && Created,
+              "create \\docs\\reports");
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports\\q1.txt", NFS_DISPOSITION_CREATE, 0,
+                          &Doc, &Created) == NFS_OK && Created,
+              "create a file three levels down");
+        CHECK(NfsWrite(Volume, Doc, 0, Body, (nfs_u32)sizeof(Body), NULL) == NFS_OK,
+              "write through the resolved file");
+
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports\\q1.txt", NFS_DISPOSITION_OPEN, 0,
+                          &Opened, NULL) == NFS_OK && Opened == Doc,
+              "open by path returns the same file");
+        CHECK(NfsOpenPath(Volume, "\\docs\\.\\reports\\q1.txt", NFS_DISPOSITION_OPEN, 0,
+                          &Opened, NULL) == NFS_OK && Opened == Doc, "'.' is ignored");
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports\\..\\reports\\q1.txt",
+                          NFS_DISPOSITION_OPEN, 0, &Opened, NULL) == NFS_OK &&
+              Opened == Doc, "'..' goes back one level");
+        CHECK(NfsOpenPath(Volume, "docs/reports/q1.txt", NFS_DISPOSITION_OPEN, 0, &Opened,
+                          NULL) == NFS_OK && Opened == Doc, "forward slashes work too");
+
+        CHECK(NfsOpenPath(Volume, "\\docs\\.\\reports\\q1.txt",
+                          NFS_DISPOSITION_CREATE, 0, &Opened, NULL) == NFS_EEXIST,
+              "FILE_CREATE on an existing file fails");
+        CHECK(NfsOpenPath(Volume, "\\docs\\.\\reports\\q1.txt",
+                          NFS_DISPOSITION_OPEN_IF, 0, &Opened, &Created) == NFS_OK &&
+              !Created && Opened == Doc, "FILE_OPEN_IF opens what is there");
+        CHECK(NfsOpenPath(Volume, "\\docs\\nope.txt", NFS_DISPOSITION_OPEN_IF, 0, &Opened,
+                          &Created) == NFS_OK && Created,
+              "FILE_OPEN_IF creates when missing");
+
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports\\q1.txt", NFS_DISPOSITION_OVERWRITE, 0,
+                          &Opened, NULL) == NFS_OK && Opened == Doc,
+              "FILE_OVERWRITE opens the file");
+        CHECK(NfsOpenById(Volume, Doc, &EntryRecord) == NFS_OK && EntryRecord.Size == 0,
+              "and it is truncated");
+        CHECK(NfsOpenPath(Volume, "\\docs\\missing.txt", NFS_DISPOSITION_OVERWRITE, 0,
+                          &Opened, NULL) == NFS_ENOENT, "FILE_OVERWRITE needs a file");
+        CHECK(NfsOpenPath(Volume, "\\docs\\missing.txt", NFS_DISPOSITION_OVERWRITE_IF, 0,
+                          &Opened, &Created) == NFS_OK && Created,
+              "FILE_OVERWRITE_IF creates it instead");
+
+        CHECK(NfsOpenPath(Volume, "\\", NFS_DISPOSITION_OPEN, 1, &Opened, NULL) == NFS_OK &&
+              Opened == NFS_ROOT_ID, "the root opens as a directory");
+        CHECK(NfsOpenPath(Volume, "\\", NFS_DISPOSITION_OPEN, 0, &Opened, NULL) ==
+              NFS_EINVAL, "but not as a file");
+        CHECK(NfsOpenPath(Volume, "\\..\\..\\docs", NFS_DISPOSITION_OPEN, 1, &Opened, NULL) ==
+              NFS_OK, "'..' above the root stays at the root");
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports\\q1.txt\\more",
+                          NFS_DISPOSITION_OPEN, 0, &Opened, NULL) == NFS_ENOENT,
+              "a file cannot be used as a path component");
+        CHECK(NfsOpenPath(Volume, "\\docs\\bad*name", NFS_DISPOSITION_OPEN, 0, &Opened,
+                          NULL) == NFS_EINVAL, "wildcards are refused");
+        CHECK(NfsOpenPath(Volume, "\\docs\\reports", NFS_DISPOSITION_OPEN, 0, &Opened,
+                          NULL) == NFS_EINVAL, "a directory does not open as a file");
+
+        CHECK(NfsQueryVolumeInfo(Volume, &Info) == NFS_OK, "query volume information");
+        CHECK(Info.ClusterSize == NfsGetSuper(Volume)->ClusterSize &&
+              Info.TotalClusters == NfsGetSuper(Volume)->TotalClusters &&
+              Info.FreeClusters == NfsGetSuper(Volume)->FreeClusters,
+              "the volume information matches the superblock");
+        CHECK(Info.TotalBytes == Info.TotalClusters * Info.ClusterSize,
+              "total bytes is consistent");
+        CHECK(Info.FreeBytes <= Info.TotalBytes, "free bytes is within the volume");
+        CHECK(Info.Files > 0 && Info.Snapshots == 0, "file and snapshot counts are live");
+    }
+
 Done:
     if (Volume)
         NfsUnmount(Volume);

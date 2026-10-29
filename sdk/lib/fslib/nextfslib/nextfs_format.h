@@ -262,6 +262,31 @@ typedef struct _NFS_FILE_INFO
     nfs_u64 Btime;
 } NFS_FILE_INFO, *PNFS_FILE_INFO;
 
+/* Creation dispositions, the Win32/NT values the FSD receives in
+   FILE_CREATE_DISPOSITION_INFORMATION. */
+#define NFS_DISPOSITION_SUPERSEDE      0u
+#define NFS_DISPOSITION_OPEN           1u
+#define NFS_DISPOSITION_CREATE         2u
+#define NFS_DISPOSITION_OPEN_IF        3u
+#define NFS_DISPOSITION_OVERWRITE      4u
+#define NFS_DISPOSITION_OVERWRITE_IF   5u
+
+/* What the FSD shows for a volume. */
+typedef struct _NFS_VOLUME_INFO
+{
+    nfs_u32    ClusterSize;
+    nfs_u64    TotalClusters;
+    nfs_u64    FreeClusters;
+    nfs_u64    TotalBytes;
+    nfs_u64    FreeBytes;
+    nfs_u64    Generation;
+    nfs_u32    Files;
+    nfs_u32    Snapshots;
+    nfs_u32    Flags;
+    char       Label[NFS_LABEL_MAX];
+    nfs_u8     Uuid[16];
+} NFS_VOLUME_INFO, *PNFS_VOLUME_INFO;
+
 /* One snapshot, as reported by NfsSnapshotList. */
 typedef struct _NFS_SNAPSHOT_INFO
 {
@@ -306,6 +331,12 @@ int NfsReadDir(PNFS_VOLUME Volume, nfs_fileid Directory, nfs_u32 Index,
    first, atomically with the rename: one PIFT commit, no delete window. */
 int NfsRename(PNFS_VOLUME Volume, nfs_fileid FileId, nfs_fileid NewParent,
               const nfs_u16 *NewName, nfs_u32 NameLength, int ReplaceExisting);
+/* Resolve a backslash path ("\dir\sub\file", "." and ".." allowed) and apply an
+   NT creation disposition in one step, which is what IRP_MJ_CREATE needs. */
+int NfsOpenPath(PNFS_VOLUME Volume, const char *Path, nfs_u32 Disposition,
+                int IsDirectory, nfs_fileid *OutFileId, int *OutCreated);
+int NfsQueryVolumeInfo(PNFS_VOLUME Volume, NFS_VOLUME_INFO *OutInfo);
+
 /* Attributes and timestamps. */
 int NfsSetFileInfo(PNFS_VOLUME Volume, nfs_fileid FileId,
                    const NFS_FILE_INFO *Info);
