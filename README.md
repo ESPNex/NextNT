@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="media/graphics/branding/nextnt-banner.png" width="480" alt="NextNT">
+  <img src="https://files.catbox.moe/cu8wap.png" width="480" alt="NextNT">
 </p>
 
 > [!IMPORTANT]
