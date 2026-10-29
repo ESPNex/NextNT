@@ -64,6 +64,7 @@ PFS_MOUNT FileSystems[] =
     FatMount,
     ExFatMount,
     BtrFsMount,
+    NextFsMount,
 #ifndef _M_ARM
     NtfsMount,
     ExtMount,

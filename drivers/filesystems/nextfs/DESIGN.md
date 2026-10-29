@@ -1,4 +1,4 @@
-# NextFS — design (v0.12, branch `nextfs`)
+# NextFS — design (v0.13, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -300,16 +300,15 @@ PIFT record.
 2. **Compression/encryption**: NTFS does it in the FSD above the `$DATA` attribute.
    NextFS can do it per-extent with a flag, but the cache manager path must not see
    compressed bytes. Deferred.
-3. **Boot path**: `nextldr` must map the boot volume. Simplest correct approach is a
-   read-only NextFS reader in `boot/nextldr/nextldr/lib/fs/nextfs.c` that uses only the
-   superblock + PIFT checkpoint tree (never the journal), so boot cannot be broken by a
-   dirty volume.
+3. ~~**Boot path**~~ — **decided and built in phase 13**: a read-only reader in
+   `boot/nextldr/nextldr/lib/fs/nextfs_core.c` that uses only the superblock and the
+   checkpoint tree, never the journal. See §9.
 4. **Journal sizing**: fixed 8 MiB or scale with volume? Sizing rule goes in the
    superblock at format time.
 
 ---
 
-## 6. Implementation status (v0.12, branch `nextfs`)
+## 6. Implementation status (v0.13, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -332,8 +331,11 @@ Done and tested in this phase:
 | FSD: volume information + FSCTL | `drivers/filesystems/nextfs/nextfs_volinfo.c` | size/label/attributes, dirty, sparse, retrieval pointers |
 | security descriptor store | `nextfslib/nextfs_security.c` | dedup by CRC, strict self-relative validation, remount, garbage collection, empty `.security` removed |
 | FSD: query/set security | `drivers/filesystems/nextfs/nextfs_security.c` | length probe, user-memory probe under SEH, trimming, volume default |
+| boot loader: NextFS reader | `boot/nextldr/nextldr/lib/fs/nextfs_core.c` | 94 checks against an image nextformat wrote: lookups, UTF-8 names, sparse holes, backup superblock, previous checkpoint generation |
+| boot loader: ARC glue | `boot/nextldr/nextldr/lib/fs/nextfs.c` | 24 checks through the DEVVTBL: open/read/seek/query/close, write open refused, seek past EOF refused |
 
-`nextfslib/tests/nextfs_selftest.c` runs 360 checks: format, mount, create/write/
+`nextfslib/tests/nextfs_selftest.c` runs 360 checks (and the two boot-path tests of
+§9.4 add 118 more): format, mount, create/write/
 read, mkdir, nested file, append, readdir, unmount+remount (PIFT rebuilt from
 disk only), crash after the commit point (change must survive), crash before the
 commit frame (change must be discarded), delete, free-space return, unaligned
@@ -563,9 +565,10 @@ Still open, in order of importance:
 
 1. **The boot switch**. Every IRP path a running system needs exists and is
    dispatched (create, read, write, flush, the information classes, directory
-   control, volume information, FSCTL, locks, query/set security). What is still
-   missing is the other half of the road: `nextldr` reading a NextFS boot volume,
-   and a formatted, installed image. Until then NTFS stays the boot file system.
+   control, volume information, FSCTL, locks, query/set security), and `nextldr`
+   can now mount and read a NextFS volume (§9). What is still missing is the last
+   mile: an installed image on a NextFS volume, `NEXTLDR.INI` pointing at it, and
+   the installer's cooperation. Until then NTFS stays the boot file system.
 2. **Compression, encryption, quotas**: not implemented. Compression is per-extent
    with a flag (§5, item 2); quotas need a per-owner record the PIFT does not have yet.
 3. **Encryption and the cache manager**: if a volume is ever encrypted below the
@@ -675,3 +678,75 @@ oversights:
    rule is `SeAccessCheck` with `WRITE_DAC`/`WRITE_OWNER` against the file's stored
    descriptor and the requestor's access state, and it is the one thing in this
    phase that a security review would send back.
+
+---
+
+## 9. The boot path: nextldr reads NextFS
+
+The loader is not the kernel, and pretending otherwise would be the easiest way to
+lose a boot. It is a 32-bit freestanding program with an ARC byte source and a heap
+that can be freed when it exits; nextfslib is written for a kernel with a paged
+pool, IRPs and a journal to replay. So the boot path is a **second reader**, about
+900 lines, and the only thing it shares with the first one is the on-disk format.
+
+### 9.1 What it reads
+
+```
+superblock (primary, else the backup in the last cluster)
+    -> checkpoint tree of the live generation, else the previous one
+        -> PIFT records: names, parents, sizes, extent lists
+            -> file data: extent -> LCN -> cluster, holes read as zeroes
+```
+
+It does **not** open the journal and it does **not** scan the PIFT-on-disk area.
+`NfsUnmount` ends in `NfsSync`, which checkpoints, so a cleanly shut down volume has
+everything it will ever need in the tree. A dirty volume keeps its last consistent
+checkpoint: stale by the transactions that were in flight, but consistent, and being
+one checkpoint behind is recoverable while replaying a half-written journal at boot
+is not. `NextFsMount` says so on the console (`FileSystemError`) rather than booting
+quietly from stale metadata.
+
+### 9.2 The three failure modes it is built around
+
+| Failure | What the reader does |
+|---|---|
+| a torn or copied node | every node is CRC32C'd over its whole 4 KiB and carries its own block number; a node that fails either is not trusted |
+| one bad record inside a good node | the record is skipped and the walk continues: a corrupt file must not become an unbootable machine |
+| the newest generation does not verify | the superblock's `CheckpointRootPrev` is walked instead, and `UsedFallbackRoot` is set so the user is told |
+| a torn primary superblock | the backup in the last cluster is tried, and `FromBackupSuper` says which one was used |
+
+### 9.3 Two readers, one format
+
+The duplication is deliberate and it has a price: two places to change when the
+format moves. The price is paid at compile time -- `nextfs.h` declares the on-disk
+structures and a `typedef char NfsbAssertXSize[(sizeof(X) == N) ? 1 : -1]` for each
+one, so a format change that the loader does not know about is a build error, not a
+boot that reads garbage.
+
+What the reader does *not* do, on purpose: no writes (every entry point returns
+`EACCES` for a write open), no directory enumeration beyond path resolution, no
+case-folding table beyond ASCII, no extended attributes beyond the attribute bits in
+the record. A boot needs to find `\ReactOS\System32\ntoskrnl.exe` and read it; it
+does not need a shell.
+
+### 9.4 How it is verified
+
+Two host-side tests, both in `nextfslib/tests/` and both built against a **real
+image produced by nextfslib**, not against a fixture:
+
+* `nextfs_boot_selftest.c` -- 94 checks. Formats 16 MiB, writes a tree with nested
+  directories, a 9 KiB file, a sparse file, an empty file and a UTF-8 name, unmounts
+  (which checkpoints), then mounts the resulting image with the loader's core and
+  compares every lookup and every byte read. Then it breaks a copy of the image: the
+  primary superblock first (boot must fall back to the backup), the newest checkpoint
+  root second (boot must fall back to the previous generation *and* that generation
+  must not contain the file written after it).
+* `nextfs_boot_glue.c` -- 24 checks. Drives the ARC layer through the `DEVVTBL` the
+  way `fs.c` does (mount, open, read, seek, query, close and the four refusals), with
+  ARC replaced by a stub over `pread` (`tests/bootstub/`).
+
+The loader build itself is not exercised here -- there is no CMake run in this
+environment -- so the ARC glue is checked by contract rather than by linker. That is
+the honest state of it: the format reader is tested, the glue is tested, the two
+having been compiled into one binary by the real build is the one step that has not
+happened yet.
