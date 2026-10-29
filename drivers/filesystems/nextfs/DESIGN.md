@@ -288,7 +288,7 @@ PIFT record.
 
 ---
 
-## 5. Open questions (to settle before phase 9)
+## 5. Open questions (to settle before phase 10)
 
 1. **Security descriptors**: store inline in the record (simple, fat) or in a
    deduplicated blob store (smaller, slower)? Leaning to a deduplicated store keyed by
