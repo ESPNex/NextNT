@@ -18,10 +18,14 @@
 #define WIN32_NO_STATUS
 #include <windef.h>
 #include <winbase.h>
-#include <ndk/iofuncs.h>
-#include <ndk/obfuncs.h>
-#include <ndk/psfuncs.h>
-#include <ndk/rtlfuncs.h>
+
+/* The aggregate NDK header, not the per-area ones: NtCreateEvent and
+ * NtQuerySystemTime are not in iofuncs/obfuncs/psfuncs/rtlfuncs, and listing the
+ * areas by hand is how this file ended up calling three functions it had no
+ * prototypes for. debug.h comes after, so that DPRINT1 uses the NDK's NTSTATUS
+ * instead of declaring its own. */
+#include <ndk/ntndk.h>
+#include <debug.h>
 
 /* DISK_GEOMETRY_EX and IOCTL_DISK_GET_DRIVE_GEOMETRY_EX come from the DDK
  * ntdddisk.h, already reachable through the ndk headers above; including the

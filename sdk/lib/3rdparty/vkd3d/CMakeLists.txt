@@ -1,3 +1,8 @@
+# GCC 13 reports a maybe-uninitialized in hlsl_codegen.c (copy_propagation_replace_with_deref)
+# that GCC 12 did not, and the build runs with -Werror: the warning stays visible,
+# it just stops being fatal for this third-party code.
+add_compile_options("$<$<COMPILE_LANGUAGE:C>:-Wno-error=maybe-uninitialized>")
+
 add_definitions(
     -D_CRT_DECLARE_NONSTDC_NAMES=1
     -D_USE_MATH_DEFINES
