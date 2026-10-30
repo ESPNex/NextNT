@@ -337,6 +337,24 @@
 - **Ritocco (2728ac92)**: la luce del gradiente è al quadrato e il fondo dei tratti è alzato al blu profondo
   dell'immagine, così il marchio si legge su nero a ogni fase mentre il riflesso continua a scorrerci dentro.
   Confronto forma: `mark-confronto.png` in sandbox (riferimento + tre fasi del render): stesso disegno.
+## 2026-10-30 · build UEFI amd64 (t-5a324d)
+- **Perché i386**: non era una scelta, era il compilatore che c'era. In WSL c'è solo il mingw i686 di RosBE
+  (`~/.local/opt/rosbe/mingw-gcc/i686-w64-mingw32`). Ho installato in WSL `gcc/g++-mingw-w64-x86-64` (13.2.0) —
+  unica cosa installata sul PC, concordata con la richiesta di avere la build a 64 bit.
+- **Build**: `cmake -G Ninja -DARCH=amd64 -DCMAKE_BUILD_TYPE=Debug -DENABLE_CCACHE=FALSE
+  -DCMAKE_TOOLCHAIN_FILE=toolchain-gcc.cmake -S . -B output-GCC-amd64-debug` (82 s configure, 224 s generate).
+  `ninja bootmgfw` produce `bootloader/bootmgfw.efi`: **PE32+ x86-64**, 1.306.624 byte, con `gui/splash.cpp`
+  compilato in C++ per amd64.
+- **Due ostacoli di toolchain**, non di codice:
+  1. `sdk/include/xdk/iotypes.h`: `Lev1Depends[]`/`Lev2Depends[]` sono array flessibili dentro una union, che
+     GCC 13 rifiuta (errore, non warning). Passati a `[1]`.
+  2. `host-tools/bin/asmpp` va in eccezione sui `.asm` con CRLF. In WSL il repo era stato scritto con
+     `core.autocrlf=true`; con `git config core.autocrlf false` e ri-checkout di `sdk/lib/crt` (`.gitattributes`
+     dice già `*.asm text`) i file tornano in LF e la build passa. **Va tenuto `core.autocrlf false` in WSL.**
+- **OVMF**: in sandbox QEMU+OVMF funzionano e il boot manager amd64 parte davvero su firmware: dice
+  "The Boot Configuration Data store is missing or corrupt" ed esce, quindi per vedere la schermata serve un BCD
+  valido nella ESP. Il tentativo precedente con il binario i386 come BOOTX64.EFI non poteva funzionare per
+  l'architettura sbagliata.
 <!-- agente:fine -->
 
 Updated automatically by ArenaCode at the end of each job. The API key is not written here.
