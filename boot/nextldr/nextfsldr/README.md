@@ -162,7 +162,28 @@ So there are two ways into the real-mode half and two ways out:
   through `NfldrRealReturn`, which is ordinary 32-bit code in this image.
 
 The exit stub is 32-bit code entered with a 32-bit far jump, not 16-bit bytes
-that happen to decode differently in a `D=1` segment.## What is not here yet
+that happen to decode differently in a `D=1` segment.## The interrupt vectors, or why everything died at the first BIOS call
+
+`enter_real16` (in `stage1.S`) now puts back any entry of the interrupt vector
+table that reads as `0000:0000` before it runs a BIOS call. The backup is taken
+in `stage1.c` right before the handoff, kept in the loader's own `.bss` below one
+megabyte, and its address is written into `ivt_backup_ptr` with
+`NfldrSetIvtBackup()`.
+
+Two details cost a lot to learn:
+
+- the restore must run **after** protected mode is off and the real-mode IDT is
+  loaded. Loading `ds` with a real-mode segment while `CR0.PE` is still set goes
+  through the GDT, and `#GP(0x7808)` is what that looks like.
+- only entries that are actually zero are restored, so a handler the firmware
+  installs later is left alone.
+
+With that in place nextldr runs all the way to its main loop and talks to the
+BIOS through this stage's dispatcher, which is the thing this whole exercise was
+for: the serial log shows `BootMain() called`, `INT 13h Extended version: 0x30`,
+the EDD parameter block of drive `0x80`, and `DiskInitialize(0x80, ...)`.
+
+## What is not here yet
 
 - A partition offset. The stage reads the volume it was booted from at absolute
   LBA 0, which is what the volume boot record does too; booting NextFS from a

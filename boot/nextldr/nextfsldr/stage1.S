@@ -281,6 +281,37 @@ switch_to_real16_local:
     mov     byte ptr cs:[return_to_local], 1
 
 enter_real16:
+    /* Restore the segment registers to the real-mode limit */
+    mov     ax, RMODE_DS
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
+    mov     ss, ax
+
+    /* Protected mode off */
+    mov     eax, cr0
+    and     eax, 0xFFFFFFFE
+    mov     cr0, eax
+
+    /* Clear the prefetch queue and correct CS */
+    .byte   0xEA
+    .word   inrmode
+    .word   0
+
+inrmode:
+    xor     ax, ax
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
+    mov     ss, ax
+    xor     esp, esp
+    mov     sp, word ptr ds:[stack16]
+
+    /* Real-mode IDT */
+    lidt    ds:[rmode_idtptr]
+
     /* Put back any interrupt vector that went missing. Something in the boot
        path writes over the bottom of low memory, and an interrupt vector that
        reads as 0000:0000 turns the next BIOS call into a jump to address zero.
@@ -322,37 +353,6 @@ enter_real16:
     pop     si
     pop     es
     pop     ds
-
-    /* Restore the segment registers to the real-mode limit */
-    mov     ax, RMODE_DS
-    mov     ds, ax
-    mov     es, ax
-    mov     fs, ax
-    mov     gs, ax
-    mov     ss, ax
-
-    /* Protected mode off */
-    mov     eax, cr0
-    and     eax, 0xFFFFFFFE
-    mov     cr0, eax
-
-    /* Clear the prefetch queue and correct CS */
-    .byte   0xEA
-    .word   inrmode
-    .word   0
-
-inrmode:
-    xor     ax, ax
-    mov     ds, ax
-    mov     es, ax
-    mov     fs, ax
-    mov     gs, ax
-    mov     ss, ax
-    xor     esp, esp
-    mov     sp, word ptr ds:[stack16]
-
-    /* Real-mode IDT */
-    lidt    ds:[rmode_idtptr]
 
     sti
 
@@ -423,10 +423,6 @@ return_to_local:
 .align 4
 ivt_backup_ptr:
     .long   0
-trace_count:
-    .word   0
-trace_ring:
-    .space  128
 
 .code16
 
@@ -450,23 +446,6 @@ boot_drive:
 /* INT with the register block's registers, as int386.inc does it, so that
    nextldr's Int386() sees exactly what it saw before. */
 Int386:
-    /* DEBUG: remember the stack pointer on the way in and on the way out, so
-       that a BIOS that does not balance its own stack shows up as drift. */
-    push    ax
-    push    bx
-    push    ds
-    xor     ax, ax
-    mov     ds, ax
-    mov     bx, word ptr ds:[trace_count]
-    inc     word ptr ds:[trace_count]
-    and     bx, 15
-    shl     bx, 3
-    mov     ax, sp
-    mov     word ptr ds:[trace_ring + bx], ax
-    pop     ds
-    pop     bx
-    pop     ax
-
     push    ds
     push    es
     push    fs
@@ -537,23 +516,6 @@ Int386_opcode:
     pop     es
     pop     ds
 
-    /* DEBUG: the matching exit stack pointer for the entry above. */
-    push    ax
-    push    bx
-    push    ds
-    xor     ax, ax
-    mov     ds, ax
-    mov     bx, word ptr ds:[trace_count]
-    dec     bx
-    and     bx, 15
-    shl     bx, 3
-    mov     ax, sp
-    mov     word ptr ds:[trace_ring + bx + 2], ax
-    mov     al, byte ptr ds:[BSS_INT_VECTOR]
-    mov     byte ptr ds:[trace_ring + bx + 4], al
-    pop     ds
-    pop     bx
-    pop     ax
     ret
 
 Reboot:
