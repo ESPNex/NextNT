@@ -477,7 +477,7 @@ NfsbReadSuper(NFSB_VOLUME *Volume)
     int PrimaryOk, BackupOk;
 
     PrimaryOk = 0;
-    if (NfsbReadDevice(Volume, 0, &Primary, NFSB_SUPER_SIZE) == NFSB_OK)
+    if (NfsbReadDevice(Volume, NFSB_SUPER_OFFSET, &Primary, NFSB_SUPER_SIZE) == NFSB_OK)
         PrimaryOk = NfsbSuperValid(&Primary, Volume->Io.DeviceBytes);
 
     /* The backup lives in the last cluster: after a torn primary this is the

@@ -13,10 +13,23 @@
  * this tool exists first is that a filesystem with no installable image cannot be
  * tested at all, and the boot path is exactly what has to be tested.
  *
- * What it deliberately does not do: no boot sector, no partition table, no
- * NEXTLDR.INI writing. Those belong to the image layout, not to the file system,
- * and keeping them out means this tool can be pointed at a plain image file, a
- * loopback device, or a partition on a real disk without knowing the difference.
+ * With --boot-code and --boot-loader it also fills the boot area, the first
+ * 4 KiB of the volume that format 5 keeps out of the file system:
+ *
+ *   nextfsinstall --image boot.img --size 512 --label NEXTNT \
+ *                 --source <tree> --dest \\ReactOS \
+ *                 --boot-code nextfs.bin \
+ *                 --boot-loader /ReactOS/nexldr.sys --boot-load 0x1000
+ *
+ * Sector 0 gets the volume boot record, LBA 1 the boot descriptor. The
+ * descriptor is not a file system structure and is not read by anything but the
+ * boot record: it lists the payload as runs of absolute sectors, straight from
+ * the extent list of the installed file, because a 512-byte real-mode program
+ * cannot walk a copy-on-write tree and this tool can.
+ *
+ * What it still does not do: no partition table, no NEXTLDR.INI writing. Those
+ * belong to the image layout, and keeping them out means the same tool writes a
+ * plain image file, a loopback device, or a partition on a real disk.
  */
 
 #include "../nextfs_format.h"
@@ -272,6 +285,216 @@ EnsureDestination(PNFS_VOLUME Volume, const char *Path, nfs_fileid *OutId)
     return NFS_OK;
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Boot area                                                          */
+/* ------------------------------------------------------------------ */
+
+#define BOOT_SECTOR_SIZE      512u
+#define BOOT_DESC_LBA         1u
+#define BOOT_DESC_SECTORS     4u
+#define BOOT_DESC_RUN_MAX     ((BOOT_DESC_SECTORS * BOOT_SECTOR_SIZE - 24u) / 12u)
+
+#pragma pack(push, 1)
+typedef struct _BOOT_DESC_HEADER
+{
+    char   Magic[4];        /* "NFB1"                           */
+    nfs_u16 Version;        /* 1                                */
+    nfs_u16 SectorSize;
+    nfs_u32 LoadSegment;
+    nfs_u32 EntryOffset;
+    nfs_u32 EntrySegment;
+    nfs_u16 RunCount;
+    nfs_u16 Reserved;
+} BOOT_DESC_HEADER, *PBOOT_DESC_HEADER;
+
+typedef struct _BOOT_DESC_RUN
+{
+    nfs_u64 Lba;
+    nfs_u32 Sectors;
+    nfs_u32 Reserved;
+} BOOT_DESC_RUN, *PBOOT_DESC_RUN;
+
+typedef struct _BOOT_DESC
+{
+    BOOT_DESC_HEADER Header;
+    BOOT_DESC_RUN    Runs[BOOT_DESC_RUN_MAX];
+} BOOT_DESC, *PBOOT_DESC;
+#pragma pack(pop)
+
+/*
+ * The boot record is a 512-byte image built from boot/nextldr/bootsect/nextfs.S.
+ * It is written verbatim: this tool does not know what is inside it, and the
+ * only thing the two agree on is that sector 0 is its.
+ */
+static int
+WriteBootCode(PNFS_BDEV Device, const char *Path)
+{
+    unsigned char Sector[BOOT_SECTOR_SIZE];
+    FILE *File;
+    size_t Read;
+
+    File = fopen(Path, "rb");
+    if (!File)
+    {
+        fprintf(stderr, "nextfsinstall: cannot open boot code %s: %s\n", Path,
+                strerror(errno));
+        return NFS_EIO;
+    }
+
+    Read = fread(Sector, 1, sizeof(Sector), File);
+    if (Read != sizeof(Sector) || fgetc(File) != EOF)
+    {
+        fprintf(stderr, "nextfsinstall: %s is not exactly %u bytes\n", Path,
+                BOOT_SECTOR_SIZE);
+        fclose(File);
+        return NFS_EINVAL;
+    }
+    fclose(File);
+
+    if (Sector[510] != 0x55 || Sector[511] != 0xAA)
+    {
+        fprintf(stderr, "nextfsinstall: %s has no 0xAA55 signature\n", Path);
+        return NFS_EINVAL;
+    }
+
+    return Device->Write(Device->Context, 0, Sector, sizeof(Sector));
+}
+
+/*
+ * The descriptor comes from the extent list of a file that is already on the
+ * volume. Holes are refused rather than skipped: a sparse loader would boot
+ * garbage, and the only way a loader file becomes sparse is a bug worth
+ * reporting at install time.
+ */
+/*
+ * Resolve a volume path one component at a time. NfsOpenPath applies a creation
+ * disposition and reports every failure as one code; here the question is only
+ * "where is this file", so walking gives an error a human can act on.
+ */
+static int
+LookupVolumePath(PNFS_VOLUME Volume, const char *VolumePath, NFS_PIFT_RECORD *OutRecord)
+{
+    nfs_u16 Name[NFS_NAME_MAX];
+    nfs_u32 NameLength;
+    nfs_fileid Parent = NFS_ROOT_ID;
+    const char *Cursor = VolumePath;
+
+    while (*Cursor == '/' || *Cursor == '\\')
+        Cursor++;
+
+    while (*Cursor)
+    {
+        const char *End = Cursor;
+        char Component[NFS_NAME_MAX + 1];
+        size_t Length;
+
+        while (*End && *End != '/' && *End != '\\')
+            End++;
+        Length = (size_t)(End - Cursor);
+        if (Length == 0 || Length > NFS_NAME_MAX)
+            return NFS_EINVAL;
+        memcpy(Component, Cursor, Length);
+        Component[Length] = 0;
+
+        NameLength = NfsNameFromAscii(Component, Name, NFS_NAME_MAX);
+        if (NameLength == 0)
+            return NFS_EINVAL;
+
+        if (NfsLookup(Volume, Parent, Name, NameLength, OutRecord) != NFS_OK)
+            return NFS_ENOENT;
+
+        Parent = OutRecord->FileId;
+        Cursor = End;
+        while (*Cursor == '/' || *Cursor == '\\')
+            Cursor++;
+    }
+
+    return NFS_OK;
+}
+
+static int
+WriteBootDescriptor(PNFS_VOLUME Volume, PNFS_BDEV Device, const char *VolumePath,
+                    nfs_u32 LoadSegment, nfs_u32 EntrySegOffset)
+{
+    static BOOT_DESC Descriptor;
+    NFS_PIFT_RECORD Record;
+    const NFS_SUPER *Super;
+    nfs_u32 i;
+    nfs_u64 SectorsPerCluster;
+    int Status;
+
+    Super = NfsGetSuper(Volume);
+    if (Super->ClusterSize < NFS_BOOT_AREA_SIZE)
+    {
+        fprintf(stderr, "nextfsinstall: cluster size %u cannot hold a boot area\n",
+                (unsigned)Super->ClusterSize);
+        return NFS_EINVAL;
+    }
+    SectorsPerCluster = Super->ClusterSize / BOOT_SECTOR_SIZE;
+
+    memset(&Record, 0, sizeof(Record));
+    Status = LookupVolumePath(Volume, VolumePath, &Record);
+    if (Status != NFS_OK)
+    {
+        fprintf(stderr, "nextfsinstall: --boot-loader %s is not on the volume (%d)\n",
+                VolumePath, Status);
+        return Status;
+    }
+    if (Record.Flags & NFS_FLAG_DIR)
+    {
+        fprintf(stderr, "nextfsinstall: --boot-loader %s is a directory\n", VolumePath);
+        return NFS_EINVAL;
+    }
+    if (Record.ExtentCount == 0)
+    {
+        fprintf(stderr, "nextfsinstall: --boot-loader %s is empty\n", VolumePath);
+        return NFS_EINVAL;
+    }
+    if (Record.ExtentCount > BOOT_DESC_RUN_MAX)
+    {
+        fprintf(stderr, "nextfsinstall: --boot-loader has %u extents, the descriptor holds %u\n",
+                (unsigned)Record.ExtentCount, (unsigned)BOOT_DESC_RUN_MAX);
+        return NFS_ENOSPC;
+    }
+
+    memset(&Descriptor, 0, sizeof(Descriptor));
+    memcpy(Descriptor.Header.Magic, "NFB1", 4);
+    Descriptor.Header.Version = 1;
+    Descriptor.Header.SectorSize = BOOT_SECTOR_SIZE;
+    Descriptor.Header.LoadSegment = LoadSegment;
+    Descriptor.Header.EntrySegment = EntrySegOffset >> 16;
+    Descriptor.Header.EntryOffset = EntrySegOffset & 0xFFFFu;
+
+    for (i = 0; i < Record.ExtentCount; i++)
+    {
+        const NFS_EXTENT *Extent = &Record.Extents[i];
+
+        if (Extent->Length == 0)
+            break;
+        if (Extent->Lcn == NFS_HOLE)
+        {
+            fprintf(stderr, "nextfsinstall: --boot-loader is sparse at vcn %llu\n",
+                    (unsigned long long)Extent->Vcn);
+            return NFS_EINVAL;
+        }
+        Descriptor.Runs[i].Lba = Extent->Lcn * SectorsPerCluster;
+        Descriptor.Runs[i].Sectors = (nfs_u32)(Extent->Length * SectorsPerCluster);
+    }
+    Descriptor.Header.RunCount = (nfs_u16)i;
+
+    Status = Device->Write(Device->Context, BOOT_DESC_LBA * BOOT_SECTOR_SIZE,
+                           &Descriptor, BOOT_DESC_SECTORS * BOOT_SECTOR_SIZE);
+    if (Status != NFS_OK)
+        return Status;
+
+    printf("boot descriptor: %u runs, load segment 0x%04x, entry %04x:%04x\n",
+           (unsigned)Descriptor.Header.RunCount, (unsigned)LoadSegment,
+           (unsigned)Descriptor.Header.EntrySegment,
+           (unsigned)Descriptor.Header.EntryOffset);
+    return NFS_OK;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -282,6 +505,10 @@ main(int argc, char **argv)
     unsigned long long SizeMiB = 0;
     nfs_u32 ClusterSize = 4096;
     int Format = 1;
+    const char *BootCodePath = NULL;
+    const char *BootLoaderPath = NULL;
+    nfs_u32 BootLoadSegment = 0x1000;
+    nfs_u32 BootEntry = 0;
     IMAGE_DEVICE ImageDevice;
     NFS_BDEV Device;
     PNFS_VOLUME Volume = NULL;
@@ -304,12 +531,23 @@ main(int argc, char **argv)
             ClusterSize = (nfs_u32)strtoul(argv[++i], NULL, 10);
         else if (strcmp(argv[i], "--no-format") == 0)
             Format = 0;
+        else if (strcmp(argv[i], "--boot-code") == 0 && i + 1 < argc)
+            BootCodePath = argv[++i];
+        else if (strcmp(argv[i], "--boot-loader") == 0 && i + 1 < argc)
+            BootLoaderPath = argv[++i];
+        else if (strcmp(argv[i], "--boot-load") == 0 && i + 1 < argc)
+            BootLoadSegment = (nfs_u32)strtoul(argv[++i], NULL, 16);
+        else if (strcmp(argv[i], "--boot-entry") == 0 && i + 1 < argc)
+            BootEntry = (nfs_u32)strtoul(argv[++i], NULL, 16);
         else
         {
             fprintf(stderr,
                     "usage: nextfsinstall --image <file> --size <MiB> [--cluster N]\n"
                     "                     [--label NAME] --source <dir> [--dest <path>]\n"
-                    "                     [--no-format]\n");
+                    "                     [--no-format]\n"
+                    "                     [--boot-code <512-byte VBR>]\n"
+                    "                     [--boot-loader <volume path>]\n"
+                    "                     [--boot-load <hex segment>] [--boot-entry <hex seg:off>]\n");
             return 2;
         }
     }
@@ -389,6 +627,31 @@ main(int argc, char **argv)
         }
 
         InstallTree(&State, Root, SourcePath);
+    }
+
+    if (BootLoaderPath)
+    {
+        nfs_u32 Entry = BootEntry ? BootEntry : BootLoadSegment << 16;
+
+        Status = WriteBootDescriptor(Volume, &Device, BootLoaderPath, BootLoadSegment, Entry);
+        if (Status != NFS_OK)
+        {
+            NfsUnmount(Volume);
+            fclose(ImageDevice.File);
+            return 1;
+        }
+    }
+
+    if (BootCodePath)
+    {
+        Status = WriteBootCode(&Device, BootCodePath);
+        if (Status != NFS_OK)
+        {
+            NfsUnmount(Volume);
+            fclose(ImageDevice.File);
+            return 1;
+        }
+        printf("boot record: %s in sector 0\n", BootCodePath);
     }
 
     NfsUnmount(Volume);              /* checkpoints: the boot reader needs the tree */

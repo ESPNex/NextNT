@@ -1,4 +1,4 @@
-# NextFS — design (v0.15, branch `nextfs`)
+# NextFS — design (v0.16, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -308,7 +308,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.15, branch `nextfs`)
+## 6. Implementation status (v0.16, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -335,6 +335,7 @@ Done and tested in this phase:
 | boot loader: ARC glue | `boot/nextldr/nextldr/lib/fs/nextfs.c` | 24 checks through the DEVVTBL: open/read/seek/query/close, write open refused, seek past EOF refused |
 | installer: format + populate | `nextfslib/tools/nextfsinstall.c` | a 32 MiB image with a five-file tree, every file read back byte for byte through the boot reader |
 | installer: format inside setup | `nextfslib/nextfsformat.c`, `fslib/nextfslib.h` | one PULIB_FORMAT entry point, the same library code the FSD runs; format + mount + checkpoint on a real NT volume |
+| boot record | `boot/nextldr/bootsect/nextfs.S` | 512-byte VBR, assembled and **booted in QEMU**: prints `PAYLOAD OK from NextFS` from a payload loaded off a NextFS volume; both negative controls report the right reason |
 
 `nextfslib/tests/nextfs_selftest.c` runs 360 checks (and the two boot-path tests of
 §9.4 add 118 more): format, mount, create/write/
@@ -883,3 +884,76 @@ unmount → checkpoint → read back through the boot reader) is what phase 14
 exercised end to end in `nextfsinstall`. Not verified: the compilation of
 `nextfsformat.c` against the ReactOS user-mode headers and the link into
 `setuplib`, because that needs the real build (§9.4).
+
+---
+
+## 12. Booting from a NextFS volume
+
+### 12.1 The superblock had to move
+
+Until format 4 the superblock started at offset 0, which means sector 0 — the
+sector a BIOS loads and jumps to — belonged to the file system. A volume boot
+record could not exist there: writing one would have destroyed the superblock.
+
+Format 5 reserves the first **4 KiB** as a boot area and puts the superblock at
+`NFS_SUPER_OFFSET` (4096). The backup superblock is still in the last cluster, so
+the two copies stay at the two ends of the volume. This is the one place where
+the boot path changed the on-disk format, and it changed it for the right reason:
+a file system that cannot be booted from is a file system that cannot be an
+operating system's.
+
+### 12.2 The boot record: 512 bytes, and no file system parser
+
+`boot/nextldr/bootsect/nextfs.S` (built by the same `CreateBootSectorTarget` as
+the FAT and NTFS ones, as `nextfsvbr`) does exactly three things:
+
+1. reads the superblock from LBA 8 and refuses a volume that is not NextFS in the
+   format it knows (`NF: bad volume`);
+2. reads the **boot descriptor** from LBA 1 (`NF: no descriptor` if it is missing);
+3. loads the payload — a flat image given as runs of absolute sectors — at the
+   segment the descriptor names, and far-jumps to the entry it names.
+
+It parses no directory and walks no tree, and that is the design, not a shortcut.
+Walking the checkpoint tree needs a 4 KiB-node reader, an extent-list resolver and
+about 4 KiB of stack; a 512-byte real-mode program has none of that. So the
+descriptor is built **at install time**, from the same extent list the file system
+already maintains:
+
+    nextfsinstall --image boot.img --size 512 --label NEXTNT \
+                  --source <tree> --dest \ReactOS \
+                  --boot-code nextfs.bin \
+                  --boot-loader /ReactOS/nexldr.sys --boot-load 0x1000
+
+The tool refuses a payload that is sparse (a sparse loader would boot garbage) or
+that needs more than 168 runs. The descriptor is 4 sectors: `"NFB1"`, version,
+sector size, load segment, entry `seg:off`, run count, then `{u64 lba, u32
+sectors}` per run.
+
+What this splits cleanly, for later: the boot record does not care *what* the
+payload is. Pointing `--boot-loader` at the loader's PE image keeps working once
+`nextldr` is built as a file on the volume; the descriptor is the interface, and
+it does not change.
+
+### 12.3 Verified in QEMU, not argued about
+
+- **The happy path**: a 32 MiB image, `nextfsinstall` writes the tree, the
+  descriptor and the boot record, `qemu-system-i386 -drive file=boot.img` boots
+  it, and the payload prints `PAYLOAD OK from NextFS` — on COM1, so the check is a
+  string comparison and not an opinion about a screenshot.
+- **Negative control, not a NextFS volume**: same boot record bolted onto a random
+  4 MiB image → `NF: bad volume`.
+- **Negative control, NextFS without a descriptor**: `NF: no descriptor`.
+- **Regression matrix after the format move**: library self-test 360/0, boot
+  reader 94/0, ARC glue 24/0, and the install → boot-reader round trip (a 70 KB
+  file, a nested file, an empty file, an accented name) byte for byte identical.
+  The boot self-test had one genuine failure after the move — it corrupted offset
+  0 to break the primary superblock, which is now the boot area — and it was the
+  test that was wrong, not the reader.
+
+### 12.4 What is still missing
+
+The setup **does not install this boot record yet**: `bootsup.c` writes the FAT
+and NTFS volume boot records as part of its install sequence, and a NextFS branch
+there needs the same descriptor generation the tool does, from inside the
+installer. Until then a bootable NextFS volume is produced by `nextfsinstall`, and
+the last mile is: `bootsup` → descriptor → `NfsFormat` (already in `setuplib`).

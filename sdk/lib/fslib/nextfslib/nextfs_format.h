@@ -30,7 +30,14 @@ typedef nfs_u64 nfs_seq;
 
 #define NFS_SUPER_MAGIC        "NFSB"
 #define NFS_SUPER_SIZE         1024u
-#define NFS_FORMAT_VERSION     4u   /* 4: security descriptors in the record */
+/* Format 5: the superblock moved out of offset 0. Sector 0 of a volume is
+   where a BIOS hands control, so the first 4 KiB -- one minimum-size cluster --
+   is a boot area and the superblock starts right after it. Formats 1..4 kept
+   the superblock at offset 0, which made a NextFS volume impossible to boot
+   from without overwriting the superblock. */
+#define NFS_FORMAT_VERSION     5u
+#define NFS_BOOT_AREA_SIZE     4096u
+#define NFS_SUPER_OFFSET       NFS_BOOT_AREA_SIZE
 #define NFS_BOOT_OEM           "NEXTFS  "
 #define NFS_NODE_MAGIC         "NFBT"
 #define NFS_FRAME_MAGIC        "NFJN"

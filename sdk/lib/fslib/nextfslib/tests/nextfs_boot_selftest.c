@@ -358,7 +358,10 @@ main(void)
         ssize_t Got = In >= 0 ? read(In, Copy, IMAGE_BYTES) : -1;
 
         CHECK(Got == (ssize_t)IMAGE_BYTES, "copy the image");
-        memset(Copy, 0, 8);              /* the magic and version of the primary */
+        /* The primary superblock starts after the boot area (format 5), so the
+           damage has to land there and not on sector 0, which belongs to the
+           volume boot record. */
+        memset(Copy + NFSB_SUPER_OFFSET, 0, 8);   /* magic and version */
         CHECK(write(Out, Copy, IMAGE_BYTES) == (ssize_t)IMAGE_BYTES, "write the copy");
         close(In);
         close(Out);

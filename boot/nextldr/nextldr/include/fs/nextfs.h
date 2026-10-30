@@ -42,8 +42,11 @@ typedef unsigned long long NFSB_U64;
 #define NFSB_REC_MAGIC       "NFPR"
 
 #define NFSB_SUPER_SIZE      1024u
+/* The superblock starts after the boot area: sector 0 belongs to the volume
+   boot record, so the first 4 KiB are not file system metadata. */
+#define NFSB_SUPER_OFFSET    4096ull
 #define NFSB_NODE_SIZE       4096u
-#define NFSB_FORMAT_VERSION  4u
+#define NFSB_FORMAT_VERSION  5u
 #define NFSB_NAME_MAX        255u
 #define NFSB_EXTENT_MAX      64u
 #define NFSB_TREE_MAX_DEPTH  8u

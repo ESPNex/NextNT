@@ -128,7 +128,7 @@ NfsReadSuper(PNFS_BDEV Device, PNFS_SUPER Super)
     if (Device->Size)
         Device->Size(Device->Context, &DeviceBytes);
 
-    if (Device->Read(Device->Context, 0, &Primary, NFS_SUPER_SIZE) != NFS_OK)
+    if (Device->Read(Device->Context, NFS_SUPER_OFFSET, &Primary, NFS_SUPER_SIZE) != NFS_OK)
         return NFS_EIO;
     PrimaryOk = NfsSuperValid(&Primary, DeviceBytes);
 
@@ -172,7 +172,7 @@ NfsWriteSuper(PNFS_VOLUME Volume)
 
     Volume->Super.Crc32c = NfsSuperCrc(&Volume->Super);
 
-    Status = NfsDevWrite(Volume, 0, &Volume->Super, NFS_SUPER_SIZE);
+    Status = NfsDevWrite(Volume, NFS_SUPER_OFFSET, &Volume->Super, NFS_SUPER_SIZE);
     if (Status != NFS_OK)
         return Status;
     Status = NfsDevFlush(Volume);
