@@ -334,6 +334,9 @@
   In sandbox ho installato QEMU + OVMF e provato a far partire `bootmgfw.efi` da una ESP: OVMF lo esegue e lui
   esce subito senza disegnare niente (vuole una configurazione di boot valida), quindi lo screenshot su firmware
   vero resta da fare con un target NextNT configurato.
+- **Ritocco (2728ac92)**: la luce del gradiente è al quadrato e il fondo dei tratti è alzato al blu profondo
+  dell'immagine, così il marchio si legge su nero a ogni fase mentre il riflesso continua a scorrerci dentro.
+  Confronto forma: `mark-confronto.png` in sandbox (riferimento + tre fasi del render): stesso disegno.
 <!-- agente:fine -->
 
 Updated automatically by ArenaCode at the end of each job. The API key is not written here.
