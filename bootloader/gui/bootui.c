@@ -44,11 +44,8 @@ static PUCHAR BootUiGlyphPixels;
 static ULONG BootUiGlyphUsed;
 static LONG BootUiClipLeft, BootUiClipTop, BootUiClipRight, BootUiClipBottom;
 
-/* The animated background's clock, advanced one frame at a time by
-   BootUiAnimate(), and the last row the mark and the name occupy: the animation
-   repaints that strip only, so it never has to guess what else is on screen. */
-static ULONG BootUiAnimationMs;
-static ULONG BootUiBrandBottom;
+/* The startup screen's clock, advanced one frame at a time while it is showing. */
+static ULONG BootUiSplashMs;
 
 typedef struct
 {
@@ -153,15 +150,12 @@ BootUiDrawErrors(ULONG Height);
 static VOID
 BootUiBackground(ULONG Height)
 {
-    LONG Bottom = min((LONG)min(Height, BootUiHeight), BootUiClipBottom);
+    LONG Row, Bottom = min((LONG)min(Height, BootUiHeight), BootUiClipBottom);
     if (!BootUiPixels)
         return;
-
-    /* The backdrop is the animated gradient, not a flat fill: the clip is what
-       says which rows to paint, so a small redraw stays a small redraw. */
-    SplashFillBackground(BootUiPixels, BootUiWidth, BootUiHeight,
-                         (ULONG)max(BootUiClipTop, 0), (ULONG)max(Bottom, 0),
-                         BootUiAnimationMs);
+    for (Row = BootUiClipTop; Row < Bottom; ++Row)
+        RtlZeroMemory(&BootUiPixels[Row * BootUiWidth + BootUiClipLeft],
+                      (BootUiClipRight - BootUiClipLeft) * sizeof(ULONG));
     BootUiDrawErrors(min(Height, BootUiHeight));
 }
 
@@ -340,41 +334,38 @@ BootUiDrawErrors(ULONG Height)
 }
 
 static VOID
-BootUiBrand(VOID)
+BootUiLogo(ULONG Left, ULONG Top, ULONG Scale)
 {
-    /* The mark is drawn, not pasted: two chevrons of the given height, centred
-       to the left of the name. The strip it lives in is remembered so the
-       animation can repaint it without touching the menu. */
-    ULONG Size = BootUiHeight < 600 ? 34 : 48;
-    ULONG TextSize = BootUiHeight < 600 ? 20 : 26;
-    ULONG TextWidth = BootUiTextWidth("NextNT", TextSize, MAXULONG);
-    ULONG TextLeft, Top, MarkLeft;
-    Top = BootUiHeight < 600 ? 12 : 28;
-    TextLeft = (BootUiWidth - Size - 16 - TextWidth) / 2 + Size + 16;
-    MarkLeft = TextLeft - Size - 16;
-    SplashDrawMark(BootUiPixels, BootUiWidth, BootUiHeight,
-                   (long)(MarkLeft + Size / 2), (long)(Top + Size / 2),
-                   Size, BootUiAnimationMs);
-    BootUiText(TextLeft, Top + (Size - min(Size, TextSize)) / 2 - 1,
-               "NextNT", TextSize, BOOTUI_TEXT, TextWidth, MAXULONG);
-    BootUiBrandBottom = Top + Size;
+    ULONG Width = 48 / Scale, Height = 42 / Scale;
+    ULONG X, Y;
+    for (Y = 0; Y < Height; ++Y)
+    {
+        for (X = 0; X < Width; ++X)
+        {
+            const UCHAR* Pixel = bootui_logo + (Y * Scale * 48 + X * Scale) * 4;
+            ULONG Color, Alpha = Pixel[3];
+            if (!Alpha)
+                continue;
+            Color = (min(255, Pixel[0] * 255 / Alpha) << 16) |
+                    (min(255, Pixel[1] * 255 / Alpha) << 8) |
+                    min(255, Pixel[2] * 255 / Alpha);
+            BootUiPixel(Left + X, Top + Y, Color, Alpha);
+        }
+    }
 }
 
-/* One frame of the animation: the strip that carries the mark and the name is
-   repainted with the current phase and presented. Nothing else is touched, so
-   the menu text is never redrawn by the timer. */
 static VOID
-BootUiAnimate(VOID)
+BootUiBrand(VOID)
 {
-    if (!BootUiPixels || !BootUiBrandBottom)
-        return;
-
-    BootUiAnimationMs += SPLASH_FRAME_MS;
-    BootUiSetClip(0, 0, (LONG)BootUiWidth, (LONG)(BootUiBrandBottom + 12));
-    BootUiBackground(BootUiHeight);
-    BootUiBrand();
-    BootUiPresentRegion(0, BootUiBrandBottom + 12);
-    BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
+    ULONG Scale = BootUiHeight < 600 ? 2 : 1;
+    ULONG Width = 48 / Scale, Height = 42 / Scale;
+    ULONG Size = BootUiHeight < 600 ? 20 : 26;
+    ULONG TextWidth = BootUiTextWidth("NextNT", Size, MAXULONG);
+    ULONG Left = (BootUiWidth - Width - 14 - TextWidth) / 2;
+    ULONG Top = BootUiHeight < 600 ? 12 : 28;
+    BootUiLogo(Left, Top, Scale);
+    BootUiText(Left + Width + 14, Top + (Height - min(Height, Size)) / 2 - 1,
+               "NextNT", Size, BOOTUI_TEXT, TextWidth, MAXULONG);
 }
 
 static VOID
@@ -417,8 +408,7 @@ BootUiInitialize(VOID)
         return FALSE;
     }
     BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
-    BootUiAnimationMs = 0;
-    BootUiBrandBottom = 0;
+    BootUiSplashMs = 0;
     FbConsGetCellSize(&BootUiCellWidth, &BootUiCellHeight);
     BootUiFontSize = max(16, min(32, BootUiHeight / 38));
     BootUiStatus[0] = 0;
@@ -853,24 +843,14 @@ BootUiSetProgressBarText(PCSTR Text)
 static VOID
 BootUiTickProgressBar(ULONG Progress)
 {
-    ULONG Width = min(520, BootUiWidth - 64);
+    ULONG Width = min(720, BootUiWidth - 64);
     ULONG Left = (BootUiWidth - Width) / 2;
     ULONG Top = BootUiHeight - 100;
-    ULONG Mark = max(28, BootUiFontSize);
-
-    /* No box, no rounded track: the strip is repainted with the same gradient as
-       the rest of the screen, the mark goes above the text, and progress is a
-       hairline that grows. The rectangular loading bar is gone. */
-    BootUiSetClip(0, (LONG)(Top - 20), (LONG)BootUiWidth, (LONG)(Top + Mark + 60));
-    BootUiBackground(BootUiHeight);
-    SplashDrawMark(BootUiPixels, BootUiWidth, BootUiHeight,
-                   (long)(BootUiWidth / 2), (long)(Top + 4), Mark, BootUiAnimationMs);
-    BootUiCentered(Top + Mark + 14, BootUiProgressText, max(14, BootUiFontSize - 3), BOOTUI_MUTED);
-    BootUiRect(Left, Top + Mark + 44, Width, 2, 0, 0x1B2A44, 255);
-    BootUiRect(Left, Top + Mark + 44, Width * min(Progress, 10000) / 10000, 2, 0,
-               BOOTUI_ACCENT, 255);
-    BootUiPresentRegion((ULONG)max((LONG)(Top - 20), 0), 160);
-    BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
+    BootUiRect(0, Top - 20, BootUiWidth, 120, 0, 0, 255);
+    BootUiCentered(Top, BootUiProgressText, max(14, BootUiFontSize - 3), BOOTUI_MUTED);
+    BootUiRect(Left, Top + 44, Width, 10, 5, 0x23314A, 255);
+    BootUiRect(Left, Top + 44, Width * min(Progress, 10000) / 10000, 10, 5, BOOTUI_ACCENT, 255);
+    BootUiPresentRegion(Top - 20, 120);
 }
 
 static VOID
@@ -1004,10 +984,7 @@ BootUiRenderMenu(PUI_MENU_INFO Menu, LONG TimeOut, BOOLEAN CanEscape, BOOTUI_MEN
             Icon = 2;
         if (Menu->MenuItemIcons && Menu->MenuItemIcons[I] == UiMenuIconNextNT)
         {
-            SplashDrawMark(BootUiPixels, BootUiWidth, BootUiHeight,
-                           (long)(Left + 20 + (RowHeight - 12) / 4),
-                           (long)(Y + RowHeight / 2),
-                           RowHeight - 12 > 16 ? RowHeight - 12 : 16, BootUiAnimationMs);
+            BootUiLogo(Left + 20, Y + (RowHeight - 21) / 2, 2);
             TextInset = 64;
         }
         else if (Menu->MenuItemIcons && Menu->MenuItemIcons[I] == UiMenuIconImage &&
@@ -1086,13 +1063,35 @@ BootUiEraseCountdown(VOID)
     BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
 }
 
+/* One frame of the startup animation. Only the rows above the countdown text
+   are repainted, so the text underneath is not redrawn sixty times a second. */
+static VOID
+BootUiAnimateSplash(VOID)
+{
+    ULONG Bottom;
+
+    if (!BootUiPixels || !UiKeepFirmwareScreen)
+        return;
+
+    BootUiSplashMs += SPLASH_FRAME_MS;
+    Bottom = BootUiHeight > 150 ? BootUiHeight - 150 : BootUiHeight;
+    BootUiSetClip(0, 0, BootUiWidth, (LONG)Bottom);
+    SplashStartup(BootUiPixels, BootUiWidth, BootUiHeight, 0, Bottom, BootUiSplashMs);
+    BootUiPresentRegion(0, Bottom);
+    BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
+}
+
 static VOID
 BootUiDrawCountdown(LONG TimeOut)
 {
     CHAR Text[80];
     ULONG Size = max(14, BootUiFontSize - 3);
+
+    /* The startup screen is the chevrons on black -- the same drawing as the
+       reference artwork, with a gradient that moves inside the strokes. */
+    BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
+    SplashStartup(BootUiPixels, BootUiWidth, BootUiHeight, 0, BootUiHeight, BootUiSplashMs);
     BootUiCountdownClip(Size);
-    BootUiBackground(BootUiHeight);
     RtlStringCbPrintfA(Text, sizeof(Text), "Starting in %ld %s", TimeOut,
                        TimeOut == 1 ? "second" : "seconds");
     BootUiCentered(BootUiHeight - 100, Text, Size, BOOTUI_TEXT);
@@ -1293,7 +1292,7 @@ CheckTimeout:
         }
         if (!Busy && !Redraw)
         {
-            BootUiAnimate();
+            BootUiAnimateSplash();
             MachHwIdle();
         }
     }

@@ -298,6 +298,42 @@
 - **Non si tocca**: catena VBR/NextFS, lettore del primo stadio, formato su disco, logica di menu/input/countdown.
 - **Nota**: `boot/nextldr/nextldr/ui/bootui.c` è la variante testuale (usata nel boot BIOS); se il gradiente va anche
   lì, è un secondo passo con la stessa `splash.cpp`.
+## 2026-10-30 · schermata di avvio disegnata: gradiente animato e chevron (t-2ae77e, commit ff2003e9)
+- **Fatto**: `bootloader/gui/splash.cpp` + `splash.h` (C++ freestanding, nessuna allocazione, nessun costruttore
+  statico, niente eccezioni/RTTI). `SplashFillBackground` riempie un intervallo di righe con una palette di 256
+  colori (navy → zaffiro) il cui indice viene da una rampa diagonale in virgola fissa 16.16, avanzata di una somma
+  per pixel, con dither ordinato 4×4 e fase mossa dal clock: il gradiente scorre. `SplashDrawMark` disegna i due
+  chevron dalla geometria (distanza dai due bracci di ogni tratto, un pixel di antialiasing, ombra verticale e un
+  respiro lento), quindi nessun asset rasterizzato.
+- **Cablaggio** in `bootloader/gui/bootui.c`: `BootUiBackground` dipinge il gradiente rispettando il clip, header e
+  righe del menu usano il marchio disegnato, la barra di caricamento rettangolare è sostituita da una linea sottile
+  sullo stesso gradiente, `BootUiAnimate()` avanza il clock di `SPLASH_FRAME_MS` e ridipinge solo la striscia
+  dell'header quando il menu è fermo (60 FPS senza toccare il testo). `BootUiLogo` rasterizzato rimosso.
+- **Verifiche**: `ninja bootloader` linka `bootmgfw.efi` (1,46 MB) come eseguibile **CXX** senza simboli di runtime
+  C++; due render host a 1,5 s di distanza differiscono in 1.719.991 byte su 1.720.000 (la fase si muove);
+  l'anteprima è in `bootloader/gui/assets/splash-preview.png`.
+- **Da fare/aperto**: la schermata non è mai stata vista su firmware reale (serve OVMF/UEFI: i nostri test di boot
+  sono BIOS). La variante testuale `boot/nextldr/nextldr/ui/bootui.c` non è stata toccata: se il gradiente va anche
+  lì, `splash.cpp` è già riutilizzabile.
+## 2026-10-30 · schermata di avvio rifatta: nero e chevron identici all'immagine (t-e3bae8)
+- **Correzione dopo il primo giro**: il primo tentativo aveva sbagliato tre cose. Sfondo gradiente: no, lo schermo
+  deve essere **nero**. Marchio disegnato dalla geometria: no, deve essere **identico** all'immagine di riferimento,
+  non una semplificazione. E avevo toccato anche il menu e la barra di caricamento: da rifare, si cambia **solo la
+  schermata di avvio**. `bootui.c` e `assets/README.md` sono stati riportati a `ff2003e9~1` prima di ricominciare.
+- **Cosa c'è adesso**: `bootloader/gui/assets/nextnt-mark.alpha` (142×122, un byte per pixel, canale più chiaro
+  del disegno ritagliato al bounding box) è la maschera vera del marchio, passata a bin2c come gli altri asset.
+  `splash.cpp`/`splash.h` espongono `SplashStartup(pixels, w, h, top, bottom, timeMs)`: riempie di nero, poi
+  disegna la maschera scalata (nearest, dimensioni fisse 142×122 note nel file) al centro e, dentro i tratti,
+  un gradiente blu che scorre (una traversata ogni 3 s, fase da `timeMs`). Un solo marchio, niente duplicati.
+- **In `bootui.c` solo tre punti**: include, `BootUiSplashMs`, `BootUiAnimateSplash()` chiamata nel ramo fermo del
+  ciclo del menu *solo* mentre `UiKeepFirmwareScreen` è vero (cioè mentre è visibile la schermata di avvio),
+  e `BootUiDrawCountdown` che dipinge `SplashStartup` al posto di `BootUiBackground`. Menu, voci, barra di
+  caricamento e marchio delle voci non sono stati toccati.
+- **Verifiche**: `ninja bootloader` linka `bootmgfw.efi`; due render host dello stesso codice a 1,2 s di distanza
+  (`startup-t0.png`, `startup-t1200.png`) sono neri con i due chevron al centro e il gradiente che si sposta.
+  In sandbox ho installato QEMU + OVMF e provato a far partire `bootmgfw.efi` da una ESP: OVMF lo esegue e lui
+  esce subito senza disegnare niente (vuole una configurazione di boot valida), quindi lo screenshot su firmware
+  vero resta da fare con un target NextNT configurato.
 <!-- agente:fine -->
 
 Updated automatically by ArenaCode at the end of each job. The API key is not written here.
