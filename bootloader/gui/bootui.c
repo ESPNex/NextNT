@@ -1075,6 +1075,19 @@ BootUiAnimateSplash(VOID)
         return;
 
     BootUiSplashMs += SPLASH_FRAME_MS;
+
+    /* On the first frame the whole screen is painted and presented, not just the
+       band: the firmware's own console text may still be on it, and a splash that
+       only repaints its band would leave that text sitting above the mark. After
+       that, only the band is touched, which is what keeps sixty frames a second
+       cheap. */
+    if (BootUiSplashMs <= SPLASH_FRAME_MS)
+    {
+        SplashStartup(BootUiPixels, BootUiWidth, BootUiHeight, BootUiSplashMs);
+        BootUiPresent();
+        return;
+    }
+
     SplashBand(BootUiPixels, BootUiWidth, BootUiHeight, BootUiSplashMs, &Top, &Bottom);
     if (Bottom > Top)
     {
