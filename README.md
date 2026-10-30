@@ -47,7 +47,7 @@
 
 ---
 
-NextNT is a free NT operating system. The name says it: *liber* is Latin for **free**. It targets **Windows® 11 compatibility**, with room for freestyle and experimental features.
+NextNT is a free NT operating system. The name says it: *next* means **next generation**. It targets **Windows® 11 compatibility**, with room for freestyle and experimental features.
 
 NextNT brings extensive work on kernel-space components and drivers, aimed at stability and modern hardware, and it focuses on 64-bit platforms: **amd64, arm64 and riscv64**.
 
