@@ -73,10 +73,13 @@ StrokeColor(unsigned long Position, unsigned long Phase, unsigned long Depth)
 
     /* Deeper strokes are darker: the same band reads differently on the two
        chevrons, which is what gives the mark its two-tone look. */
-    Red = 6 + (Light * (Depth ? 42 : 22)) / 255;
-    Green = 44 + (Light * (Depth ? 120 : 96)) / 255;
-    Blue = 150 + (Light * (Depth ? 105 : 70)) / 255;
-    (void)Depth;
+    /* Squared light: the bright part of the band stays narrow, the rest of the
+       stroke keeps the deep blue of the artwork. */
+    Light = (Light * Light) / 255;
+
+    Red = 10 + (Light * (Depth ? 52 : 34)) / 255;
+    Green = 62 + (Light * (Depth ? 150 : 122)) / 255;
+    Blue = 158 + (Light * (Depth ? 96 : 78)) / 255;
     return Pack(Red, Green, Blue);
 }
 
