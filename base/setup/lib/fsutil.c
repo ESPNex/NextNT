@@ -24,6 +24,7 @@
 #include <fslib/vfatlib.h>
 #include <fslib/btrfslib.h>
 #include <fslib/ntfslib.h>
+#include <fslib/nextfslib.h>
 // #include <fslib/ext2lib.h>
 
 #define NDEBUG
@@ -168,6 +169,9 @@ static FILE_SYSTEM RegisteredFileSystems[] =
     { L"FATX" , VfatxFormat, VfatxChkdsk },
 #endif
     { L"BTRFS", BtrfsFormat, BtrfsChkdsk },
+    /* NOTE: NextFS formats and checkpoints the volume, and stops there: there is
+     * no NextFS checker, and NextfsChkdsk says so instead of reporting clean. */
+    { L"NEXTFS", NextfsFormat, NextfsChkdsk },
 #if 0
     { L"EXT2" , Ext2Format, Ext2Chkdsk },
     { L"EXT3" , Ext2Format, Ext2Chkdsk },

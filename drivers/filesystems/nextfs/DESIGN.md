@@ -1,4 +1,4 @@
-# NextFS — design (v0.14, branch `nextfs`)
+# NextFS — design (v0.15, branch `nextfs`)
 
 NextFS is the NextNT native file system. It replaces NTFS: there is no `$MFT`, no
 journal replay of file records, no directory indexes (`$I30`) and no change journal
@@ -308,7 +308,7 @@ PIFT record.
 
 ---
 
-## 6. Implementation status (v0.14, branch `nextfs`)
+## 6. Implementation status (v0.15, branch `nextfs`)
 
 Done and tested in this phase:
 
@@ -334,6 +334,7 @@ Done and tested in this phase:
 | boot loader: NextFS reader | `boot/nextldr/nextldr/lib/fs/nextfs_core.c` | 94 checks against an image nextformat wrote: lookups, UTF-8 names, sparse holes, backup superblock, previous checkpoint generation |
 | boot loader: ARC glue | `boot/nextldr/nextldr/lib/fs/nextfs.c` | 24 checks through the DEVVTBL: open/read/seek/query/close, write open refused, seek past EOF refused |
 | installer: format + populate | `nextfslib/tools/nextfsinstall.c` | a 32 MiB image with a five-file tree, every file read back byte for byte through the boot reader |
+| installer: format inside setup | `nextfslib/nextfsformat.c`, `fslib/nextfslib.h` | one PULIB_FORMAT entry point, the same library code the FSD runs; format + mount + checkpoint on a real NT volume |
 
 `nextfslib/tests/nextfs_selftest.c` runs 360 checks (and the two boot-path tests of
 §9.4 add 118 more): format, mount, create/write/
@@ -804,3 +805,81 @@ five, including the one whose name is not ASCII. `nextfsinfo` reads the same ima
 back as a volume with the expected geometry. What has *not* happened is a machine
 booting from it: that needs the real loader build (§9.4) and an installer that runs
 on hardware.
+
+---
+
+## 11. The formatter inside the installer
+
+`base/setup/lib/fsutil.c` has no formatter of its own: it keeps a table of
+`{ name, FormatFunc, ChkdskFunc }` and calls the fslib libraries -- `vfatlib`,
+`ntfslib`, `btrfslib`. That table is the whole integration point, and it is why
+"port the formatter into the installer" turned out to be a smaller job than it
+sounds: the missing piece was not a formatter, it was the entry point.
+
+### 11.1 `nextfsformat.c`
+
+`NextfsFormat()` has the `PULIB_FORMAT` signature, so `fsutil.c` calls it exactly
+like the others. It does four things:
+
+1. opens the volume through `NtOpenFile` with `FILE_NO_INTERMEDIATE_BUFFERING`,
+   tries `FSCTL_LOCK_VOLUME`/`FSCTL_DISMOUNT_VOLUME` (best effort: a volume that
+   is not mounted cannot be locked, which is the normal case during setup), and
+   reads `IOCTL_DISK_GET_DRIVE_GEOMETRY_EX` for the size and sector size;
+2. wraps the handle in the four `NFS_BDEV` callbacks -- `NtReadFile`/`NtWriteFile`
+   with an explicit offset and one shared event, a short transfer treated as an
+   error rather than as data;
+3. calls `NfsFormat`;
+4. **mounts and unmounts once**, because `NfsUnmount` goes through `NfsSync`,
+   which writes the first checkpoint and clears the dirty flag. A volume that is
+   only formatted is a superblock and nothing else, and nextldr reads the
+   checkpoint tree: without this step the volume would format and not boot.
+
+The label goes to the superblock as ASCII (`NFS_LABEL_MAX - 1` bytes at most); a
+cluster size is accepted only if it is a whole multiple of `NFS_CLUSTER_MIN`, and
+otherwise ignored in favour of the default -- a silently different cluster size is
+worse than the default one.
+
+### 11.2 The build target
+
+`nextfslib` is compiled twice. `nextfslib` is the kernel one (`NFS_KERNEL_MODE`,
+pool allocator and clock installed by `nextfs.sys`). `nextfslib_user` is the same
+sources plus `nextfsformat.c`, without that define, and with `malloc`/`free`
+renamed to `NextfsSetupAlloc`/`NextfsSetupFree` -- a native DLL has no CRT, and the
+library's allocator hooks default to `malloc`. `setuplib` links `nextfslib_user`
+next to the other fslib libraries.
+
+So the installer and the driver run **the same format code**. There is no second
+implementation to drift: a bug fixed in the PIFT serialisation is fixed in both.
+
+### 11.3 Partition type 0x4E
+
+`FileSystemToMBRPartitionType()` maps a file system name to an MBR type, and
+`InferFileSystemWorker()` maps it back so that reopening the disk says "NEXTFS"
+rather than "unknown". NextFS claims **0x4E**, unused by anything else in this
+tree, defined in `fsrec.c` rather than in the shared partition-type header because
+it is our number and nobody else's.
+
+### 11.4 What this does not solve: the boot sector
+
+Formatting a NextFS volume is not the same as booting from it. The BIOS chain is
+MBR → partition boot record → `NEXTLDR.SYS` on the volume, and the partition boot
+record has to be able to *read* the file system it lives on. `bootcode.c` installs
+a FAT or NTFS volume boot record; there is no NextFS one yet, so at the moment a
+NextFS volume can hold an installation and be read by nextldr, but it cannot be the
+volume the firmware hands control to. That is the next piece of the switch, and it
+is larger than the formatter: a boot record is ~512 bytes of real-mode code that
+must locate, read and jump to a file in a copy-on-write file system.
+
+Two smaller gaps worth writing down: `NextfsChkdsk` reports
+`STATUS_NOT_IMPLEMENTED` instead of pretending the volume is clean, and it is
+registered as the checker rather than left NULL so the setup's error message is
+honest.
+
+### 11.5 What was verified, and what was not
+
+Verified: the portable core that `nextfslib_user` compiles is the same set that
+passes 360/0 as a host program, and the format path itself (format → mount →
+unmount → checkpoint → read back through the boot reader) is what phase 14
+exercised end to end in `nextfsinstall`. Not verified: the compilation of
+`nextfsformat.c` against the ReactOS user-mode headers and the link into
+`setuplib`, because that needs the real build (§9.4).

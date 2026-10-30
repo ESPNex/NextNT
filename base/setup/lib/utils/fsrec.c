@@ -15,6 +15,14 @@
 #define NDEBUG
 #include <debug.h>
 
+/*
+ * NextFS claims MBR partition type 0x4E, which no other file system in this tree
+ * uses. It is written here and not in the shared partition-type header because
+ * the type has to round-trip through the partition table: a disk formatted as
+ * NextFS and reopened by the setup must come back as NextFS, not as "unknown".
+ */
+#define PARTITION_NEXTFS 0x4E
+
 
 /* FUNCTIONS ****************************************************************/
 
@@ -253,6 +261,10 @@ InferFileSystemWorker(
         /* Could also be HPFS */
         Status = RtlStringCbCopyW(FileSystemName, FileSystemNameSize, L"NTFS");
     }
+    else if (PartitionType == PARTITION_NEXTFS)
+    {
+        Status = RtlStringCbCopyW(FileSystemName, FileSystemNameSize, L"NEXTFS");
+    }
 
 Quit:
     return Status;
@@ -381,6 +393,10 @@ FileSystemToMBRPartitionType(
     else if (_wcsicmp(FileSystem, L"NTFS") == 0)
     {
         return PARTITION_IFS;
+    }
+    else if (_wcsicmp(FileSystem, L"NEXTFS") == 0)
+    {
+        return PARTITION_NEXTFS;
     }
     else if (_wcsicmp(FileSystem, L"BTRFS") == 0 ||
              _wcsicmp(FileSystem, L"EXT2")  == 0 ||
