@@ -46,18 +46,18 @@ namespace
 const unsigned long MaskWidth = 143;
 const unsigned long MaskHeight = 123;
 
-/* The travelling light: one lap along the strokes every ContourPeriodMs, faded
-   in over the first ContourFadeMs so that the reference frame is what the screen
-   shows at boot. ContourStrength is the fraction of the way to the highlight at
-   the crest of the light, out of 255: bright enough to be a reflection moving
-   through the strokes, not so bright that the mark flashes. */
-const unsigned long ContourPeriodMs = 9000;
+/* How long the gradient takes to slide through one full turn, and how long it
+   takes to fade in at boot so that the first frame is the reference image. Twenty
+   seconds: the slide is meant to be noticed only after looking at it for a
+   moment, not a sweep you can follow with your eyes. ContourStrength is how far
+   the colours travel, out of 255. */
+const unsigned long ContourPeriodMs = 20000;
 
 /* How strongly the gradient slides, out of 255: the artwork's own colours moved
    by up to this much towards the pale blue of its highlight. Low on purpose --
    the mark must stay the mark, with light moving inside it. */
 const unsigned long SlideDepth = 96;
-const unsigned long ContourFadeMs = 1400;
+const unsigned long ContourFadeMs = 2000;
 const unsigned long ContourStrength = SlideDepth;
 
 /* Rows are presented in multiples of this, so a frame is one rectangular blit
