@@ -330,6 +330,64 @@ int NfldrBiosReadSectors(u64 Lba, u32 Count, void *Buffer)
 /* NextFS: one read callback, then the library's own reader            */
 /* ------------------------------------------------------------------ */
 
+/* Where the volume starts, in absolute sectors.
+ *
+ * The boot record adds the same number to everything it reads, so a volume
+ * installed inside a partition works; this stage reads the same disk, so it has
+ * to agree. Rather than trust a value handed over in a register, it looks at
+ * sector 0: if there is a partition table with an active entry and a NextFS
+ * superblock at the sector that entry names, that is the base. Anything else
+ * means the volume is at the start of the disk, which is what every earlier
+ * build assumed. */
+#define NFSLDR_PART_TABLE   446u
+#define NFSLDR_PART_ENTRIES 4u
+
+static u64 gVolumeBase;
+
+static int NfldrSuperblockAt(u64 Sector)
+{
+    const u8 *Signature = (const u8 *)NFSLDR_BOUNCE;
+
+    if (NfldrBiosReadSectors(Sector + 8, 1, (void *)NFSLDR_BOUNCE) != 0)
+        return 0;
+
+    return Signature[0] == 'N' && Signature[1] == 'F' &&
+           Signature[2] == 'S' && Signature[3] == 'B';
+}
+
+static void NfldrReadVolumeBase(void)
+{
+    const u8 *Table = (const u8 *)NFSLDR_BOUNCE;
+    u32 Index;
+
+    gVolumeBase = 0;
+
+    if (NfldrBiosReadSectors(0, 1, (void *)NFSLDR_BOUNCE) == 0 &&
+        Table[510] == 0x55 && Table[511] == 0xAA)
+    {
+        for (Index = 0; Index < NFSLDR_PART_ENTRIES; Index++)
+        {
+            const u8 *Entry = Table + NFSLDR_PART_TABLE + Index * 16;
+            u32 Start;
+
+            if (Entry[0] != 0x80 || Entry[4] == 0)
+                continue;
+
+            Start = (u32)Entry[8] | ((u32)Entry[9] << 8) |
+                    ((u32)Entry[10] << 16) | ((u32)Entry[11] << 24);
+
+            if (NfldrSuperblockAt(Start))
+            {
+                gVolumeBase = Start;
+                break;
+            }
+        }
+    }
+
+    if (gVolumeBase == 0 && !NfldrSuperblockAt(0))
+        NfldrPanic("there is no NextFS volume on this disk");
+}
+
 static int VolumeRead(void *Context, NFSB_U64 Offset, void *Buffer, NFSB_U32 Length)
 {
     u8 *Destination = (u8 *)Buffer;
@@ -340,7 +398,7 @@ static int VolumeRead(void *Context, NFSB_U64 Offset, void *Buffer, NFSB_U32 Len
 
     while (Length != 0)
     {
-        Sector = Offset / NFSLDR_SECTOR;
+        Sector = gVolumeBase + Offset / NFSLDR_SECTOR;
         Skip = (u32)(Offset % NFSLDR_SECTOR);
 
         if (Skip == 0 && Length >= NFSLDR_SECTOR && (u32)Destination < 0x100000)
@@ -459,23 +517,15 @@ void NfldrMain(void)
     NfldrBiosInit();
     NfldrPuts("NextFS stage 1\n");
 
-    /* One read before the file system is asked for anything: if the signature
-       is not there, the trouble is the disk path and not the format, and saying
-       "corrupt volume" for a disk error costs an hour every time. */
-    if (NfldrBiosReadSectors(8, 1, (void *)NFSLDR_BOUNCE) != 0)
+    /* Where the volume starts, before anything reads through it. This also
+       proves the disk answers, which is why it comes before the mount: a disk
+       error reported as a corrupt volume costs an hour every time. */
+    NfldrReadVolumeBase();
+    if (gVolumeBase != 0)
     {
-        NfldrPuts("NF: the boot disk cannot be read, drive ");
-        NfldrPrintHex(NFSLDR_BIOS_DRIVE());
+        NfldrPuts("NF: the volume starts at sector ");
+        NfldrPrintDec((u32)gVolumeBase);
         NfldrPuts("\n");
-        NfldrPanic("no disk");
-    }
-    {
-        const u8 *Signature = (const u8 *)NFSLDR_BOUNCE;
-        if (Signature[0] != 'N' || Signature[1] != 'F' ||
-            Signature[2] != 'S' || Signature[3] != 'B')
-        {
-            NfldrPanic("sector 8 is not a NextFS superblock");
-        }
     }
 
     ArenaNext = NFSLDR_ARENA_BASE;

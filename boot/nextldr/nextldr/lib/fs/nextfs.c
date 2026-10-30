@@ -17,6 +17,9 @@
 
 #include <nextldr.h>
 
+#include <debug.h>
+DBG_DEFAULT_CHANNEL(DISK);
+
 #include <fs/nextfs.h>
 
 #define TAG_NEXTFS_VOLUME 'VftF'
@@ -269,6 +272,7 @@ NextFsMount(ULONG DeviceId)
     NFSB_IO Io;
     NFSB_HEAP Heap;
     ULONGLONG DeviceBytes = 0;
+    int Status;
 
     if (DeviceId >= MAX_FDS)
         return NULL;
@@ -289,8 +293,15 @@ NextFsMount(ULONG DeviceId)
     Heap.Alloc = NextFsHeapAlloc;
     Heap.Free = NextFsHeapFree;
 
-    if (NFSB_Mount(&Io, &Heap, &Volume) != NFSB_OK)
+    Status = NFSB_Mount(&Io, &Heap, &Volume);
+    if (Status != NFSB_OK)
+    {
+        /* Silent until now: a mount that fails here leaves the loader
+           trying every other file system and then saying nothing. */
+        TRACE("NextFsMount: device %lu is not a NextFS volume (status %ld, %lu bytes)\n",
+              DeviceId, (long)Status, (unsigned long)DeviceBytes);
         return NULL;
+    }
 
     if (Volume->DirtyAtMount)
         FileSystemError("NextFS volume was not shut down cleanly: booting from its last checkpoint.");

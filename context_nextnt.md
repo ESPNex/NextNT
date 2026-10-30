@@ -232,7 +232,61 @@
 - QEMU, volume da 64 MiB formattato da nextfsinstall: la schermata dice "NF: volume NEXTNT, format 5, 5 records / NF: /ReactOS/nextldr.sys, 329216 bytes / NF: image at 0x10000, entry 0x10f38 / Starting NextNT loader...". nextldr parte davvero, fa alcune chiamate BIOS attraverso il nostro dispatcher, poi **#GP(0x18)** sul far jump verso la metà real-mode (descrittore e GDT intatti al momento del fault). Prossimo passo: capire se nextldr vuole il proprio `SwitchToReal` (con la sua GDT) invece del nostro entry point.
 - Aperto: offset di partizione nel boot descriptor (oggi il volume si legge da LBA 0 assoluto), UEFI e le altre architetture, e la potatura dei filesystem non-NextFS dal cammino di boot.
 
+## 2026-10-30 · Fase 3: BOOT.MAN, il volume dice di cosa e' fatto un boot (t-8e6a74)
+- Commit **8bc81e47** su espnex/nextfs ("BOOT.MAN: the volume says what a boot is made of, and what it must hash to"). Fase 4 (kernel che consuma il boot image in memoria) **non iniziata**: serve un PE loader da memoria dentro winldr piu' il lato ntoskrnl, e va fatta con una sua verifica.
+- Nuovo `/BOOT.MAN` alla radice del volume NextFS: testo, `version`, `default`, `timeout`, sezioni `[os Nome]`, righe `ruolo = percorso [hash=8cifre] [size=N]`. Ruoli noti: kernel, hal, hive, driver, module, config, setup; quelli sconosciuti restano. Percorsi relativi alla radice del volume.
+- Parser unico condiviso: `boot/nextldr/nextldr/include/fs/nextfs_manifest.h` + `lib/fs/nextfs_manifest.c` (nessuna libc, nessuna allocazione, FNV-1a 32). Compilato sia in nextfsldr sia in nextldr. Test host del parser: 20 check, 0 failure (BOM, CRLF, path fra virgolette, hash esadecimale con e senza 0x, sezioni, overflow della tabella contato e non fatale).
+- Primo stadio (`stage1.c`): legge `/BOOT.MAN` prima di `NEXTLDR.CNF`, prende il percorso del kernel dal manifest, e **verifica l'hash del file prima del salto**. Senza manifest si comporta come prima.
+- nextldr (`lib/fs/bootman.c` + `include/fs/bootman.h`): legge il manifest via ARC, `BootManApply()` riscrive `/KERNEL=` e `/HAL=` quando le opzioni di boot contengono `BOOTMAN` (spento di default), dopo aver verificato l'hash del kernel. Agganciato in `winldr.c` subito dopo `NtLdrNormalizeOptions`.
+- Verificato in QEMU (immagine 64 MiB, nextfsinstall): `NF: /BOOT.MAN version 1, 2 files, booting nextnt` / `NF: image hash 0xc4f9bd90, as the manifest says`; con l'hash cambiato a `0000beef` il boot si ferma con `NF: the boot image does not match the manifest`. `ninja nextldr` e `ninja nextfsldr` verdi (nextfsldr 12360 B, nextldr.sys 329216 B).
+- Nota operativa: piu' `ninja` lanciati in parallelo (dopo timeout del client) si bloccano a vicenda sul reconfigure; ucciderli con `pkill -9 ninja` prima di rilanciare. Il build completo di nextldr richiede ~12 minuti dopo un cambio di CMakeLists.
+- Resta aperto: il `#GP(0x18)` dentro nextldr dopo l'handoff (fase 1), e la fase 4.
+
+## 2026-10-30 · Il #GP(0x18) era il contratto real-mode (t-b85109)
+- Commit **aa4fe6b9** su espnex/nextfs ("Return real-mode calls to the loader entry point it expects").
+- Causa del #GP: il nostro stub tornava sempre a `NfldrRealReturn`, mentre nextldr si aspetta di rientrare nel **proprio entry point** (`pm_entrypoint`), che ricarica il suo IDT, ripristina il suo stack a 32 bit da `stack32` e continua via `ContinueAddress`. Da li' in poi il `ret` finiva su un indirizzo che non era codice.
+- Fix in `stage1.S`: due ingressi (`switch_to_real16` per nextldr, `switch_to_real16_local` per le nostre letture INT 13h), una variabile `return_to_local` che attraversa il giro in real mode, uscita riscritta come stub **32-bit** (ljmp con offset a 32 bit + `jmp [pm_entrypoint]`), e `NfldrSetLoaderEntry()` chiamata da `stage1.c` prima del salto per scrivere l'entry del PE.
+- Verificato: triple fault sparito; nel log `-d in_asm` si vede il loader eseguire 0x10f38 -> 0x10f5d -> ... -> 0x20359 (init di BSS e strutture), non piu' un salto a caso.
+- **Nuovo blocco, aperto**: al primo `int 0x10` (pcvideo.c, mode set) la CPU finisce a 0x00000000 -> esegue l'IVT come codice e distrugge la memoria bassa. Misurato: il vettore `int 10h` vale `0xC000563F` **al momento dell'handoff** (diagnostica temporanea, poi rimossa) e vale 0 quando la chiamata parte: qualcosa in nextldr lo azzera fra i due punti. Candidati da guardare: InitIdt, la pulizia della BSS, e `BIOSCALLBUFFER` a 0x4000-0x4FFF (il nostro DAP sta a 0x4F00: innocuo dopo l'handoff, da ricontrollare).
+- Metodo che ha funzionato: `-d in_asm,int,cpu_reset` su /tmp/nfv/q5.log piu' script python che stampano i blocchi nell'ordine; il registro/monitor di QEMU per lo stato finale (CR0, IVT, blocco registri a 0x6F00). gdb non c'e' su WSL: niente watchpoint, quindi il prossimo passo e' strumentare il loader o provare bochs.
+- Punto 4 (ntoskrnl che consuma il boot image in memoria) **non iniziato**: richiede un PE loader da memoria in winldr e il lato kernel, e va fatto con una sua verifica.
+
+## 2026-10-30 · La catena di boot si chiude fino a nextldr (t-755a2b)
+- Commit **669a61e0** su espnex/nextfs ("Put back the interrupt vectors nextldr loses, and let it run").
+- Causa del blocco dopo il fix del #GP: nextldr azzera **la tabella dei vettori** (o la sovrascrive), e la prima `int 0x10` finiva a 0000:0000 eseguendo l'IVT come codice. Misurato con un client GDB-remote scritto a mano (niente gdb su WSL): watchpoint su 0x40, writer = il BIOS stesso (`c000:4067`), e IVT azzerata dopo l'handoff.
+- Fix: `enter_real16` ripristina i vettori che valgono 0000:0000 prima di ogni chiamata BIOS. Backup preso in `stage1.c` prima del salto (`gIvtBackup`, `.bss` sotto 1 MiB) e indirizzo passato via `NfldrSetIvtBackup()`.
+- **Trappola grossa**: il ripristino va fatto DOPO aver spento PE e caricato l'IDT real-mode. Con PE attivo `mov ds, 0x7808` passa per la GDT e dà `#GP(0x7808)`.
+- Risultato verificato in QEMU: nextldr parte davvero e usa il nostro dispatcher. Serial log: `BootMain() called`, `Drive 0x80: INT 13h Extended version: 0x30`, parametri EDD, `DiskInitialize(0x80, multi(0)disk(0)rdisk(0))`, `FsRegisterDevice(...)`, `BIOS reports 1 harddisk`.
+- **Nuovo blocco, preciso**: `disk/part_mbr.c: No bootable (active) partitions found`. L'immagine di test è un volume NextFS nudo a LBA 0, senza MBR: nextldr vuole una partizione attiva per montare il volume. Poi prova `\rosload.exe` e `\loader\rosload.exe` e non li trova (non sono nell'immagine).
+- Prossimo passo concreto, in due pezzi: (1) base LBA di partizione — il VBR deve leggere la partizione da DS:SI (offset 8 = LBA di partenza), sommarla a ogni lettura e passarla al primo stadio; (2) immagine di test con MBR attivo tipo 0x4E a LBA 2048 e NextFS lì dentro, con `rosload.exe` nel volume (serve un bootcd costruito).
+- Metodo che ha funzionato: `-d in_asm,int` + python che stampa i blocchi; QEMU `screendump` (formato P6/PNM, convertire con `convert`) per analisi visiva; monitor unix per registri; client RSP su `-gdb tcp::1234`.
+
 <!-- agente:fine -->
 
 Updated automatically by ArenaCode at the end of each job. The API key is not written here.
 
+
+
+## 2026-10-30 · nextldr nomina il volume nudo e arriva a rosload.exe (t-ebe131)
+
+- **rosload.exe non linkava**: `ntldr/winldr.c` chiama `BootManApply()` (`lib/fs/bootman.c`, punto 3) ma la funzione
+  non era esportata da nextldr.sys, e rosload è un eseguibile separato che importa da nextldr. Aggiunta la voce a
+  `boot/nextldr/nextldr/nextldr.spec`; `ninja rosload` produce ora 384 KB.
+- **Immagine di prova**: volume NextFS nudo a LBA 0 (nessun MBR) con `\BOOT.MAN`,
+  `\ReactOS\{NEXTLDR.INI, nextldr.sys, nextfsldr.sys, rosload.exe}`, `\rosload.exe`, `\loader\rosload.exe`.
+- **nextldr rifiutava il volume** perché `disk/part_mbr.c` pretende una partizione attiva: il settore 0 del VBR porta
+  comunque 0xAA55 e le quattro “voci” sono i byte del boot code, quindi il rilevamento generico lo chiamava MBR.
+  Ora `DiskDetectPartitionType()` (`disk/partition.c`) chiede che almeno una voce descriva una partizione davvero
+  (tipo ≠ 0, conteggio ≠ 0, boot 0x00/0x80, e fine entro il disco); se non ce n'è nessuna il disco è
+  `PARTITION_STYLE_RAW` e la partizione 1 è il disco intero (`DiskGetRawPartitionEntry()`, tipo 0x4E = `PARTITION_NEXTFS`).
+- **Effetto**: seriale con `Drive 0x80 partition type RAW, no partition table`, `FsRegisterDevice(...partition(1))`, e il
+  secondo stadio cercato su `multi(0)disk(0)rdisk(0)partition(1)\rosload.exe` — il percorso giusto.
+- **Nuovo muro**: la FS layer prova `IsoMount`, `FatMount`, `BtrFsMount` e poi **riparte da `IsoMount`**, senza mai
+  arrivare a `NextFsMount`: sembra una ricorsione dentro `BtrFsMount` (una lettura fatta mentre il volume non è ancora
+  montato richiama il mount). Schermo vuoto, ciclo senza fine, ~230 giri in 14 s.
+- **Traccia aggiunta** in `NextFsMount()` (canale DISK) per non lasciare muto un mount fallito: non è ancora stata
+  raggiunta, quindi il mount NextFS non viene nemmeno tentato.
+- **VBR con gli hidden sectors abbandonato e revertito**: con l'immagine partizionata il VBR stampa `NF: novol`.
+  Il `add dword ptr [DapLba], eax` non ha effetto osservabile (DapLba resta 8 anche con HiddenLba=0x11223344 in memoria),
+  mentre codice e dati in RAM coincidono col settore su disco: da riprendere con calma.
+- **ntoskrnl non compila ancora**: `ninja ntoskrnl` si ferma, quindi rosload.exe non ha ancora un kernel da caricare.

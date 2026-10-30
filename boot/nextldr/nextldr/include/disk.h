@@ -45,6 +45,7 @@ typedef struct _GEOMETRY
 #define PARTITION_PREP                  0x41      // PowerPC Reference Platform (PReP) Boot Partition
 #define PARTITION_LDM                   0x42      // Logical Disk Manager partition
 #define PARTITION_GPT                   0xEE      // GPT protective partition
+#define PARTITION_NEXTFS                0x4E      // NextFS (a whole-disk volume)
 
 
 ///////////////////////////////////////////////////////////////////////////////

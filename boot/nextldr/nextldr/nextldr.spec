@@ -103,6 +103,7 @@
 @ cdecl FsGetServiceName()
 @ cdecl FsOpenFile() # Why not ArcOpen?
 @ cdecl GetArgumentValue()
+@ cdecl BootManApply() # lib/fs/bootman.c: BOOT.MAN rewrites /KERNEL= and /HAL=
 @ cdecl GetBootMgrInfo()
 @ cdecl IsAcpiPresent()
 @ cdecl LoadSettings()
