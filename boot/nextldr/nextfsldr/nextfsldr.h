@@ -102,6 +102,10 @@ extern u8 boot_drive;
 /* Real-mode calls out of the 32-bit half. */
 void NfldrCallReal(u16 FunctionId);
 
+/* Where nextldr's image starts, so that a real-mode call made from inside the
+   loader comes back to the loader: its stub returns through this address. */
+void NfldrSetLoaderEntry(u32 EntryPoint);
+
 /* 32-bit helpers */
 void NfldrPanic(const char *Message) __attribute__((noreturn));
 void NfldrPuts(const char *Text);

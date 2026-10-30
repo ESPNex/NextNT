@@ -203,9 +203,10 @@ NfldrCallReal:
     mov     dword ptr [stack32_save], esp
     mov     bx, word ptr [ebp + 8]
 
-    /* ljmp RMODE_CS:switch_to_real16 */
+    /* ljmp RMODE_CS:switch_to_real16_local. Ours, not nextldr's: the return
+       path comes back to NfldrRealReturn, which is this loader's own code. */
     .byte   0xEA
-    .long   switch_to_real16
+    .long   switch_to_real16_local
     .word   RMODE_CS
 
 .global NfldrRealReturn
@@ -262,8 +263,24 @@ stack32_save:
 .section .lowblob, "ax"
 .code16
 
-/* Entered from protected mode with CS:RMODE_CS. */
+/* Entered from protected mode with CS:RMODE_CS.
+ *
+ * Two ways in, and the difference is where the exit goes. nextldr comes in
+ * through the address it found in BSS_RealModeEntry and has to be returned to
+ * its own entry point, because that is the code that reloads the IDT, restores
+ * its 32-bit stack from its own variable and jumps through its ContinueAddress.
+ * This loader's own INT 13h calls come in through switch_to_real16_local and go
+ * back where NfldrCallReal expects them. Both want the same real-mode machine,
+ * so the only difference is one byte, kept in low memory because there is
+ * nowhere else that survives the trip. */
 switch_to_real16:
+    mov     byte ptr cs:[return_to_local], 0
+    jmp     enter_real16
+
+switch_to_real16_local:
+    mov     byte ptr cs:[return_to_local], 1
+
+enter_real16:
     /* Restore the segment registers to the real-mode limit */
     mov     ax, RMODE_DS
     mov     ds, ax
@@ -312,18 +329,50 @@ exit_to_protected:
     or      eax, CR0_PE
     mov     cr0, eax
 
-    /* ljmp PMODE_CS:inpmode */
-    .byte   0xEA
-    .word   inpmode
+    /* ljmp PMODE_CS:inpmode32, with a 32-bit offset: the segment it lands in is
+       a 32-bit one, so the stub there is 32-bit code and says so instead of
+       relying on how the decoder happens to read the bytes. */
+    .byte   0x66, 0xEA
+    .long   inpmode32
     .word   PMODE_CS
 
-inpmode:
-    /* jmp dword ptr [pm_entrypoint] */
-    .byte   0xFF, 0x25
-    .word   pm_entrypoint, 0
+.code32
+inpmode32:
+    mov     ax, PMODE_DS
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
+    mov     ss, ax
 
+    cmp     byte ptr ds:[return_to_local], 0
+    jne     .Llocal_return
+
+    /* nextldr: its own entry point, which reloads its IDT, restores its 32-bit
+       stack and continues through its ContinueAddress, exactly as its own stub
+       did. Getting this wrong is what the first triple fault was. */
+    jmp     dword ptr ds:[pm_entrypoint]
+
+.Llocal_return:
+    jmp     NfldrRealReturn
+
+/* Where nextldr's image starts, written by the C side before the jump because
+   only it knows what the PE header said. */
+.global NfldrSetLoaderEntry
+NfldrSetLoaderEntry:
+    mov     eax, dword ptr [esp + 4]
+    mov     dword ptr ds:[pm_entrypoint], eax
+    ret
+
+.align 4
+.global pm_entrypoint
 pm_entrypoint:
-    .long   NfldrRealReturn
+    .long   0
+
+return_to_local:
+    .byte   0
+
+.code16
 
 CallbackTable:
     .word   Int386

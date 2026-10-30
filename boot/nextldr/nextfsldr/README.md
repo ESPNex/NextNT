@@ -139,7 +139,30 @@ On the nextldr side the manifest is applied only when the boot options contain
 `BOOTMAN`: `BootManApply()` then rewrites `/KERNEL=` and `/HAL=` from the file,
 after checking the kernel hash. Off by default, on purpose.
 
-## What is not here yet
+## The real-mode contract
+
+The first stage has to be two things at once, and the fault that took the longest
+to find lived exactly between them.
+
+nextldr talks to the BIOS through a register block at `0x6F08` and an entry point
+at `0x6F00`. It fills the block, sets `ContinueAddress`, and far-jumps into
+whatever `0x6F00` points at with selector `0x18`. When the interrupt has run, the
+stub has to put the machine back into 32-bit protected mode and then jump to
+**the loader's own entry point**, because that is the code that reloads the
+loader's IDT, restores the loader's 32-bit stack from its own variable and
+continues through `ContinueAddress`. Returning anywhere else looks like it works
+until the next `ret`, and then the machine is executing an address that was
+never code.
+
+So there are two ways into the real-mode half and two ways out:
+
+- nextldr enters at `switch_to_real16` and leaves through `pm_entrypoint`, which
+  the C side fills with the entry point of the image it just loaded;
+- this stage's own INT 13h reads enter at `switch_to_real16_local` and leave
+  through `NfldrRealReturn`, which is ordinary 32-bit code in this image.
+
+The exit stub is 32-bit code entered with a 32-bit far jump, not 16-bit bytes
+that happen to decode differently in a `D=1` segment.## What is not here yet
 
 - A partition offset. The stage reads the volume it was booted from at absolute
   LBA 0, which is what the volume boot record does too; booting NextFS from a

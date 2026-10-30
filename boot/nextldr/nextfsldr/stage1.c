@@ -657,6 +657,10 @@ void NfldrMain(void)
     NfldrPrintHex(Entry);
     NfldrPuts("\nStarting NextNT loader...\n");
 
+    /* nextldr returns from every real-mode call through this address: its own
+       entry point, which reloads its IDT and continues where it left off. */
+    NfldrSetLoaderEntry(Entry);
+
     *(volatile u8 *)NFSLDR_BSS_BOOT_DRIVE = NFSLDR_BIOS_DRIVE();
     *(volatile u8 *)NFSLDR_BSS_BOOT_PARTITION = NFSLDR_BOOT_PARTITION;
 
