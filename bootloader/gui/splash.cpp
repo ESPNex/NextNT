@@ -52,6 +52,10 @@ const unsigned long MaskHeight = 123;
    the crest of the light, out of 255: bright enough to be a reflection moving
    through the strokes, not so bright that the mark flashes. */
 const unsigned long ContourPeriodMs = 3600;
+
+/* Half-width of the light along the stroke, in the 0..255 scale of the position
+   asset: about a third of the stroke is lit at any moment. */
+const unsigned long LightWidth = 88;
 const unsigned long ContourFadeMs = 700;
 const unsigned long ContourStrength = 122;
 
@@ -207,15 +211,54 @@ SampleArtwork(unsigned long MulX, unsigned long MulY)
     return Pack(Red >> 16, Green >> 16, Blue >> 16);
 }
 
-/* Where the light is, 0..255, for a pixel Contour of the way along its stroke:
-   a cosine, so it has no edge anywhere in the lap. */
+/* How bright the travelling light is at stroke position Position (0 at one tip,
+   128 at the bend, 255 at the other tip), when the light itself is at Position
+   Wave and its half-width is Width. Two factors:
+     - the bump, a cosine across the distance between the two positions, so the
+       light has no edge of its own;
+     - the taper, a sine over the whole stroke, which brings the light up from
+       nothing at the first tip and down to nothing at the second. That taper is
+       what lets the light re-enter at the beginning of the next lap without a
+       jump: there is nothing to jump from, because it arrives and leaves empty.
+   The result is 0..65535, not 0..255: the low bits are kept so the caller can
+   dither them instead of banding them. */
 unsigned long
-ContourLight(unsigned long Contour, unsigned long Phase)
+ContourLight(unsigned long Position, unsigned long Wave, unsigned long Width)
 {
-    unsigned long Angle = (Phase + 16384 - Contour * 257) & 0xFFFF;
-    unsigned long Value = (unsigned long)((65536 + CosQ16(Angle)) / 2) >> 8;
+    unsigned long Distance = Position > Wave ? Position - Wave : Wave - Position;
+    unsigned long Bump, Taper;
 
-    return Value > 255 ? 255 : Value;
+    if (Distance >= Width)
+        return 0;
+
+    /* 0..65535 across the bump, full at the centre and empty at the edge. */
+    Bump = (unsigned long)((65536 + CosQ16(((Distance * 65536) / Width) & 0xFFFF)) / 2);
+    Bump = (Bump * Bump) >> 16;
+
+    /* A window over the whole stroke: zero at both tips, full at the bend. Half
+       a turn of the same sine, not a whole one, because the stroke is a single
+       run from tip to tip and the light must die out at both ends of it. */
+    Taper = (unsigned long)SinQ16((Position * 32768) / 255);
+    if (Taper > 65535) Taper = 65535;
+
+    return (Bump * Taper) >> 16;
+}
+
+/* Ordered four by four dither, 0..15. Added to the low bits of the light, it
+   turns what would be a visible band across a stroke into a fine grain that the
+   eye reads as a smooth gradient. */
+unsigned long
+Dither4x4(unsigned long Y, unsigned long X)
+{
+    static const unsigned char Table[16] =
+    {
+         0,  8,  2, 10,
+        12,  4, 14,  6,
+         3, 11,  1,  9,
+        15,  7, 13,  5
+    };
+
+    return Table[((Y & 3) << 2) | (X & 3)];
 }
 
 } /* namespace */
@@ -225,7 +268,7 @@ SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
            unsigned long TimeMs, unsigned long *Top, unsigned long *Bottom)
 {
     unsigned long MarkH, MarkW, Left, MarkTop, First, Last, Y, X;
-    unsigned long ScaleX, ScaleY, Phase, Strength;
+    unsigned long ScaleX, ScaleY, Phase, Wave, Strength;
 
     if (Top) *Top = 0;
     if (Bottom) *Bottom = 0;
@@ -248,9 +291,12 @@ SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
     ScaleX = (MaskWidth << 16) / MarkW;
     ScaleY = (MaskHeight << 16) / MarkH;
 
-    /* One lap every ContourPeriodMs, in 16.16, continuous: the caller advances a
-       millisecond at a time, so the light moves by a fraction of a step. */
-    Phase = (unsigned long)(((unsigned long long)(TimeMs % ContourPeriodMs) * 65536ull) / ContourPeriodMs) & 0xFFFF;
+    /* The light sweeps the whole stroke once per lap, from one tip through the
+       bend to the other tip. Its position is in 0..255 so it shares the scale of
+       the asset, and it is computed in 16.16 so a frame moves it by a fraction of
+       a step rather than in jumps. */
+    Phase = (unsigned long)(((unsigned long long)(TimeMs % ContourPeriodMs) * 255ull * 65536ull / ContourPeriodMs)) & 0xFFFF;
+    Wave = Phase >> 8;
 
     /* Faded in, so the screen at time zero is the reference frame. */
     Strength = TimeMs >= ContourFadeMs ? ContourStrength : (ContourStrength * TimeMs) / ContourFadeMs;
@@ -274,7 +320,12 @@ SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
 
             Color = SampleArtwork(MulX, MulY);
             Contour = SampleByte(bootui_markpath, MulX, MulY);
-            Light = (ContourLight(Contour, Phase) * Strength) / 255;
+
+            /* The light in sixteen bits, dithered down to eight: the low bits
+               decide between two neighbouring levels, so a slow gradient gets a
+               grain instead of a band. */
+            Light = (ContourLight(Contour, Wave, LightWidth) * Strength) >> 8;
+            Light = (Light >> 8) + (((Light & 0xFF) > Dither4x4(Y, X) * 16) ? 1 : 0);
 
             /* The light pulls the pixel part of the way towards the highlight,
                the pale blue the artwork already reaches near the bend. */
