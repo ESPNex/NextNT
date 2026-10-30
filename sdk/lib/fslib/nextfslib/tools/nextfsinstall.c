@@ -323,16 +323,78 @@ typedef struct _BOOT_DESC
 #pragma pack(pop)
 
 /*
- * The boot record is a 512-byte image built from boot/nextldr/bootsect/nextfs.S.
- * It is written verbatim: this tool does not know what is inside it, and the
- * only thing the two agree on is that sector 0 is its.
+ * The boot record reads the superblock and the descriptor at fixed sector
+ * numbers, and it holds them as immediates inside the two instructions that
+ * fill in the disk address packet: 8 for the superblock and 1 for the
+ * descriptor, both counted from the start of the volume. On a volume that
+ * occupies the whole disk those are disk sector numbers; inside a partition
+ * they are not, and the difference is the partition's starting sector, which
+ * only the installer knows. Adding it here rather than at run time keeps the
+ * record free of arithmetic -- 512 bytes do not have room for it -- and makes
+ * what is on the disk a plain absolute number.
+ *
+ * The encoding looked for is what the assembler produces for
+ *     mov dword ptr [DapLba], <lba>
+ * in 16-bit code: 66 C7 06, the 16-bit DapLba address, then the immediate.
  */
 static int
-WriteBootCode(PNFS_BDEV Device, const char *Path)
+PatchBootSectorBase(unsigned char *Sector, nfs_u64 BaseLba)
+{
+    unsigned Patched = 0;
+    unsigned i;
+
+    if (BaseLba > 0xFFFFFFFFull)
+    {
+        fprintf(stderr, "nextfsinstall: --hidden-sectors %llu is past 32 bits\n",
+                (unsigned long long)BaseLba);
+        return NFS_EINVAL;
+    }
+
+    for (i = 0; i + 9 <= BOOT_SECTOR_SIZE; i++)
+    {
+        nfs_u32 Immediate;
+        nfs_u32 Value;
+
+        if (Sector[i] != 0x66 || Sector[i + 1] != 0xC7 || Sector[i + 2] != 0x06)
+            continue;
+
+        Immediate = (nfs_u32)Sector[i + 5] | ((nfs_u32)Sector[i + 6] << 8) |
+                    ((nfs_u32)Sector[i + 7] << 16) | ((nfs_u32)Sector[i + 8] << 24);
+        if (Immediate != 8 && Immediate != 1)
+            continue;
+
+        Value = Immediate + (nfs_u32)BaseLba;
+        Sector[i + 5] = (unsigned char)(Value & 0xFF);
+        Sector[i + 6] = (unsigned char)((Value >> 8) & 0xFF);
+        Sector[i + 7] = (unsigned char)((Value >> 16) & 0xFF);
+        Sector[i + 8] = (unsigned char)((Value >> 24) & 0xFF);
+        Patched++;
+    }
+
+    if (Patched != 2)
+    {
+        fprintf(stderr,
+                "nextfsinstall: the boot record does not carry the two sector "
+                "numbers of boot/nextldr/bootsect/nextfs.S (%u of 2 found)\n",
+                Patched);
+        return NFS_EINVAL;
+    }
+
+    return NFS_OK;
+}
+
+/*
+ * The boot record is a 512-byte image built from boot/nextldr/bootsect/nextfs.S.
+ * Its code is written verbatim -- this tool does not know what is inside it --
+ * except for the two sector numbers described above.
+ */
+static int
+WriteBootCode(PNFS_BDEV Device, const char *Path, nfs_u64 BaseLba)
 {
     unsigned char Sector[BOOT_SECTOR_SIZE];
     FILE *File;
     size_t Read;
+    int Status;
 
     File = fopen(Path, "rb");
     if (!File)
@@ -357,6 +419,10 @@ WriteBootCode(PNFS_BDEV Device, const char *Path)
         fprintf(stderr, "nextfsinstall: %s has no 0xAA55 signature\n", Path);
         return NFS_EINVAL;
     }
+
+    Status = PatchBootSectorBase(Sector, BaseLba);
+    if (Status != NFS_OK)
+        return Status;
 
     return Device->Write(Device->Context, 0, Sector, sizeof(Sector));
 }
@@ -415,7 +481,7 @@ LookupVolumePath(PNFS_VOLUME Volume, const char *VolumePath, NFS_PIFT_RECORD *Ou
 
 static int
 WriteBootDescriptor(PNFS_VOLUME Volume, PNFS_BDEV Device, const char *VolumePath,
-                    nfs_u32 LoadSegment, nfs_u32 EntrySegOffset)
+                    nfs_u32 LoadSegment, nfs_u32 EntrySegOffset, nfs_u64 BaseLba)
 {
     static BOOT_DESC Descriptor;
     NFS_PIFT_RECORD Record;
@@ -478,7 +544,9 @@ WriteBootDescriptor(PNFS_VOLUME Volume, PNFS_BDEV Device, const char *VolumePath
                     (unsigned long long)Extent->Vcn);
             return NFS_EINVAL;
         }
-        Descriptor.Runs[i].Lba = Extent->Lcn * SectorsPerCluster;
+        /* Absolute sector numbers, like the boot record's: the record loads
+           these runs with INT 13h and never adds anything to them. */
+        Descriptor.Runs[i].Lba = BaseLba + Extent->Lcn * SectorsPerCluster;
         Descriptor.Runs[i].Sectors = (nfs_u32)(Extent->Length * SectorsPerCluster);
     }
     Descriptor.Header.RunCount = (nfs_u16)i;
@@ -509,6 +577,7 @@ main(int argc, char **argv)
     const char *BootLoaderPath = NULL;
     nfs_u32 BootLoadSegment = 0x1000;
     nfs_u32 BootEntry = 0;
+    nfs_u64 HiddenSectors = 0;
     IMAGE_DEVICE ImageDevice;
     NFS_BDEV Device;
     PNFS_VOLUME Volume = NULL;
@@ -539,6 +608,8 @@ main(int argc, char **argv)
             BootLoadSegment = (nfs_u32)strtoul(argv[++i], NULL, 16);
         else if (strcmp(argv[i], "--boot-entry") == 0 && i + 1 < argc)
             BootEntry = (nfs_u32)strtoul(argv[++i], NULL, 16);
+        else if (strcmp(argv[i], "--hidden-sectors") == 0 && i + 1 < argc)
+            HiddenSectors = strtoull(argv[++i], NULL, 10);
         else
         {
             fprintf(stderr,
@@ -547,7 +618,8 @@ main(int argc, char **argv)
                     "                     [--no-format]\n"
                     "                     [--boot-code <512-byte VBR>]\n"
                     "                     [--boot-loader <volume path>]\n"
-                    "                     [--boot-load <hex segment>] [--boot-entry <hex seg:off>]\n");
+                    "                     [--boot-load <hex segment>] [--boot-entry <hex seg:off>]\n"
+                    "                     [--hidden-sectors <n>]\n");
             return 2;
         }
     }
@@ -633,7 +705,8 @@ main(int argc, char **argv)
     {
         nfs_u32 Entry = BootEntry ? BootEntry : BootLoadSegment << 16;
 
-        Status = WriteBootDescriptor(Volume, &Device, BootLoaderPath, BootLoadSegment, Entry);
+        Status = WriteBootDescriptor(Volume, &Device, BootLoaderPath, BootLoadSegment, Entry,
+                                     HiddenSectors);
         if (Status != NFS_OK)
         {
             NfsUnmount(Volume);
@@ -644,14 +717,18 @@ main(int argc, char **argv)
 
     if (BootCodePath)
     {
-        Status = WriteBootCode(&Device, BootCodePath);
+        Status = WriteBootCode(&Device, BootCodePath, HiddenSectors);
         if (Status != NFS_OK)
         {
             NfsUnmount(Volume);
             fclose(ImageDevice.File);
             return 1;
         }
-        printf("boot record: %s in sector 0\n", BootCodePath);
+        if (HiddenSectors)
+            printf("boot record: %s in sector 0, volume starts at sector %llu\n",
+                   BootCodePath, (unsigned long long)HiddenSectors);
+        else
+            printf("boot record: %s in sector 0\n", BootCodePath);
     }
 
     NfsUnmount(Volume);              /* checkpoints: the boot reader needs the tree */

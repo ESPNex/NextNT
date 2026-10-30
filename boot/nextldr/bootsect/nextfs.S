@@ -17,6 +17,15 @@
  *   3. loads the payload -- a flat image listed as runs of absolute sectors --
  *      at the segment the descriptor names, and jumps to the entry it names.
  *
+ * The two sector numbers above are numbers of the disk, not of the volume: when
+ * the volume sits inside a partition, nextfsinstall adds the partition's
+ * starting sector to the immediates of the two instructions that fill in the
+ * disk address packet, and writes the descriptor's runs as absolute numbers
+ * too. On a volume that occupies the whole disk nothing is added, and the two
+ * numbers are the ones written here, 8 and 1. Keeping the arithmetic out of the
+ * record is deliberate: 512 bytes have no room for a second copy of it, and the
+ * version that did it at run time cost a day.
+ *
  * It parses no directory and walks no tree. The descriptor is built at install
  * time from the payload's real extent list by the file system library, which
  * already knows how. Keeping the copy-on-write walk out of real mode is the
