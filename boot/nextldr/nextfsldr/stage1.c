@@ -25,6 +25,9 @@
 #include <fs/nextfs.h>
 #include <fs/nextfs_manifest.h>
 
+/* Declared here because this file brings its own memcpy at the bottom. */
+void *memcpy(void *Destination, const void *Source, unsigned int Length);
+
 /* Provided by stage1.S */
 void NfldrJumpToLoader(u32 EntryPoint, u8 Drive, u8 Partition) __attribute__((noreturn));
 
@@ -382,6 +385,12 @@ static int VolumeRead(void *Context, NFSB_U64 Offset, void *Buffer, NFSB_U32 Len
 static NFSB_RECORD *gLoaderRecord;
 static u8 gHeader[NFSLDR_HEADER_MAX];
 
+/* The interrupt vector table as the firmware left it. Something later in the
+   boot path writes over the bottom of low memory, and a vector that reads as
+   zero turns the next BIOS call into a jump to address zero, so the real-mode
+   half puts back whatever went missing before each call. */
+static u8 gIvtBackup[1024];
+
 static int LoaderRead(u64 Offset, void *Buffer, u32 Length, void *Context)
 {
     NFSB_VOLUME *Volume = (NFSB_VOLUME *)Context;
@@ -408,8 +417,8 @@ static u32 VolumeReadAll(NFSB_VOLUME *Volume, const NFSB_RECORD *Record, void *B
 }
 
 /* FNV-1a over a file, one buffer at a time. The manifest hashes the bytes on
-   the volume, not the image they are turned into: the file is what a bad write
-   truncates or a stale copy replaces, and it is what the hash names. */
+   the volume, not the image they are turned into: the file is what can be
+   truncated by a bad write or replaced by a stale one. */
 static int VolumeHash(NFSB_VOLUME *Volume, const NFSB_RECORD *Record,
                       void *Buffer, u32 BufferSize, u32 *Hash)
 {
@@ -499,8 +508,8 @@ void NfldrMain(void)
     NfldrPuts(" records\n");
 
     /* BOOT.MAN, when there is one, says which file is the kernel. It is read
-       before NEXTLDR.CNF so that the manifest wins, and its absence is not an
-       error: a volume without one boots the old way. */
+       before NEXTLDR.CNF so that the manifest wins, and it is not an error for
+       it to be absent: a volume without one boots the old way. */
     Record = (NFSB_RECORD *)NFSB_LookupPath(Volume, NFSLDR_MANIFEST_PATH);
     if (Record != 0 && Record->Size != 0 && Record->Size <= NFMAN_TEXT_MAX)
     {
@@ -546,7 +555,7 @@ void NfldrMain(void)
                 Path = Kernel->Path;
             }
         }
-        else if (Read != 0)
+        else if (Record->Size != 0)
         {
             NfldrPuts("NF: ");
             NfldrPuts(NFSLDR_MANIFEST_PATH);
@@ -620,7 +629,7 @@ void NfldrMain(void)
     }
 
     /* The hash is checked before the jump, never after: a kernel that starts
-       from a truncated image fails somewhere far harder to read than here. */
+       from a truncated image fails somewhere much harder to read than here. */
     if (Manifest != 0 && Kernel != 0 && (Kernel->Attributes & NFMAN_ATTR_HASH_STATED))
     {
         u8 *Buffer = (u8 *)ArenaAlloc(4096);
@@ -657,9 +666,12 @@ void NfldrMain(void)
     NfldrPrintHex(Entry);
     NfldrPuts("\nStarting NextNT loader...\n");
 
-    /* nextldr returns from every real-mode call through this address: its own
-       entry point, which reloads its IDT and continues where it left off. */
+    /* nextldr comes back from every real-mode call through this address: its
+       own entry point, which reloads its IDT and continues where it left off. */
     NfldrSetLoaderEntry(Entry);
+
+    memcpy(gIvtBackup, (const void *)0, sizeof(gIvtBackup));
+    NfldrSetIvtBackup((u32)gIvtBackup);
 
     *(volatile u8 *)NFSLDR_BSS_BOOT_DRIVE = NFSLDR_BIOS_DRIVE();
     *(volatile u8 *)NFSLDR_BSS_BOOT_PARTITION = NFSLDR_BOOT_PARTITION;

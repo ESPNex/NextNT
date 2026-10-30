@@ -203,8 +203,8 @@ NfldrCallReal:
     mov     dword ptr [stack32_save], esp
     mov     bx, word ptr [ebp + 8]
 
-    /* ljmp RMODE_CS:switch_to_real16_local. Ours, not nextldr's: the return
-       path comes back to NfldrRealReturn, which is this loader's own code. */
+    /* ljmp RMODE_CS:switch_to_real16_local. Ours, not nextldr's: the return path
+       below comes back to NfldrRealReturn, which is this loader's own code. */
     .byte   0xEA
     .long   switch_to_real16_local
     .word   RMODE_CS
@@ -266,13 +266,13 @@ stack32_save:
 /* Entered from protected mode with CS:RMODE_CS.
  *
  * Two ways in, and the difference is where the exit goes. nextldr comes in
- * through the address it found in BSS_RealModeEntry and has to be returned to
- * its own entry point, because that is the code that reloads the IDT, restores
- * its 32-bit stack from its own variable and jumps through its ContinueAddress.
+ * through the address it found in BSS_RealModeEntry and must be returned to its
+ * own entry point, because that is the code that reloads the IDT, restores its
+ * 32-bit stack from its own variable and jumps through its own ContinueAddress.
  * This loader's own INT 13h calls come in through switch_to_real16_local and go
- * back where NfldrCallReal expects them. Both want the same real-mode machine,
- * so the only difference is one byte, kept in low memory because there is
- * nowhere else that survives the trip. */
+ * back where NfldrCallReal expects. They both want the same real-mode machine,
+ * so the only thing that differs is one byte, and it survives the round trip in
+ * low memory because there is nowhere else to keep it. */
 switch_to_real16:
     mov     byte ptr cs:[return_to_local], 0
     jmp     enter_real16
@@ -281,6 +281,48 @@ switch_to_real16_local:
     mov     byte ptr cs:[return_to_local], 1
 
 enter_real16:
+    /* Put back any interrupt vector that went missing. Something in the boot
+       path writes over the bottom of low memory, and an interrupt vector that
+       reads as 0000:0000 turns the next BIOS call into a jump to address zero.
+       Only entries that are actually gone are restored, so a handler the
+       firmware installed later is left where it is. The backup lives in the
+       loader's own .bss below one megabyte, and its physical address is
+       written into ivt_backup_ptr before the loader starts. */
+    push    ds
+    push    es
+    push    si
+    push    di
+    push    ax
+    push    cx
+
+    mov     eax, dword ptr cs:[ivt_backup_ptr]
+    mov     si, ax
+    and     si, 0x000F
+    shr     eax, 4
+    mov     ds, ax
+    xor     ax, ax
+    mov     es, ax
+    xor     di, di
+    mov     cx, 256
+.Lvector_loop:
+    cmp     word ptr es:[di + 2], 0
+    jne     .Lvector_next
+    mov     ax, word ptr ds:[si]
+    mov     word ptr es:[di], ax
+    mov     ax, word ptr ds:[si + 2]
+    mov     word ptr es:[di + 2], ax
+.Lvector_next:
+    add     di, 4
+    add     si, 4
+    loop    .Lvector_loop
+
+    pop     cx
+    pop     ax
+    pop     di
+    pop     si
+    pop     es
+    pop     ds
+
     /* Restore the segment registers to the real-mode limit */
     mov     ax, RMODE_DS
     mov     ds, ax
@@ -329,9 +371,8 @@ exit_to_protected:
     or      eax, CR0_PE
     mov     cr0, eax
 
-    /* ljmp PMODE_CS:inpmode32, with a 32-bit offset: the segment it lands in is
-       a 32-bit one, so the stub there is 32-bit code and says so instead of
-       relying on how the decoder happens to read the bytes. */
+    /* ljmp PMODE_CS:inpmode32, with a 32-bit offset: the segment is 32-bit, so
+       the stub that lands there is 32-bit code and says so. */
     .byte   0x66, 0xEA
     .long   inpmode32
     .word   PMODE_CS
@@ -348,16 +389,23 @@ inpmode32:
     cmp     byte ptr ds:[return_to_local], 0
     jne     .Llocal_return
 
-    /* nextldr: its own entry point, which reloads its IDT, restores its 32-bit
-       stack and continues through its ContinueAddress, exactly as its own stub
-       did. Getting this wrong is what the first triple fault was. */
+    /* nextldr: its own entry point, which reloads its IDT, its 32-bit stack and
+       continues through its ContinueAddress, exactly as its own stub did. */
     jmp     dword ptr ds:[pm_entrypoint]
 
 .Llocal_return:
     jmp     NfldrRealReturn
 
-/* Where nextldr's image starts, written by the C side before the jump because
-   only it knows what the PE header said. */
+/* The entry point of the image nextldr was loaded from. Written by the C side
+   before the jump, because only it knows where the PE said to start. */
+/* Where the saved copy of the interrupt vector table is, written by the C side
+   before the loader starts. */
+.global NfldrSetIvtBackup
+NfldrSetIvtBackup:
+    mov     eax, dword ptr [esp + 4]
+    mov     dword ptr ds:[ivt_backup_ptr], eax
+    ret
+
 .global NfldrSetLoaderEntry
 NfldrSetLoaderEntry:
     mov     eax, dword ptr [esp + 4]
@@ -371,6 +419,14 @@ pm_entrypoint:
 
 return_to_local:
     .byte   0
+
+.align 4
+ivt_backup_ptr:
+    .long   0
+trace_count:
+    .word   0
+trace_ring:
+    .space  128
 
 .code16
 
@@ -394,6 +450,23 @@ boot_drive:
 /* INT with the register block's registers, as int386.inc does it, so that
    nextldr's Int386() sees exactly what it saw before. */
 Int386:
+    /* DEBUG: remember the stack pointer on the way in and on the way out, so
+       that a BIOS that does not balance its own stack shows up as drift. */
+    push    ax
+    push    bx
+    push    ds
+    xor     ax, ax
+    mov     ds, ax
+    mov     bx, word ptr ds:[trace_count]
+    inc     word ptr ds:[trace_count]
+    and     bx, 15
+    shl     bx, 3
+    mov     ax, sp
+    mov     word ptr ds:[trace_ring + bx], ax
+    pop     ds
+    pop     bx
+    pop     ax
+
     push    ds
     push    es
     push    fs
@@ -463,6 +536,24 @@ Int386_opcode:
     pop     fs
     pop     es
     pop     ds
+
+    /* DEBUG: the matching exit stack pointer for the entry above. */
+    push    ax
+    push    bx
+    push    ds
+    xor     ax, ax
+    mov     ds, ax
+    mov     bx, word ptr ds:[trace_count]
+    dec     bx
+    and     bx, 15
+    shl     bx, 3
+    mov     ax, sp
+    mov     word ptr ds:[trace_ring + bx + 2], ax
+    mov     al, byte ptr ds:[BSS_INT_VECTOR]
+    mov     byte ptr ds:[trace_ring + bx + 4], al
+    pop     ds
+    pop     bx
+    pop     ax
     ret
 
 Reboot:

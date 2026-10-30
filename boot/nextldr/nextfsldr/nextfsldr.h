@@ -92,9 +92,8 @@ extern u8 boot_drive;
 #define NFSLDR_DEFAULT_PATH     "/ReactOS/nextldr.sys"
 #define NFSLDR_CONFIG_PATH      "/NEXTLDR.CNF"
 /* The manifest that says which files a boot is made of, and what they should
-   hash to. Optional: without one this stage behaves as it did before the
-   manifest existed, which is what makes the path shippable before it is
-   complete. */
+   hash to. Optional: without one, this stage behaves as it did before it
+   existed, which is what makes the whole path shippable early. */
 #define NFSLDR_MANIFEST_PATH    "/BOOT.MAN"
 #define NFSLDR_PATH_MAX         128u
 #define NFSLDR_HEADER_MAX       4096u
@@ -102,9 +101,13 @@ extern u8 boot_drive;
 /* Real-mode calls out of the 32-bit half. */
 void NfldrCallReal(u16 FunctionId);
 
-/* Where nextldr's image starts, so that a real-mode call made from inside the
+/* Where nextldr's own entry point is, so that a real-mode call made from the
    loader comes back to the loader: its stub returns through this address. */
 void NfldrSetLoaderEntry(u32 EntryPoint);
+
+/* Where the copy of the interrupt vector table is, so that the real-mode half
+   can put back any entry that a later stage wipes. */
+void NfldrSetIvtBackup(u32 Address);
 
 /* 32-bit helpers */
 void NfldrPanic(const char *Message) __attribute__((noreturn));
