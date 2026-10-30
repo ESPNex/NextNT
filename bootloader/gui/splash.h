@@ -9,7 +9,7 @@
  *
  * Pixels are 0x00RRGGBB, one per pixel, rows top to bottom, as everywhere else in
  * this UI. The file is freestanding C++: no allocation, no static constructor, no
- * exception, no RTTI.
+ * exception, no RTTI, no floating point.
  */
 
 #ifndef __BOOTGUI_SPLASH_H__
@@ -23,12 +23,17 @@ extern "C" {
    clock: the renderer is given the time and does not look for one. */
 #define SPLASH_FRAME_MS 16
 
-/* Rows [Top, Bottom) are painted: black, plus the chevrons when they fall in
-   those rows. Rows outside the range are left untouched, which is what lets the
-   animation repaint only the upper part of the screen and keep the countdown
-   text that lives near the bottom. */
+/* Paints the whole screen for the given moment: black, plus the chevrons with
+   the glow around them. */
 void SplashStartup(unsigned long *Pixels, unsigned long Width, unsigned long Height,
-                   unsigned long Top, unsigned long Bottom, unsigned long TimeMs);
+                   unsigned long TimeMs);
+
+/* Paints only the band the chevrons occupy -- black outside them, the mark and
+   its glow inside -- and reports the rows it touched in *Top and *Bottom, so the
+   caller can present just those instead of the whole screen. Worth doing: the
+   mark is a couple of hundred pixels tall, the screen is not. */
+void SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
+                unsigned long TimeMs, unsigned long *Top, unsigned long *Bottom);
 
 #ifdef __cplusplus
 }

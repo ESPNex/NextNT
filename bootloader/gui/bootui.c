@@ -1063,22 +1063,25 @@ BootUiEraseCountdown(VOID)
     BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
 }
 
-/* One frame of the startup animation. Only the rows above the countdown text
-   are repainted, so the text underneath is not redrawn sixty times a second. */
+/* One frame of the startup animation. The renderer paints the band the mark
+   lives in and says which rows those are, so a frame costs a couple of hundred
+   rows instead of a whole screen and the countdown text below is never touched. */
 static VOID
 BootUiAnimateSplash(VOID)
 {
-    ULONG Bottom;
+    ULONG Top, Bottom;
 
     if (!BootUiPixels || !UiKeepFirmwareScreen)
         return;
 
     BootUiSplashMs += SPLASH_FRAME_MS;
-    Bottom = BootUiHeight > 150 ? BootUiHeight - 150 : BootUiHeight;
-    BootUiSetClip(0, 0, BootUiWidth, (LONG)Bottom);
-    SplashStartup(BootUiPixels, BootUiWidth, BootUiHeight, 0, Bottom, BootUiSplashMs);
-    BootUiPresentRegion(0, Bottom);
-    BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
+    SplashBand(BootUiPixels, BootUiWidth, BootUiHeight, BootUiSplashMs, &Top, &Bottom);
+    if (Bottom > Top)
+    {
+        BootUiSetClip(0, (LONG)Top, BootUiWidth, (LONG)Bottom);
+        BootUiPresentRegion(Top, Bottom - Top);
+        BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
+    }
 }
 
 static VOID
@@ -1090,7 +1093,7 @@ BootUiDrawCountdown(LONG TimeOut)
     /* The startup screen is the chevrons on black -- the same drawing as the
        reference artwork, with a gradient that moves inside the strokes. */
     BootUiSetClip(0, 0, BootUiWidth, BootUiHeight);
-    SplashStartup(BootUiPixels, BootUiWidth, BootUiHeight, 0, BootUiHeight, BootUiSplashMs);
+    SplashStartup(BootUiPixels, BootUiWidth, BootUiHeight, BootUiSplashMs);
     BootUiCountdownClip(Size);
     RtlStringCbPrintfA(Text, sizeof(Text), "Starting in %ld %s", TimeOut,
                        TimeOut == 1 ? "second" : "seconds");
