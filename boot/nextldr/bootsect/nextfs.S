@@ -162,6 +162,9 @@ NextRun:
 
 RunLoaded:
     cli
+    /* The BIOS is allowed to change DL during the reads above, and the image we
+       jump to needs the drive it was booted from: give it back. */
+    mov     dl, byte ptr [DriveNumber]
     mov     ax, word ptr [DESC_BUF+16]          /* entry segment */
     mov     bx, word ptr [DESC_BUF+12]          /* entry offset  */
     push    ax
