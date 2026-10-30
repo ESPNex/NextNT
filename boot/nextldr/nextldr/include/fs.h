@@ -58,6 +58,11 @@ FsGetVolumeSize(
     _In_ ULONG DeviceId,
     _Out_ PULONGLONG VolumeSize);
 
+ULONG
+FsGetDeviceSize(
+    _In_ ULONG DeviceId,
+    _Out_ PULONGLONG DeviceSize);
+
 ULONG FsGetNumPathParts(PCSTR Path);
 VOID  FsGetFirstNameFromPath(PCHAR Buffer, PCSTR Path);
 

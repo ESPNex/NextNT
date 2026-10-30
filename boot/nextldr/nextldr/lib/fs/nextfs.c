@@ -284,7 +284,10 @@ NextFsMount(ULONG DeviceId)
         NextFsVolumes[DeviceId] = NULL;
     }
 
-    FsGetVolumeSize(DeviceId, &DeviceBytes);
+    /* The size of the device, not of the volume: FsGetVolumeSize() mounts
+       the device to answer, and we are the mount it would call. */
+    if (FsGetDeviceSize(DeviceId, &DeviceBytes) != ESUCCESS)
+        return NULL;
 
     Io.Read = NextFsDeviceRead;
     Io.Context = (void *)(ULONG_PTR)DeviceId;

@@ -555,14 +555,22 @@ FsGetVolumeSize(
 
     // TODO: Mount the device, if not already done?
 #if 1 // FIXME: TEMP HACK!
-    if (!pDevice->FileFuncTable && (pDevice->ReferenceCount <= 1))
+    /* A file-system mount asks how big the volume it is mounting is, and
+       this is where it would find out -- by mounting the device, that is,
+       by calling the mount function that asked. One round of that is
+       enough to lose the machine, so mount at most one at a time. */
+    static BOOLEAN MountInProgress = FALSE;
+    if (!MountInProgress && !pDevice->FileFuncTable &&
+        (pDevice->ReferenceCount <= 1))
     {
+        MountInProgress = TRUE;
         for (ULONG fs = 0; fs < _countof(FileSystems); ++fs)
         {
             pDevice->FileFuncTable = FileSystems[fs](DeviceId);
             if (pDevice->FileFuncTable)
                 break;
         }
+        MountInProgress = FALSE;
     }
 #endif
     // TODO: Use a virtual table function member for easily handling other file systems.
@@ -605,6 +613,48 @@ FsGetVolumeSize(
         return EIO; // ENXIO;
     }
     *VolumeSize = pFsGetVolumeSize(DeviceId);
+    return ESUCCESS;
+}
+
+/**
+ * @brief
+ * Size in bytes of a device, without mounting it.
+ *
+ * A file-system mount needs to know how big its volume is before it can read
+ * anything out of it, and FsGetVolumeSize() cannot answer that: on a device
+ * that is not mounted yet it mounts it, which re-enters the file systems --
+ * and, when the caller is a mount function, comes straight back to the caller.
+ * The device driver knows on its own: ARC gives the device's starting and
+ * ending byte offsets, and the difference is its size.
+ *
+ * @param[in]  DeviceId
+ * The device ID.
+ *
+ * @param[out] DeviceSize
+ * Receives the size of the device in bytes.
+ *
+ * @return
+ * ESUCCESS on success, EBADF if the ID is not a device, EIO if the device
+ * driver cannot answer.
+ **/
+ULONG
+FsGetDeviceSize(
+    _In_ ULONG DeviceId,
+    _Out_ PULONGLONG DeviceSize)
+{
+    DEVICE* pDevice;
+    FILEINFORMATION FileInfo;
+
+    *DeviceSize = 0;
+
+    pDevice = FsGetDeviceById(DeviceId);
+    if (!pDevice || !pDevice->FuncTable)
+        return EBADF;
+
+    if (pDevice->FuncTable->GetFileInformation(DeviceId, &FileInfo) != ESUCCESS)
+        return EIO;
+
+    *DeviceSize = FileInfo.EndingAddress.QuadPart - FileInfo.StartingAddress.QuadPart;
     return ESUCCESS;
 }
 
