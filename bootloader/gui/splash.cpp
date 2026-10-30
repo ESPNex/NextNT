@@ -7,13 +7,11 @@
  * assets/nextnt-mark.alpha, the coverage mask taken from the reference artwork
  * (142 x 122, one byte per pixel, brightest channel of the drawing), which
  * native-bin2c turns into bootui_mark. What is described in code is the colour:
- * a five-stop ramp that runs through the strokes and slides with the clock,
- * with a bright specular edge crossing it the other way, a vertical shade, and
- * a soft halo around the mark so its ends read against the black instead of
- * dissolving into it.
+ * the two blues of the artwork with a reflection travelling through them, and a
+ * vertical shade so the mark sits in space.
  *
- * Everything is integer arithmetic: fixed point for the sampling, tables for the
- * ramp. No floating point, because the firmware is not promised an FPU here.
+ * Everything is integer arithmetic, fixed point for sampling and phase. No
+ * floating point, because the firmware is not promised an FPU here.
  *
  * Freestanding C++: no headers beyond the two local ones, no allocation, no
  * static objects with constructors, no exceptions, no RTTI.
@@ -33,27 +31,6 @@ const unsigned long MaskHeight = 122;
    staircase out of the ends of the strokes without becoming the slowest thing
    in the boot path. */
 const unsigned long SubSamples = 3;
-
-/* The ramp inside the strokes, from the deep blue of the artwork to a cold
-   highlight. Five stops: a two-stop ramp reads as a smear, five read as glass. */
-struct RAMPSTOP
-{
-    unsigned long At;      /* 0..255 along the ramp */
-    unsigned long Red;
-    unsigned long Green;
-    unsigned long Blue;
-};
-
-const RAMPSTOP Ramp[] =
-{
-    {   0,  10,  34,  88 },
-    {  64,  18,  74, 160 },
-    { 128,  34, 130, 220 },
-    { 192,  92, 198, 248 },
-    { 255, 150, 232, 255 },
-};
-
-const unsigned long RampCount = sizeof(Ramp) / sizeof(Ramp[0]);
 
 inline unsigned long
 Channel(unsigned long Color, unsigned int Shift)
@@ -78,43 +55,7 @@ Clamp(unsigned long Value, unsigned long Low, unsigned long High)
     return Value;
 }
 
-/* Colour of the ramp at At = 0..255: linear between the two stops around it. */
-unsigned long
-RampColor(unsigned long At, unsigned long* Red, unsigned long* Green, unsigned long* Blue)
-{
-    unsigned long i;
-
-    for (i = 1; i + 1 < RampCount; i++)
-    {
-        if (At <= Ramp[i].At)
-            break;
-        if (i + 2 == RampCount)
-        {
-            i = RampCount - 1;
-            break;
-        }
-    }
-
-    if (i >= RampCount - 1)
-    {
-        *Red = Ramp[RampCount - 1].Red;
-        *Green = Ramp[RampCount - 1].Green;
-        *Blue = Ramp[RampCount - 1].Blue;
-    }
-    else
-    {
-        unsigned long Span = Ramp[i].At - Ramp[i - 1].At;
-        unsigned long Part = Span ? (At - Ramp[i - 1].At) : 0;
-
-        *Red = Ramp[i - 1].Red + ((Ramp[i].Red - Ramp[i - 1].Red) * Part) / Span;
-        *Green = Ramp[i - 1].Green + ((Ramp[i].Green - Ramp[i - 1].Green) * Part) / Span;
-        *Blue = Ramp[i - 1].Blue + ((Ramp[i].Blue - Ramp[i - 1].Blue) * Part) / Span;
-    }
-
-    return Pack(*Red, *Green, *Blue);
-}
-
-/* The mark occupies a sixth of the screen's height: present, not shouty. The
+/* The mark occupies a fifth of the screen's height: present, not shouty. The
    limits keep it sensible on a small panel and on a wall of a monitor. */
 unsigned long
 MarkHeight(unsigned long Width, unsigned long Height)
@@ -162,35 +103,42 @@ SampleMask(unsigned long MulX, unsigned long MulY)
     return Value > 255 ? 255 : Value;
 }
 
-/* One pixel inside the strokes: the ramp sliding one way, the specular edge
-   crossing the other way, and a vertical shade so the mark sits in space. */
+/* One pixel inside the strokes. The two blues of the artwork, with a slow
+   reflection travelling through them: one full crossing every three seconds,
+   continuous -- no triangle wave, no seam where the light turns around, because
+   the turnaround is where a gradient stops looking like light and starts looking
+   like a moving stripe. Position and phase are both 16.16, so each frame moves
+   the reflection by a fraction of a step and the change reads as a flow rather
+   than as a jump. */
 unsigned long
-StrokeColor(unsigned long Across, unsigned long Down, unsigned long Phase)
+StrokeColor(unsigned long Across, unsigned long Down, unsigned long Phase, bool Deep)
 {
-    unsigned long Position, Along, Red, Green, Blue, Shade, Spec;
+    unsigned long Along, Light, Red, Green, Blue, Shade;
 
-    /* The ramp travels diagonally, from the upper left to the lower right. */
-    Position = (Across * 156) / 255 + (Down * 84) / 255 + Phase;
-    Along = Position & 0xFF;
-    Along = Along < 128 ? Along * 2 : (255 - Along) * 2;
+    /* Across and Down are 0..255; the reflection runs diagonally from the upper
+       left to the lower right, and Phase is 16.16 of 0..255 per cycle. */
+    Along = ((Across * 156) / 255 + (Down * 84) / 255) * 256;
+    Along = (Along + Phase) & 0xFFFF;
 
-    RampColor(Along, &Red, &Green, &Blue);
+    /* Light along the stroke, zero at both ends and one at the middle, so the
+       crossing joins itself without a visible edge. Squared, so the bright part
+       stays narrow and the rest of the stroke keeps the deep blue. */
+    Light = Along < 32768 ? Along / 128 : (65536 - Along) / 128;
+    Light = (Light * Light) / 255;
 
-    /* Shade: the top of the strokes a touch brighter than the bottom. */
-    Shade = 255 - (Down * 46) / 255;
+    /* The two chevrons are told apart the way the artwork does it: the left one
+       a little deeper than the right. */
+    Red = 10 + (Light * (Deep ? 34 : 52)) / 255;
+    Green = 62 + (Light * (Deep ? 122 : 150)) / 255;
+    Blue = 158 + (Light * (Deep ? 78 : 96)) / 255;
+
+    /* A vertical shade, so the mark sits in space instead of floating flat. */
+    Shade = 255 - (Down * 34) / 255;
     Red = (Red * Shade) / 255;
     Green = (Green * Shade) / 255;
     Blue = (Blue * Shade) / 255;
 
-    /* Specular: a narrow, brighter band going the other way. */
-    Position = (Across * 200) / 255 + (Down * 128) / 255 + 255 - Phase;
-    Spec = Position & 0xFF;
-    Spec = Spec < 34 ? (34 - Spec) * 7 : (Spec > 222 ? (Spec - 222) * 7 : 0);
-    if (Spec > 120) Spec = 120;
-
-    return Pack(Red + (Spec * 55) / 120,
-                Green + (Spec * 100) / 120,
-                Blue + (Spec * 115) / 120);
+    return Pack(Red, Green, Blue);
 }
 
 } /* namespace */
@@ -199,8 +147,8 @@ extern "C" void
 SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
            unsigned long TimeMs, unsigned long *Top, unsigned long *Bottom)
 {
-    unsigned long MarkH, MarkW, Left, MarkTop, Radius, First, Last, Y, X;
-    unsigned long CenterX, CenterY, Radius2, Phase;
+    unsigned long MarkH, MarkW, Left, MarkTop, First, Last, Y, X;
+    unsigned long Phase;
 
     if (Top) *Top = 0;
     if (Bottom) *Bottom = 0;
@@ -211,66 +159,31 @@ SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
     MarkW = MarkWidth(MarkH);
     Left = (Width - MarkW) / 2;
     MarkTop = (Height - MarkH) / 2;
-    CenterX = Width / 2;
-    CenterY = Height / 2;
 
-    /* The halo is what keeps the ends of the strokes from ending in a hard edge
-       against the black; it reaches a little further than the mark itself. */
-    Radius = (MarkW * 58) / 100;
-    Radius2 = Radius * Radius;
-
-    First = MarkTop > Radius ? MarkTop - Radius : 0;
-    Last = MarkTop + MarkH + Radius;
+    First = MarkTop;
+    Last = MarkTop + MarkH;
     if (Last > Height)
         Last = Height;
 
-    /* One crossing of the ramp every four seconds, in 0..255 units. */
-    Phase = (unsigned long)((TimeMs * 256ull) / 4000ull) & 0xFF;
+    /* One crossing of the reflection every three seconds, 16.16 of 0..255: the
+       caller advances a millisecond at a time, so the motion is a flow. */
+    Phase = (unsigned long)(((unsigned long long)TimeMs * 256ull * 65536ull / 3000ull) & 0xFFFF);
 
     for (Y = First; Y < Last; Y++)
     {
         unsigned long *Row = Pixels + Y * Width;
         unsigned long Down;
-        long DeltaY;
         bool InMark;
 
         InMark = (Y >= MarkTop && Y < MarkTop + MarkH);
         Down = InMark ? (Y - MarkTop) * 255 / MarkH : 0;
-        DeltaY = (long)Y - (long)CenterY;
 
         for (X = 0; X < Width; X++)
         {
             unsigned long Coverage = 0;
-            long DeltaX;
 
-            /* Halo first, on the black. Outside its reach the row stays black. */
-            DeltaX = (long)X - (long)CenterX;
-            if (DeltaX > -(long)Radius && DeltaX < (long)Radius)
-            {
-                /* Squashed vertically: a wide, low glow sits behind the mark like
-                   light on a black surface, a round one looks like a smudge. */
-                long SquashedY = DeltaY + DeltaY / 3;
-                unsigned long Distance2 = (unsigned long)(DeltaX * DeltaX) +
-                                          (unsigned long)(SquashedY * SquashedY);
-
-                if (Distance2 < Radius2)
-                {
-                    unsigned long Fall = ((Radius2 - Distance2) * 255) / Radius2;
-
-                    /* Cubed: the glow stays tight and fades out without a rim. */
-                    Fall = (Fall * Fall) / 255;
-                    Fall = (Fall * Fall) / 255;
-                    Row[X] = Pack((Fall * 6) / 255, (Fall * 30) / 255, (Fall * 84) / 255);
-                }
-                else
-                {
-                    Row[X] = 0;
-                }
-            }
-            else
-            {
-                Row[X] = 0;
-            }
+            /* The screen is black; the mark is the only thing on it. */
+            Row[X] = 0;
 
             if (!InMark || X < Left || X >= Left + MarkW)
                 continue;
@@ -303,7 +216,7 @@ SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
                 continue;
 
             {
-                unsigned long Color = StrokeColor((X - Left) * 255 / MarkW, Down, Phase);
+                unsigned long Color = StrokeColor((X - Left) * 255 / MarkW, Down, Phase, X < Left + MarkW / 2);
                 unsigned long Backdrop = Row[X];
 
                 if (Coverage >= 250)
