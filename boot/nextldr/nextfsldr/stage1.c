@@ -23,6 +23,7 @@
 #include "nextfsldr.h"
 
 #include <fs/nextfs.h>
+#include <fs/nextfs_manifest.h>
 
 /* Provided by stage1.S */
 void NfldrJumpToLoader(u32 EntryPoint, u8 Drive, u8 Partition) __attribute__((noreturn));
@@ -391,6 +392,48 @@ static int LoaderRead(u64 Offset, void *Buffer, u32 Length, void *Context)
     return (Done == Length) ? 0 : -1;
 }
 
+/* ------------------------------------------------------------------ */
+/* Boot manifest                                                       */
+/* ------------------------------------------------------------------ */
+
+/* A whole file into a buffer, or as much of it as fits. */
+static u32 VolumeReadAll(NFSB_VOLUME *Volume, const NFSB_RECORD *Record, void *Buffer, u32 Limit)
+{
+    NFSB_U32 Done = 0;
+
+    if (NFSB_Read(Volume, Record, 0, Buffer, Limit, &Done) != NFSB_OK)
+        return 0;
+
+    return Done;
+}
+
+/* FNV-1a over a file, one buffer at a time. The manifest hashes the bytes on
+   the volume, not the image they are turned into: the file is what a bad write
+   truncates or a stale copy replaces, and it is what the hash names. */
+static int VolumeHash(NFSB_VOLUME *Volume, const NFSB_RECORD *Record,
+                      void *Buffer, u32 BufferSize, u32 *Hash)
+{
+    NFSB_U64 Offset = 0;
+    u32 Value = NFMAN_FNV1A_INIT;
+
+    while (Offset < Record->Size)
+    {
+        NFSB_U32 Want = BufferSize, Done = 0;
+
+        if ((NFSB_U64)Want > Record->Size - Offset)
+            Want = (NFSB_U32)(Record->Size - Offset);
+
+        if (NFSB_Read(Volume, Record, Offset, Buffer, Want, &Done) != NFSB_OK || Done != Want)
+            return -1;
+
+        Value = NfmanFnv1a(Value, Buffer, Done);
+        Offset += Done;
+    }
+
+    *Hash = Value;
+    return 0;
+}
+
 void NfldrMain(void)
 {
     NFSB_IO Io;
@@ -401,6 +444,8 @@ void NfldrMain(void)
     u8 *Header = gHeader;
     u32 Entry = 0;
     int Status;
+    NFMAN *Manifest = 0;
+    const NFMAN_ENTRY *Kernel = 0;
 
     NfldrBiosInit();
     NfldrPuts("NextFS stage 1\n");
@@ -452,6 +497,68 @@ void NfldrMain(void)
     NfldrPuts(", ");
     NfldrPrintDec(Volume->RecordCount);
     NfldrPuts(" records\n");
+
+    /* BOOT.MAN, when there is one, says which file is the kernel. It is read
+       before NEXTLDR.CNF so that the manifest wins, and its absence is not an
+       error: a volume without one boots the old way. */
+    Record = (NFSB_RECORD *)NFSB_LookupPath(Volume, NFSLDR_MANIFEST_PATH);
+    if (Record != 0 && Record->Size != 0 && Record->Size <= NFMAN_TEXT_MAX)
+    {
+        char *Text = (char *)ArenaAlloc(NFMAN_TEXT_MAX);
+        NFMAN *Parsed = (NFMAN *)ArenaAlloc(sizeof(NFMAN));
+        u32 Read = 0;
+
+        if (Text != 0 && Parsed != 0)
+            Read = VolumeReadAll(Volume, Record, Text, NFMAN_TEXT_MAX);
+
+        if (Read != 0 && NfmanParse(Parsed, Text, Read))
+        {
+            Manifest = Parsed;
+            Kernel = NfmanFind(Manifest, 0, "kernel");
+
+            NfldrPuts("NF: ");
+            NfldrPuts(NFSLDR_MANIFEST_PATH);
+            NfldrPuts(" version ");
+            NfldrPrintDec(Manifest->Version);
+            NfldrPuts(", ");
+            NfldrPrintDec(Manifest->Entries);
+            NfldrPuts(" files");
+            if (Manifest->DefaultOs[0] != 0)
+            {
+                NfldrPuts(", booting ");
+                NfldrPutCounted(Manifest->DefaultOs, NFMAN_SECTION_MAX);
+            }
+            if (Manifest->Skipped != 0)
+            {
+                NfldrPuts(", ");
+                NfldrPrintDec(Manifest->Skipped);
+                NfldrPuts(" lines skipped");
+            }
+            NfldrPuts("\n");
+
+            if (Kernel == 0)
+            {
+                NfldrPuts("NF: the manifest names no kernel, using the old path\n");
+                Manifest = 0;
+            }
+            else
+            {
+                Path = Kernel->Path;
+            }
+        }
+        else if (Read != 0)
+        {
+            NfldrPuts("NF: ");
+            NfldrPuts(NFSLDR_MANIFEST_PATH);
+            NfldrPuts(" is not a manifest, ignoring it\n");
+        }
+    }
+    else if (Record != 0)
+    {
+        NfldrPuts("NF: ");
+        NfldrPuts(NFSLDR_MANIFEST_PATH);
+        NfldrPuts(" is too large to be a manifest\n");
+    }
 
     /* A file at the root of the volume overrides where the second stage is,
        so a test image can point at another loader without touching the code. */
@@ -510,6 +617,30 @@ void NfldrMain(void)
         NfldrPrintDec((u32)(-Status));
         NfldrPuts(")\n");
         NfldrPanic("second stage is not a loadable image");
+    }
+
+    /* The hash is checked before the jump, never after: a kernel that starts
+       from a truncated image fails somewhere far harder to read than here. */
+    if (Manifest != 0 && Kernel != 0 && (Kernel->Attributes & NFMAN_ATTR_HASH_STATED))
+    {
+        u8 *Buffer = (u8 *)ArenaAlloc(4096);
+        u32 Hash = 0;
+
+        if (Buffer == 0 || VolumeHash(Volume, gLoaderRecord, Buffer, 4096, &Hash) != 0)
+            NfldrPanic("cannot hash the boot image");
+
+        NfldrPuts("NF: image hash ");
+        NfldrPrintHex(Hash);
+
+        if (Hash != Kernel->Hash)
+        {
+            NfldrPuts(", the manifest says ");
+            NfldrPrintHex(Kernel->Hash);
+            NfldrPuts("\n");
+            NfldrPanic("the boot image does not match the manifest");
+        }
+
+        NfldrPuts(", as the manifest says\n");
     }
 
     if (Entry < NFSLDR_PE_BASE || Entry >= NFSLDR_PE_LIMIT)

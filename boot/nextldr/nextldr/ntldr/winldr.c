@@ -12,6 +12,7 @@
 #include "hiber.h"
 #include "ntldropts.h"
 #include "registry.h"
+#include <fs/bootman.h>
 #include <internal/cmboot.h>
 
 #include <drivers/bootvid/framebuf.h> // For CM_FRAMEBUF_DEVICE_DATA
@@ -1591,6 +1592,12 @@ LoadAndBootWindows(
     /* Post-process the boot options */
     NtLdrNormalizeOptions(BootOptions);
     TRACE("BootOptions(2): '%s'\n", BootOptions);
+
+    /* BOOT.MAN, when the boot options ask for it with BOOTMAN, names the kernel
+       and the HAL and says what they should hash to; a volume without one, or a
+       boot that did not ask, keeps the old options untouched. */
+    if (BootManApply(SystemPartition, BootOptions, sizeof(BootOptions)))
+        TRACE("BootOptions(3): '%s'\n", BootOptions);
     if (NtLdrGetOption(BootOptions, "DEBUGPORT=NET"))
     {
         CHAR AssistanceText[48] = "Network assistance";

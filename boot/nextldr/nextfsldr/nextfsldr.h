@@ -91,6 +91,11 @@ extern u8 boot_drive;
    reached a different way. */
 #define NFSLDR_DEFAULT_PATH     "/ReactOS/nextldr.sys"
 #define NFSLDR_CONFIG_PATH      "/NEXTLDR.CNF"
+/* The manifest that says which files a boot is made of, and what they should
+   hash to. Optional: without one this stage behaves as it did before the
+   manifest existed, which is what makes the path shippable before it is
+   complete. */
+#define NFSLDR_MANIFEST_PATH    "/BOOT.MAN"
 #define NFSLDR_PATH_MAX         128u
 #define NFSLDR_HEADER_MAX       4096u
 

@@ -54,6 +54,8 @@ list(APPEND NEXTLDR_BOOTLIB_SOURCE
     lib/fs/ntfs.c
     lib/fs/nextfs.c
     lib/fs/nextfs_core.c
+    lib/fs/nextfs_manifest.c
+    lib/fs/bootman.c
     lib/ramdisk_format.c
     lib/ramdisk_fatwrite.c
     lib/inifile/ini_init.c

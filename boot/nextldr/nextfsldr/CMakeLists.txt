@@ -38,7 +38,8 @@ set(NEXTFSLDR_SOURCE
     ${NEXTFSLDR_DIR}/stage1.c
     ${NEXTFSLDR_DIR}/peload.c
     ${NEXTFSLDR_DIR}/div64.c
-    ${REACTOS_SOURCE_DIR}/boot/nextldr/nextldr/lib/fs/nextfs_core.c)
+    ${REACTOS_SOURCE_DIR}/boot/nextldr/nextldr/lib/fs/nextfs_core.c
+    ${REACTOS_SOURCE_DIR}/boot/nextldr/nextldr/lib/fs/nextfs_manifest.c)
 
 set(NEXTFSLDR_CFLAGS
     -m32 -march=i386 -Os -std=c99

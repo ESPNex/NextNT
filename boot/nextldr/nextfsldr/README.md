@@ -95,6 +95,50 @@ whether the loader expects its own real-mode entry (its `SwitchToReal` path, wit
 its own GDT loaded) rather than the one this stage installs. That is the open
 item, and it is a debugging problem, not a design one.
 
+## BOOT.MAN
+
+`NEXTLDR.INI` describes a boot in the vocabulary of ARC firmware: a device path,
+a list of operating systems, a kernel whose directory is assumed to be the system
+directory. On a machine that boots one NextFS volume there is exactly one way to
+name a file, so the volume can simply say which file is the kernel.
+
+`/BOOT.MAN` is that manifest. It is a text file at the root of the volume, it is
+read by both halves of the loader (`lib/fs/nextfs_manifest.c` parses it, the same
+code here and in nextldr), and it names the files a boot is made of, with a hash
+for each:
+
+    version 1
+    default NextNT
+    timeout 0
+
+    [os NextNT]
+    kernel = \ReactOS\nextldr.sys   hash=c4f9bd90
+    hal    = \ReactOS\hal.dll       hash=0b7d1e44
+    hive   = \ReactOS\system32\config\SYSTEM
+
+This stage reads it before `NEXTLDR.CNF`, takes the kernel path from it, and
+checks the file's FNV-1a against the manifest before the jump: a truncated or
+replaced image is refused here, where the message is readable, instead of failing
+somewhere inside the kernel. Without a `BOOT.MAN` the stage behaves exactly as it
+did before the manifest existed, which is what makes the path shippable while it
+is still incomplete.
+
+Verified in QEMU with a 64 MiB volume built by `nextfsinstall`:
+
+    NF: /BOOT.MAN version 1, 2 files, booting nextnt
+    NF: \ReactOS\nextldr.sys, 329216 bytes
+    NF: image hash 0xc4f9bd90, as the manifest says
+    NF: image at 0x00010000, entry 0x00010f38
+
+and with the hash edited to `0000beef`:
+
+    NF: image hash 0xc4f9bd90, the manifest says 0x0000beef
+    NF: the boot image does not match the manifest
+
+On the nextldr side the manifest is applied only when the boot options contain
+`BOOTMAN`: `BootManApply()` then rewrites `/KERNEL=` and `/HAL=` from the file,
+after checking the kernel hash. Off by default, on purpose.
+
 ## What is not here yet
 
 - A partition offset. The stage reads the volume it was booted from at absolute
