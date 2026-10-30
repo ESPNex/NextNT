@@ -350,8 +350,26 @@ endif()
 set(USE_DUMMY_PSEH FALSE CACHE BOOL
 "Whether to disable PSEH support.")
 
+# Two numbers, deliberately different.
+#
+# REACTOS_TARGET_NT is the *contract*: the value WINVER, _WIN32_WINNT, the SDK
+# headers and every API gate compile against. It stays at 10.0, so anything built
+# here -- including software written for Windows 10, whose manifests and headers
+# say 10.0 -- keeps seeing the interface it was written for.
+#
+# REACTOS_REPORTED_NT is the *identity*: what the system answers when it is asked
+# which version it is (SharedUserData, RtlGetVersion, the version resource of the
+# kernel). NextNT says 11.0, because it is not Windows 10 and pretending to be is
+# the kind of thing that makes a version number useless.
+#
+# An application that asks for "10.0 or later" is satisfied by 11.0 and needs
+# nothing. An application that checks for exactly 10.0 is living in the past and
+# is handled by the version-lie list in ntdll (dll/ntdll/AppCompat), not here.
 set(REACTOS_TARGET_NT "0xA00" CACHE STRING
-"Target NT version (e.g. 0x502, 0x600, 0x601, 0xA00)")
+"NT version the headers and API gates compile against (e.g. 0x502, 0x600, 0x601, 0xA00)")
+
+set(REACTOS_REPORTED_NT "0xB00" CACHE STRING
+"NT version the system reports at runtime (0xA00 = 10.0, 0xB00 = 11.0)")
 
 set(REACTOS_GRAPHICS_DRIVER_MODEL "WDDM" CACHE STRING
 "Display driver model to build. Specify XPDM or WDDM.")

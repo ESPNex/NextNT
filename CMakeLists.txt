@@ -250,6 +250,15 @@ Enable this if the module uses typeid or dynamic_cast. You will probably need to
     math(EXPR _NT_MINOR "${REACTOS_TARGET_NT} % 256")
     math(EXPR _NT_VALUE "${REACTOS_TARGET_NT} + 0")
 
+    # The reported identity is a separate number from the compile-time contract:
+    # see REACTOS_REPORTED_NT in sdk/cmake/config.cmake. VER_PRODUCTMAJORVERSION
+    # is what ntoskrnl publishes as NtMajorVersion and what reaches
+    # SharedUserData, so it follows the reported version, while WINVER and
+    # _WIN32_WINNT below stay on REACTOS_TARGET_NT.
+    math(EXPR _NT_REPORTED_MAJOR "${REACTOS_REPORTED_NT} / 256")
+    math(EXPR _NT_REPORTED_MINOR "${REACTOS_REPORTED_NT} % 256")
+    math(EXPR _NT_REPORTED_VALUE "${REACTOS_REPORTED_NT} + 0")
+
     add_definitions(-DWINVER=${REACTOS_TARGET_NT}
                     -D_WIN32_IE=0x603
                     -D_WIN32_WINNT=${REACTOS_TARGET_NT}
@@ -258,8 +267,9 @@ Enable this if the module uses typeid or dynamic_cast. You will probably need to
                     -DMINGW_HAS_SECURE_API=1
                     -DDXGKDDI_INTERFACE_VERSION=0x1052 # Vista
                     -DDLL_EXPORT_VERSION=${DLL_EXPORT_VERSION}
-                    -DVER_PRODUCTMAJORVERSION=${_NT_MAJOR}
-                    -DVER_PRODUCTMINORVERSION=${_NT_MINOR})
+                    -DVER_PRODUCTMAJORVERSION=${_NT_REPORTED_MAJOR}
+                    -DVER_PRODUCTMINORVERSION=${_NT_REPORTED_MINOR}
+                    -DREACTOS_REPORTED_NT=${_NT_REPORTED_VALUE})
 
     if(REACTOS_USE_WDDM)
         add_definitions(
@@ -274,7 +284,7 @@ Enable this if the module uses typeid or dynamic_cast. You will probably need to
         message(STATUS "Display driver model: XPDM")
     endif()
 
-    if(_NT_VALUE GREATER_EQUAL 2560)
+    if(_NT_REPORTED_VALUE GREATER_EQUAL 2560)
         add_definitions(-DVER_PRODUCTBUILD=26100 -DVER_PRODUCTBUILD_QFE=1)
     endif()
 

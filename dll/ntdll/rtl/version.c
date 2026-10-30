@@ -159,12 +159,132 @@ RtlGetNtProductType(_Out_ PNT_PRODUCT_TYPE ProductType)
  *
  * @implemented
  */
+/*
+ * Version lie for applications that demand Windows 10.
+ *
+ * The system reports 11.0 (REACTOS_REPORTED_NT), which is the truth. An
+ * application that asks for "10.0 or later" -- the normal check, through its
+ * manifest or VerifyVersionInfo -- is satisfied by 11.0 and never reaches this
+ * code. An application that insists on *exactly* 10.0 refuses to start on
+ * anything newer, and there are a few of those; Windows itself answers them with
+ * an app-compat shim, and so does this:
+ *
+ *   HKLM\System\CurrentControlSet\Control\Session Manager\AppCompat
+ *       VersionLie  REG_MULTI_SZ  = foo.exe\0bar.exe\0
+ *
+ * A name in that list gets 10.0.19045 from every version query of the process;
+ * everything else gets the truth. The decision is per process (the image path),
+ * so one lying application cannot lower the version for the rest of the system.
+ *
+ * This deliberately does not go through ntdll.AppCompat/ because the PEB is
+ * where the answer already lives: RtlGetVersion reads Peb->OSMajorVersion, so
+ * the shim only has to compute a different number for the calls that produce it.
+ */
+static BOOLEAN g_VersionLieChecked;
+static BOOLEAN g_VersionLie;
+
+#define VERSION_LIE_KEY \
+    L"\\Registry\\Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCompat"
+#define VERSION_LIE_VALUE L"VersionLie"
+#define VERSION_LIE_MAJOR 10
+#define VERSION_LIE_MINOR 0
+#define VERSION_LIE_BUILD 19045
+
+static BOOLEAN NTAPI
+IsVersionLieImage(VOID)
+{
+    PEB *Peb = NtCurrentPeb();
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING KeyName = RTL_CONSTANT_STRING(VERSION_LIE_KEY);
+    UNICODE_STRING ValueName = RTL_CONSTANT_STRING(VERSION_LIE_VALUE);
+    KEY_VALUE_PARTIAL_INFORMATION *Info;
+    UNICODE_STRING ImageName, Entry;
+    PWSTR Base;
+    USHORT BaseLength, i;
+    UCHAR Buffer[sizeof(KEY_VALUE_PARTIAL_INFORMATION) + 2048];
+    HANDLE Key = NULL;
+    ULONG Length = 0;
+    NTSTATUS Status;
+    BOOLEAN Match = FALSE;
+
+    if (g_VersionLieChecked)
+        return g_VersionLie;
+    g_VersionLieChecked = TRUE;
+
+    if (!Peb || !Peb->ProcessParameters)
+        return FALSE;
+
+    InitializeObjectAttributes(&ObjectAttributes, &KeyName,
+                               OBJ_CASE_INSENSITIVE, NULL, NULL);
+    Status = NtOpenKey(&Key, KEY_QUERY_VALUE, &ObjectAttributes);
+    if (!NT_SUCCESS(Status))
+        return FALSE;
+
+    Info = (KEY_VALUE_PARTIAL_INFORMATION *)Buffer;
+    Status = NtQueryValueKey(Key, &ValueName, KeyValuePartialInformation,
+                             Info, sizeof(Buffer), &Length);
+    NtClose(Key);
+    if (!NT_SUCCESS(Status) || Info->Type != REG_MULTI_SZ || Info->DataLength < sizeof(WCHAR))
+        return FALSE;
+
+    /* The image name is a full path; the list holds bare file names. */
+    ImageName = Peb->ProcessParameters->ImagePathName;
+    Base = ImageName.Buffer;
+    BaseLength = ImageName.Length;
+    for (i = 0; i < ImageName.Length / sizeof(WCHAR); i++)
+    {
+        if (ImageName.Buffer[i] == (WCHAR)0x5C || ImageName.Buffer[i] == (WCHAR)0x2F)
+        {
+            Base = ImageName.Buffer + i + 1;
+            BaseLength = ImageName.Length - (i + 1) * sizeof(WCHAR);
+        }
+    }
+
+    /* Walk the multi-string: entries are NUL terminated, the list ends with an
+       empty one. */
+    Entry.Buffer = (PWSTR)Info->Data;
+    Entry.Length = 0;
+    for (i = 0; i * sizeof(WCHAR) < Info->DataLength; i++)
+    {
+        WCHAR c = ((PWSTR)Info->Data)[i];
+
+        if (c == UNICODE_NULL)
+        {
+            if (Entry.Length != 0 &&
+                Entry.Length == BaseLength &&
+                _wcsnicmp(Entry.Buffer, Base, BaseLength / sizeof(WCHAR)) == 0)
+            {
+                Match = TRUE;
+                break;
+            }
+            Entry.Buffer = (PWSTR)Info->Data + i + 1;
+            Entry.Length = 0;
+        }
+        else
+        {
+            Entry.Length += sizeof(WCHAR);
+        }
+    }
+
+    g_VersionLie = Match;
+    return Match;
+}
+
 VOID NTAPI
 RtlGetNtVersionNumbers(OUT PULONG pMajorVersion,
                        OUT PULONG pMinorVersion,
                        OUT PULONG pBuildNumber)
 {
     PPEB pPeb = NtCurrentPeb();
+    BOOLEAN Lie = IsVersionLieImage();
+
+    if (Lie)
+    {
+        if (pMajorVersion) *pMajorVersion = VERSION_LIE_MAJOR;
+        if (pMinorVersion) *pMinorVersion = VERSION_LIE_MINOR;
+        if (pBuildNumber) *pBuildNumber = (0xF0000000 | VERSION_LIE_BUILD);
+        return;
+    }
 
     if (pMajorVersion)
     {
@@ -197,9 +317,18 @@ RtlGetVersion(IN OUT PRTL_OSVERSIONINFOW lpVersionInformation)
     SIZE_T Length;
     PPEB Peb = NtCurrentPeb();
 
-    lpVersionInformation->dwMajorVersion = Peb->OSMajorVersion;
-    lpVersionInformation->dwMinorVersion = Peb->OSMinorVersion;
-    lpVersionInformation->dwBuildNumber = Peb->OSBuildNumber;
+    if (IsVersionLieImage())
+    {
+        lpVersionInformation->dwMajorVersion = VERSION_LIE_MAJOR;
+        lpVersionInformation->dwMinorVersion = VERSION_LIE_MINOR;
+        lpVersionInformation->dwBuildNumber = VERSION_LIE_BUILD;
+    }
+    else
+    {
+        lpVersionInformation->dwMajorVersion = Peb->OSMajorVersion;
+        lpVersionInformation->dwMinorVersion = Peb->OSMinorVersion;
+        lpVersionInformation->dwBuildNumber = Peb->OSBuildNumber;
+    }
     lpVersionInformation->dwPlatformId = Peb->OSPlatformId;
     RtlZeroMemory(lpVersionInformation->szCSDVersion, sizeof(lpVersionInformation->szCSDVersion));
 
