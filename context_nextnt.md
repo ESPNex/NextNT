@@ -290,3 +290,29 @@ Updated automatically by ArenaCode at the end of each job. The API key is not wr
   Il `add dword ptr [DapLba], eax` non ha effetto osservabile (DapLba resta 8 anche con HiddenLba=0x11223344 in memoria),
   mentre codice e dati in RAM coincidono col settore su disco: da riprendere con calma.
 - **ntoskrnl non compila ancora**: `ninja ntoskrnl` si ferma, quindi rosload.exe non ha ancora un kernel da caricare.
+
+
+## 2026-10-30 · Il muro del mount, e rosload.exe parte da NextFS (t-483f97)
+
+- **Il muro era il mount che chiedeva a se stesso quanto è grande il volume**: `NextFsMount()` chiamava
+  `FsGetVolumeSize()`, che su un device non ancora montato *monta* il device rifacendo la tabella `FileSystems[]`,
+  e quindi rientra in `NextFsMount()`. Da qui il ciclo `IsoMount`/`FatMount`/`BtrFsMount` che riparte da capo e non
+  arriva mai a NextFS, con lo schermo vuoto.
+- **Correzione**: `FsGetDeviceSize()` in `lib/fs/fs.c` chiede al driver del device la dimensione (differenza fra
+  `EndingAddress` e `StartingAddress` di ARC) senza montare niente; `FsGetVolumeSize()` non avvia un secondo mount
+  mentre uno è in corso. `NextFsMount()` usa `FsGetDeviceSize()`. Commit `6cfce223`.
+- **Risultato**: il volume si monta, nextldr carica il secondo stadio *da NextFS* e lo schermo dice
+  `Launching rosload.exe...`; poi compare la UI di FreeLoader con `Welcome to FreeLoader!` e l'avviso sul file di
+  esempio, e legge `nextldr.ini` dalla radice del volume (screenshot in
+  `output-GCC-i386-debug/shots/boot-chain.png`).
+- **Serve `nextldr.ini` nella radice**: rosload lo cerca per nome nudo (`Status: 14` = non trovato se sta solo sotto
+  `\ReactOS`). Nell'immagine di prova va copiato sia in `\ReactOS\NEXTLDR.INI` sia in `\nextldr.ini`.
+- **VBR**: via l'aritmetica in real mode. `nextfs.S` tiene i due numeri di settore come immediati (8 superblocco,
+  1 descrittore) e `nextfsinstall --hidden-sectors <n>` somma il settore iniziale della partizione a quegli immediati
+  e scrive i run del descrittore in numeri assoluti (commit `74ac9090`). Con base 0 il boot record è identico a
+  prima e la catena arriva a rosload (verificato).
+- **Aperto**: con l'immagine partizionata (partizione a LBA 2048) il VBR stampa ancora `NF: bad volume`, e non è
+  l'aritmetica: gli immediati nel settore sono 2056 e 2049, corretti. Un settore di boot di trenta byte che legge
+  LBA 2056 e stampa la prima lettera del risultato non arriva a stamparla (lo stesso probe legge LBA 2048 e 4096
+  senza problemi, e stampa '3' e '4'), quindi il punto è la lettura di quell'LBA su quell'immagine, non il record.
+- `ninja ntoskrnl` continua a fermarsi: rosload non ha ancora un kernel da caricare.
