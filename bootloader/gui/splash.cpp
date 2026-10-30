@@ -51,13 +51,14 @@ const unsigned long MaskHeight = 123;
    shows at boot. ContourStrength is the fraction of the way to the highlight at
    the crest of the light, out of 255: bright enough to be a reflection moving
    through the strokes, not so bright that the mark flashes. */
-const unsigned long ContourPeriodMs = 3600;
+const unsigned long ContourPeriodMs = 9000;
 
-/* Half-width of the light along the stroke, in the 0..255 scale of the position
-   asset: about a third of the stroke is lit at any moment. */
-const unsigned long LightWidth = 88;
-const unsigned long ContourFadeMs = 700;
-const unsigned long ContourStrength = 122;
+/* How strongly the gradient slides, out of 255: the artwork's own colours moved
+   by up to this much towards the pale blue of its highlight. Low on purpose --
+   the mark must stay the mark, with light moving inside it. */
+const unsigned long SlideDepth = 96;
+const unsigned long ContourFadeMs = 1400;
+const unsigned long ContourStrength = SlideDepth;
 
 /* Rows are presented in multiples of this, so a frame is one rectangular blit
    with no ragged edge at the top or the bottom of the band. */
@@ -211,37 +212,23 @@ SampleArtwork(unsigned long MulX, unsigned long MulY)
     return Pack(Red >> 16, Green >> 16, Blue >> 16);
 }
 
-/* How bright the travelling light is at stroke position Position (0 at one tip,
-   128 at the bend, 255 at the other tip), when the light itself is at Position
-   Wave and its half-width is Width. Two factors:
-     - the bump, a cosine across the distance between the two positions, so the
-       light has no edge of its own;
-     - the taper, a sine over the whole stroke, which brings the light up from
-       nothing at the first tip and down to nothing at the second. That taper is
-       what lets the light re-enter at the beginning of the next lap without a
-       jump: there is nothing to jump from, because it arrives and leaves empty.
-   The result is 0..65535, not 0..255: the low bits are kept so the caller can
-   dither them instead of banding them. */
+/* How far the gradient has slid at stroke position Position (0 at one tip, 128
+   at the bend, 255 at the other tip), when the slide is at Slide (same scale,
+   one turn of Slide = one lap).
+
+   This is not a spotlight travelling along the stroke: that is what produced a
+   bright band with two edges crossing the mark, and a band with edges is read as
+   a line however smooth its profile is. It is the gradient itself moving: one
+   cosine over the whole stroke, so the transition is spread across the entire
+   length of the chevron and there is no edge anywhere, only a slow slide from
+   deep to light and back. The result is 0..65535, so the caller can dither the
+   low bits instead of banding them. */
 unsigned long
-ContourLight(unsigned long Position, unsigned long Wave, unsigned long Width)
+ContourLight(unsigned long Position, unsigned long Slide)
 {
-    unsigned long Distance = Position > Wave ? Position - Wave : Wave - Position;
-    unsigned long Bump, Taper;
+    unsigned long Angle = ((Slide * 65536) / 255 + 16384 - Position * 257) & 0xFFFF;
 
-    if (Distance >= Width)
-        return 0;
-
-    /* 0..65535 across the bump, full at the centre and empty at the edge. */
-    Bump = (unsigned long)((65536 + CosQ16(((Distance * 65536) / Width) & 0xFFFF)) / 2);
-    Bump = (Bump * Bump) >> 16;
-
-    /* A window over the whole stroke: zero at both tips, full at the bend. Half
-       a turn of the same sine, not a whole one, because the stroke is a single
-       run from tip to tip and the light must die out at both ends of it. */
-    Taper = (unsigned long)SinQ16((Position * 32768) / 255);
-    if (Taper > 65535) Taper = 65535;
-
-    return (Bump * Taper) >> 16;
+    return (unsigned long)((65536 + CosQ16(Angle)) / 2);
 }
 
 /* Ordered four by four dither, 0..15. Added to the low bits of the light, it
@@ -324,7 +311,7 @@ SplashBand(unsigned long *Pixels, unsigned long Width, unsigned long Height,
             /* The light in sixteen bits, dithered down to eight: the low bits
                decide between two neighbouring levels, so a slow gradient gets a
                grain instead of a band. */
-            Light = (ContourLight(Contour, Wave, LightWidth) * Strength) >> 8;
+            Light = (ContourLight(Contour, Wave) * Strength) >> 8;
             Light = (Light >> 8) + (((Light & 0xFF) > Dither4x4(Y, X) * 16) ? 1 : 0);
 
             /* The light pulls the pixel part of the way towards the highlight,
