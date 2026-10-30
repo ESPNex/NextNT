@@ -89,7 +89,33 @@ NextNT brings modern hardware and platforms to the NT architecture.
 | **The Windows 11 driver model** | Windows 11 (NT10) compatibility and driver-model work, checked against Windows 11 itself. |
 | **Graphics and x86 apps on Arm** | The graphics driver model with Mesa, and WoW64 with FEX, are build options you can switch on. |
 | **NextNT Setup** | Lists drives the way Windows Setup does, creates, deletes, formats, shrinks and extends partitions, and installs NextNT on NTFS with the EFI system partition it needs. |
+| **NextFS** | A copy-on-write file system built for NextNT: a journal, snapshots, deduplicated security descriptors, its own formatter inside Setup, a reader in the boot loader, and a volume boot record — so a NextFS volume can be formatted, filled and, with the second-stage loader that is being written now, booted. |
 | **Your own build** | `menuconfig` lets you choose the target, compiler and build type, and switch features on or off. |
+
+### NextFS
+
+NextFS is NextNT's own file system, in `drivers/filesystems/nextfs` and `sdk/lib/fslib/nextfslib`. It is one format read by three different programs, each built for its own world:
+
+| Where | What it does |
+| --- | --- |
+| `nextfs.sys` | The driver: mount, create, read, write, directory queries, locks, oplocks, security descriptors, snapshots. |
+| `nextfslib` | The format itself — journal, PIFT, copy-on-write data path — as portable C with no OS dependency, so it also builds as a host program for the tests. |
+| `nextldr` | A read-only reader, because the loader is a freestanding 32-bit program that must not carry a kernel's compromises. It reads the checkpoint tree and never the journal. |
+| `base/setup` | The formatter, through the same library the driver runs, plus the `NEXTFS` partition type. |
+| `boot/nextldr/bootsect/nextfs.S` | The volume boot record: 512 bytes that read the superblock and load a payload. |
+
+Status, honestly: the format, the library, the driver, the reader, the Setup formatter and the boot record all work and are tested — 360 library checks, 94 boot-reader checks, 24 ARC-glue checks, a byte-for-byte round trip through the boot reader after `nextfsinstall`, and a QEMU boot of a volume to a payload. What is not finished: the boot record loads a flat image, while `nextldr.sys` is a PE that expects its own stub, so a two-stage loader (`nextfsldr.sys`, reusing the boot reader) is the piece in progress. NTFS remains the file system Setup installs to by default.
+
+A volume is prepared on a build machine with the tool that shares the library:
+
+```sh
+nextfsinstall --image boot.img --size 512 --label NEXTNT \
+              --source <install-tree> --dest \ReactOS \
+              --boot-code nextfs.bin \
+              --boot-loader /ReactOS/nexldr.sys --boot-load 0x1000
+```
+
+The design, with what is deliberately not implemented (compression, encryption, quotas), is in [`drivers/filesystems/nextfs/DESIGN.md`](drivers/filesystems/nextfs/DESIGN.md).
 
 > [!TIP]
 > Each build on the [Releases](https://github.com/espnex/NextNT/releases) page lists what changed since the previous one.
