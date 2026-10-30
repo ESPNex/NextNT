@@ -22,7 +22,10 @@
 #include <ndk/obfuncs.h>
 #include <ndk/psfuncs.h>
 #include <ndk/rtlfuncs.h>
-#include <ntdddisk.h>
+
+/* DISK_GEOMETRY_EX and IOCTL_DISK_GET_DRIVE_GEOMETRY_EX come from the DDK
+ * ntdddisk.h, already reachable through the ndk headers above; including the
+ * psdk copy as well redeclares MEDIA_TYPE and every F5_ geometry. */
 
 #include <fmifs/fmifs.h>
 
@@ -284,7 +287,7 @@ NextfsFormat(
             if (Length > NFS_LABEL_MAX - 1)
                 Length = NFS_LABEL_MAX - 1;
             RtlCopyMemory(VolumeLabel, AnsiLabel.Buffer, Length);
-            VolumeLabel[Length] = ANSICHAR_NULL;
+            VolumeLabel[Length] = ANSI_NULL;
             RtlFreeAnsiString(&AnsiLabel);
         }
     }
@@ -344,13 +347,18 @@ NextfsFormat(
             goto Quit;
         }
 
-        NfsStatus = NfsUnmount(Volume);
+        /* NfsUnmount is void: it syncs on the way out. Ask for the checkpoint
+         * explicitly first, so a failure is still reportable. */
+        NfsStatus = NfsSync(Volume);
         if (NfsStatus != NFS_OK)
         {
             DPRINT1("NextfsFormat: checkpoint failed, %d\n", NfsStatus);
+            NfsDiscard(Volume);
             Status = STATUS_UNEXPECTED_IO_ERROR;
             goto Quit;
         }
+
+        NfsUnmount(Volume);
     }
 
     Success = TRUE;

@@ -33,6 +33,13 @@ list(APPEND SOURCE
     setuplib.c
     precomp.h)
 
+# GCC 13 sees six locals in arcname.c as possibly uninitialised that the GCC of
+# RosBE does not, and this tree compiles with -Werror. They are false positives
+# (each one is set on every path that uses it), so the flag keeps a compiler
+# version difference from stopping the build of an unrelated file.
+set_source_files_properties(utils/arcname.c PROPERTIES
+    COMPILE_FLAGS "-Wno-error=maybe-uninitialized")
+
 # Static library used for the dll and for setuplib_unittest.
 add_library(setuplib_static ${SOURCE})
 add_pch(setuplib_static precomp.h SOURCE)
