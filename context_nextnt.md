@@ -261,6 +261,43 @@
 - Prossimo passo concreto, in due pezzi: (1) base LBA di partizione — il VBR deve leggere la partizione da DS:SI (offset 8 = LBA di partenza), sommarla a ogni lettura e passarla al primo stadio; (2) immagine di test con MBR attivo tipo 0x4E a LBA 2048 e NextFS lì dentro, con `rosload.exe` nel volume (serve un bootcd costruito).
 - Metodo che ha funzionato: `-d in_asm,int` + python che stampa i blocchi; QEMU `screendump` (formato P6/PNM, convertire con `convert`) per analisi visiva; monitor unix per registri; client RSP su `-gdb tcp::1234`.
 
+## 2026-10-30 · kernel e HAL compilano; la catena arriva a winldr (t-59a6ca)
+- **Il kernel non compilava per GCC 13, non per il nostro codice**: `-Werror` trasformava in errore ogni nuovo
+  avviso dentro header e terze parti (`PKSDEVICE __inline` in `psdk/ks.h`, `-Wnonnull-compare` in
+  `sdk/lib/crt/string/tcsnlen.h`, `maybe-uninitialized` in vkd3d, `uninitialized` in glu32). In `sdk/cmake/gcc.cmake`
+  queste diagnosi restano avvisi (tutto il resto tiene `-Werror`), con la stessa eccezione limitata a vkd3d.
+  `nextfsformat.c` includeva quattro sottotitoli NDK che non dichiarano `NtCreateEvent` né `NtQuerySystemTime`:
+  ora usa `<ndk/ntndk.h>` e `<debug.h>` dopo. Da qui **`ninja ntoskrnl` produce ntoskrnl.exe (4,9 MB) e
+  `ninja hal` hal.dll (2,4 MB)**. Commit `adedfd13`.
+- **La catena adesso si vede tutta a schermo**: VBR → `nextfsldr` → FreeLoader che legge `NEXTLDR.INI` **dal volume
+  NextFS** e mostra il menu con `NextNT (HardDrive)`; scegliendola carica `rosload.exe` da NextFS e arriva a winldr.
+  Le hive si generano con **`ninja preinstall_hives`** in `boot/bootdata/preinstall/` (system, software, default,
+  sam, security), i file NLS con i target `media/nls/*.nls` (117 file).
+- **Muro nuovo, misurato**: con un'immagine di 22 file (15 MB) il primo stadio dice `NF: cannot mount the volume (30)`
+  — 30 = `NFSB_ECORRUPT` — mentre `nextfsinfo` monta la stessa immagine senza problemi (volume NEXTNT, generation 11,
+  root del checkpoint 4760, fallback 4274). Con 8 file e 1,5 MB la stessa catena partiva. Quindi il lettore di NextFS
+  del primo stadio non sa leggere un albero che l'altro lato scrive: il sospetto è il livello dell'albero
+  (`NFSB_TREE_MAX_DEPTH`, `Header->Block != Block` in `NfsbReadNode`), non la dimensione del volume, che è 64 MiB
+  in tutti e due i casi. Prossimo passo: far camminare `nextfs_core.c` un albero a più livelli, con la controprova
+  che l'immagine grossa si monti.
+- **Aperto**: `ntoskrnl.exe` linkato ma mai eseguito (mancano i driver di boot citati nella hive SYSTEM); il VBR con
+  gli hidden sectors resta da riprendere; niente commit su `origin`.
+## 2026-10-30 · piano approvato: schermata di avvio con gradiente animato (t-2ae77e)
+- **Richiesta**: togliere il marchio attuale e lo spinner rettangolare dalla schermata di avvio e rifarla in **C++ puro**
+  con un gradiente animato a 60 FPS, usando il logo nuovo (due chevron blu, `uploads/20261030-173331/nextnt logo.png`).
+- **Dove si lavora**: `bootloader/gui/` (il boot manager grafico UEFI). Punti individuati leggendo il codice:
+  `BootUiBackground()` in `bootloader/gui/bootui.c` è lo sfondo (azzera i pixel: `RtlZeroMemory`), `BootUiPresent()`/
+  `BootUiPresentRegion()` presentano, `BootUiBrand()`/`BootUiLogo()` disegnano marchio + nome nell'header (dati da
+  `assets/logo.rgba` → `bootui_logo.h` via `native-bin2c`), e la barra di caricamento è disegnata da
+  `BootUiDrawProgressBar()`/`BootUiDrawProgressBarCenter()`. Il timer per il ridisegno periodico esiste già
+  (`MachSetInputTimer(Milliseconds)` in `include/machine.h`), il framebuffer è BGRA a 32 bit (`VidFbPresent`).
+- **Da fare**: nuovo `bootloader/gui/splash.cpp` + `splash.h` (C++ freestanding, no STL/eccezioni/RTTI) che riempie il
+  framebuffer con un gradiente animato su due assi, dithered, con dirty region; marchio chevron centrato; barra
+  rettangolare rimossa; asset `assets/nextnt-chevrons.rgba` ricavato dall'allegato (nero → trasparente) e README
+  aggiornato; build `nextldr` i386 e controllo che non entrino simboli libstdc++.
+- **Non si tocca**: catena VBR/NextFS, lettore del primo stadio, formato su disco, logica di menu/input/countdown.
+- **Nota**: `boot/nextldr/nextldr/ui/bootui.c` è la variante testuale (usata nel boot BIOS); se il gradiente va anche
+  lì, è un secondo passo con la stessa `splash.cpp`.
 <!-- agente:fine -->
 
 Updated automatically by ArenaCode at the end of each job. The API key is not written here.

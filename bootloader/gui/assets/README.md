@@ -1,5 +1,13 @@
 # NextLdr artwork and assets
 
+The boot screen no longer uses a rasterized mark. The header and the entry rows
+draw the two chevrons from the geometry in `gui/splash.cpp`
+(`SplashDrawMark`), and the background is a generated gradient
+(`SplashFillBackground`) instead of the flat `#202020` fill and the
+rectangular loading bar. `logo.rgba` and `bootui_logo.h` are kept because the
+non-graphical menu and the entries that name another operating system still use
+them; nothing in the graphical boot screen reads them any more.
+
 The interactive boot menu uses a solid dark gray background (`#202020`) and embeds these assets in the UEFI executable; no external image file is needed at boot.
 
 The initial countdown uses a black screen with the firmware's BGRT logo. A key, volume button, click or tap opens the menu; the opening input is consumed. Pointer movement alone does not open it. When the countdown expires, the configured default entry starts automatically; the supplied media configurations default to the normal NextNT entry. Selecting an entry from the menu also restores the black BGRT screen with the graphical loading bar. Error dialogs temporarily hide BGRT so it cannot cover their text.

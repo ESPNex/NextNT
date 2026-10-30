@@ -141,7 +141,8 @@ add_library(bootgui
     gui/bmui.c
     gui/bootui.c
     gui/ftglue.c
-    gui/guisupp.c)
+    gui/guisupp.c
+    gui/splash.cpp)
 target_include_directories(bootgui PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(bootgui setjmp freetype)
 add_dependencies(bootgui bugcodes asm xdk)
